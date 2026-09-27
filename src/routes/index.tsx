@@ -28,7 +28,9 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [activeArea, setActiveArea] = useState(0); const [wizardOpen, setWizardOpen] = useState(false); const [wizardStep, setWizardStep] = useState(0); const [mobileMenu, setMobileMenu] = useState(false); const [searchOpen, setSearchOpen] = useState(false); const [search, setSearch] = useState(""); const [notice, setNotice] = useState<string | null>(null);
-  const active = areas[activeArea] ?? areas[0]; const progress = Math.round(((wizardStep + 1) / setupSteps.length) * 100); const filteredAreas = useMemo(() => areas.filter((area) => area.name.toLowerCase().includes(search.toLowerCase())), [search]);
+  const active = areas.at(activeArea) ?? areas.at(0);
+  if (!active) return null;
+  const progress = Math.round(((wizardStep + 1) / setupSteps.length) * 100); const filteredAreas = useMemo(() => areas.filter((area) => area.name.toLowerCase().includes(search.toLowerCase())), [search]);
   const announce = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(null), 3200); };
   return <main className="min-h-screen bg-background text-foreground">
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-border bg-sidebar p-4 lg:flex lg:flex-col"><Brand/><nav className="mt-8 space-y-1" aria-label="Primary navigation">{areas.map((area, index) => <AreaNav key={area.name} area={area} active={activeArea === index} onClick={() => setActiveArea(index)}/>)}</nav><div className="mt-auto border-t border-sidebar-border pt-4"><button onClick={() => setWizardOpen(true)} className="flex w-full items-center gap-3 rounded-lg bg-sidebar-accent px-3 py-3 text-left text-sm font-semibold text-sidebar-accent-foreground"><Settings2 className="size-4"/>Portal setup <span className="ml-auto font-mono text-[10px]">10 steps</span></button></div></aside>
