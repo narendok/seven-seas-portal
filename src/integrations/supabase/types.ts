@@ -825,10 +825,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_access_controlled_document_object: {
-        Args: { object_name: string }
-        Returns: boolean
-      }
       has_department_permission: {
         Args: {
           _department_id: string
