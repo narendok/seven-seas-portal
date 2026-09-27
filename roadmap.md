@@ -4,3 +4,4 @@
 - [x] Convert all master-data fields into searchable selectors with direct create/manage actions and return-to-form selection.
 - [x] Add department-scoped role management, granular permissions, admin context switching, all-department table controls, and delegated-action audit history.
 - [x] Add idempotent, clearly labeled fictional demo data with reset controls and protected approval examples for end-to-end role/context testing.
+- [x] Add the department-wise Today/Pending checklist with DEMO task moves and linked project and assignee views.
