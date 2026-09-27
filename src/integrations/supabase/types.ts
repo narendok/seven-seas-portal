@@ -448,6 +448,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          department_id: string | null
           document_type: string
           id: string
           organization_id: string
@@ -460,6 +461,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          department_id?: string | null
           document_type: string
           id?: string
           organization_id: string
@@ -472,6 +474,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          department_id?: string | null
           document_type?: string
           id?: string
           organization_id?: string
@@ -482,6 +485,13 @@ export type Database = {
           visibility?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_organization_id_fkey"
             columns: ["organization_id"]
