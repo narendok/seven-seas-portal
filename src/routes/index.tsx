@@ -255,6 +255,38 @@ const automotivePhases = [
   ["Phase_9_Production_and_Verification", "HW_30–35", "SMT, DVR, tests, pilot and release records"],
   ["Phase_10_Change_Control_and_Compliance", "HW_36–37", "ECO, reverification, AIS-140, AIS-004, IMDS, RoHS and REACH records"],
 ] as const;
+const automotiveDocumentStatus = (lifecycle: ControlledDocument["lifecycle"]): RecordStatus =>
+  lifecycle === "Approved"
+    ? "Approved"
+    : lifecycle === "Obsolete"
+      ? "Archived"
+      : lifecycle === "In review"
+        ? "In review"
+        : "Draft";
+const mergeAutomotiveDemoDocuments = (documents: ControlledDocument[]) => {
+  const existing = new Set(documents.map((document) => document.id));
+  const seed: ControlledDocument[] = [
+    {
+      id: "demo-repository-template",
+      title: "DEMO · Automotive hardware repository path template",
+      url: "",
+      type: "Repository path template",
+      departmentId: "demo-dept-rnd",
+      group: "02_Product_Platforms/Automotive_Devices",
+      device: "Automotive_Devices · DEMO platform only",
+      part: "DEMO-AIS140-OBD-01",
+      revision: "A · DEMO",
+      phase: "Phase_1_Requirements_and_Concept · HW_01–04",
+      lifecycle: "Draft",
+      classification: "Internal · DEMO only · Drive path template",
+      effectiveDate: "Not effective until human approval",
+      approver: "Human approval required",
+      history: ["DEMO repository path template loaded"],
+      linkedRecordRefs: ["DEMO-RND-001", "DEMO-RND-002", "DEMO-RND-003", "DEMO-RND-005"],
+    },
+  ];
+  return [...documents, ...seed.filter((document) => !existing.has(document.id))];
+};
 const setupSteps = [
   "Company, locations, calendars & numbering",
   "Departments, leads, roles & sub-roles",
