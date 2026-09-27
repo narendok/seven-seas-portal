@@ -2100,23 +2100,40 @@ function departmentFlow(area: AreaId, records: RecordItem[]) {
     people: ["Need", "Training", "Access", "Evidence", "Review"],
   };
   const stages = area === "home" || area === "audit" ? [] : labels[area];
-  return stages.map((label) => ({
-    label,
-    total: records.filter((record) =>
+  return stages.map((label) => {
+    const stageRecords = records.filter((record) =>
       `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
         .toLowerCase()
         .includes(label.toLowerCase()),
-    ).length,
-    complete: records.filter(
-      (record) =>
-        `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
-          .toLowerCase()
-          .includes(label.toLowerCase()) && ["Approved", "Released"].includes(record.status),
-    ).length,
-  }));
+    );
+    const complete = stageRecords.filter((record) => ["Approved", "Released"].includes(record.status)).length;
+    const blocked = stageRecords.filter((record) => Boolean(record.fields["blocker"])).length;
+    const inProgress = stageRecords.filter(
+      (record) => !record.fields["blocker"] && ["Open", "In review"].includes(record.status),
+    ).length;
+    const upcoming = stageRecords.filter((record) => record.status === "Draft").length;
+    const latestUpdate = stageRecords
+      .map((record) => record.updatedAt)
+      .sort((a, b) => b.localeCompare(a))[0];
+    return { label, total: stageRecords.length, complete, blocked, inProgress, upcoming, latestUpdate };
+  });
 }
 
-function DepartmentFlow({ flow }: { flow: { label: string; total: number; complete: number }[] }) {
+function DepartmentFlow({
+  flow,
+  onOpenStage,
+}: {
+  flow: {
+    label: string;
+    total: number;
+    complete: number;
+    blocked: number;
+    inProgress: number;
+    upcoming: number;
+    latestUpdate?: string | undefined;
+  }[];
+  onOpenStage: (label: string) => void;
+}) {
   if (!flow.length) return null;
   return (
     <section className="mt-6 overflow-hidden border border-border bg-panel">
@@ -2132,17 +2149,36 @@ function DepartmentFlow({ flow }: { flow: { label: string; total: number; comple
         </span>
       </div>
       <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
-        {flow.map((stage, index) => (
-          <div key={stage.label} className="relative min-h-24 bg-card px-4 py-4">
-            <span className="font-mono text-[10px] text-muted-foreground">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <p className="mt-2 text-sm font-semibold">{stage.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {stage.complete}/{stage.total} completed
-            </p>
-          </div>
-        ))}
+        {flow.map((stage, index) => {
+          const percent = stage.total ? Math.round((stage.complete / stage.total) * 100) : 0;
+          return (
+            <button
+              key={stage.label}
+              onClick={() => onOpenStage(stage.label)}
+              className="relative min-h-36 bg-card px-4 py-4 text-left transition-colors hover:bg-secondary"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="font-mono text-sm font-semibold text-steel">{percent}%</span>
+              </div>
+              <p className="mt-2 text-sm font-semibold">{stage.label}</p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary" aria-label={`${stage.label} ${percent}% complete`}>
+                <span
+                  className="block h-full rounded-full bg-steel motion-safe:animate-[rise-in_600ms_ease-out_both] motion-safe:transition-[width] motion-safe:duration-700"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {stage.complete} complete · {stage.inProgress} in progress · {stage.blocked} blocked · {stage.upcoming} upcoming
+              </p>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {stage.latestUpdate ? `Latest update ${stage.latestUpdate}` : "No records in this stage"}
+              </p>
+            </button>
+          );
+        })}
       </div>
     </section>
   );
