@@ -63,11 +63,17 @@ async def main() -> None:
         await page.get_by_role("button", name="Administration", exact=True).click()
         await select_tab(page, "demo")
         dialog_text = await page.get_by_role("dialog").inner_text()
-        await expect("Protected quality release and financial approval examples remain pending" in dialog_text, "Protected approval protection is not stated")
+        await expect("Quality release and financial commitment examples remain pending" in dialog_text, "Protected approval protection is not stated")
+        await expect(await page.get_by_role("button", name="Approve", exact=True).count() == 0, "Protected approval can be approved directly")
+        await page.get_by_role("button", name="Close", exact=True).click()
+        await page.get_by_role("button", name="History", exact=True).click()
+        approval_text = await page.get_by_role("dialog").inner_text()
+        await expect("DEMO · Quality release — human decision required" in approval_text, "Protected quality approval is absent")
+        await expect("DEMO · Financial commitment — human decision required" in approval_text, "Protected financial approval is absent")
         await expect(await page.get_by_role("button", name="Approve", exact=True).count() == 0, "Protected approval can be approved directly")
         await page.get_by_role("button", name="Close", exact=True).click()
 
-        # Admin context switching: quality context appears in the header and can return to global administration.
+        # Admin context switching: quality context appears in the header and can move between departments.
         await manage_department(page, "DEMO · Quality")
         header_text = await page.locator("header").inner_text()
         await expect("DEMO · Quality · Administrator context" in header_text, "Quality administrator context did not activate")
