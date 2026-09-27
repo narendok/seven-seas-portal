@@ -4184,9 +4184,25 @@ function DocumentDetail({
                   </div>
                 </>
               ) : (
-                <p className="text-sm leading-6 text-muted-foreground">
-                  This browser-local document link is preserved. Connect it to an organization-controlled document record to enable private Lovable Cloud upload and signed retrieval.
-                </p>
+                <>
+                  <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-card px-3.5 text-sm font-semibold transition-colors hover:border-ring/50 hover:bg-secondary">
+                    Upload document
+                    <input
+                      key={fileInputKey}
+                      className="sr-only"
+                      type="file"
+                      onChange={() => {
+                        setFileState("error");
+                        setFileMessage("This browser-local document must first be linked to an authenticated organization record. No file was uploaded.");
+                        setFileInputKey((value) => value + 1);
+                      }}
+                    />
+                  </label>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    Lovable Cloud storage is active. This browser-local document link is preserved; link it to an organization-controlled document record to enable private upload, revision history and signed retrieval.
+                  </p>
+                  {fileMessage && <p className="mt-3 text-sm text-danger">{fileMessage}</p>}
+                </>
               )}
             </div>
           </section>
