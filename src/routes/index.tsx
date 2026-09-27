@@ -1338,7 +1338,10 @@ function Portal() {
           departmentContext={departmentContext}
           onClose={() => setModal(null)}
           onSelectDocument={openDocument}
-          onUploadDocument={openDocument}
+          onUploadDocument={(document) => {
+            setSelectedDocumentId(document.id);
+            setModal("document");
+          }}
         />
       )}{" "}
       {modal === "document" && selectedDocument && (
@@ -3864,7 +3867,7 @@ function DocumentsPanel({
           </p>
         </div>
         <span className="rounded-md border border-moss/25 bg-card px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-moss">
-          Private bucket
+          Private Cloud storage
         </span>
       </section>
       <section className="mb-5 overflow-hidden rounded-lg border border-border bg-panel">
