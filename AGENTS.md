@@ -16,3 +16,4 @@
 - Keep authorized demo data in the same versioned browser-local portal state, clearly marked and replaceable as a whole, so it never blends with configured operational data or creates duplicate records.
 
 - Shared records and documents stay browser-local and are surfaced through access-checked aggregate views; department ownership remains the source of authority.
+- Private controlled-document binaries live in Lovable Cloud Storage; server functions create short-lived signed upload/download links only after authenticated database policies authorize the department-scoped document.
