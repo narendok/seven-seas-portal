@@ -183,6 +183,99 @@ export type Database = {
           },
         ]
       }
+      department_role_assignments: {
+        Row: {
+          active: boolean
+          assigned_by: string
+          created_at: string
+          id: string
+          member_id: string
+          role_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          assigned_by: string
+          created_at?: string
+          id?: string
+          member_id: string
+          role_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          assigned_by?: string
+          created_at?: string
+          id?: string
+          member_id?: string
+          role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_role_assignments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "organization_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_role_assignments_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "department_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      department_roles: {
+        Row: {
+          active: boolean
+          created_at: string
+          department_id: string | null
+          id: string
+          name: string
+          organization_id: string
+          role_key: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          role_key: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          role_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_roles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       department_settings: {
         Row: {
           active: boolean
@@ -535,6 +628,38 @@ export type Database = {
             columns: ["target_record_id"]
             isOneToOne: false
             referencedRelation: "operational_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          id: string
+          permission_key: string
+          role_id: string
+        }
+        Insert: {
+          allowed?: boolean
+          created_at?: string
+          id?: string
+          permission_key: string
+          role_id: string
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          id?: string
+          permission_key?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "department_roles"
             referencedColumns: ["id"]
           },
         ]
