@@ -4002,6 +4002,7 @@ function DocumentDetail({
   const [fileState, setFileState] = useState<"idle" | "loading" | "uploading" | "error">("idle");
   const [fileMessage, setFileMessage] = useState("");
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const isCloudDocument = Boolean(document.cloudDocumentId);
   useEffect(() => {
     if (!document.cloudDocumentId || !allowed) {
@@ -4032,8 +4033,10 @@ function DocumentDetail({
     }
     try {
       setFileState("uploading");
+      setUploadProgress(12);
       setFileMessage("Preparing secure upload…");
       const checksum = await sha256(file);
+      setUploadProgress(32);
       const result = await beginUpload({
         data: {
           documentId: document.cloudDocumentId,
@@ -4045,15 +4048,19 @@ function DocumentDetail({
         },
       });
       if (result.duplicate) {
+        setUploadProgress(100);
         setFileMessage("This exact revision already exists; no duplicate file was created.");
       } else if (result.signedUploadUrl) {
+        setUploadProgress(55);
         const response = await fetch(result.signedUploadUrl, {
           method: "PUT",
           headers: { "Content-Type": file.type || "application/octet-stream" },
           body: file,
         });
         if (!response.ok) throw new Error("The secure upload did not complete.");
+        setUploadProgress(82);
         await finishUpload({ data: { fileId: result.file.id } });
+        setUploadProgress(100);
         setFileMessage("File stored privately in Lovable Cloud.");
       }
       const refreshed = await listFiles({ data: { documentId: document.cloudDocumentId } });
@@ -4067,6 +4074,7 @@ function DocumentDetail({
       setFileInputKey((value) => value + 1);
     } catch (error) {
       setFileState("error");
+      setUploadProgress(0);
       setFileMessage(error instanceof Error ? error.message : "Secure upload could not be completed.");
     }
   };
@@ -4135,6 +4143,17 @@ function DocumentDetail({
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
                     Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
                   </p>
+                  {fileState === "uploading" && (
+                    <div className="mt-3" aria-live="polite">
+                      <div className="h-2 overflow-hidden rounded-full bg-secondary">
+                        <div
+                          className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Secure upload {uploadProgress}%</p>
+                    </div>
+                  )}
                   {fileMessage && (
                     <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-muted-foreground"}`}>
                       {fileMessage}
@@ -4151,6 +4170,7 @@ function DocumentDetail({
                             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
                               Rev {file.revision} · {Math.ceil(file.size_bytes / 1024)} KB · {file.uploaded_at}
                             </p>
+                            <p className="mt-1 text-xs text-muted-foreground">{file.audit_note}</p>
                           </div>
                           <Action label="Secure download" onClick={() => void download(file)} />
                         </div>
