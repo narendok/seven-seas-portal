@@ -3959,12 +3959,20 @@ function DocumentDetail({
             />
             <DocumentField label="Phase" value={document.phase ?? "Not set"} />
             <DocumentField label="Status" value={document.lifecycle ?? "Draft"} />
+             <DocumentField label="Effective date" value={document.effectiveDate ?? "Not set"} />
+             <DocumentField label="Approver" value={document.approver ?? "Human approval required"} />
             <DocumentField label="Classification" value={document.classification ?? "Internal"} />
             <DocumentField
               label="Access"
-              value="Department-owned · internal by default · no external sharing"
+               value="Department-owned · internal by default · no external sharing · Drive path template only"
             />
           </section>
+           <section className="mt-6 border-t border-border pt-5">
+             <p className="font-semibold">Document history</p>
+             <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+               {document.history?.length ? document.history.map((event) => <p key={event}>{event}</p>) : <p>No controlled history has been recorded.</p>}
+             </div>
+           </section>
           <section className="mt-6 border-t border-border pt-5">
             <p className="font-semibold">Access-controlled references</p>
             <div className="mt-3 space-y-2">
