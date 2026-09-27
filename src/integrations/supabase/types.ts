@@ -435,6 +435,7 @@ export type Database = {
           due_at: string | null
           fields: Json
           id: string
+          is_demo: boolean
           notes: string
           organization_id: string
           priority: string
@@ -455,6 +456,7 @@ export type Database = {
           due_at?: string | null
           fields?: Json
           id?: string
+          is_demo?: boolean
           notes?: string
           organization_id: string
           priority?: string
@@ -475,6 +477,7 @@ export type Database = {
           due_at?: string | null
           fields?: Json
           id?: string
+          is_demo?: boolean
           notes?: string
           organization_id?: string
           priority?: string
@@ -749,6 +752,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_department_permission: {
+        Args: {
+          _department_id: string
+          _organization_id: string
+          _permission_key: string
+        }
+        Returns: boolean
+      }
       has_organization_role: {
         Args: {
           _organization_id: string
