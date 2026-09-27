@@ -11,3 +11,4 @@
 
 ## Portal runtime
 - Keep operational prototype data in a versioned browser-local store so records persist between refreshes without creating an unconfigured backend.
+- Portal record forms use structured local fields, controlled master options, and record links so created operational data remains traceable without inventing business data.
