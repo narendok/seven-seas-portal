@@ -1002,6 +1002,7 @@ function Portal() {
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [queueStage, setQueueStage] = useState<string | null>(null);
   const [modal, setModal] = useState<
     "create" | "wizard" | "approvals" | "documents" | "document" | "history" | "admin" | null
   >(null);
@@ -1035,6 +1036,7 @@ function Portal() {
     setView("queue");
     setSelectedId(null);
     setSelectedAssignee(null);
+    setQueueStage(null);
     setMobileMenu(false);
   };
   const loadDemo = () => {
@@ -1242,7 +1244,8 @@ function Portal() {
               records={activeRecords.filter(
                 (record) =>
                   record.area === activeArea &&
-                  (!departmentContext || record.departmentId === departmentContext),
+                  (!departmentContext || record.departmentId === departmentContext) &&
+                  (!queueStage || `${record.type} ${record.fields["lifecycleStage"] ?? ""}`.toLowerCase().includes(queueStage.toLowerCase())),
               )}
               department={
                 portal.departments.find((item) => item.id === departmentContext) ??
@@ -1258,6 +1261,10 @@ function Portal() {
                 setView("detail");
               }}
               onAdmin={() => setModal("admin")}
+              onOpenStage={(stage) => {
+                setQueueStage(stage);
+                setView("queue");
+              }}
             />
           )}
         </div>
