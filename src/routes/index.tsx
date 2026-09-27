@@ -14,6 +14,7 @@ import {
   Menu,
   PackageSearch,
   Plus,
+  Upload,
   Search,
   Settings2,
   ShieldCheck,
@@ -1337,6 +1338,10 @@ function Portal() {
           departmentContext={departmentContext}
           onClose={() => setModal(null)}
           onSelectDocument={openDocument}
+          onUploadDocument={(document) => {
+            setSelectedDocumentId(document.id);
+            setModal("document");
+          }}
         />
       )}{" "}
       {modal === "document" && selectedDocument && (
@@ -3820,12 +3825,14 @@ function DocumentsPanel({
   departmentContext,
   onClose,
   onSelectDocument,
+  onUploadDocument,
 }: {
   documents: ControlledDocument[];
   departments: Department[];
   departmentContext: string | null;
   onClose: () => void;
   onSelectDocument: (document: ControlledDocument) => void;
+  onUploadDocument: (document: ControlledDocument) => void;
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("All groups");
@@ -3852,9 +3859,17 @@ function DocumentsPanel({
   );
   return (
     <Modal title="Controlled document repository" onClose={onClose} wide>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Department-owned documents remain access checked. This is an internal path template; Google Drive is not connected and no folders have been created.
-      </p>
+      <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-moss/25 bg-accent px-4 py-3">
+        <div>
+          <p className="text-sm font-semibold text-accent-foreground">Lovable Cloud storage active</p>
+          <p className="mt-1 text-xs text-accent-foreground/80">
+            Private, department-authorized files use signed access. Google Drive is optional and not connected.
+          </p>
+        </div>
+        <span className="rounded-md border border-moss/25 bg-card px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-moss">
+          Private Cloud storage
+        </span>
+      </section>
       <section className="mb-5 overflow-hidden rounded-lg border border-border bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Canonical repository path</p>
@@ -3905,20 +3920,34 @@ function DocumentsPanel({
       <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
         {visible.length ? (
           visible.map((document) => (
-            <button
+            <div
               key={document.id}
-              onClick={() => onSelectDocument(document)}
-              className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-4 text-left last:border-0"
+              className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-4 last:border-0"
             >
+              <button onClick={() => onSelectDocument(document)} className="min-w-0 text-left">
               <span>
                 <strong className="block">{document.title}</strong>
                 <small className="mt-1 block text-muted-foreground">
                   {document.group ?? "Unclassified"} · {document.device ?? "No device"} ·{" "}
                   {document.part ?? "No part"} · Rev {document.revision ?? "—"}
                 </small>
+                <small className="mt-1 block font-mono text-[10px] uppercase tracking-[.06em] text-steel">
+                  {document.cloudDocumentId ? "Private files enabled" : "Link to organization to enable files"}
+                </small>
               </span>
-               <Status status={automotiveDocumentStatus(document.lifecycle)} />
-            </button>
+              </button>
+              <div className="flex flex-col items-end gap-2">
+                <Status status={automotiveDocumentStatus(document.lifecycle)} />
+                <button
+                  aria-label={`Upload document for ${document.title}`}
+                  onClick={() => onUploadDocument(document)}
+                  className="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-card text-steel transition-colors hover:border-ring/50 hover:bg-secondary"
+                  title="Open file upload and revision history"
+                >
+                  <Upload className="size-4" />
+                </button>
+              </div>
+            </div>
           ))
         ) : (
           <p className="p-8 text-center text-sm text-muted-foreground">
@@ -3976,6 +4005,7 @@ function DocumentDetail({
   const [fileState, setFileState] = useState<"idle" | "loading" | "uploading" | "error">("idle");
   const [fileMessage, setFileMessage] = useState("");
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const isCloudDocument = Boolean(document.cloudDocumentId);
   useEffect(() => {
     if (!document.cloudDocumentId || !allowed) {
@@ -4006,8 +4036,10 @@ function DocumentDetail({
     }
     try {
       setFileState("uploading");
+      setUploadProgress(12);
       setFileMessage("Preparing secure upload…");
       const checksum = await sha256(file);
+      setUploadProgress(32);
       const result = await beginUpload({
         data: {
           documentId: document.cloudDocumentId,
@@ -4019,15 +4051,19 @@ function DocumentDetail({
         },
       });
       if (result.duplicate) {
+        setUploadProgress(100);
         setFileMessage("This exact revision already exists; no duplicate file was created.");
       } else if (result.signedUploadUrl) {
+        setUploadProgress(55);
         const response = await fetch(result.signedUploadUrl, {
           method: "PUT",
           headers: { "Content-Type": file.type || "application/octet-stream" },
           body: file,
         });
         if (!response.ok) throw new Error("The secure upload did not complete.");
+        setUploadProgress(82);
         await finishUpload({ data: { fileId: result.file.id } });
+        setUploadProgress(100);
         setFileMessage("File stored privately in Lovable Cloud.");
       }
       const refreshed = await listFiles({ data: { documentId: document.cloudDocumentId } });
@@ -4041,6 +4077,7 @@ function DocumentDetail({
       setFileInputKey((value) => value + 1);
     } catch (error) {
       setFileState("error");
+      setUploadProgress(0);
       setFileMessage(error instanceof Error ? error.message : "Secure upload could not be completed.");
     }
   };
@@ -4109,6 +4146,17 @@ function DocumentDetail({
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
                     Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
                   </p>
+                  {fileState === "uploading" && (
+                    <div className="mt-3" aria-live="polite">
+                      <div className="h-2 overflow-hidden rounded-full bg-secondary">
+                        <div
+                          className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Secure upload {uploadProgress}%</p>
+                    </div>
+                  )}
                   {fileMessage && (
                     <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-muted-foreground"}`}>
                       {fileMessage}
@@ -4125,6 +4173,7 @@ function DocumentDetail({
                             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
                               Rev {file.revision} · {Math.ceil(file.size_bytes / 1024)} KB · {file.uploaded_at}
                             </p>
+                            <p className="mt-1 text-xs text-muted-foreground">{file.audit_note}</p>
                           </div>
                           <Action label="Secure download" onClick={() => void download(file)} />
                         </div>
@@ -4135,9 +4184,25 @@ function DocumentDetail({
                   </div>
                 </>
               ) : (
-                <p className="text-sm leading-6 text-muted-foreground">
-                  This browser-local document link is preserved. Connect it to an organization-controlled document record to enable private Lovable Cloud upload and signed retrieval.
-                </p>
+                <>
+                  <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-card px-3.5 text-sm font-semibold transition-colors hover:border-ring/50 hover:bg-secondary">
+                    Upload document
+                    <input
+                      key={fileInputKey}
+                      className="sr-only"
+                      type="file"
+                      onChange={() => {
+                        setFileState("error");
+                        setFileMessage("This browser-local document must first be linked to an authenticated organization record. No file was uploaded.");
+                        setFileInputKey((value) => value + 1);
+                      }}
+                    />
+                  </label>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    Lovable Cloud storage is active. This browser-local document link is preserved; link it to an organization-controlled document record to enable private upload, revision history and signed retrieval.
+                  </p>
+                  {fileMessage && <p className="mt-3 text-sm text-danger">{fileMessage}</p>}
+                </>
               )}
             </div>
           </section>
