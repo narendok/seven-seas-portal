@@ -1950,6 +1950,7 @@ function DepartmentWorkspace({
   onCreate,
   onSelect,
   onAdmin,
+  onOpenStage,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -1961,6 +1962,7 @@ function DepartmentWorkspace({
   onCreate: () => void;
   onSelect: (id: string) => void;
   onAdmin: () => void;
+  onOpenStage: (stage: string) => void;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const open = records.filter((record) => record.status === "Draft" || record.status === "Open");
@@ -2026,7 +2028,7 @@ function DepartmentWorkspace({
           tone="steel"
         />
       </section>
-      <DepartmentFlow flow={flow} />
+      <DepartmentFlow flow={flow} onOpenStage={onOpenStage} />
       <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="overflow-hidden border border-border bg-card">
           {view === "summary" ? (
