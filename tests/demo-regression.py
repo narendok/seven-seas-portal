@@ -35,6 +35,7 @@ async def load_demo(page) -> None:
 async def manage_department(page, department_name: str) -> None:
     await open_administration(page)
     await select_tab(page, "departments")
+    await page.get_by_label("Filter departments", exact=True).fill(department_name)
     row = page.locator("tr", has=page.get_by_text(department_name, exact=True))
     await expect(await row.count() == 1, f"Could not find department row: {department_name}")
     await row.get_by_role("button", name="Manage", exact=True).click()
@@ -99,6 +100,7 @@ async def main() -> None:
         await expect("PEOPLE & ADMINISTRATION" in header_text and "ADMINISTRATOR CONTEXT" in header_text, "No-lead department is not manageable by administrator")
         await page.get_by_role("button", name="Administration", exact=True).click()
         await select_tab(page, "departments")
+        await page.get_by_label("Filter departments", exact=True).fill("DEMO · People & Administration")
         fallback_row = page.locator("tr", has=page.get_by_text("DEMO · People & Administration", exact=True))
         await expect("No lead assigned" in await fallback_row.inner_text(), "No-lead fallback label is missing")
         await page.screenshot(path=str(SCREENSHOTS / "3-no-lead-admin-fallback.png"))
