@@ -108,6 +108,9 @@ type ControlledDocument = {
   lifecycle?: "Draft" | "In review" | "Approved" | "Obsolete" | undefined;
   classification?: string | undefined;
   linkedRecordRefs?: string[] | undefined;
+  effectiveDate?: string | undefined;
+  approver?: string | undefined;
+  history?: string[] | undefined;
 };
 type PortalState = {
   demoLoaded: boolean;
@@ -222,6 +225,36 @@ const auditStatuses = [
   "Overdue",
 ];
 const documentLifecycles = ["Draft", "In review", "Approved", "Obsolete"];
+const automotiveRepositoryRoot = "00_Automotive_Hardware_Audit_Repository";
+const automotiveRepositoryGroups = [
+  {
+    path: "01_Governance_and_QMS",
+    title: "Governance and QMS",
+    artifacts: "Quality manual, procedures, controlled forms and record-control goals",
+  },
+  {
+    path: "03_Supplier_Quality_and_PPAP",
+    title: "Supplier quality and PPAP",
+    artifacts: "PPAP, AEC-Q evidence, supplier datasheets and incoming-quality records",
+  },
+  {
+    path: "04_Equipment_and_Calibration",
+    title: "Equipment and calibration",
+    artifacts: "Calibration, maintenance, laboratory accreditation and equipment history",
+  },
+] as const;
+const automotivePhases = [
+  ["Phase_1_Requirements_and_Concept", "HW_01–04", "Requirements, PRS and sign-offs"],
+  ["Phase_2_Key_Part_Selection", "HW_05–12", "Selections, BOM, procurement, samples and firmware feasibility"],
+  ["Phase_3_Risk_and_Verification_Planning", "HW_13–14", "DFMEA and DVP"],
+  ["Phase_4_Schematic_Design", "HW_15–16", "Schematics, ERC and design reviews"],
+  ["Phase_5_Mechanical_and_Enclosure", "HW_17–18", "STEP files and fit reports"],
+  ["Phase_6_BOM_and_PCB_Layout", "HW_19–23", "Costed BOM, PCB, layout, worst-case analysis and DRC"],
+  ["Phase_7_Fabrication_and_Precompliance", "HW_24–27", "Gerber, fabrication, EMC and ESD evidence"],
+  ["Phase_8_Hardware_Software_Integration", "HW_28–29", "HSI and bring-up records"],
+  ["Phase_9_Production_and_Verification", "HW_30–35", "SMT, DVR, tests, pilot and release records"],
+  ["Phase_10_Change_Control_and_Compliance", "HW_36–37", "ECO, reverification, AIS-140, AIS-004, IMDS, RoHS and REACH records"],
+] as const;
 const setupSteps = [
   "Company, locations, calendars & numbering",
   "Departments, leads, roles & sub-roles",
