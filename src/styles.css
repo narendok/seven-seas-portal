@@ -71,7 +71,7 @@
 }
 
 :root {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --radius: 0.55rem;
   --background: oklch(0.957 0.006 106);
@@ -159,6 +159,18 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    font-weight: 650;
+    letter-spacing: 0;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
   }
 }
 
