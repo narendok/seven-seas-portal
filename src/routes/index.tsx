@@ -900,6 +900,9 @@ const readPortal = (): PortalState => {
             linkedRecordRefs:
               defaults?.linkedRecordRefs ??
               (Array.isArray(document.linkedRecordRefs) ? document.linkedRecordRefs : []),
+             effectiveDate: defaults?.effectiveDate ?? document.effectiveDate,
+             approver: defaults?.approver ?? document.approver,
+             history: Array.isArray(document.history) ? document.history : [],
           };
         })
       : [];
@@ -932,7 +935,7 @@ const readPortal = (): PortalState => {
           }))
         : [],
       approvals: Array.isArray(value.approvals) ? value.approvals : [],
-      documents,
+      documents: value.demoLoaded === true ? mergeAutomotiveDemoDocuments(documents) : documents,
       audit: Array.isArray(value.audit) ? value.audit : [],
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
     };
