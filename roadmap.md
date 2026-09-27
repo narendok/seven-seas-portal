@@ -2,3 +2,4 @@
 - [x] Audit all seven Create actions without saving data; add the missing Home task form and verify modal titles, default types, controlled selectors, and master-data management paths.
 - [x] Replace generic record creation with validated, domain-specific forms, linked record selectors, and complete Administration master-data CRUD.
 - [x] Convert all master-data fields into searchable selectors with direct create/manage actions and return-to-form selection.
+- [ ] Add department-scoped role management, granular permissions, admin context switching, all-department table controls, and delegated-action audit history.
