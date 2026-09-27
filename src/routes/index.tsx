@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   ArrowLeft,
@@ -21,6 +22,12 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import {
+  beginControlledDocumentUpload,
+  completeControlledDocumentUpload,
+  getControlledDocumentDownload,
+  listControlledDocumentFiles,
+} from "@/lib/controlled-documents.functions";
 
 type AreaId = "home" | "rnd" | "stores" | "production" | "quality" | "sales" | "people" | "audit";
 type RecordStatus = "Draft" | "Open" | "In review" | "Approved" | "Released" | "Archived";
@@ -111,6 +118,17 @@ type ControlledDocument = {
   effectiveDate?: string | undefined;
   approver?: string | undefined;
   history?: string[] | undefined;
+  cloudDocumentId?: string | undefined;
+};
+type ControlledFile = {
+  id: string;
+  revision: string;
+  original_name: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+  superseded_at: string | null;
+  audit_note: string;
 };
 type PortalState = {
   demoLoaded: boolean;
@@ -1328,6 +1346,13 @@ function Portal() {
           records={activeRecords}
           departmentContext={departmentContext}
           onClose={() => setModal(null)}
+          onDocumentUpdated={(document, event) => {
+            update((state) => ({
+              ...state,
+              documents: state.documents.map((item) => (item.id === document.id ? document : item)),
+            }));
+            log("Controlled document file activity", event);
+          }}
           onSelectRecord={(record) => {
             openRecord(record);
             setModal(null);
@@ -3925,6 +3950,7 @@ function DocumentDetail({
   records,
   departmentContext,
   onClose,
+  onDocumentUpdated,
   onSelectRecord,
 }: {
   document: ControlledDocument;
@@ -3932,6 +3958,7 @@ function DocumentDetail({
   records: RecordItem[];
   departmentContext: string | null;
   onClose: () => void;
+  onDocumentUpdated: (document: ControlledDocument, event: string) => void;
   onSelectRecord: (record: RecordItem) => void;
 }) {
   const owner = departments.find((item) => item.id === document.departmentId);
@@ -3941,6 +3968,92 @@ function DocumentDetail({
       document.linkedRecordRefs?.includes(record.reference) &&
       (!departmentContext || record.departmentId === departmentContext),
   );
+  const listFiles = useServerFn(listControlledDocumentFiles);
+  const beginUpload = useServerFn(beginControlledDocumentUpload);
+  const finishUpload = useServerFn(completeControlledDocumentUpload);
+  const getDownload = useServerFn(getControlledDocumentDownload);
+  const [files, setFiles] = useState<ControlledFile[]>([]);
+  const [fileState, setFileState] = useState<"idle" | "loading" | "uploading" | "error">("idle");
+  const [fileMessage, setFileMessage] = useState("");
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const isCloudDocument = Boolean(document.cloudDocumentId);
+  useEffect(() => {
+    if (!document.cloudDocumentId || !allowed) {
+      setFiles([]);
+      return;
+    }
+    setFileState("loading");
+    listFiles({ data: { documentId: document.cloudDocumentId } })
+      .then((result) => {
+        setFiles(result);
+        setFileState("idle");
+      })
+      .catch(() => {
+        setFileState("error");
+        setFileMessage("Secure file history is available after this document is linked to your signed-in organization.");
+      });
+  }, [allowed, document.cloudDocumentId, listFiles]);
+  const sha256 = async (file: File) => {
+    const buffer = await file.arrayBuffer();
+    const hash = await crypto.subtle.digest("SHA-256", buffer);
+    return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  };
+  const upload = async (file: File) => {
+    if (!document.cloudDocumentId) {
+      setFileState("error");
+      setFileMessage("Link this controlled document to your organization before uploading.");
+      return;
+    }
+    try {
+      setFileState("uploading");
+      setFileMessage("Preparing secure upload…");
+      const checksum = await sha256(file);
+      const result = await beginUpload({
+        data: {
+          documentId: document.cloudDocumentId,
+          revision: document.revision ?? "Unrevised",
+          name: file.name,
+          contentType: file.type || "application/octet-stream",
+          sizeBytes: file.size,
+          checksum,
+        },
+      });
+      if (result.duplicate) {
+        setFileMessage("This exact revision already exists; no duplicate file was created.");
+      } else if (result.signedUploadUrl) {
+        const response = await fetch(result.signedUploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file,
+        });
+        if (!response.ok) throw new Error("The secure upload did not complete.");
+        await finishUpload({ data: { fileId: result.file.id } });
+        setFileMessage("File stored privately in Lovable Cloud.");
+      }
+      const refreshed = await listFiles({ data: { documentId: document.cloudDocumentId } });
+      setFiles(refreshed);
+      const next = {
+        ...document,
+        history: [`${now()} · Private Lovable Cloud file ${file.name} registered`, ...(document.history ?? [])],
+      };
+      onDocumentUpdated(next, `${document.title} · ${file.name} registered in private Cloud storage`);
+      setFileState("idle");
+      setFileInputKey((value) => value + 1);
+    } catch (error) {
+      setFileState("error");
+      setFileMessage(error instanceof Error ? error.message : "Secure upload could not be completed.");
+    }
+  };
+  const download = async (file: ControlledFile) => {
+    try {
+      const result = await getDownload({ data: { fileId: file.id } });
+      window.open(result.url, "_blank", "noopener,noreferrer");
+      setFileMessage(`Secure download opened; access expires in ${result.expiresInSeconds} seconds.`);
+    } catch (error) {
+      setFileState("error");
+      setFileMessage(error instanceof Error ? error.message : "Secure download is unavailable.");
+    }
+  };
   return (
     <Modal title="Controlled document detail" onClose={onClose} wide>
       {allowed ? (
@@ -3964,8 +4077,69 @@ function DocumentDetail({
             <DocumentField label="Classification" value={document.classification ?? "Internal"} />
             <DocumentField
               label="Access"
-               value="Department-owned · internal by default · no external sharing · Drive path template only"
+              value="Department-owned · internal by default · no external sharing"
             />
+          </section>
+          <section className="mt-6 overflow-hidden rounded-lg border border-border bg-panel">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-4">
+              <div>
+                <p className="font-semibold">Private file storage</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Lovable Cloud is the active backend. Google Drive is optional and not connected.
+                </p>
+              </div>
+              <Status status={isCloudDocument ? "Approved" : "Draft"} />
+            </div>
+            <div className="p-4">
+              {isCloudDocument ? (
+                <>
+                  <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-card px-3.5 text-sm font-semibold transition-colors hover:border-ring/50 hover:bg-secondary">
+                    {fileState === "uploading" ? "Uploading securely…" : "Upload private revision"}
+                    <input
+                      key={fileInputKey}
+                      className="sr-only"
+                      type="file"
+                      disabled={fileState === "uploading"}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void upload(file);
+                      }}
+                    />
+                  </label>
+                  <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                    Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
+                  </p>
+                  {fileMessage && (
+                    <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-muted-foreground"}`}>
+                      {fileMessage}
+                    </p>
+                  )}
+                  <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-card">
+                    {fileState === "loading" ? (
+                      <p className="p-4 text-sm text-muted-foreground">Loading secure file history…</p>
+                    ) : files.length ? (
+                      files.map((file) => (
+                        <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                          <div>
+                            <p className="text-sm font-semibold">{file.original_name}</p>
+                            <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                              Rev {file.revision} · {Math.ceil(file.size_bytes / 1024)} KB · {file.uploaded_at}
+                            </p>
+                          </div>
+                          <Action label="Secure download" onClick={() => void download(file)} />
+                        </div>
+                      ))
+                    ) : (
+                      <p className="p-4 text-sm text-muted-foreground">No private file revisions have been uploaded.</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm leading-6 text-muted-foreground">
+                  This browser-local document link is preserved. Connect it to an organization-controlled document record to enable private Lovable Cloud upload and signed retrieval.
+                </p>
+              )}
+            </div>
           </section>
            <section className="mt-6 border-t border-border pt-5">
              <p className="font-semibold">Document history</p>

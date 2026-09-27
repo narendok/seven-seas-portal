@@ -8,3 +8,4 @@
 
 - [x] Complete the 11-step company setup, administration configuration, and separate DEMO setup lifecycle.
 - [x] Align demo setup completion and checklist dashboard summaries.
+- [x] Add private Lovable Cloud controlled-document storage with department-aware records, short-lived signed upload/download links, and duplicate-safe revision handling.

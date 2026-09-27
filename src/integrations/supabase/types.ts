@@ -183,6 +183,79 @@ export type Database = {
           },
         ]
       }
+      controlled_document_files: {
+        Row: {
+          audit_note: string
+          checksum: string
+          content_type: string
+          department_id: string
+          document_id: string
+          id: string
+          organization_id: string
+          original_name: string
+          revision: string
+          size_bytes: number
+          storage_path: string
+          superseded_at: string | null
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          audit_note?: string
+          checksum: string
+          content_type: string
+          department_id: string
+          document_id: string
+          id?: string
+          organization_id: string
+          original_name: string
+          revision: string
+          size_bytes: number
+          storage_path: string
+          superseded_at?: string | null
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          audit_note?: string
+          checksum?: string
+          content_type?: string
+          department_id?: string
+          document_id?: string
+          id?: string
+          organization_id?: string
+          original_name?: string
+          revision?: string
+          size_bytes?: number
+          storage_path?: string
+          superseded_at?: string | null
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controlled_document_files_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controlled_document_files_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controlled_document_files_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       department_role_assignments: {
         Row: {
           active: boolean
@@ -375,6 +448,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          department_id: string | null
           document_type: string
           id: string
           organization_id: string
@@ -387,6 +461,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          department_id?: string | null
           document_type: string
           id?: string
           organization_id: string
@@ -399,6 +474,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          department_id?: string | null
           document_type?: string
           id?: string
           organization_id?: string
@@ -409,6 +485,13 @@ export type Database = {
           visibility?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_organization_id_fkey"
             columns: ["organization_id"]
