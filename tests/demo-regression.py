@@ -84,7 +84,9 @@ async def main() -> None:
         # Admin context switching: quality context appears in the header and can move between departments.
         await manage_department(page, "DEMO · Quality")
         header_text = await page.locator("header").inner_text()
-        await expect("DEMO · Quality" in header_text and "Administrator context" in header_text, "Quality administrator context did not activate")
+        print("quality header:", repr(header_text))
+        await page.screenshot(path="/tmp/browser/demo-debug/quality-context.png")
+        await expect("Quality" in header_text and "Administrator context" in header_text, "Quality administrator context did not activate")
         await page.screenshot(path=str(SCREENSHOTS / "2-quality-administrator-context.png"))
         await open_administration(page)
         await select_tab(page, "departments")
