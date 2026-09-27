@@ -7,3 +7,4 @@
 - [x] Add the department-wise Today/Pending checklist with DEMO task moves and linked project and assignee views.
 
 - [x] Complete the 11-step company setup, administration configuration, and separate DEMO setup lifecycle.
+- [x] Align demo setup completion and checklist dashboard summaries.
