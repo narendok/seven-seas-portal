@@ -844,7 +844,7 @@ const demoPortal = (): PortalState => {
         updatedAt: timestamp,
       },
     ],
-    documents: [
+    documents: mergeAutomotiveDemoDocuments([
       {
         id: "demo-doc-datasheet",
         title: "DEMO-AIS140-OBD-01 datasheet / specification summary · NOT VALIDATED",
@@ -860,7 +860,7 @@ const demoPortal = (): PortalState => {
         classification: "Internal · DEMO only",
         linkedRecordRefs: ["DEMO-RND-001", "DEMO-RND-002", "DEMO-RND-003", "DEMO-RND-005"],
       },
-    ],
+    ]),
     audit: [
       {
         id: "demo-audit-lifecycle",
