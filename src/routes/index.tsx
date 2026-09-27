@@ -108,6 +108,9 @@ type ControlledDocument = {
   lifecycle?: "Draft" | "In review" | "Approved" | "Obsolete" | undefined;
   classification?: string | undefined;
   linkedRecordRefs?: string[] | undefined;
+  effectiveDate?: string | undefined;
+  approver?: string | undefined;
+  history?: string[] | undefined;
 };
 type PortalState = {
   demoLoaded: boolean;
@@ -222,6 +225,68 @@ const auditStatuses = [
   "Overdue",
 ];
 const documentLifecycles = ["Draft", "In review", "Approved", "Obsolete"];
+const automotiveRepositoryRoot = "00_Automotive_Hardware_Audit_Repository";
+const automotiveRepositoryGroups = [
+  {
+    path: "01_Governance_and_QMS",
+    title: "Governance and QMS",
+    artifacts: "Quality manual, procedures, controlled forms and record-control goals",
+  },
+  {
+    path: "03_Supplier_Quality_and_PPAP",
+    title: "Supplier quality and PPAP",
+    artifacts: "PPAP, AEC-Q evidence, supplier datasheets and incoming-quality records",
+  },
+  {
+    path: "04_Equipment_and_Calibration",
+    title: "Equipment and calibration",
+    artifacts: "Calibration, maintenance, laboratory accreditation and equipment history",
+  },
+] as const;
+const automotivePhases = [
+  ["Phase_1_Requirements_and_Concept", "HW_01–04", "Requirements, PRS and sign-offs"],
+  ["Phase_2_Key_Part_Selection", "HW_05–12", "Selections, BOM, procurement, samples and firmware feasibility"],
+  ["Phase_3_Risk_and_Verification_Planning", "HW_13–14", "DFMEA and DVP"],
+  ["Phase_4_Schematic_Design", "HW_15–16", "Schematics, ERC and design reviews"],
+  ["Phase_5_Mechanical_and_Enclosure", "HW_17–18", "STEP files and fit reports"],
+  ["Phase_6_BOM_and_PCB_Layout", "HW_19–23", "Costed BOM, PCB, layout, worst-case analysis and DRC"],
+  ["Phase_7_Fabrication_and_Precompliance", "HW_24–27", "Gerber, fabrication, EMC and ESD evidence"],
+  ["Phase_8_Hardware_Software_Integration", "HW_28–29", "HSI and bring-up records"],
+  ["Phase_9_Production_and_Verification", "HW_30–35", "SMT, DVR, tests, pilot and release records"],
+  ["Phase_10_Change_Control_and_Compliance", "HW_36–37", "ECO, reverification, AIS-140, AIS-004, IMDS, RoHS and REACH records"],
+] as const;
+const automotiveDocumentStatus = (lifecycle: ControlledDocument["lifecycle"]): RecordStatus =>
+  lifecycle === "Approved"
+    ? "Approved"
+    : lifecycle === "Obsolete"
+      ? "Archived"
+      : lifecycle === "In review"
+        ? "In review"
+        : "Draft";
+const mergeAutomotiveDemoDocuments = (documents: ControlledDocument[]) => {
+  const existing = new Set(documents.map((document) => document.id));
+  const seed: ControlledDocument[] = [
+    {
+      id: "demo-repository-template",
+      title: "DEMO · Automotive hardware repository path template",
+      url: "",
+      type: "Repository path template",
+      departmentId: "demo-dept-rnd",
+      group: "02_Product_Platforms/Automotive_Devices",
+      device: "Automotive_Devices · DEMO platform only",
+      part: "DEMO-AIS140-OBD-01",
+      revision: "A · DEMO",
+      phase: "Phase_1_Requirements_and_Concept · HW_01–04",
+      lifecycle: "Draft",
+      classification: "Internal · DEMO only · Drive path template",
+      effectiveDate: "Not effective until human approval",
+      approver: "Human approval required",
+      history: ["DEMO repository path template loaded"],
+      linkedRecordRefs: ["DEMO-RND-001", "DEMO-RND-002", "DEMO-RND-003", "DEMO-RND-005"],
+    },
+  ];
+  return [...documents, ...seed.filter((document) => !existing.has(document.id))];
+};
 const setupSteps = [
   "Company, locations, calendars & numbering",
   "Departments, leads, roles & sub-roles",
@@ -779,7 +844,7 @@ const demoPortal = (): PortalState => {
         updatedAt: timestamp,
       },
     ],
-    documents: [
+    documents: mergeAutomotiveDemoDocuments([
       {
         id: "demo-doc-datasheet",
         title: "DEMO-AIS140-OBD-01 datasheet / specification summary · NOT VALIDATED",
@@ -795,7 +860,7 @@ const demoPortal = (): PortalState => {
         classification: "Internal · DEMO only",
         linkedRecordRefs: ["DEMO-RND-001", "DEMO-RND-002", "DEMO-RND-003", "DEMO-RND-005"],
       },
-    ],
+    ]),
     audit: [
       {
         id: "demo-audit-lifecycle",
@@ -867,6 +932,9 @@ const readPortal = (): PortalState => {
             linkedRecordRefs:
               defaults?.linkedRecordRefs ??
               (Array.isArray(document.linkedRecordRefs) ? document.linkedRecordRefs : []),
+             effectiveDate: defaults?.effectiveDate ?? document.effectiveDate,
+             approver: defaults?.approver ?? document.approver,
+             history: Array.isArray(document.history) ? document.history : [],
           };
         })
       : [];
@@ -899,7 +967,7 @@ const readPortal = (): PortalState => {
           }))
         : [],
       approvals: Array.isArray(value.approvals) ? value.approvals : [],
-      documents,
+      documents: value.demoLoaded === true ? mergeAutomotiveDemoDocuments(documents) : documents,
       audit: Array.isArray(value.audit) ? value.audit : [],
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
     };
@@ -934,6 +1002,7 @@ function Portal() {
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [queueStage, setQueueStage] = useState<string | null>(null);
   const [modal, setModal] = useState<
     "create" | "wizard" | "approvals" | "documents" | "document" | "history" | "admin" | null
   >(null);
@@ -967,6 +1036,7 @@ function Portal() {
     setView("queue");
     setSelectedId(null);
     setSelectedAssignee(null);
+    setQueueStage(null);
     setMobileMenu(false);
   };
   const loadDemo = () => {
@@ -1174,7 +1244,8 @@ function Portal() {
               records={activeRecords.filter(
                 (record) =>
                   record.area === activeArea &&
-                  (!departmentContext || record.departmentId === departmentContext),
+                  (!departmentContext || record.departmentId === departmentContext) &&
+                  (!queueStage || `${record.type} ${record.fields["lifecycleStage"] ?? ""}`.toLowerCase().includes(queueStage.toLowerCase())),
               )}
               department={
                 portal.departments.find((item) => item.id === departmentContext) ??
@@ -1190,6 +1261,10 @@ function Portal() {
                 setView("detail");
               }}
               onAdmin={() => setModal("admin")}
+              onOpenStage={(stage) => {
+                setQueueStage(stage);
+                setView("queue");
+              }}
             />
           )}
         </div>
@@ -1882,6 +1957,7 @@ function DepartmentWorkspace({
   onCreate,
   onSelect,
   onAdmin,
+  onOpenStage,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -1893,6 +1969,7 @@ function DepartmentWorkspace({
   onCreate: () => void;
   onSelect: (id: string) => void;
   onAdmin: () => void;
+  onOpenStage: (stage: string) => void;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const open = records.filter((record) => record.status === "Draft" || record.status === "Open");
@@ -1958,7 +2035,7 @@ function DepartmentWorkspace({
           tone="steel"
         />
       </section>
-      <DepartmentFlow flow={flow} />
+      <DepartmentFlow flow={flow} onOpenStage={onOpenStage} />
       <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="overflow-hidden border border-border bg-card">
           {view === "summary" ? (
@@ -2032,23 +2109,40 @@ function departmentFlow(area: AreaId, records: RecordItem[]) {
     people: ["Need", "Training", "Access", "Evidence", "Review"],
   };
   const stages = area === "home" || area === "audit" ? [] : labels[area];
-  return stages.map((label) => ({
-    label,
-    total: records.filter((record) =>
+  return stages.map((label) => {
+    const stageRecords = records.filter((record) =>
       `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
         .toLowerCase()
         .includes(label.toLowerCase()),
-    ).length,
-    complete: records.filter(
-      (record) =>
-        `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
-          .toLowerCase()
-          .includes(label.toLowerCase()) && ["Approved", "Released"].includes(record.status),
-    ).length,
-  }));
+    );
+    const complete = stageRecords.filter((record) => ["Approved", "Released"].includes(record.status)).length;
+    const blocked = stageRecords.filter((record) => Boolean(record.fields["blocker"])).length;
+    const inProgress = stageRecords.filter(
+      (record) => !record.fields["blocker"] && ["Open", "In review"].includes(record.status),
+    ).length;
+    const upcoming = stageRecords.filter((record) => record.status === "Draft").length;
+    const latestUpdate = stageRecords
+      .map((record) => record.updatedAt)
+      .sort((a, b) => b.localeCompare(a))[0];
+    return { label, total: stageRecords.length, complete, blocked, inProgress, upcoming, latestUpdate };
+  });
 }
 
-function DepartmentFlow({ flow }: { flow: { label: string; total: number; complete: number }[] }) {
+function DepartmentFlow({
+  flow,
+  onOpenStage,
+}: {
+  flow: {
+    label: string;
+    total: number;
+    complete: number;
+    blocked: number;
+    inProgress: number;
+    upcoming: number;
+    latestUpdate?: string | undefined;
+  }[];
+  onOpenStage: (label: string) => void;
+}) {
   if (!flow.length) return null;
   return (
     <section className="mt-6 overflow-hidden border border-border bg-panel">
@@ -2064,17 +2158,36 @@ function DepartmentFlow({ flow }: { flow: { label: string; total: number; comple
         </span>
       </div>
       <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
-        {flow.map((stage, index) => (
-          <div key={stage.label} className="relative min-h-24 bg-card px-4 py-4">
-            <span className="font-mono text-[10px] text-muted-foreground">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <p className="mt-2 text-sm font-semibold">{stage.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {stage.complete}/{stage.total} completed
-            </p>
-          </div>
-        ))}
+        {flow.map((stage, index) => {
+          const percent = stage.total ? Math.round((stage.complete / stage.total) * 100) : 0;
+          return (
+            <button
+              key={stage.label}
+              onClick={() => onOpenStage(stage.label)}
+              className="relative min-h-36 bg-card px-4 py-4 text-left transition-colors hover:bg-secondary"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="font-mono text-sm font-semibold text-steel">{percent}%</span>
+              </div>
+              <p className="mt-2 text-sm font-semibold">{stage.label}</p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary" aria-label={`${stage.label} ${percent}% complete`}>
+                <span
+                  className="block h-full rounded-full bg-steel motion-safe:animate-[rise-in_600ms_ease-out_both] motion-safe:transition-[width] motion-safe:duration-700"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {stage.complete} complete · {stage.inProgress} in progress · {stage.blocked} blocked · {stage.upcoming} upcoming
+              </p>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {stage.latestUpdate ? `Latest update ${stage.latestUpdate}` : "No records in this stage"}
+              </p>
+            </button>
+          );
+        })}
       </div>
     </section>
   );
@@ -3697,16 +3810,12 @@ function DocumentsPanel({
     "Product/Device Audit Packs",
     "Supplier Quality/IQC",
     "Calibration/Laboratory",
+    "01_Governance_and_QMS",
+    "02_Product_Platforms/Automotive_Devices",
+    "03_Supplier_Quality_and_PPAP",
+    "04_Equipment_and_Calibration",
   ];
-  const phases = [
-    "Phase 1 · Requirements",
-    "Phase 2 · Architecture",
-    "Phase 3 · Design",
-    "Phase 4 · Prototype",
-    "Phase 5 · Verification",
-    "Phase 6 · Validation",
-    "Phase 7 · Release",
-  ];
+  const phases = automotivePhases.map(([phaseName, codes]) => `${phaseName} · ${codes}`);
   const visible = documents.filter(
     (document) =>
       (!departmentContext || document.departmentId === departmentContext) &&
@@ -3719,8 +3828,27 @@ function DocumentsPanel({
   return (
     <Modal title="Controlled document repository" onClose={onClose} wide>
       <p className="mb-4 text-sm text-muted-foreground">
-        Department-owned documents remain access checked; this repository is a shared browse view.
+        Department-owned documents remain access checked. This is an internal path template; Google Drive is not connected and no folders have been created.
       </p>
+      <section className="mb-5 overflow-hidden rounded-lg border border-border bg-panel">
+        <div className="border-b border-border px-4 py-3">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Canonical repository path</p>
+          <p className="mt-1 font-mono text-xs text-foreground">{automotiveRepositoryRoot}</p>
+        </div>
+        <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {automotiveRepositoryGroups.map((item) => (
+            <div key={item.path} className="p-3">
+              <p className="font-mono text-[10px] text-steel">{item.path}</p>
+              <p className="mt-1 text-sm font-semibold">{item.title}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.artifacts}</p>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-border px-4 py-3">
+          <p className="font-mono text-[10px] text-steel">02_Product_Platforms/Automotive_Devices</p>
+          <p className="mt-1 text-xs text-muted-foreground">DEMO platform only · IATF is a record-control goal, not a certification claim.</p>
+        </div>
+      </section>
       <div className="grid gap-3 md:grid-cols-3">
         <input
           value={query}
@@ -3749,7 +3877,7 @@ function DocumentsPanel({
           ))}
         </select>
       </div>
-      <div className="mt-4 border border-border bg-card">
+      <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
         {visible.length ? (
           visible.map((document) => (
             <button
@@ -3764,17 +3892,7 @@ function DocumentsPanel({
                   {document.part ?? "No part"} · Rev {document.revision ?? "—"}
                 </small>
               </span>
-              <Status
-                status={
-                  document.lifecycle === "Approved"
-                    ? "Approved"
-                    : document.lifecycle === "Obsolete"
-                      ? "Archived"
-                      : document.lifecycle === "In review"
-                        ? "In review"
-                        : "Draft"
-                }
-              />
+               <Status status={automotiveDocumentStatus(document.lifecycle)} />
             </button>
           ))
         ) : (
@@ -3783,6 +3901,21 @@ function DocumentsPanel({
           </p>
         )}
       </div>
+      <section className="mt-5 overflow-hidden rounded-lg border border-border bg-panel">
+        <div className="border-b border-border px-4 py-3">
+          <p className="font-semibold">Platform phase mapping</p>
+          <p className="mt-1 text-xs text-muted-foreground">Path template for Automotive_Devices · DEMO only</p>
+        </div>
+        <div className="divide-y divide-border">
+          {automotivePhases.map(([phaseName, codes, artifacts]) => (
+            <div key={phaseName} className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(15rem,1fr)] sm:items-center sm:gap-3">
+              <span className="font-mono text-xs text-foreground">{phaseName}</span>
+              <span className="font-mono text-xs text-steel">{codes}</span>
+              <span className="text-xs leading-5 text-muted-foreground">{artifacts}</span>
+            </div>
+          ))}
+        </div>
+      </section>
     </Modal>
   );
 }
@@ -3826,12 +3959,20 @@ function DocumentDetail({
             />
             <DocumentField label="Phase" value={document.phase ?? "Not set"} />
             <DocumentField label="Status" value={document.lifecycle ?? "Draft"} />
+             <DocumentField label="Effective date" value={document.effectiveDate ?? "Not set"} />
+             <DocumentField label="Approver" value={document.approver ?? "Human approval required"} />
             <DocumentField label="Classification" value={document.classification ?? "Internal"} />
             <DocumentField
               label="Access"
-              value="Department-owned · internal by default · no external sharing"
+               value="Department-owned · internal by default · no external sharing · Drive path template only"
             />
           </section>
+           <section className="mt-6 border-t border-border pt-5">
+             <p className="font-semibold">Document history</p>
+             <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+               {document.history?.length ? document.history.map((event) => <p key={event}>{event}</p>) : <p>No controlled history has been recorded.</p>}
+             </div>
+           </section>
           <section className="mt-6 border-t border-border pt-5">
             <p className="font-semibold">Access-controlled references</p>
             <div className="mt-3 space-y-2">
