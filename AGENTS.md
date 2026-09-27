@@ -13,3 +13,4 @@
 - Keep operational prototype data in a versioned browser-local store so records persist between refreshes without creating an unconfigured backend.
 - Portal record forms use structured local fields, controlled master options, and record links so created operational data remains traceable without inventing business data.
 - Keep the operational command-center prototype in one browser-local state model until authenticated shared-data queries replace the full workflow; do not mix local mutations with partial shared persistence.
+- Keep authorized demo data in the same versioned browser-local portal state, clearly marked and replaceable as a whole, so it never blends with configured operational data or creates duplicate records.
