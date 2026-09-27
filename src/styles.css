@@ -164,35 +164,58 @@
     text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     font-weight: 650;
     letter-spacing: 0;
   }
 
-  button, input, select, textarea {
+  button,
+  input,
+  select,
+  textarea {
     font: inherit;
   }
 
-  button, input, select, textarea, a {
+  button,
+  input,
+  select,
+  textarea,
+  a {
     outline-color: var(--ring);
   }
 
-  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 }
 
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-@utility animate-rise-in { animation: rise-in 420ms ease-out both; }
+@utility animate-rise-in {
+  animation: rise-in 420ms ease-out both;
+}
 
 @utility surface-card {
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px oklch(0.25 0.02 251 / 5%), 0 8px 24px oklch(0.25 0.02 251 / 4%);
+  box-shadow:
+    0 1px 2px oklch(0.25 0.02 251 / 5%),
+    0 8px 24px oklch(0.25 0.02 251 / 4%);
 }
 
 @utility surface-panel {
