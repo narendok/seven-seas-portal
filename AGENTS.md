@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Portal runtime
+- Keep operational prototype data in a versioned browser-local store so records persist between refreshes without creating an unconfigured backend.
