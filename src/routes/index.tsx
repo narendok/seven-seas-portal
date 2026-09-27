@@ -3810,16 +3810,12 @@ function DocumentsPanel({
     "Product/Device Audit Packs",
     "Supplier Quality/IQC",
     "Calibration/Laboratory",
+    "01_Governance_and_QMS",
+    "02_Product_Platforms/Automotive_Devices",
+    "03_Supplier_Quality_and_PPAP",
+    "04_Equipment_and_Calibration",
   ];
-  const phases = [
-    "Phase 1 · Requirements",
-    "Phase 2 · Architecture",
-    "Phase 3 · Design",
-    "Phase 4 · Prototype",
-    "Phase 5 · Verification",
-    "Phase 6 · Validation",
-    "Phase 7 · Release",
-  ];
+  const phases = automotivePhases.map(([phaseName, codes]) => `${phaseName} · ${codes}`);
   const visible = documents.filter(
     (document) =>
       (!departmentContext || document.departmentId === departmentContext) &&
@@ -3832,8 +3828,27 @@ function DocumentsPanel({
   return (
     <Modal title="Controlled document repository" onClose={onClose} wide>
       <p className="mb-4 text-sm text-muted-foreground">
-        Department-owned documents remain access checked; this repository is a shared browse view.
+        Department-owned documents remain access checked. This is an internal path template; Google Drive is not connected and no folders have been created.
       </p>
+      <section className="mb-5 overflow-hidden rounded-lg border border-border bg-panel">
+        <div className="border-b border-border px-4 py-3">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Canonical repository path</p>
+          <p className="mt-1 font-mono text-xs text-foreground">{automotiveRepositoryRoot}</p>
+        </div>
+        <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {automotiveRepositoryGroups.map((item) => (
+            <div key={item.path} className="p-3">
+              <p className="font-mono text-[10px] text-steel">{item.path}</p>
+              <p className="mt-1 text-sm font-semibold">{item.title}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.artifacts}</p>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-border px-4 py-3">
+          <p className="font-mono text-[10px] text-steel">02_Product_Platforms/Automotive_Devices</p>
+          <p className="mt-1 text-xs text-muted-foreground">DEMO platform only · IATF is a record-control goal, not a certification claim.</p>
+        </div>
+      </section>
       <div className="grid gap-3 md:grid-cols-3">
         <input
           value={query}
@@ -3862,7 +3877,7 @@ function DocumentsPanel({
           ))}
         </select>
       </div>
-      <div className="mt-4 border border-border bg-card">
+      <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
         {visible.length ? (
           visible.map((document) => (
             <button
@@ -3877,17 +3892,7 @@ function DocumentsPanel({
                   {document.part ?? "No part"} · Rev {document.revision ?? "—"}
                 </small>
               </span>
-              <Status
-                status={
-                  document.lifecycle === "Approved"
-                    ? "Approved"
-                    : document.lifecycle === "Obsolete"
-                      ? "Archived"
-                      : document.lifecycle === "In review"
-                        ? "In review"
-                        : "Draft"
-                }
-              />
+               <Status status={automotiveDocumentStatus(document.lifecycle)} />
             </button>
           ))
         ) : (
@@ -3896,6 +3901,21 @@ function DocumentsPanel({
           </p>
         )}
       </div>
+      <section className="mt-5 overflow-hidden rounded-lg border border-border bg-panel">
+        <div className="border-b border-border px-4 py-3">
+          <p className="font-semibold">Platform phase mapping</p>
+          <p className="mt-1 text-xs text-muted-foreground">Path template for Automotive_Devices · DEMO only</p>
+        </div>
+        <div className="divide-y divide-border">
+          {automotivePhases.map(([phaseName, codes, artifacts]) => (
+            <div key={phaseName} className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(15rem,1fr)] sm:items-center sm:gap-3">
+              <span className="font-mono text-xs text-foreground">{phaseName}</span>
+              <span className="font-mono text-xs text-steel">{codes}</span>
+              <span className="text-xs leading-5 text-muted-foreground">{artifacts}</span>
+            </div>
+          ))}
+        </div>
+      </section>
     </Modal>
   );
 }
