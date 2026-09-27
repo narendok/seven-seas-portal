@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   ArrowLeft,
@@ -21,6 +22,12 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import {
+  beginControlledDocumentUpload,
+  completeControlledDocumentUpload,
+  getControlledDocumentDownload,
+  listControlledDocumentFiles,
+} from "@/lib/controlled-documents.functions";
 
 type AreaId = "home" | "rnd" | "stores" | "production" | "quality" | "sales" | "people" | "audit";
 type RecordStatus = "Draft" | "Open" | "In review" | "Approved" | "Released" | "Archived";
@@ -111,6 +118,17 @@ type ControlledDocument = {
   effectiveDate?: string | undefined;
   approver?: string | undefined;
   history?: string[] | undefined;
+  cloudDocumentId?: string | undefined;
+};
+type ControlledFile = {
+  id: string;
+  revision: string;
+  original_name: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+  superseded_at: string | null;
+  audit_note: string;
 };
 type PortalState = {
   demoLoaded: boolean;
