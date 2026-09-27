@@ -6,4 +6,4 @@
 - [x] Add idempotent, clearly labeled fictional demo data with reset controls and protected approval examples for end-to-end role/context testing.
 - [x] Add the department-wise Today/Pending checklist with DEMO task moves and linked project and assignee views.
 
-- [ ] Complete the 11-step company setup, administration configuration, and separate DEMO setup lifecycle.
+- [x] Complete the 11-step company setup, administration configuration, and separate DEMO setup lifecycle.
