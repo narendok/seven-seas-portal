@@ -1,3 +1,3 @@
 - [ ] Make the Seven-area Six Sense Mobility portal fully functional with browser-local records, master data, setup values, global utilities, and verifiable create-to-detail workflows.
 - [x] Replace generic record creation with validated, domain-specific forms, linked record selectors, and complete Administration master-data CRUD.
-- [ ] Convert all master-data fields into searchable selectors with direct create/manage actions and return-to-form selection.
+- [x] Convert all master-data fields into searchable selectors with direct create/manage actions and return-to-form selection.
