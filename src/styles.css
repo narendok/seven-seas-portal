@@ -73,46 +73,46 @@
 :root {
   --font-sans: "IBM Plex Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --radius: 0.55rem;
-  --background: oklch(0.957 0.006 106);
-  --foreground: oklch(0.19 0.017 235);
-  --card: oklch(0.992 0.002 106 / 82%);
-  --card-foreground: oklch(0.19 0.017 235);
-  --popover: oklch(0.992 0.002 106);
-  --popover-foreground: oklch(0.19 0.017 235);
-  --primary: oklch(0.37 0.043 235);
-  --primary-foreground: oklch(0.98 0.003 106);
-  --secondary: oklch(0.927 0.008 106);
-  --secondary-foreground: oklch(0.27 0.02 235);
-  --muted: oklch(0.927 0.008 106);
-  --muted-foreground: oklch(0.49 0.016 235);
-  --accent: oklch(0.89 0.019 145);
-  --accent-foreground: oklch(0.28 0.036 145);
+  --radius: 0.75rem;
+  --background: oklch(0.972 0.004 85);
+  --foreground: oklch(0.245 0.018 251);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.245 0.018 251);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.245 0.018 251);
+  --primary: oklch(0.49 0.13 250);
+  --primary-foreground: oklch(0.99 0.002 250);
+  --secondary: oklch(0.947 0.006 250);
+  --secondary-foreground: oklch(0.3 0.022 251);
+  --muted: oklch(0.955 0.004 85);
+  --muted-foreground: oklch(0.51 0.018 251);
+  --accent: oklch(0.91 0.035 180);
+  --accent-foreground: oklch(0.29 0.055 180);
   --destructive: oklch(0.56 0.18 28);
   --destructive-foreground: oklch(0.98 0.003 106);
-  --border: oklch(0.84 0.009 106);
-  --input: oklch(0.84 0.009 106);
-  --ring: oklch(0.51 0.052 235);
-  --panel: oklch(0.98 0.003 106 / 65%);
-  --panel-strong: oklch(0.94 0.009 106);
-  --ink: oklch(0.19 0.017 235);
-  --moss: oklch(0.42 0.055 145);
-  --steel: oklch(0.45 0.055 235);
-  --warning: oklch(0.69 0.13 75);
+  --border: oklch(0.88 0.008 250);
+  --input: oklch(0.84 0.011 250);
+  --ring: oklch(0.58 0.13 250);
+  --panel: oklch(0.984 0.003 85);
+  --panel-strong: oklch(0.93 0.01 250);
+  --ink: oklch(0.245 0.018 251);
+  --moss: oklch(0.49 0.085 163);
+  --steel: oklch(0.49 0.13 250);
+  --warning: oklch(0.72 0.13 78);
   --danger: oklch(0.56 0.18 28);
   --chart-1: var(--steel);
   --chart-2: var(--moss);
   --chart-3: var(--warning);
   --chart-4: var(--danger);
   --chart-5: oklch(0.54 0.06 310);
-  --sidebar: oklch(0.932 0.009 106);
-  --sidebar-foreground: oklch(0.19 0.017 235);
-  --sidebar-primary: oklch(0.19 0.017 235);
-  --sidebar-primary-foreground: oklch(0.98 0.003 106);
-  --sidebar-accent: oklch(0.89 0.019 145);
-  --sidebar-accent-foreground: oklch(0.28 0.036 145);
-  --sidebar-border: oklch(0.84 0.009 106);
-  --sidebar-ring: oklch(0.51 0.052 235);
+  --sidebar: oklch(0.985 0.003 85);
+  --sidebar-foreground: oklch(0.29 0.02 251);
+  --sidebar-primary: oklch(0.49 0.13 250);
+  --sidebar-primary-foreground: oklch(0.99 0.002 250);
+  --sidebar-accent: oklch(0.93 0.023 250);
+  --sidebar-accent-foreground: oklch(0.29 0.04 250);
+  --sidebar-border: oklch(0.88 0.008 250);
+  --sidebar-ring: oklch(0.58 0.13 250);
 }
 
 .dark {
@@ -164,19 +164,61 @@
     text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     font-weight: 650;
     letter-spacing: 0;
   }
 
-  button, input, select, textarea {
+  button,
+  input,
+  select,
+  textarea {
     font: inherit;
+  }
+
+  button,
+  input,
+  select,
+  textarea,
+  a {
+    outline-color: var(--ring);
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-@utility animate-rise-in { animation: rise-in 420ms ease-out both; }
+@utility animate-rise-in {
+  animation: rise-in 420ms ease-out both;
+}
+
+@utility surface-card {
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px oklch(0.25 0.02 251 / 5%),
+    0 8px 24px oklch(0.25 0.02 251 / 4%);
+}
+
+@utility surface-panel {
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px oklch(0.25 0.02 251 / 3%);
+}
