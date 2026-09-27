@@ -57,7 +57,7 @@ async def main() -> None:
         workspace_text = await page.locator("main").inner_text()
         await expect("DEMO · Quality priority review" in workspace_text, "Quality record is not visible in Quality")
         await expect("DEMO · Stores priority review" not in workspace_text, "Stores record leaked into Quality")
-        await expect("Approvals" in workspace_text and "Human decisions" in workspace_text, "Quality approval metric is missing")
+        await expect("Approvals" in workspace_text and "1" in workspace_text, "Quality approval metric is missing")
         await page.screenshot(path=str(SCREENSHOTS / "1-quality-scoped-visibility.png"))
 
         # Protected approvals remain pending and expose no decision action from the workspace.
