@@ -1,0 +1,1 @@
+- [x] Build the Seven-area Six Sense Mobility portal with the 10-step setup wizard, using the approved clean command-center direction.
