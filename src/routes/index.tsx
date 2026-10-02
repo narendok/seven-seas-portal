@@ -2485,8 +2485,9 @@ function RecordDetail({
   );
 }
 
-const formSpecs: Partial<Record<
-  AreaId,
+const formSpecs: Partial<
+  Record<
+    AreaId,
   {
     types: string[];
     fields: {
@@ -2497,7 +2498,8 @@ const formSpecs: Partial<Record<
       options?: string[];
       master?: keyof MasterData;
     }[];
-  }
+    }
+  >
 > = {
   home: {
     types: ["Task"],
