@@ -9,3 +9,5 @@
 - [x] Complete the 11-step company setup, administration configuration, and separate DEMO setup lifecycle.
 - [x] Align demo setup completion and checklist dashboard summaries.
 - [x] Add private Lovable Cloud controlled-document storage with department-aware records, short-lived signed upload/download links, and duplicate-safe revision handling.
+
+- [ ] Expand the portal from six areas to the eleven SCMS functional departments, with lifecycle control, PMSS, and numbering.

@@ -30,7 +30,25 @@ import {
   listControlledDocumentFiles,
 } from "@/lib/controlled-documents.functions";
 
-type AreaId = "home" | "rnd" | "stores" | "production" | "quality" | "sales" | "people" | "audit";
+type AreaId =
+  | "home"
+  | "sales"
+  | "ehw"
+  | "esw"
+  | "mech"
+  | "pur"
+  | "qa"
+  | "emf"
+  | "tst"
+  | "fin"
+  | "sit"
+  | "hrops"
+  | "rnd"
+  | "stores"
+  | "production"
+  | "quality"
+  | "people"
+  | "audit";
 type RecordStatus = "Draft" | "Open" | "In review" | "Approved" | "Released" | "Archived";
 type Priority = "Low" | "Normal" | "High" | "Critical";
 type RecordItem = {
@@ -159,55 +177,95 @@ const areas = [
     short: "Home",
     icon: LayoutDashboard,
     recordType: "Task",
-    summary: "Today, priority, approvals and progress",
-  },
-  {
-    id: "rnd" as const,
-    name: "R&D & Projects",
-    short: "R&D",
-    icon: Wrench,
-    recordType: "Project",
-    summary: "Projects, BOMs, prototype work and design gates",
-  },
-  {
-    id: "stores" as const,
-    name: "Purchasing & Stores",
-    short: "Stores",
-    icon: PackageSearch,
-    recordType: "Purchase request",
-    summary: "Requests, purchase orders and stock movement",
-  },
-  {
-    id: "production" as const,
-    name: "Production",
-    short: "Production",
-    icon: Factory,
-    recordType: "Production order",
-    summary: "Work orders, testing, release and traceability",
-  },
-  {
-    id: "quality" as const,
-    name: "Quality",
-    short: "Quality",
-    icon: ShieldCheck,
-    recordType: "Inspection",
-    summary: "Inspections, NCRs, CAPAs and actions",
+    summary: "Today, priority, approvals and lifecycle control",
   },
   {
     id: "sales" as const,
-    name: "Sales & Customers",
-    short: "Sales",
+    name: "Sales & Business Development",
+    short: "SAL",
     icon: UsersRound,
-    recordType: "Enquiry",
-    summary: "Enquiries, requirements, orders and client updates",
+    recordType: "Lead intake",
+    summary: "HLPL-F-SAL-01, mNDA, quotations and contract reviews",
   },
   {
-    id: "people" as const,
-    name: "People & Administration",
-    short: "Admin",
+    id: "ehw" as const,
+    name: "Embedded Hardware",
+    short: "EHW",
+    icon: Wrench,
+    recordType: "Hardware record",
+    summary: "HW_01–HW_37, PRS, schematics, BOM and Gerber gates",
+  },
+  {
+    id: "esw" as const,
+    name: "Firmware & Software",
+    short: "ESW",
     icon: Settings2,
-    recordType: "Person",
-    summary: "People, access, assets, policies and portal setup",
+    recordType: "Software gate",
+    summary: "G0–G11, HSI registers and CI/CD telemetry",
+  },
+  {
+    id: "mech" as const,
+    name: "Mechanical Engineering",
+    short: "MECH",
+    icon: PackageSearch,
+    recordType: "Mechanical record",
+    summary: "STEP clearance, drawings and mold tooling",
+  },
+  {
+    id: "pur" as const,
+    name: "Purchasing & SCM",
+    short: "PUR",
+    icon: PackageSearch,
+    recordType: "Procurement record",
+    summary: "Rapid prototype / mass production, ASL/ACML and PPAP",
+  },
+  {
+    id: "qa" as const,
+    name: "Quality Assurance",
+    short: "QA",
+    icon: ShieldCheck,
+    recordType: "Quality record",
+    summary: "APQP, DVP&R, inspection and 8D CAPA",
+  },
+  {
+    id: "emf" as const,
+    name: "Manufacturing",
+    short: "EMF",
+    icon: Factory,
+    recordType: "Manufacturing record",
+    summary: "PFD, PFMEA, control plan and line startup",
+  },
+  {
+    id: "tst" as const,
+    name: "EOL Testing",
+    short: "TST",
+    icon: CheckCircle2,
+    recordType: "EOL test run",
+    summary: "Test jig, serial QR labels and first-pass yield",
+  },
+  {
+    id: "fin" as const,
+    name: "Accounts & Finance",
+    short: "FIN",
+    icon: ClipboardCheck,
+    recordType: "Finance control",
+    summary: "Billing, PO/GRN validation and aging controls",
+  },
+  {
+    id: "sit" as const,
+    name: "Service & IT",
+    short: "SIT",
+    icon: Bell,
+    recordType: "Service record",
+    summary: "Telemetry, backups, support and ISMS",
+  },
+  {
+    id: "hrops" as const,
+    name: "HR & Operations",
+    short: "HR/OPS",
+    icon: Settings2,
+    recordType: "People record",
+    summary: "Skill matrix, TNI, compliance and DMAIC",
   },
 ] as const;
 const departmentTypes = [
@@ -222,6 +280,17 @@ const departmentTypes = [
   "Finance",
   "IT/Support",
   "Other/custom",
+  "Sales & Business Development",
+  "Embedded Hardware",
+  "Firmware & Software",
+  "Mechanical Engineering",
+  "Purchasing & SCM",
+  "Quality Assurance",
+  "Manufacturing",
+  "EOL Testing",
+  "Accounts & Finance",
+  "Service & IT",
+  "HR & Operations",
 ];
 const permissionOptions = [
   "records:view",
@@ -264,15 +333,31 @@ const automotiveRepositoryGroups = [
 ] as const;
 const automotivePhases = [
   ["Phase_1_Requirements_and_Concept", "HW_01–04", "Requirements, PRS and sign-offs"],
-  ["Phase_2_Key_Part_Selection", "HW_05–12", "Selections, BOM, procurement, samples and firmware feasibility"],
+  [
+    "Phase_2_Key_Part_Selection",
+    "HW_05–12",
+    "Selections, BOM, procurement, samples and firmware feasibility",
+  ],
   ["Phase_3_Risk_and_Verification_Planning", "HW_13–14", "DFMEA and DVP"],
   ["Phase_4_Schematic_Design", "HW_15–16", "Schematics, ERC and design reviews"],
   ["Phase_5_Mechanical_and_Enclosure", "HW_17–18", "STEP files and fit reports"],
-  ["Phase_6_BOM_and_PCB_Layout", "HW_19–23", "Costed BOM, PCB, layout, worst-case analysis and DRC"],
-  ["Phase_7_Fabrication_and_Precompliance", "HW_24–27", "Gerber, fabrication, EMC and ESD evidence"],
+  [
+    "Phase_6_BOM_and_PCB_Layout",
+    "HW_19–23",
+    "Costed BOM, PCB, layout, worst-case analysis and DRC",
+  ],
+  [
+    "Phase_7_Fabrication_and_Precompliance",
+    "HW_24–27",
+    "Gerber, fabrication, EMC and ESD evidence",
+  ],
   ["Phase_8_Hardware_Software_Integration", "HW_28–29", "HSI and bring-up records"],
   ["Phase_9_Production_and_Verification", "HW_30–35", "SMT, DVR, tests, pilot and release records"],
-  ["Phase_10_Change_Control_and_Compliance", "HW_36–37", "ECO, reverification, AIS-140, AIS-004, IMDS, RoHS and REACH records"],
+  [
+    "Phase_10_Change_Control_and_Compliance",
+    "HW_36–37",
+    "ECO, reverification, AIS-140, AIS-004, IMDS, RoHS and REACH records",
+  ],
 ] as const;
 const automotiveDocumentStatus = (lifecycle: ControlledDocument["lifecycle"]): RecordStatus =>
   lifecycle === "Approved"
@@ -911,12 +996,29 @@ const areaForDepartment = (department: Department | undefined): AreaId => {
 };
 const areaById = (id: AreaId) => areas.find((area) => area.id === id) ?? homeArea;
 const areaDepartmentType: Partial<Record<AreaId, string>> = {
-  rnd: "R&D/Engineering",
-  stores: "Purchasing/Stores",
-  production: "Production/Manufacturing",
-  quality: "Quality",
-  sales: "Sales/Customer Success",
-  people: "People/HR",
+  sales: "Sales & Business Development",
+  ehw: "Embedded Hardware",
+  esw: "Firmware & Software",
+  mech: "Mechanical Engineering",
+  pur: "Purchasing & SCM",
+  qa: "Quality Assurance",
+  emf: "Manufacturing",
+  tst: "EOL Testing",
+  fin: "Accounts & Finance",
+  sit: "Service & IT",
+  hrops: "HR & Operations",
+  rnd: "Embedded Hardware",
+  stores: "Purchasing & SCM",
+  production: "Manufacturing",
+  quality: "Quality Assurance",
+  people: "HR & Operations",
+};
+const legacyAreaMap: Partial<Record<AreaId, AreaId>> = {
+  rnd: "ehw",
+  stores: "pur",
+  production: "emf",
+  quality: "qa",
+  people: "hrops",
 };
 const readPortal = (): PortalState => {
   const base = emptyPortal();
@@ -951,9 +1053,9 @@ const readPortal = (): PortalState => {
             linkedRecordRefs:
               defaults?.linkedRecordRefs ??
               (Array.isArray(document.linkedRecordRefs) ? document.linkedRecordRefs : []),
-             effectiveDate: defaults?.effectiveDate ?? document.effectiveDate,
-             approver: defaults?.approver ?? document.approver,
-             history: Array.isArray(document.history) ? document.history : [],
+            effectiveDate: defaults?.effectiveDate ?? document.effectiveDate,
+            approver: defaults?.approver ?? document.approver,
+            history: Array.isArray(document.history) ? document.history : [],
           };
         })
       : [];
@@ -975,15 +1077,17 @@ const readPortal = (): PortalState => {
         : [],
       roles: Array.isArray(value.roles) ? value.roles : [],
       records: Array.isArray(value.records)
-        ? value.records.map((record) => ({
-            ...record,
-            departmentId:
-              record.departmentId ??
-              findAreaDepartment(
-                Array.isArray(value.departments) ? value.departments : [],
-                record.area,
-              )?.id,
-          }))
+        ? value.records.map((record) => {
+            const area = legacyAreaMap[record.area] ?? record.area;
+            return {
+              ...record,
+              area,
+              departmentId:
+                record.departmentId ??
+                findAreaDepartment(Array.isArray(value.departments) ? value.departments : [], area)
+                  ?.id,
+            };
+          })
         : [],
       approvals: Array.isArray(value.approvals) ? value.approvals : [],
       documents: value.demoLoaded === true ? mergeAutomotiveDemoDocuments(documents) : documents,
@@ -1017,7 +1121,7 @@ function Portal() {
   const [activeArea, setActiveArea] = useState<AreaId>("home");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<
-    "queue" | "detail" | "summary" | "project" | "assignee" | "index"
+    "queue" | "detail" | "summary" | "project" | "assignee" | "index" | "pmss"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
@@ -1165,6 +1269,7 @@ function Portal() {
                   : `All departments · ${portal.setup.location}`}
               </p>
             </button>
+            <HeaderAction label="PMSS" icon={ClipboardCheck} onClick={() => setView("pmss")} />
             <HeaderAction
               label="Search"
               icon={Search}
@@ -1183,7 +1288,22 @@ function Portal() {
           </div>
         </header>
         <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-10">
-          {view === "index" ? (
+          {view === "pmss" ? (
+            <PMSSWorkspace
+              portal={portal}
+              onBack={() => navigate(activeArea)}
+              onUpdate={(patch) =>
+                update((state) => ({
+                  ...state,
+                  setup: {
+                    ...state.setup,
+                    configuration: { ...state.setup.configuration, ...patch },
+                  },
+                }))
+              }
+              onLog={log}
+            />
+          ) : view === "index" ? (
             <IndexWorkspace
               records={activeRecords}
               documents={portal.documents}
@@ -1264,7 +1384,10 @@ function Portal() {
                 (record) =>
                   record.area === activeArea &&
                   (!departmentContext || record.departmentId === departmentContext) &&
-                  (!queueStage || `${record.type} ${record.fields["lifecycleStage"] ?? ""}`.toLowerCase().includes(queueStage.toLowerCase())),
+                  (!queueStage ||
+                    `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
+                      .toLowerCase()
+                      .includes(queueStage.toLowerCase())),
               )}
               department={
                 portal.departments.find((item) => item.id === departmentContext) ??
@@ -2145,7 +2268,9 @@ function departmentFlow(area: AreaId, records: RecordItem[]) {
         .toLowerCase()
         .includes(label.toLowerCase()),
     );
-    const complete = stageRecords.filter((record) => ["Approved", "Released"].includes(record.status)).length;
+    const complete = stageRecords.filter((record) =>
+      ["Approved", "Released"].includes(record.status),
+    ).length;
     const blocked = stageRecords.filter((record) => Boolean(record.fields["blocker"])).length;
     const inProgress = stageRecords.filter(
       (record) => !record.fields["blocker"] && ["Open", "In review"].includes(record.status),
@@ -2154,7 +2279,15 @@ function departmentFlow(area: AreaId, records: RecordItem[]) {
     const latestUpdate = stageRecords
       .map((record) => record.updatedAt)
       .sort((a, b) => b.localeCompare(a))[0];
-    return { label, total: stageRecords.length, complete, blocked, inProgress, upcoming, latestUpdate };
+    return {
+      label,
+      total: stageRecords.length,
+      complete,
+      blocked,
+      inProgress,
+      upcoming,
+      latestUpdate,
+    };
   });
 }
 
@@ -2203,17 +2336,23 @@ function DepartmentFlow({
                 <span className="font-mono text-sm font-semibold text-steel">{percent}%</span>
               </div>
               <p className="mt-2 text-sm font-semibold">{stage.label}</p>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary" aria-label={`${stage.label} ${percent}% complete`}>
+              <div
+                className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"
+                aria-label={`${stage.label} ${percent}% complete`}
+              >
                 <span
                   className="block h-full rounded-full bg-steel motion-safe:animate-[rise-in_600ms_ease-out_both] motion-safe:transition-[width] motion-safe:duration-700"
                   style={{ width: `${percent}%` }}
                 />
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                {stage.complete} complete · {stage.inProgress} in progress · {stage.blocked} blocked · {stage.upcoming} upcoming
+                {stage.complete} complete · {stage.inProgress} in progress · {stage.blocked} blocked
+                · {stage.upcoming} upcoming
               </p>
               <p className="mt-2 text-[11px] text-muted-foreground">
-                {stage.latestUpdate ? `Latest update ${stage.latestUpdate}` : "No records in this stage"}
+                {stage.latestUpdate
+                  ? `Latest update ${stage.latestUpdate}`
+                  : "No records in this stage"}
               </p>
             </button>
           );
@@ -3861,9 +4000,12 @@ function DocumentsPanel({
     <Modal title="Controlled document repository" onClose={onClose} wide>
       <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-moss/25 bg-accent px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-accent-foreground">Lovable Cloud storage active</p>
+          <p className="text-sm font-semibold text-accent-foreground">
+            Lovable Cloud storage active
+          </p>
           <p className="mt-1 text-xs text-accent-foreground/80">
-            Private, department-authorized files use signed access. Google Drive is optional and not connected.
+            Private, department-authorized files use signed access. Google Drive is optional and not
+            connected.
           </p>
         </div>
         <span className="rounded-md border border-moss/25 bg-card px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-moss">
@@ -3872,7 +4014,9 @@ function DocumentsPanel({
       </section>
       <section className="mb-5 overflow-hidden rounded-lg border border-border bg-panel">
         <div className="border-b border-border px-4 py-3">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Canonical repository path</p>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
+            Canonical repository path
+          </p>
           <p className="mt-1 font-mono text-xs text-foreground">{automotiveRepositoryRoot}</p>
         </div>
         <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
@@ -3885,8 +4029,12 @@ function DocumentsPanel({
           ))}
         </div>
         <div className="border-t border-border px-4 py-3">
-          <p className="font-mono text-[10px] text-steel">02_Product_Platforms/Automotive_Devices</p>
-          <p className="mt-1 text-xs text-muted-foreground">DEMO platform only · IATF is a record-control goal, not a certification claim.</p>
+          <p className="font-mono text-[10px] text-steel">
+            02_Product_Platforms/Automotive_Devices
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            DEMO platform only · IATF is a record-control goal, not a certification claim.
+          </p>
         </div>
       </section>
       <div className="grid gap-3 md:grid-cols-3">
@@ -3925,16 +4073,18 @@ function DocumentsPanel({
               className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-4 last:border-0"
             >
               <button onClick={() => onSelectDocument(document)} className="min-w-0 text-left">
-              <span>
-                <strong className="block">{document.title}</strong>
-                <small className="mt-1 block text-muted-foreground">
-                  {document.group ?? "Unclassified"} · {document.device ?? "No device"} ·{" "}
-                  {document.part ?? "No part"} · Rev {document.revision ?? "—"}
-                </small>
-                <small className="mt-1 block font-mono text-[10px] uppercase tracking-[.06em] text-steel">
-                  {document.cloudDocumentId ? "Private files enabled" : "Link to organization to enable files"}
-                </small>
-              </span>
+                <span>
+                  <strong className="block">{document.title}</strong>
+                  <small className="mt-1 block text-muted-foreground">
+                    {document.group ?? "Unclassified"} · {document.device ?? "No device"} ·{" "}
+                    {document.part ?? "No part"} · Rev {document.revision ?? "—"}
+                  </small>
+                  <small className="mt-1 block font-mono text-[10px] uppercase tracking-[.06em] text-steel">
+                    {document.cloudDocumentId
+                      ? "Private files enabled"
+                      : "Link to organization to enable files"}
+                  </small>
+                </span>
               </button>
               <div className="flex flex-col items-end gap-2">
                 <Status status={automotiveDocumentStatus(document.lifecycle)} />
@@ -3958,11 +4108,16 @@ function DocumentsPanel({
       <section className="mt-5 overflow-hidden rounded-lg border border-border bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-semibold">Platform phase mapping</p>
-          <p className="mt-1 text-xs text-muted-foreground">Path template for Automotive_Devices · DEMO only</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Path template for Automotive_Devices · DEMO only
+          </p>
         </div>
         <div className="divide-y divide-border">
           {automotivePhases.map(([phaseName, codes, artifacts]) => (
-            <div key={phaseName} className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(15rem,1fr)] sm:items-center sm:gap-3">
+            <div
+              key={phaseName}
+              className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(15rem,1fr)] sm:items-center sm:gap-3"
+            >
               <span className="font-mono text-xs text-foreground">{phaseName}</span>
               <span className="font-mono text-xs text-steel">{codes}</span>
               <span className="text-xs leading-5 text-muted-foreground">{artifacts}</span>
@@ -4020,7 +4175,9 @@ function DocumentDetail({
       })
       .catch(() => {
         setFileState("error");
-        setFileMessage("Secure file history is available after this document is linked to your signed-in organization.");
+        setFileMessage(
+          "Secure file history is available after this document is linked to your signed-in organization.",
+        );
       });
   }, [allowed, document.cloudDocumentId, listFiles]);
   const sha256 = async (file: File) => {
@@ -4070,22 +4227,32 @@ function DocumentDetail({
       setFiles(refreshed);
       const next = {
         ...document,
-        history: [`${now()} · Private Lovable Cloud file ${file.name} registered`, ...(document.history ?? [])],
+        history: [
+          `${now()} · Private Lovable Cloud file ${file.name} registered`,
+          ...(document.history ?? []),
+        ],
       };
-      onDocumentUpdated(next, `${document.title} · ${file.name} registered in private Cloud storage`);
+      onDocumentUpdated(
+        next,
+        `${document.title} · ${file.name} registered in private Cloud storage`,
+      );
       setFileState("idle");
       setFileInputKey((value) => value + 1);
     } catch (error) {
       setFileState("error");
       setUploadProgress(0);
-      setFileMessage(error instanceof Error ? error.message : "Secure upload could not be completed.");
+      setFileMessage(
+        error instanceof Error ? error.message : "Secure upload could not be completed.",
+      );
     }
   };
   const download = async (file: ControlledFile) => {
     try {
       const result = await getDownload({ data: { fileId: file.id } });
       window.open(result.url, "_blank", "noopener,noreferrer");
-      setFileMessage(`Secure download opened; access expires in ${result.expiresInSeconds} seconds.`);
+      setFileMessage(
+        `Secure download opened; access expires in ${result.expiresInSeconds} seconds.`,
+      );
     } catch (error) {
       setFileState("error");
       setFileMessage(error instanceof Error ? error.message : "Secure download is unavailable.");
@@ -4109,8 +4276,11 @@ function DocumentDetail({
             />
             <DocumentField label="Phase" value={document.phase ?? "Not set"} />
             <DocumentField label="Status" value={document.lifecycle ?? "Draft"} />
-             <DocumentField label="Effective date" value={document.effectiveDate ?? "Not set"} />
-             <DocumentField label="Approver" value={document.approver ?? "Human approval required"} />
+            <DocumentField label="Effective date" value={document.effectiveDate ?? "Not set"} />
+            <DocumentField
+              label="Approver"
+              value={document.approver ?? "Human approval required"}
+            />
             <DocumentField label="Classification" value={document.classification ?? "Internal"} />
             <DocumentField
               label="Access"
@@ -4144,7 +4314,8 @@ function DocumentDetail({
                     />
                   </label>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
+                    Private, department-authorized storage · maximum 25 MB · duplicate revisions are
+                    safely detected.
                   </p>
                   {fileState === "uploading" && (
                     <div className="mt-3" aria-live="polite">
@@ -4154,24 +4325,34 @@ function DocumentDetail({
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">Secure upload {uploadProgress}%</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Secure upload {uploadProgress}%
+                      </p>
                     </div>
                   )}
                   {fileMessage && (
-                    <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-muted-foreground"}`}>
+                    <p
+                      className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-muted-foreground"}`}
+                    >
                       {fileMessage}
                     </p>
                   )}
                   <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-card">
                     {fileState === "loading" ? (
-                      <p className="p-4 text-sm text-muted-foreground">Loading secure file history…</p>
+                      <p className="p-4 text-sm text-muted-foreground">
+                        Loading secure file history…
+                      </p>
                     ) : files.length ? (
                       files.map((file) => (
-                        <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                        <div
+                          key={file.id}
+                          className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                        >
                           <div>
                             <p className="text-sm font-semibold">{file.original_name}</p>
                             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                              Rev {file.revision} · {Math.ceil(file.size_bytes / 1024)} KB · {file.uploaded_at}
+                              Rev {file.revision} · {Math.ceil(file.size_bytes / 1024)} KB ·{" "}
+                              {file.uploaded_at}
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">{file.audit_note}</p>
                           </div>
@@ -4179,7 +4360,9 @@ function DocumentDetail({
                         </div>
                       ))
                     ) : (
-                      <p className="p-4 text-sm text-muted-foreground">No private file revisions have been uploaded.</p>
+                      <p className="p-4 text-sm text-muted-foreground">
+                        No private file revisions have been uploaded.
+                      </p>
                     )}
                   </div>
                 </>
@@ -4193,25 +4376,33 @@ function DocumentDetail({
                       type="file"
                       onChange={() => {
                         setFileState("error");
-                        setFileMessage("This browser-local document must first be linked to an authenticated organization record. No file was uploaded.");
+                        setFileMessage(
+                          "This browser-local document must first be linked to an authenticated organization record. No file was uploaded.",
+                        );
                         setFileInputKey((value) => value + 1);
                       }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Lovable Cloud storage is active. This browser-local document link is preserved; link it to an organization-controlled document record to enable private upload, revision history and signed retrieval.
+                    Lovable Cloud storage is active. This browser-local document link is preserved;
+                    link it to an organization-controlled document record to enable private upload,
+                    revision history and signed retrieval.
                   </p>
                   {fileMessage && <p className="mt-3 text-sm text-danger">{fileMessage}</p>}
                 </>
               )}
             </div>
           </section>
-           <section className="mt-6 border-t border-border pt-5">
-             <p className="font-semibold">Document history</p>
-             <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-               {document.history?.length ? document.history.map((event) => <p key={event}>{event}</p>) : <p>No controlled history has been recorded.</p>}
-             </div>
-           </section>
+          <section className="mt-6 border-t border-border pt-5">
+            <p className="font-semibold">Document history</p>
+            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+              {document.history?.length ? (
+                document.history.map((event) => <p key={event}>{event}</p>)
+              ) : (
+                <p>No controlled history has been recorded.</p>
+              )}
+            </div>
+          </section>
           <section className="mt-6 border-t border-border pt-5">
             <p className="font-semibold">Access-controlled references</p>
             <div className="mt-3 space-y-2">
