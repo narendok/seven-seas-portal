@@ -1618,6 +1618,8 @@ function Portal() {
             log("Setup saved", "Portal setup progress saved");
           }}
           onOpenAdministration={() => setModal("admin")}
+          onLoadDemo={loadDemo}
+          onResetDemo={resetDemo}
         />
       )}{" "}
       {modal === "history" && <HistoryPanel audit={portal.audit} onClose={() => setModal(null)} />}{" "}
@@ -3799,11 +3801,15 @@ function Wizard({
   onClose,
   onSave,
   onOpenAdministration,
+  onLoadDemo,
+  onResetDemo,
 }: {
   portal: PortalState;
   onClose: () => void;
   onSave: (next: PortalState) => void;
   onOpenAdministration: () => void;
+  onLoadDemo: () => void;
+  onResetDemo: () => void;
 }) {
   const [step, setStep] = useState(portal.setupStep);
   const [setup, setSetup] = useState(() => ({
@@ -3867,6 +3873,9 @@ function Wizard({
           className="h-full bg-steel"
           style={{ width: `${(completed / setupSteps.length) * 100}%` }}
         />
+      </div>
+      <div className="mt-5">
+        <DemoDataPanel loaded={portal.demoLoaded} onLoad={onLoadDemo} onReset={onResetDemo} />
       </div>
       <div className="mt-5 grid gap-5 md:grid-cols-[15rem_1fr]">
         <div className="grid grid-cols-2 gap-1 md:block">
