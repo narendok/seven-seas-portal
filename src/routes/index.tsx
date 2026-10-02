@@ -470,45 +470,80 @@ const demoPortal = (): PortalState => {
   }[] = [
     {
       id: "rnd",
-      name: "R&D & Projects",
-      code: "RND",
-      departmentType: "R&D/Engineering",
+      name: "Embedded Hardware",
+      code: "EHW",
+      departmentType: "Embedded Hardware",
       lead: "Avery Vale · demo",
     },
     {
       id: "stores",
-      name: "Purchasing & Stores",
+      name: "Purchasing & SCM",
       code: "PUR",
-      departmentType: "Purchasing/Stores",
+      departmentType: "Purchasing & SCM",
       lead: "Morgan Reed · demo",
     },
     {
       id: "production",
-      name: "Production",
-      code: "PRO",
-      departmentType: "Production/Manufacturing",
+      name: "Manufacturing",
+      code: "EMF",
+      departmentType: "Manufacturing",
       lead: "Casey Rowan · demo",
     },
     {
       id: "quality",
-      name: "Quality",
-      code: "QLT",
-      departmentType: "Quality",
+      name: "Quality Assurance",
+      code: "QA",
+      departmentType: "Quality Assurance",
       lead: "Jordan Blake · demo",
     },
     {
       id: "sales",
-      name: "Sales & Customers",
+      name: "Sales & Business Development",
       code: "SAL",
-      departmentType: "Sales/Customer Success",
+      departmentType: "Sales & Business Development",
       lead: "Riley Stone · demo",
     },
     {
       id: "people",
-      name: "People & Administration",
-      code: "PEO",
-      departmentType: "People/HR",
+      name: "HR & Operations",
+      code: "HR",
+      departmentType: "HR & Operations",
       lead: "",
+    },
+    {
+      id: "esw",
+      name: "Firmware & Software",
+      code: "ESW",
+      departmentType: "Firmware & Software",
+      lead: "Devon Lane · demo",
+    },
+    {
+      id: "mech",
+      name: "Mechanical Engineering",
+      code: "MECH",
+      departmentType: "Mechanical Engineering",
+      lead: "Samira Holt · demo",
+    },
+    {
+      id: "tst",
+      name: "EOL Testing",
+      code: "TST",
+      departmentType: "EOL Testing",
+      lead: "Mina Cross · demo",
+    },
+    {
+      id: "fin",
+      name: "Accounts & Finance",
+      code: "FIN",
+      departmentType: "Accounts & Finance",
+      lead: "",
+    },
+    {
+      id: "sit",
+      name: "Service & IT",
+      code: "SIT",
+      departmentType: "Service & IT",
+      lead: "Kai Morgan · demo",
     },
   ];
   const departments: Department[] = departmentSeeds.map((seed, sortOrder) => ({
@@ -831,6 +866,63 @@ const demoPortal = (): PortalState => {
       { approvalStatus: "PENDING · NEVER AUTO-APPROVED", releaseStatus: "NOT RELEASED" },
     ),
   ];
+  records.push(
+    make(
+      "DEMO-ESW-001",
+      "esw",
+      "HSI register",
+      "HSI interface register",
+      "Draft",
+      "Normal",
+      "G0–G2",
+      ["DEMO-RND-001"],
+      { gate: "G0", hsi: "HLPL-DEMO-ESW-HSI-01 · NOT VALIDATED" },
+    ),
+    make(
+      "DEMO-MECH-001",
+      "mech",
+      "STEP clearance",
+      "Enclosure clearance check",
+      "Open",
+      "Normal",
+      "STEP clearance",
+      ["DEMO-RND-001"],
+      { drawing: "HLPL-DEMO-MECH-DRW-01 · NOT VALIDATED" },
+    ),
+    make(
+      "DEMO-TST-001",
+      "tst",
+      "EOL test run",
+      "Illustrative EOL test jig run",
+      "Draft",
+      "High",
+      "Pre-flash",
+      ["DEMO-PRO-002"],
+      { fpy: "Not calculated · DEMO ONLY", qr: "No production label generated" },
+    ),
+    make(
+      "DEMO-FIN-001",
+      "fin",
+      "PO & GRN validation",
+      "Illustrative PO / GRN check",
+      "Draft",
+      "Normal",
+      "PO & GRN",
+      ["DEMO-PUR-002", "DEMO-PUR-003"],
+      { financeStatus: "DEMO ONLY · no payment or billing" },
+    ),
+    make(
+      "DEMO-SIT-001",
+      "sit",
+      "Server telemetry",
+      "Illustrative portal telemetry review",
+      "Open",
+      "Normal",
+      "Telemetry",
+      [],
+      { isms: "DEMO ONLY · no live infrastructure monitored" },
+    ),
+  );
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = nextWorkingDay(today);
   records.push(
@@ -931,6 +1023,10 @@ const demoPortal = (): PortalState => {
         "Jordan Blake · demo",
         "Riley Stone · demo",
         "Taylor Demo · demo@example.test",
+        "Devon Lane · demo",
+        "Samira Holt · demo",
+        "Mina Cross · demo",
+        "Kai Morgan · demo",
       ],
       suppliers: ["DEMO Orbit Modules · fictional", "DEMO Harness Works · fictional"],
       parts: ["DEMO GNSS/LTE module", "DEMO OBD harness", "DEMO backup battery", "DEMO enclosure"],
@@ -1560,6 +1656,63 @@ function CommandCenter({
     ? records.filter((record) => record.departmentId === departmentContext)
     : records;
   const pending = portal.approvals.filter((item) => item.outcome === "Pending").length;
+  records.push(
+    make(
+      "DEMO-ESW-001",
+      "esw",
+      "HSI register",
+      "HSI interface register",
+      "Draft",
+      "Normal",
+      "G0–G2",
+      ["DEMO-RND-001"],
+      { gate: "G0", hsi: "HLPL-DEMO-ESW-HSI-01 · NOT VALIDATED" },
+    ),
+    make(
+      "DEMO-MECH-001",
+      "mech",
+      "STEP clearance",
+      "Enclosure clearance check",
+      "Open",
+      "Normal",
+      "STEP clearance",
+      ["DEMO-RND-001"],
+      { drawing: "HLPL-DEMO-MECH-DRW-01 · NOT VALIDATED" },
+    ),
+    make(
+      "DEMO-TST-001",
+      "tst",
+      "EOL test run",
+      "Illustrative EOL test jig run",
+      "Draft",
+      "High",
+      "Pre-flash",
+      ["DEMO-PRO-002"],
+      { fpy: "Not calculated · DEMO ONLY", qr: "No production label generated" },
+    ),
+    make(
+      "DEMO-FIN-001",
+      "fin",
+      "PO & GRN validation",
+      "Illustrative PO / GRN check",
+      "Draft",
+      "Normal",
+      "PO & GRN",
+      ["DEMO-PUR-002", "DEMO-PUR-003"],
+      { financeStatus: "DEMO ONLY · no payment or billing" },
+    ),
+    make(
+      "DEMO-SIT-001",
+      "sit",
+      "Server telemetry",
+      "Illustrative portal telemetry review",
+      "Open",
+      "Normal",
+      "Telemetry",
+      [],
+      { isms: "DEMO ONLY · no live infrastructure monitored" },
+    ),
+  );
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = nextWorkingDay(today);
   const taskRecords = visible.filter((record) => record.type === "Task");
@@ -2064,43 +2217,61 @@ function LifecycleProgress({ records }: { records: RecordItem[] }) {
     (record) => record.fields["lifecycleId"] === "DEMO-AIS140-OBD-01",
   );
   const stages = [
-    "Customer requirement",
-    "Requirements and design",
-    "Sourcing",
-    "Assembly and traceability",
-    "Testing",
-    "Human quality release pending",
-    "Client update",
-  ];
+    ["1", "Sales & NDA", ["Customer requirement", "Enquiry"]],
+    ["2", "Feasibility", ["Contract review", "Requirements and design"]],
+    ["3", "Requirement freeze", ["Requirements approved"]],
+    ["4", "PoC", ["Prototype verified"]],
+    ["5", "Pilot build", ["BOM review", "Assembly and traceability"]],
+    ["6", "Client validation", ["Testing", "Quality inspection"]],
+    ["7", "Design release", ["Engineering change"]],
+    ["8", "Type approval & SCM", ["Sourcing", "Material received"]],
+    [
+      "9",
+      "Mass production & EOL",
+      ["Kitted for production", "Human quality release pending", "Client update"],
+    ],
+  ] as const;
   return (
-    <section className="mb-6 border border-border bg-panel">
+    <section className="surface-card mb-6 overflow-hidden border border-border bg-panel">
       <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border p-4">
         <div>
-          <p className="font-mono text-[10px] uppercase text-moss">Demo lifecycle</p>
-          <h2 className="mt-1 font-semibold">DEMO-AIS140-OBD-01 · AIS-140 style vehicle tracker</h2>
+          <p className="font-mono text-[10px] uppercase text-moss">Nine-stage lifecycle</p>
+          <h2 className="mt-1 font-semibold">DEMO-AIS140-OBD-01 · controlled lifecycle</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Illustrative only · NOT VALIDATED · no certification claim
+            Illustrative only · NOT VALIDATED · human gate sign-offs remain required
           </p>
         </div>
         <span className="font-mono text-sm text-steel">
           {lifecycleRecords.length} linked records
         </span>
       </div>
-      <div className="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
-        {stages.map((stage) => {
-          const stageRecords = lifecycleRecords.filter(
-            (record) => record.fields["lifecycleStage"] === stage,
+      <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0 xl:grid-cols-9">
+        {stages.map(([number, label, terms]) => {
+          const stageRecords = lifecycleRecords.filter((record) =>
+            terms.some(
+              (term) =>
+                record.fields["lifecycleStage"]?.includes(term) || record.type.includes(term),
+            ),
           );
-          const complete = stageRecords.filter(
-            (record) => record.status === "Approved" || record.status === "Released",
+          const complete = stageRecords.filter((record) =>
+            ["Approved", "Released"].includes(record.status),
           ).length;
+          const percent = stageRecords.length
+            ? Math.round((complete / stageRecords.length) * 100)
+            : 0;
           return (
-            <div key={stage} className="bg-card p-3">
-              <p className="font-mono text-[10px] uppercase text-muted-foreground">{stage}</p>
-              <p className="mt-2 text-lg font-semibold">
-                {complete}/{stageRecords.length || 0}
+            <div key={number} className="min-h-32 bg-card p-3">
+              <p className="font-mono text-[10px] text-steel">STAGE {number}</p>
+              <p className="mt-2 text-xs font-semibold leading-5">{label}</p>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+                <span
+                  className="block h-full bg-moss motion-safe:transition-[width] motion-safe:duration-700"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {complete}/{stageRecords.length} checks
               </p>
-              <p className="text-xs text-muted-foreground">completed records</p>
             </div>
           );
         })}
@@ -2108,6 +2279,7 @@ function LifecycleProgress({ records }: { records: RecordItem[] }) {
     </section>
   );
 }
+
 function DepartmentWorkspace({
   area,
   records,
@@ -2133,6 +2305,63 @@ function DepartmentWorkspace({
   onAdmin: () => void;
   onOpenStage: (stage: string) => void;
 }) {
+  records.push(
+    make(
+      "DEMO-ESW-001",
+      "esw",
+      "HSI register",
+      "HSI interface register",
+      "Draft",
+      "Normal",
+      "G0–G2",
+      ["DEMO-RND-001"],
+      { gate: "G0", hsi: "HLPL-DEMO-ESW-HSI-01 · NOT VALIDATED" },
+    ),
+    make(
+      "DEMO-MECH-001",
+      "mech",
+      "STEP clearance",
+      "Enclosure clearance check",
+      "Open",
+      "Normal",
+      "STEP clearance",
+      ["DEMO-RND-001"],
+      { drawing: "HLPL-DEMO-MECH-DRW-01 · NOT VALIDATED" },
+    ),
+    make(
+      "DEMO-TST-001",
+      "tst",
+      "EOL test run",
+      "Illustrative EOL test jig run",
+      "Draft",
+      "High",
+      "Pre-flash",
+      ["DEMO-PRO-002"],
+      { fpy: "Not calculated · DEMO ONLY", qr: "No production label generated" },
+    ),
+    make(
+      "DEMO-FIN-001",
+      "fin",
+      "PO & GRN validation",
+      "Illustrative PO / GRN check",
+      "Draft",
+      "Normal",
+      "PO & GRN",
+      ["DEMO-PUR-002", "DEMO-PUR-003"],
+      { financeStatus: "DEMO ONLY · no payment or billing" },
+    ),
+    make(
+      "DEMO-SIT-001",
+      "sit",
+      "Server telemetry",
+      "Illustrative portal telemetry review",
+      "Open",
+      "Normal",
+      "Telemetry",
+      [],
+      { isms: "DEMO ONLY · no live infrastructure monitored" },
+    ),
+  );
   const today = new Date().toISOString().slice(0, 10);
   const open = records.filter((record) => record.status === "Draft" || record.status === "Open");
   const blocked = records.filter((record) => record.fields["blocker"]);
@@ -2808,7 +3037,9 @@ function RecordForm({
   const field = (key: string) => values[key] ?? "";
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const missing = spec.fields.find((item) => item.required && !field(item.key).trim());
+    const missing = spec.fields.find(
+      (item) => item.required && item.key !== "controlledNumber" && !field(item.key).trim(),
+    );
     if (missing) return setError(`${missing.label} is required.`);
     const invalid = spec.fields.find(
       (item) =>
@@ -2832,6 +3063,10 @@ function RecordForm({
   return (
     <Modal title={`Create ${type}`} onClose={onClose} wide>
       <form onSubmit={submit} className="space-y-5">
+        <p className="rounded-lg border border-border bg-panel px-3 py-2 text-xs text-muted-foreground">
+          The portal generates an HLPL document number on save when you leave the controlled number
+          blank.
+        </p>
         <SelectField label="Record type" value={type} options={spec.types} onChange={setType} />
         <div className="grid gap-4 md:grid-cols-2">
           {spec.fields.map((item) =>
