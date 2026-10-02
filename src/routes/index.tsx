@@ -30,7 +30,25 @@ import {
   listControlledDocumentFiles,
 } from "@/lib/controlled-documents.functions";
 
-type AreaId = "home" | "rnd" | "stores" | "production" | "quality" | "sales" | "people" | "audit";
+type AreaId =
+  | "home"
+  | "sales"
+  | "ehw"
+  | "esw"
+  | "mech"
+  | "pur"
+  | "qa"
+  | "emf"
+  | "tst"
+  | "fin"
+  | "sit"
+  | "hrops"
+  | "rnd"
+  | "stores"
+  | "production"
+  | "quality"
+  | "people"
+  | "audit";
 type RecordStatus = "Draft" | "Open" | "In review" | "Approved" | "Released" | "Archived";
 type Priority = "Low" | "Normal" | "High" | "Critical";
 type RecordItem = {
@@ -159,55 +177,95 @@ const areas = [
     short: "Home",
     icon: LayoutDashboard,
     recordType: "Task",
-    summary: "Today, priority, approvals and progress",
-  },
-  {
-    id: "rnd" as const,
-    name: "R&D & Projects",
-    short: "R&D",
-    icon: Wrench,
-    recordType: "Project",
-    summary: "Projects, BOMs, prototype work and design gates",
-  },
-  {
-    id: "stores" as const,
-    name: "Purchasing & Stores",
-    short: "Stores",
-    icon: PackageSearch,
-    recordType: "Purchase request",
-    summary: "Requests, purchase orders and stock movement",
-  },
-  {
-    id: "production" as const,
-    name: "Production",
-    short: "Production",
-    icon: Factory,
-    recordType: "Production order",
-    summary: "Work orders, testing, release and traceability",
-  },
-  {
-    id: "quality" as const,
-    name: "Quality",
-    short: "Quality",
-    icon: ShieldCheck,
-    recordType: "Inspection",
-    summary: "Inspections, NCRs, CAPAs and actions",
+    summary: "Today, priority, approvals and lifecycle control",
   },
   {
     id: "sales" as const,
-    name: "Sales & Customers",
-    short: "Sales",
+    name: "Sales & Business Development",
+    short: "SAL",
     icon: UsersRound,
-    recordType: "Enquiry",
-    summary: "Enquiries, requirements, orders and client updates",
+    recordType: "Lead intake",
+    summary: "HLPL-F-SAL-01, mNDA, quotations and contract reviews",
   },
   {
-    id: "people" as const,
-    name: "People & Administration",
-    short: "Admin",
+    id: "ehw" as const,
+    name: "Embedded Hardware",
+    short: "EHW",
+    icon: Wrench,
+    recordType: "Hardware record",
+    summary: "HW_01–HW_37, PRS, schematics, BOM and Gerber gates",
+  },
+  {
+    id: "esw" as const,
+    name: "Firmware & Software",
+    short: "ESW",
     icon: Settings2,
-    recordType: "Person",
-    summary: "People, access, assets, policies and portal setup",
+    recordType: "Software gate",
+    summary: "G0–G11, HSI registers and CI/CD telemetry",
+  },
+  {
+    id: "mech" as const,
+    name: "Mechanical Engineering",
+    short: "MECH",
+    icon: PackageSearch,
+    recordType: "Mechanical record",
+    summary: "STEP clearance, drawings and mold tooling",
+  },
+  {
+    id: "pur" as const,
+    name: "Purchasing & SCM",
+    short: "PUR",
+    icon: PackageSearch,
+    recordType: "Procurement record",
+    summary: "Rapid prototype / mass production, ASL/ACML and PPAP",
+  },
+  {
+    id: "qa" as const,
+    name: "Quality Assurance",
+    short: "QA",
+    icon: ShieldCheck,
+    recordType: "Quality record",
+    summary: "APQP, DVP&R, inspection and 8D CAPA",
+  },
+  {
+    id: "emf" as const,
+    name: "Manufacturing",
+    short: "EMF",
+    icon: Factory,
+    recordType: "Manufacturing record",
+    summary: "PFD, PFMEA, control plan and line startup",
+  },
+  {
+    id: "tst" as const,
+    name: "EOL Testing",
+    short: "TST",
+    icon: CheckCircle2,
+    recordType: "EOL test run",
+    summary: "Test jig, serial QR labels and first-pass yield",
+  },
+  {
+    id: "fin" as const,
+    name: "Accounts & Finance",
+    short: "FIN",
+    icon: ClipboardCheck,
+    recordType: "Finance control",
+    summary: "Billing, PO/GRN validation and aging controls",
+  },
+  {
+    id: "sit" as const,
+    name: "Service & IT",
+    short: "SIT",
+    icon: Bell,
+    recordType: "Service record",
+    summary: "Telemetry, backups, support and ISMS",
+  },
+  {
+    id: "hrops" as const,
+    name: "HR & Operations",
+    short: "HR/OPS",
+    icon: Settings2,
+    recordType: "People record",
+    summary: "Skill matrix, TNI, compliance and DMAIC",
   },
 ] as const;
 const departmentTypes = [
@@ -222,6 +280,17 @@ const departmentTypes = [
   "Finance",
   "IT/Support",
   "Other/custom",
+  "Sales & Business Development",
+  "Embedded Hardware",
+  "Firmware & Software",
+  "Mechanical Engineering",
+  "Purchasing & SCM",
+  "Quality Assurance",
+  "Manufacturing",
+  "EOL Testing",
+  "Accounts & Finance",
+  "Service & IT",
+  "HR & Operations",
 ];
 const permissionOptions = [
   "records:view",
@@ -264,15 +333,31 @@ const automotiveRepositoryGroups = [
 ] as const;
 const automotivePhases = [
   ["Phase_1_Requirements_and_Concept", "HW_01–04", "Requirements, PRS and sign-offs"],
-  ["Phase_2_Key_Part_Selection", "HW_05–12", "Selections, BOM, procurement, samples and firmware feasibility"],
+  [
+    "Phase_2_Key_Part_Selection",
+    "HW_05–12",
+    "Selections, BOM, procurement, samples and firmware feasibility",
+  ],
   ["Phase_3_Risk_and_Verification_Planning", "HW_13–14", "DFMEA and DVP"],
   ["Phase_4_Schematic_Design", "HW_15–16", "Schematics, ERC and design reviews"],
   ["Phase_5_Mechanical_and_Enclosure", "HW_17–18", "STEP files and fit reports"],
-  ["Phase_6_BOM_and_PCB_Layout", "HW_19–23", "Costed BOM, PCB, layout, worst-case analysis and DRC"],
-  ["Phase_7_Fabrication_and_Precompliance", "HW_24–27", "Gerber, fabrication, EMC and ESD evidence"],
+  [
+    "Phase_6_BOM_and_PCB_Layout",
+    "HW_19–23",
+    "Costed BOM, PCB, layout, worst-case analysis and DRC",
+  ],
+  [
+    "Phase_7_Fabrication_and_Precompliance",
+    "HW_24–27",
+    "Gerber, fabrication, EMC and ESD evidence",
+  ],
   ["Phase_8_Hardware_Software_Integration", "HW_28–29", "HSI and bring-up records"],
   ["Phase_9_Production_and_Verification", "HW_30–35", "SMT, DVR, tests, pilot and release records"],
-  ["Phase_10_Change_Control_and_Compliance", "HW_36–37", "ECO, reverification, AIS-140, AIS-004, IMDS, RoHS and REACH records"],
+  [
+    "Phase_10_Change_Control_and_Compliance",
+    "HW_36–37",
+    "ECO, reverification, AIS-140, AIS-004, IMDS, RoHS and REACH records",
+  ],
 ] as const;
 const automotiveDocumentStatus = (lifecycle: ControlledDocument["lifecycle"]): RecordStatus =>
   lifecycle === "Approved"
@@ -290,7 +375,7 @@ const mergeAutomotiveDemoDocuments = (documents: ControlledDocument[]) => {
       title: "DEMO · Automotive hardware repository path template",
       url: "",
       type: "Repository path template",
-      departmentId: "demo-dept-rnd",
+      departmentId: "demo-dept-ehw",
       group: "02_Product_Platforms/Automotive_Devices",
       device: "Automotive_Devices · DEMO platform only",
       part: "DEMO-AIS140-OBD-01",
@@ -385,45 +470,80 @@ const demoPortal = (): PortalState => {
   }[] = [
     {
       id: "rnd",
-      name: "R&D & Projects",
-      code: "RND",
-      departmentType: "R&D/Engineering",
+      name: "Embedded Hardware",
+      code: "EHW",
+      departmentType: "Embedded Hardware",
       lead: "Avery Vale · demo",
     },
     {
       id: "stores",
-      name: "Purchasing & Stores",
+      name: "Purchasing & SCM",
       code: "PUR",
-      departmentType: "Purchasing/Stores",
+      departmentType: "Purchasing & SCM",
       lead: "Morgan Reed · demo",
     },
     {
       id: "production",
-      name: "Production",
-      code: "PRO",
-      departmentType: "Production/Manufacturing",
+      name: "Manufacturing",
+      code: "EMF",
+      departmentType: "Manufacturing",
       lead: "Casey Rowan · demo",
     },
     {
       id: "quality",
-      name: "Quality",
-      code: "QLT",
-      departmentType: "Quality",
+      name: "Quality Assurance",
+      code: "QA",
+      departmentType: "Quality Assurance",
       lead: "Jordan Blake · demo",
     },
     {
       id: "sales",
-      name: "Sales & Customers",
+      name: "Sales & Business Development",
       code: "SAL",
-      departmentType: "Sales/Customer Success",
+      departmentType: "Sales & Business Development",
       lead: "Riley Stone · demo",
     },
     {
       id: "people",
-      name: "People & Administration",
-      code: "PEO",
-      departmentType: "People/HR",
+      name: "HR & Operations",
+      code: "HR",
+      departmentType: "HR & Operations",
       lead: "",
+    },
+    {
+      id: "esw",
+      name: "Firmware & Software",
+      code: "ESW",
+      departmentType: "Firmware & Software",
+      lead: "Devon Lane · demo",
+    },
+    {
+      id: "mech",
+      name: "Mechanical Engineering",
+      code: "MECH",
+      departmentType: "Mechanical Engineering",
+      lead: "Samira Holt · demo",
+    },
+    {
+      id: "tst",
+      name: "EOL Testing",
+      code: "TST",
+      departmentType: "EOL Testing",
+      lead: "Mina Cross · demo",
+    },
+    {
+      id: "fin",
+      name: "Accounts & Finance",
+      code: "FIN",
+      departmentType: "Accounts & Finance",
+      lead: "",
+    },
+    {
+      id: "sit",
+      name: "Service & IT",
+      code: "SIT",
+      departmentType: "Service & IT",
+      lead: "Kai Morgan · demo",
     },
   ];
   const departments: Department[] = departmentSeeds.map((seed, sortOrder) => ({
@@ -469,7 +589,7 @@ const demoPortal = (): PortalState => {
   ): RecordItem => ({
     id,
     area,
-    departmentId: `demo-dept-${area === "stores" ? "stores" : area}`,
+    departmentId: `demo-dept-${area}`,
     type,
     title: `DEMO · ${title}`,
     status,
@@ -526,7 +646,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-001",
-      "rnd",
+      "ehw",
       "Project",
       lifecycle,
       "In review",
@@ -551,7 +671,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-002",
-      "rnd",
+      "ehw",
       "Requirements",
       "Requirements baseline",
       "Approved",
@@ -565,7 +685,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-003",
-      "rnd",
+      "ehw",
       "BOM",
       "Prototype BOM",
       "In review",
@@ -579,7 +699,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-004",
-      "rnd",
+      "ehw",
       "Engineering change",
       "Enclosure sealing change",
       "Open",
@@ -590,7 +710,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-005",
-      "rnd",
+      "ehw",
       "Prototype",
       "Tracker prototype build",
       "Approved",
@@ -604,7 +724,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PUR-001",
-      "stores",
+      "pur",
       "RFQ",
       "Fictional GNSS/LTE module RFQ",
       "Approved",
@@ -615,7 +735,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PUR-002",
-      "stores",
+      "pur",
       "Purchase order",
       "Fictional prototype material PO",
       "Approved",
@@ -626,7 +746,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PUR-003",
-      "stores",
+      "pur",
       "Receiving",
       "Prototype material receipt",
       "Released",
@@ -637,7 +757,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PUR-004",
-      "stores",
+      "pur",
       "Material issue / kitting",
       "Prototype kit issued",
       "Released",
@@ -648,7 +768,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PRO-001",
-      "production",
+      "emf",
       "Production order",
       "Prototype tracker assembly",
       "Open",
@@ -663,7 +783,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PRO-002",
-      "production",
+      "emf",
       "Serial-numbered units",
       "Two illustrative tracker units",
       "In review",
@@ -678,7 +798,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PRO-003",
-      "production",
+      "tst",
       "Production test",
       "End-of-line functional test",
       "In review",
@@ -692,7 +812,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PRO-004",
-      "production",
+      "emf",
       "Dispatch",
       "Demo dispatch / handover hold",
       "Draft",
@@ -703,7 +823,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-QLT-001",
-      "quality",
+      "qa",
       "Inspection",
       "Prototype functional inspection",
       "In review",
@@ -714,7 +834,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-QLT-002",
-      "quality",
+      "qa",
       "NCR",
       "Illustrative enclosure sealing NCR",
       "Open",
@@ -725,7 +845,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-QLT-003",
-      "quality",
+      "qa",
       "CAPA",
       "Illustrative sealing CAPA",
       "Open",
@@ -736,7 +856,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-QLT-004",
-      "quality",
+      "qa",
       "Quality release",
       "Human quality release for prototype",
       "In review",
@@ -746,12 +866,69 @@ const demoPortal = (): PortalState => {
       { approvalStatus: "PENDING · NEVER AUTO-APPROVED", releaseStatus: "NOT RELEASED" },
     ),
   ];
+  records.push(
+    make(
+      "DEMO-ESW-001",
+      "esw",
+      "HSI register",
+      "HSI interface register",
+      "Draft",
+      "Normal",
+      "G0–G2",
+      ["DEMO-RND-001"],
+      { gate: "G0", hsi: "HLPL-DEMO-ESW-HSI-01 · NOT VALIDATED" },
+    ),
+    make(
+      "DEMO-MECH-001",
+      "mech",
+      "STEP clearance",
+      "Enclosure clearance check",
+      "Open",
+      "Normal",
+      "STEP clearance",
+      ["DEMO-RND-001"],
+      { drawing: "HLPL-DEMO-MECH-DRW-01 · NOT VALIDATED" },
+    ),
+    make(
+      "DEMO-TST-001",
+      "tst",
+      "EOL test run",
+      "Illustrative EOL test jig run",
+      "Draft",
+      "High",
+      "Pre-flash",
+      ["DEMO-PRO-002"],
+      { fpy: "Not calculated · DEMO ONLY", qr: "No production label generated" },
+    ),
+    make(
+      "DEMO-FIN-001",
+      "fin",
+      "PO & GRN validation",
+      "Illustrative PO / GRN check",
+      "Draft",
+      "Normal",
+      "PO & GRN",
+      ["DEMO-PUR-002", "DEMO-PUR-003"],
+      { financeStatus: "DEMO ONLY · no payment or billing" },
+    ),
+    make(
+      "DEMO-SIT-001",
+      "sit",
+      "Server telemetry",
+      "Illustrative portal telemetry review",
+      "Open",
+      "Normal",
+      "Telemetry",
+      [],
+      { isms: "DEMO ONLY · no live infrastructure monitored" },
+    ),
+  );
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = nextWorkingDay(today);
   records.push(
     make(
       "DEMO-TASK-001",
-      "rnd",
+      "ehw",
       "Task",
       "Validate tracker prototype evidence",
       "Open",
@@ -768,7 +945,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-TASK-002",
-      "quality",
+      "qa",
       "Task",
       "Review human quality release inputs",
       "Open",
@@ -846,6 +1023,10 @@ const demoPortal = (): PortalState => {
         "Jordan Blake · demo",
         "Riley Stone · demo",
         "Taylor Demo · demo@example.test",
+        "Devon Lane · demo",
+        "Samira Holt · demo",
+        "Mina Cross · demo",
+        "Kai Morgan · demo",
       ],
       suppliers: ["DEMO Orbit Modules · fictional", "DEMO Harness Works · fictional"],
       parts: ["DEMO GNSS/LTE module", "DEMO OBD harness", "DEMO backup battery", "DEMO enclosure"],
@@ -869,7 +1050,7 @@ const demoPortal = (): PortalState => {
         title: "DEMO-AIS140-OBD-01 datasheet / specification summary · NOT VALIDATED",
         url: "",
         type: "DEMO controlled datasheet",
-        departmentId: "demo-dept-rnd",
+        departmentId: "demo-dept-ehw",
         group: "Product/Device Audit Packs",
         device: "DEMO-AIS140-OBD-01",
         part: "DEMO-PART-GNSS-LTE-01 · fictional",
@@ -911,12 +1092,29 @@ const areaForDepartment = (department: Department | undefined): AreaId => {
 };
 const areaById = (id: AreaId) => areas.find((area) => area.id === id) ?? homeArea;
 const areaDepartmentType: Partial<Record<AreaId, string>> = {
-  rnd: "R&D/Engineering",
-  stores: "Purchasing/Stores",
-  production: "Production/Manufacturing",
-  quality: "Quality",
-  sales: "Sales/Customer Success",
-  people: "People/HR",
+  sales: "Sales & Business Development",
+  ehw: "Embedded Hardware",
+  esw: "Firmware & Software",
+  mech: "Mechanical Engineering",
+  pur: "Purchasing & SCM",
+  qa: "Quality Assurance",
+  emf: "Manufacturing",
+  tst: "EOL Testing",
+  fin: "Accounts & Finance",
+  sit: "Service & IT",
+  hrops: "HR & Operations",
+  rnd: "Embedded Hardware",
+  stores: "Purchasing & SCM",
+  production: "Manufacturing",
+  quality: "Quality Assurance",
+  people: "HR & Operations",
+};
+const legacyAreaMap: Partial<Record<AreaId, AreaId>> = {
+  rnd: "ehw",
+  stores: "pur",
+  production: "emf",
+  quality: "qa",
+  people: "hrops",
 };
 const readPortal = (): PortalState => {
   const base = emptyPortal();
@@ -951,9 +1149,9 @@ const readPortal = (): PortalState => {
             linkedRecordRefs:
               defaults?.linkedRecordRefs ??
               (Array.isArray(document.linkedRecordRefs) ? document.linkedRecordRefs : []),
-             effectiveDate: defaults?.effectiveDate ?? document.effectiveDate,
-             approver: defaults?.approver ?? document.approver,
-             history: Array.isArray(document.history) ? document.history : [],
+            effectiveDate: defaults?.effectiveDate ?? document.effectiveDate,
+            approver: defaults?.approver ?? document.approver,
+            history: Array.isArray(document.history) ? document.history : [],
           };
         })
       : [];
@@ -975,15 +1173,17 @@ const readPortal = (): PortalState => {
         : [],
       roles: Array.isArray(value.roles) ? value.roles : [],
       records: Array.isArray(value.records)
-        ? value.records.map((record) => ({
-            ...record,
-            departmentId:
-              record.departmentId ??
-              findAreaDepartment(
-                Array.isArray(value.departments) ? value.departments : [],
-                record.area,
-              )?.id,
-          }))
+        ? value.records.map((record) => {
+            const area = legacyAreaMap[record.area] ?? record.area;
+            return {
+              ...record,
+              area,
+              departmentId:
+                record.departmentId ??
+                findAreaDepartment(Array.isArray(value.departments) ? value.departments : [], area)
+                  ?.id,
+            };
+          })
         : [],
       approvals: Array.isArray(value.approvals) ? value.approvals : [],
       documents: value.demoLoaded === true ? mergeAutomotiveDemoDocuments(documents) : documents,
@@ -1017,7 +1217,7 @@ function Portal() {
   const [activeArea, setActiveArea] = useState<AreaId>("home");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<
-    "queue" | "detail" | "summary" | "project" | "assignee" | "index"
+    "queue" | "detail" | "summary" | "project" | "assignee" | "index" | "pmss"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
@@ -1080,11 +1280,20 @@ function Portal() {
       input.departmentId ??
       departmentContext ??
       findAreaDepartment(portal.departments, input.area)?.id;
+    const department = portal.departments.find((item) => item.id === departmentId);
+    const projectId = input.fields["projectId"] || input.fields["product"] || "GEN";
+    const departmentCode = department?.code.replace(/^DEMO-/, "") || prefix;
+    const docType =
+      input.type
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "-")
+        .slice(0, 12) || "REC";
+    const generatedNumber = `HLPL-${projectId.replace(/[^A-Z0-9]/gi, "").slice(0, 12) || "GEN"}-${departmentCode}-${docType}-${String(count).padStart(2, "0")}`;
     const record: RecordItem = {
       ...input,
       departmentId,
       id: createId(),
-      reference: input.fields["controlledNumber"] ?? `${prefix}-${String(count).padStart(4, "0")}`,
+      reference: input.fields["controlledNumber"] || generatedNumber,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -1165,6 +1374,7 @@ function Portal() {
                   : `All departments · ${portal.setup.location}`}
               </p>
             </button>
+            <HeaderAction label="PMSS" icon={ClipboardCheck} onClick={() => setView("pmss")} />
             <HeaderAction
               label="Search"
               icon={Search}
@@ -1183,7 +1393,22 @@ function Portal() {
           </div>
         </header>
         <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-10">
-          {view === "index" ? (
+          {view === "pmss" ? (
+            <PMSSWorkspace
+              portal={portal}
+              onBack={() => navigate(activeArea)}
+              onUpdate={(patch) =>
+                update((state) => ({
+                  ...state,
+                  setup: {
+                    ...state.setup,
+                    configuration: { ...state.setup.configuration, ...patch },
+                  },
+                }))
+              }
+              onLog={log}
+            />
+          ) : view === "index" ? (
             <IndexWorkspace
               records={activeRecords}
               documents={portal.documents}
@@ -1264,7 +1489,10 @@ function Portal() {
                 (record) =>
                   record.area === activeArea &&
                   (!departmentContext || record.departmentId === departmentContext) &&
-                  (!queueStage || `${record.type} ${record.fields["lifecycleStage"] ?? ""}`.toLowerCase().includes(queueStage.toLowerCase())),
+                  (!queueStage ||
+                    `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
+                      .toLowerCase()
+                      .includes(queueStage.toLowerCase())),
               )}
               department={
                 portal.departments.find((item) => item.id === departmentContext) ??
@@ -1932,43 +2160,61 @@ function LifecycleProgress({ records }: { records: RecordItem[] }) {
     (record) => record.fields["lifecycleId"] === "DEMO-AIS140-OBD-01",
   );
   const stages = [
-    "Customer requirement",
-    "Requirements and design",
-    "Sourcing",
-    "Assembly and traceability",
-    "Testing",
-    "Human quality release pending",
-    "Client update",
-  ];
+    ["1", "Sales & NDA", ["Customer requirement", "Enquiry"]],
+    ["2", "Feasibility", ["Contract review", "Requirements and design"]],
+    ["3", "Requirement freeze", ["Requirements approved"]],
+    ["4", "PoC", ["Prototype verified"]],
+    ["5", "Pilot build", ["BOM review", "Assembly and traceability"]],
+    ["6", "Client validation", ["Testing", "Quality inspection"]],
+    ["7", "Design release", ["Engineering change"]],
+    ["8", "Type approval & SCM", ["Sourcing", "Material received"]],
+    [
+      "9",
+      "Mass production & EOL",
+      ["Kitted for production", "Human quality release pending", "Client update"],
+    ],
+  ] as const;
   return (
-    <section className="mb-6 border border-border bg-panel">
+    <section className="surface-card mb-6 overflow-hidden border border-border bg-panel">
       <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border p-4">
         <div>
-          <p className="font-mono text-[10px] uppercase text-moss">Demo lifecycle</p>
-          <h2 className="mt-1 font-semibold">DEMO-AIS140-OBD-01 · AIS-140 style vehicle tracker</h2>
+          <p className="font-mono text-[10px] uppercase text-moss">Nine-stage lifecycle</p>
+          <h2 className="mt-1 font-semibold">DEMO-AIS140-OBD-01 · controlled lifecycle</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Illustrative only · NOT VALIDATED · no certification claim
+            Illustrative only · NOT VALIDATED · human gate sign-offs remain required
           </p>
         </div>
         <span className="font-mono text-sm text-steel">
           {lifecycleRecords.length} linked records
         </span>
       </div>
-      <div className="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
-        {stages.map((stage) => {
-          const stageRecords = lifecycleRecords.filter(
-            (record) => record.fields["lifecycleStage"] === stage,
+      <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0 xl:grid-cols-9">
+        {stages.map(([number, label, terms]) => {
+          const stageRecords = lifecycleRecords.filter((record) =>
+            terms.some(
+              (term) =>
+                record.fields["lifecycleStage"]?.includes(term) || record.type.includes(term),
+            ),
           );
-          const complete = stageRecords.filter(
-            (record) => record.status === "Approved" || record.status === "Released",
+          const complete = stageRecords.filter((record) =>
+            ["Approved", "Released"].includes(record.status),
           ).length;
+          const percent = stageRecords.length
+            ? Math.round((complete / stageRecords.length) * 100)
+            : 0;
           return (
-            <div key={stage} className="bg-card p-3">
-              <p className="font-mono text-[10px] uppercase text-muted-foreground">{stage}</p>
-              <p className="mt-2 text-lg font-semibold">
-                {complete}/{stageRecords.length || 0}
+            <div key={number} className="min-h-32 bg-card p-3">
+              <p className="font-mono text-[10px] text-steel">STAGE {number}</p>
+              <p className="mt-2 text-xs font-semibold leading-5">{label}</p>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+                <span
+                  className="block h-full bg-moss motion-safe:transition-[width] motion-safe:duration-700"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {complete}/{stageRecords.length} checks
               </p>
-              <p className="text-xs text-muted-foreground">completed records</p>
             </div>
           );
         })}
@@ -1976,6 +2222,7 @@ function LifecycleProgress({ records }: { records: RecordItem[] }) {
     </section>
   );
 }
+
 function DepartmentWorkspace({
   area,
   records,
@@ -2130,22 +2377,34 @@ function DepartmentWorkspace({
 }
 
 function departmentFlow(area: AreaId, records: RecordItem[]) {
-  const labels: Record<Exclude<AreaId, "home" | "audit">, string[]> = {
-    rnd: ["Requirements", "Design", "Prototype", "Verification", "Release"],
-    stores: ["Request", "RFQ", "Purchase order", "Receiving", "Kitting"],
-    production: ["Plan", "Kitting", "Assembly", "Test", "Dispatch"],
-    quality: ["Inspection", "NCR", "CAPA", "Quality release"],
-    sales: ["Enquiry", "Requirement", "Review", "Handover", "Client update"],
-    people: ["Need", "Training", "Access", "Evidence", "Review"],
+  const labels: Partial<Record<AreaId, string[]>> = {
+    sales: ["Lead intake", "mNDA", "Quotation", "Contract review"],
+    ehw: ["HW_01–04", "PRS", "Schematic", "BOM & layout", "Gerber gate"],
+    esw: ["G0–G2", "G3–G5", "G6–G8", "G9–G11", "HSI & CI/CD"],
+    mech: ["Concept", "STEP clearance", "2D drawing", "Tooling", "Release"],
+    pur: ["Request", "RFQ", "ASL/ACML", "PPAP", "Receiving"],
+    qa: ["APQP", "DVP&R", "IQC/IPQC/FQC", "8D CAPA", "Quality release"],
+    emf: ["PFD", "PFMEA", "Control plan", "Line startup", "Dispatch"],
+    tst: ["Pre-flash", "Parametric", "CAN loopback", "Production flash", "FPY & QR"],
+    fin: ["PO & GRN", "Billing", "Receivables", "Tax close"],
+    sit: ["Telemetry", "Backup", "Support", "ISMS"],
+    hrops: ["Skill matrix", "TNI", "License calendar", "DMAIC"],
+    rnd: ["HW_01–04", "PRS", "Schematic", "BOM & layout", "Gerber gate"],
+    stores: ["Request", "RFQ", "ASL/ACML", "PPAP", "Receiving"],
+    production: ["PFD", "PFMEA", "Control plan", "Line startup", "Dispatch"],
+    quality: ["APQP", "DVP&R", "IQC/IPQC/FQC", "8D CAPA", "Quality release"],
+    people: ["Skill matrix", "TNI", "License calendar", "DMAIC"],
   };
-  const stages = area === "home" || area === "audit" ? [] : labels[area];
+  const stages = labels[area] ?? [];
   return stages.map((label) => {
     const stageRecords = records.filter((record) =>
       `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
         .toLowerCase()
         .includes(label.toLowerCase()),
     );
-    const complete = stageRecords.filter((record) => ["Approved", "Released"].includes(record.status)).length;
+    const complete = stageRecords.filter((record) =>
+      ["Approved", "Released"].includes(record.status),
+    ).length;
     const blocked = stageRecords.filter((record) => Boolean(record.fields["blocker"])).length;
     const inProgress = stageRecords.filter(
       (record) => !record.fields["blocker"] && ["Open", "In review"].includes(record.status),
@@ -2154,7 +2413,15 @@ function departmentFlow(area: AreaId, records: RecordItem[]) {
     const latestUpdate = stageRecords
       .map((record) => record.updatedAt)
       .sort((a, b) => b.localeCompare(a))[0];
-    return { label, total: stageRecords.length, complete, blocked, inProgress, upcoming, latestUpdate };
+    return {
+      label,
+      total: stageRecords.length,
+      complete,
+      blocked,
+      inProgress,
+      upcoming,
+      latestUpdate,
+    };
   });
 }
 
@@ -2203,17 +2470,23 @@ function DepartmentFlow({
                 <span className="font-mono text-sm font-semibold text-steel">{percent}%</span>
               </div>
               <p className="mt-2 text-sm font-semibold">{stage.label}</p>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary" aria-label={`${stage.label} ${percent}% complete`}>
+              <div
+                className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"
+                aria-label={`${stage.label} ${percent}% complete`}
+              >
                 <span
                   className="block h-full rounded-full bg-steel motion-safe:animate-[rise-in_600ms_ease-out_both] motion-safe:transition-[width] motion-safe:duration-700"
                   style={{ width: `${percent}%` }}
                 />
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                {stage.complete} complete · {stage.inProgress} in progress · {stage.blocked} blocked · {stage.upcoming} upcoming
+                {stage.complete} complete · {stage.inProgress} in progress · {stage.blocked} blocked
+                · {stage.upcoming} upcoming
               </p>
               <p className="mt-2 text-[11px] text-muted-foreground">
-                {stage.latestUpdate ? `Latest update ${stage.latestUpdate}` : "No records in this stage"}
+                {stage.latestUpdate
+                  ? `Latest update ${stage.latestUpdate}`
+                  : "No records in this stage"}
               </p>
             </button>
           );
@@ -2349,19 +2622,21 @@ function RecordDetail({
   );
 }
 
-const formSpecs: Record<
-  AreaId,
-  {
-    types: string[];
-    fields: {
-      key: string;
-      label: string;
-      required?: boolean;
-      kind?: "text" | "date" | "select";
-      options?: string[];
-      master?: keyof MasterData;
-    }[];
-  }
+const formSpecs: Partial<
+  Record<
+    AreaId,
+    {
+      types: string[];
+      fields: {
+        key: string;
+        label: string;
+        required?: boolean;
+        kind?: "text" | "date" | "select";
+        options?: string[];
+        master?: keyof MasterData;
+      }[];
+    }
+  >
 > = {
   home: {
     types: ["Task"],
@@ -2460,6 +2735,126 @@ const formSpecs: Record<
       { key: "dueDate", label: "Due date", kind: "date" },
     ],
   },
+  ehw: {
+    types: ["PRS", "Hardware tracker", "Schematic", "BOM", "Gerber release"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      {
+        key: "hwStage",
+        label: "HW stage",
+        required: true,
+        kind: "select",
+        options: Array.from(
+          { length: 37 },
+          (_, index) => `HW_${String(index + 1).padStart(2, "0")}`,
+        ),
+      },
+      { key: "projectId", label: "Project ID", master: "products" },
+      { key: "location", label: "Location", required: true, master: "locations" },
+    ],
+  },
+  esw: {
+    types: ["Software gate", "HSI register", "CI/CD telemetry", "Firmware release"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      {
+        key: "gate",
+        label: "SDLC gate",
+        required: true,
+        kind: "select",
+        options: Array.from({ length: 12 }, (_, index) => `G${index}`),
+      },
+      { key: "projectId", label: "Project ID", master: "products" },
+    ],
+  },
+  mech: {
+    types: ["STEP clearance", "2D drawing", "Mold tooling", "Mechanical release"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      { key: "projectId", label: "Project ID", master: "products" },
+      { key: "location", label: "Location", required: true, master: "locations" },
+    ],
+  },
+  pur: {
+    types: [
+      "Rapid prototype request",
+      "Mass production request",
+      "ASL/ACML",
+      "F-PUR-10",
+      "F-PUR-16",
+      "PPAP Level 3",
+    ],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      {
+        key: "procurementTrack",
+        label: "Procurement track",
+        required: true,
+        kind: "select",
+        options: ["Rapid prototype", "Mass production"],
+      },
+      { key: "supplier", label: "Supplier", master: "suppliers" },
+    ],
+  },
+  qa: {
+    types: ["APQP gate", "DVP&R", "IQC", "IPQC", "FQC", "8D CAPA"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      {
+        key: "qualityStage",
+        label: "Quality stage",
+        required: true,
+        kind: "select",
+        options: ["APQP", "DVP&R", "IQC", "IPQC", "FQC", "8D"],
+      },
+    ],
+  },
+  emf: {
+    types: ["Line startup checklist", "PFD", "PFMEA", "Control plan"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      { key: "location", label: "Location", required: true, master: "locations" },
+    ],
+  },
+  tst: {
+    types: ["EOL test run", "Test jig", "QR label batch", "FPY review"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      { key: "serialRange", label: "Serial range" },
+      { key: "fpy", label: "First-pass yield %" },
+    ],
+  },
+  fin: {
+    types: ["Commercial billing", "PO & GRN validation", "Receivables review", "Tax close"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      { key: "ageingDays", label: "Ageing days" },
+    ],
+  },
+  sit: {
+    types: ["Server telemetry", "Backup review", "IT support ticket", "ISMS control"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      { key: "service", label: "Service / asset" },
+    ],
+  },
+  hrops: {
+    types: ["Skill matrix", "Training need", "License alert", "DMAIC tollgate"],
+    fields: [
+      { key: "controlledNumber", label: "Controlled number", required: true },
+      { key: "title", label: "Title", required: true },
+      { key: "owner", label: "Owner", master: "people" },
+    ],
+  },
   audit: {
     types: [
       "Audit programme",
@@ -2520,14 +2915,17 @@ function RecordForm({
   onClose: () => void;
   onSave: (record: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => void;
 }) {
-  const spec = formSpecs[area];
+  const spec = formSpecs[area] ?? formSpecs.ehw;
+  if (!spec) return null;
   const [type, setType] = useState(spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const field = (key: string) => values[key] ?? "";
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const missing = spec.fields.find((item) => item.required && !field(item.key).trim());
+    const missing = spec.fields.find(
+      (item) => item.required && item.key !== "controlledNumber" && !field(item.key).trim(),
+    );
     if (missing) return setError(`${missing.label} is required.`);
     const invalid = spec.fields.find(
       (item) =>
@@ -2551,6 +2949,10 @@ function RecordForm({
   return (
     <Modal title={`Create ${type}`} onClose={onClose} wide>
       <form onSubmit={submit} className="space-y-5">
+        <p className="rounded-lg border border-border bg-panel px-3 py-2 text-xs text-muted-foreground">
+          The portal generates an HLPL document number on save when you leave the controlled number
+          blank.
+        </p>
         <SelectField label="Record type" value={type} options={spec.types} onChange={setType} />
         <div className="grid gap-4 md:grid-cols-2">
           {spec.fields.map((item) =>
@@ -3675,6 +4077,80 @@ function SharedIndex({
     </div>
   );
 }
+function PMSSWorkspace({
+  portal,
+  onBack,
+  onUpdate,
+  onLog,
+}: {
+  portal: PortalState;
+  onBack: () => void;
+  onUpdate: (patch: Record<string, string>) => void;
+  onLog: (action: string, detail: string) => void;
+}) {
+  const config = portal.setup.configuration;
+  const [amendment, setAmendment] = useState(config["pmssStatus"] === "Under Amendment");
+  const fields = [
+    ["Nominal voltage", config["pmssVoltage"] ?? "12V / 24V"],
+    ["Operating temperature", config["pmssTemperature"] ?? "-40°C to +85°C"],
+    ["Enclosure rating", config["pmssIp"] ?? "IP67 / IP68"],
+    ["Compliance flags", config["pmssCompliance"] ?? "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS"],
+  ];
+  const trigger = () => {
+    setAmendment(true);
+    onUpdate({
+      pmssStatus: "Under Amendment",
+      pmssGate: "Lifecycle gates held pending human scope review",
+    });
+    onLog(
+      "PMSS scope-change trigger",
+      "Loop 1 triggered: PMSS marked Under Amendment; subsequent phase gates are held.",
+    );
+  };
+  return (
+    <>
+      <button
+        onClick={onBack}
+        className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-steel"
+      >
+        <ArrowLeft className="size-4" />
+        Back to workspace
+      </button>
+      <PageHeader
+        eyebrow="Project master spec sheet · SSOT"
+        title="PMSS control"
+        description="The shared project baseline for engineering, compliance and lifecycle gate decisions."
+        actions={<Action onClick={trigger} label="Trigger scope change" primary />}
+      />
+      <section className="surface-card border border-border bg-card p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase text-muted-foreground">PMSS status</p>
+            <p className="mt-1 font-semibold">
+              {amendment ? "Under Amendment" : "Controlled baseline"}
+            </p>
+          </div>
+          <Status status={amendment ? "In review" : "Approved"} />
+        </div>
+        <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+          {fields.map(([label, value]) => (
+            <div key={label} className="rounded-lg border border-border bg-panel p-4">
+              <dt className="font-mono text-[10px] uppercase tracking-[.08em] text-muted-foreground">
+                {label}
+              </dt>
+              <dd className="mt-2 text-sm font-semibold">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-5 text-sm text-muted-foreground">
+          Loop 1 controls customer scope amendments. A human review is required before any lifecycle
+          gate can advance after the PMSS is marked Under Amendment.
+        </p>
+      </section>
+    </>
+  );
+}
+
 function IndexWorkspace({
   records,
   documents,
@@ -3861,9 +4337,12 @@ function DocumentsPanel({
     <Modal title="Controlled document repository" onClose={onClose} wide>
       <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-moss/25 bg-accent px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-accent-foreground">Lovable Cloud storage active</p>
+          <p className="text-sm font-semibold text-accent-foreground">
+            Lovable Cloud storage active
+          </p>
           <p className="mt-1 text-xs text-accent-foreground/80">
-            Private, department-authorized files use signed access. Google Drive is optional and not connected.
+            Private, department-authorized files use signed access. Google Drive is optional and not
+            connected.
           </p>
         </div>
         <span className="rounded-md border border-moss/25 bg-card px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-moss">
@@ -3872,7 +4351,9 @@ function DocumentsPanel({
       </section>
       <section className="mb-5 overflow-hidden rounded-lg border border-border bg-panel">
         <div className="border-b border-border px-4 py-3">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Canonical repository path</p>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
+            Canonical repository path
+          </p>
           <p className="mt-1 font-mono text-xs text-foreground">{automotiveRepositoryRoot}</p>
         </div>
         <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
@@ -3885,8 +4366,12 @@ function DocumentsPanel({
           ))}
         </div>
         <div className="border-t border-border px-4 py-3">
-          <p className="font-mono text-[10px] text-steel">02_Product_Platforms/Automotive_Devices</p>
-          <p className="mt-1 text-xs text-muted-foreground">DEMO platform only · IATF is a record-control goal, not a certification claim.</p>
+          <p className="font-mono text-[10px] text-steel">
+            02_Product_Platforms/Automotive_Devices
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            DEMO platform only · IATF is a record-control goal, not a certification claim.
+          </p>
         </div>
       </section>
       <div className="grid gap-3 md:grid-cols-3">
@@ -3925,16 +4410,18 @@ function DocumentsPanel({
               className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-4 last:border-0"
             >
               <button onClick={() => onSelectDocument(document)} className="min-w-0 text-left">
-              <span>
-                <strong className="block">{document.title}</strong>
-                <small className="mt-1 block text-muted-foreground">
-                  {document.group ?? "Unclassified"} · {document.device ?? "No device"} ·{" "}
-                  {document.part ?? "No part"} · Rev {document.revision ?? "—"}
-                </small>
-                <small className="mt-1 block font-mono text-[10px] uppercase tracking-[.06em] text-steel">
-                  {document.cloudDocumentId ? "Private files enabled" : "Link to organization to enable files"}
-                </small>
-              </span>
+                <span>
+                  <strong className="block">{document.title}</strong>
+                  <small className="mt-1 block text-muted-foreground">
+                    {document.group ?? "Unclassified"} · {document.device ?? "No device"} ·{" "}
+                    {document.part ?? "No part"} · Rev {document.revision ?? "—"}
+                  </small>
+                  <small className="mt-1 block font-mono text-[10px] uppercase tracking-[.06em] text-steel">
+                    {document.cloudDocumentId
+                      ? "Private files enabled"
+                      : "Link to organization to enable files"}
+                  </small>
+                </span>
               </button>
               <div className="flex flex-col items-end gap-2">
                 <Status status={automotiveDocumentStatus(document.lifecycle)} />
@@ -3958,11 +4445,16 @@ function DocumentsPanel({
       <section className="mt-5 overflow-hidden rounded-lg border border-border bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-semibold">Platform phase mapping</p>
-          <p className="mt-1 text-xs text-muted-foreground">Path template for Automotive_Devices · DEMO only</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Path template for Automotive_Devices · DEMO only
+          </p>
         </div>
         <div className="divide-y divide-border">
           {automotivePhases.map(([phaseName, codes, artifacts]) => (
-            <div key={phaseName} className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(15rem,1fr)] sm:items-center sm:gap-3">
+            <div
+              key={phaseName}
+              className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(15rem,1fr)] sm:items-center sm:gap-3"
+            >
               <span className="font-mono text-xs text-foreground">{phaseName}</span>
               <span className="font-mono text-xs text-steel">{codes}</span>
               <span className="text-xs leading-5 text-muted-foreground">{artifacts}</span>
@@ -4020,7 +4512,9 @@ function DocumentDetail({
       })
       .catch(() => {
         setFileState("error");
-        setFileMessage("Secure file history is available after this document is linked to your signed-in organization.");
+        setFileMessage(
+          "Secure file history is available after this document is linked to your signed-in organization.",
+        );
       });
   }, [allowed, document.cloudDocumentId, listFiles]);
   const sha256 = async (file: File) => {
@@ -4070,22 +4564,32 @@ function DocumentDetail({
       setFiles(refreshed);
       const next = {
         ...document,
-        history: [`${now()} · Private Lovable Cloud file ${file.name} registered`, ...(document.history ?? [])],
+        history: [
+          `${now()} · Private Lovable Cloud file ${file.name} registered`,
+          ...(document.history ?? []),
+        ],
       };
-      onDocumentUpdated(next, `${document.title} · ${file.name} registered in private Cloud storage`);
+      onDocumentUpdated(
+        next,
+        `${document.title} · ${file.name} registered in private Cloud storage`,
+      );
       setFileState("idle");
       setFileInputKey((value) => value + 1);
     } catch (error) {
       setFileState("error");
       setUploadProgress(0);
-      setFileMessage(error instanceof Error ? error.message : "Secure upload could not be completed.");
+      setFileMessage(
+        error instanceof Error ? error.message : "Secure upload could not be completed.",
+      );
     }
   };
   const download = async (file: ControlledFile) => {
     try {
       const result = await getDownload({ data: { fileId: file.id } });
       window.open(result.url, "_blank", "noopener,noreferrer");
-      setFileMessage(`Secure download opened; access expires in ${result.expiresInSeconds} seconds.`);
+      setFileMessage(
+        `Secure download opened; access expires in ${result.expiresInSeconds} seconds.`,
+      );
     } catch (error) {
       setFileState("error");
       setFileMessage(error instanceof Error ? error.message : "Secure download is unavailable.");
@@ -4109,8 +4613,11 @@ function DocumentDetail({
             />
             <DocumentField label="Phase" value={document.phase ?? "Not set"} />
             <DocumentField label="Status" value={document.lifecycle ?? "Draft"} />
-             <DocumentField label="Effective date" value={document.effectiveDate ?? "Not set"} />
-             <DocumentField label="Approver" value={document.approver ?? "Human approval required"} />
+            <DocumentField label="Effective date" value={document.effectiveDate ?? "Not set"} />
+            <DocumentField
+              label="Approver"
+              value={document.approver ?? "Human approval required"}
+            />
             <DocumentField label="Classification" value={document.classification ?? "Internal"} />
             <DocumentField
               label="Access"
@@ -4144,7 +4651,8 @@ function DocumentDetail({
                     />
                   </label>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
+                    Private, department-authorized storage · maximum 25 MB · duplicate revisions are
+                    safely detected.
                   </p>
                   {fileState === "uploading" && (
                     <div className="mt-3" aria-live="polite">
@@ -4154,24 +4662,34 @@ function DocumentDetail({
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">Secure upload {uploadProgress}%</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Secure upload {uploadProgress}%
+                      </p>
                     </div>
                   )}
                   {fileMessage && (
-                    <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-muted-foreground"}`}>
+                    <p
+                      className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-muted-foreground"}`}
+                    >
                       {fileMessage}
                     </p>
                   )}
                   <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-card">
                     {fileState === "loading" ? (
-                      <p className="p-4 text-sm text-muted-foreground">Loading secure file history…</p>
+                      <p className="p-4 text-sm text-muted-foreground">
+                        Loading secure file history…
+                      </p>
                     ) : files.length ? (
                       files.map((file) => (
-                        <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                        <div
+                          key={file.id}
+                          className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                        >
                           <div>
                             <p className="text-sm font-semibold">{file.original_name}</p>
                             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                              Rev {file.revision} · {Math.ceil(file.size_bytes / 1024)} KB · {file.uploaded_at}
+                              Rev {file.revision} · {Math.ceil(file.size_bytes / 1024)} KB ·{" "}
+                              {file.uploaded_at}
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">{file.audit_note}</p>
                           </div>
@@ -4179,7 +4697,9 @@ function DocumentDetail({
                         </div>
                       ))
                     ) : (
-                      <p className="p-4 text-sm text-muted-foreground">No private file revisions have been uploaded.</p>
+                      <p className="p-4 text-sm text-muted-foreground">
+                        No private file revisions have been uploaded.
+                      </p>
                     )}
                   </div>
                 </>
@@ -4193,25 +4713,33 @@ function DocumentDetail({
                       type="file"
                       onChange={() => {
                         setFileState("error");
-                        setFileMessage("This browser-local document must first be linked to an authenticated organization record. No file was uploaded.");
+                        setFileMessage(
+                          "This browser-local document must first be linked to an authenticated organization record. No file was uploaded.",
+                        );
                         setFileInputKey((value) => value + 1);
                       }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Lovable Cloud storage is active. This browser-local document link is preserved; link it to an organization-controlled document record to enable private upload, revision history and signed retrieval.
+                    Lovable Cloud storage is active. This browser-local document link is preserved;
+                    link it to an organization-controlled document record to enable private upload,
+                    revision history and signed retrieval.
                   </p>
                   {fileMessage && <p className="mt-3 text-sm text-danger">{fileMessage}</p>}
                 </>
               )}
             </div>
           </section>
-           <section className="mt-6 border-t border-border pt-5">
-             <p className="font-semibold">Document history</p>
-             <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-               {document.history?.length ? document.history.map((event) => <p key={event}>{event}</p>) : <p>No controlled history has been recorded.</p>}
-             </div>
-           </section>
+          <section className="mt-6 border-t border-border pt-5">
+            <p className="font-semibold">Document history</p>
+            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+              {document.history?.length ? (
+                document.history.map((event) => <p key={event}>{event}</p>)
+              ) : (
+                <p>No controlled history has been recorded.</p>
+              )}
+            </div>
+          </section>
           <section className="mt-6 border-t border-border pt-5">
             <p className="font-semibold">Access-controlled references</p>
             <div className="mt-3 space-y-2">
