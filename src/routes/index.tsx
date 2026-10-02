@@ -1184,11 +1184,16 @@ function Portal() {
       input.departmentId ??
       departmentContext ??
       findAreaDepartment(portal.departments, input.area)?.id;
+    const department = portal.departments.find((item) => item.id === departmentId);
+    const projectId = input.fields["projectId"] || input.fields["product"] || "GEN";
+    const departmentCode = department?.code.replace(/^DEMO-/, "") || prefix;
+    const docType = input.type.toUpperCase().replace(/[^A-Z0-9]+/g, "-").slice(0, 12) || "REC";
+    const generatedNumber = `HLPL-${projectId.replace(/[^A-Z0-9]/gi, "").slice(0, 12) || "GEN"}-${departmentCode}-${docType}-${String(count).padStart(2, "0")}`;
     const record: RecordItem = {
       ...input,
       departmentId,
       id: createId(),
-      reference: input.fields["controlledNumber"] ?? `${prefix}-${String(count).padStart(4, "0")}`,
+      reference: input.fields["controlledNumber"] || generatedNumber,
       createdAt: now(),
       updatedAt: now(),
     };
@@ -2253,41 +2258,33 @@ function DepartmentWorkspace({
 }
 
 function departmentFlow(area: AreaId, records: RecordItem[]) {
-  const labels: Record<Exclude<AreaId, "home" | "audit">, string[]> = {
-    rnd: ["Requirements", "Design", "Prototype", "Verification", "Release"],
-    stores: ["Request", "RFQ", "Purchase order", "Receiving", "Kitting"],
-    production: ["Plan", "Kitting", "Assembly", "Test", "Dispatch"],
-    quality: ["Inspection", "NCR", "CAPA", "Quality release"],
-    sales: ["Enquiry", "Requirement", "Review", "Handover", "Client update"],
-    people: ["Need", "Training", "Access", "Evidence", "Review"],
+  const labels: Partial<Record<AreaId, string[]>> = {
+    sales: ["Lead intake", "mNDA", "Quotation", "Contract review"],
+    ehw: ["HW_01–04", "PRS", "Schematic", "BOM & layout", "Gerber gate"],
+    esw: ["G0–G2", "G3–G5", "G6–G8", "G9–G11", "HSI & CI/CD"],
+    mech: ["Concept", "STEP clearance", "2D drawing", "Tooling", "Release"],
+    pur: ["Request", "RFQ", "ASL/ACML", "PPAP", "Receiving"],
+    qa: ["APQP", "DVP&R", "IQC/IPQC/FQC", "8D CAPA", "Quality release"],
+    emf: ["PFD", "PFMEA", "Control plan", "Line startup", "Dispatch"],
+    tst: ["Pre-flash", "Parametric", "CAN loopback", "Production flash", "FPY & QR"],
+    fin: ["PO & GRN", "Billing", "Receivables", "Tax close"],
+    sit: ["Telemetry", "Backup", "Support", "ISMS"],
+    hrops: ["Skill matrix", "TNI", "License calendar", "DMAIC"],
+    rnd: ["HW_01–04", "PRS", "Schematic", "BOM & layout", "Gerber gate"],
+    stores: ["Request", "RFQ", "ASL/ACML", "PPAP", "Receiving"],
+    production: ["PFD", "PFMEA", "Control plan", "Line startup", "Dispatch"],
+    quality: ["APQP", "DVP&R", "IQC/IPQC/FQC", "8D CAPA", "Quality release"],
+    people: ["Skill matrix", "TNI", "License calendar", "DMAIC"],
   };
-  const stages = area === "home" || area === "audit" ? [] : labels[area];
+  const stages = labels[area] ?? [];
   return stages.map((label) => {
-    const stageRecords = records.filter((record) =>
-      `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
-        .toLowerCase()
-        .includes(label.toLowerCase()),
-    );
-    const complete = stageRecords.filter((record) =>
-      ["Approved", "Released"].includes(record.status),
-    ).length;
+    const stageRecords = records.filter((record) => `${record.type} ${record.fields["lifecycleStage"] ?? ""}`.toLowerCase().includes(label.toLowerCase()));
+    const complete = stageRecords.filter((record) => ["Approved", "Released"].includes(record.status)).length;
     const blocked = stageRecords.filter((record) => Boolean(record.fields["blocker"])).length;
-    const inProgress = stageRecords.filter(
-      (record) => !record.fields["blocker"] && ["Open", "In review"].includes(record.status),
-    ).length;
+    const inProgress = stageRecords.filter((record) => !record.fields["blocker"] && ["Open", "In review"].includes(record.status)).length;
     const upcoming = stageRecords.filter((record) => record.status === "Draft").length;
-    const latestUpdate = stageRecords
-      .map((record) => record.updatedAt)
-      .sort((a, b) => b.localeCompare(a))[0];
-    return {
-      label,
-      total: stageRecords.length,
-      complete,
-      blocked,
-      inProgress,
-      upcoming,
-      latestUpdate,
-    };
+    const latestUpdate = stageRecords.map((record) => record.updatedAt).sort((a, b) => b.localeCompare(a))[0];
+    return { label, total: stageRecords.length, complete, blocked, inProgress, upcoming, latestUpdate };
   });
 }
 
@@ -2488,7 +2485,7 @@ function RecordDetail({
   );
 }
 
-const formSpecs: Record<
+const formSpecs: Partial<Record<
   AreaId,
   {
     types: string[];
@@ -2599,6 +2596,16 @@ const formSpecs: Record<
       { key: "dueDate", label: "Due date", kind: "date" },
     ],
   },
+  ehw: { types: ["PRS", "Hardware tracker", "Schematic", "BOM", "Gerber release"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "hwStage", label: "HW stage", required: true, kind: "select", options: Array.from({ length: 37 }, (_, index) => `HW_${String(index + 1).padStart(2, "0")}`) }, { key: "projectId", label: "Project ID", master: "products" }, { key: "location", label: "Location", required: true, master: "locations" }] },
+  esw: { types: ["Software gate", "HSI register", "CI/CD telemetry", "Firmware release"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "gate", label: "SDLC gate", required: true, kind: "select", options: Array.from({ length: 12 }, (_, index) => `G${index}`) }, { key: "projectId", label: "Project ID", master: "products" }] },
+  mech: { types: ["STEP clearance", "2D drawing", "Mold tooling", "Mechanical release"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "projectId", label: "Project ID", master: "products" }, { key: "location", label: "Location", required: true, master: "locations" }] },
+  pur: { types: ["Rapid prototype request", "Mass production request", "ASL/ACML", "F-PUR-10", "F-PUR-16", "PPAP Level 3"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "procurementTrack", label: "Procurement track", required: true, kind: "select", options: ["Rapid prototype", "Mass production"] }, { key: "supplier", label: "Supplier", master: "suppliers" }] },
+  qa: { types: ["APQP gate", "DVP&R", "IQC", "IPQC", "FQC", "8D CAPA"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "qualityStage", label: "Quality stage", required: true, kind: "select", options: ["APQP", "DVP&R", "IQC", "IPQC", "FQC", "8D"] }] },
+  emf: { types: ["Line startup checklist", "PFD", "PFMEA", "Control plan"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "location", label: "Location", required: true, master: "locations" }] },
+  tst: { types: ["EOL test run", "Test jig", "QR label batch", "FPY review"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "serialRange", label: "Serial range" }, { key: "fpy", label: "First-pass yield %" }] },
+  fin: { types: ["Commercial billing", "PO & GRN validation", "Receivables review", "Tax close"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "ageingDays", label: "Ageing days" }] },
+  sit: { types: ["Server telemetry", "Backup review", "IT support ticket", "ISMS control"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "service", label: "Service / asset" }] },
+  hrops: { types: ["Skill matrix", "Training need", "License alert", "DMAIC tollgate"], fields: [{ key: "controlledNumber", label: "Controlled number", required: true }, { key: "title", label: "Title", required: true }, { key: "owner", label: "Owner", master: "people" }] },
   audit: {
     types: [
       "Audit programme",
@@ -2659,7 +2666,8 @@ function RecordForm({
   onClose: () => void;
   onSave: (record: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => void;
 }) {
-  const spec = formSpecs[area];
+  const spec = formSpecs[area] ?? formSpecs.ehw;
+  if (!spec) return null;
   const [type, setType] = useState(spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
@@ -3814,6 +3822,29 @@ function SharedIndex({
     </div>
   );
 }
+function PMSSWorkspace({ portal, onBack, onUpdate, onLog }: { portal: PortalState; onBack: () => void; onUpdate: (patch: Record<string, string>) => void; onLog: (action: string, detail: string) => void }) {
+  const config = portal.setup.configuration;
+  const [amendment, setAmendment] = useState(config["pmssStatus"] === "Under Amendment");
+  const fields = [
+    ["Nominal voltage", config["pmssVoltage"] ?? "12V / 24V"], ["Operating temperature", config["pmssTemperature"] ?? "-40°C to +85°C"],
+    ["Enclosure rating", config["pmssIp"] ?? "IP67 / IP68"], ["Compliance flags", config["pmssCompliance"] ?? "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS"],
+  ];
+  const trigger = () => {
+    setAmendment(true);
+    onUpdate({ pmssStatus: "Under Amendment", pmssGate: "Lifecycle gates held pending human scope review" });
+    onLog("PMSS scope-change trigger", "Loop 1 triggered: PMSS marked Under Amendment; subsequent phase gates are held.");
+  };
+  return <>
+    <button onClick={onBack} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-steel"><ArrowLeft className="size-4" />Back to workspace</button>
+    <PageHeader eyebrow="Project master spec sheet · SSOT" title="PMSS control" description="The shared project baseline for engineering, compliance and lifecycle gate decisions." actions={<Action onClick={trigger} label="Trigger scope change" primary />} />
+    <section className="surface-card border border-border bg-card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"><div><p className="font-mono text-[10px] uppercase text-muted-foreground">PMSS status</p><p className="mt-1 font-semibold">{amendment ? "Under Amendment" : "Controlled baseline"}</p></div><Status status={amendment ? "In review" : "Approved"} /></div>
+      <dl className="mt-5 grid gap-4 sm:grid-cols-2">{fields.map(([label, value]) => <div key={label} className="rounded-lg border border-border bg-panel p-4"><dt className="font-mono text-[10px] uppercase tracking-[.08em] text-muted-foreground">{label}</dt><dd className="mt-2 text-sm font-semibold">{value}</dd></div>)}</dl>
+      <p className="mt-5 text-sm text-muted-foreground">Loop 1 controls customer scope amendments. A human review is required before any lifecycle gate can advance after the PMSS is marked Under Amendment.</p>
+    </section>
+  </>;
+}
+
 function IndexWorkspace({
   records,
   documents,
