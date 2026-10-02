@@ -375,7 +375,7 @@ const mergeAutomotiveDemoDocuments = (documents: ControlledDocument[]) => {
       title: "DEMO · Automotive hardware repository path template",
       url: "",
       type: "Repository path template",
-      departmentId: "demo-dept-rnd",
+      departmentId: "demo-dept-ehw",
       group: "02_Product_Platforms/Automotive_Devices",
       device: "Automotive_Devices · DEMO platform only",
       part: "DEMO-AIS140-OBD-01",
@@ -589,7 +589,7 @@ const demoPortal = (): PortalState => {
   ): RecordItem => ({
     id,
     area,
-    departmentId: `demo-dept-${area === "stores" ? "stores" : area}`,
+    departmentId: `demo-dept-${area}`,
     type,
     title: `DEMO · ${title}`,
     status,
@@ -646,7 +646,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-001",
-      "rnd",
+      "ehw",
       "Project",
       lifecycle,
       "In review",
@@ -671,7 +671,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-002",
-      "rnd",
+      "ehw",
       "Requirements",
       "Requirements baseline",
       "Approved",
@@ -685,7 +685,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-003",
-      "rnd",
+      "ehw",
       "BOM",
       "Prototype BOM",
       "In review",
@@ -699,7 +699,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-004",
-      "rnd",
+      "ehw",
       "Engineering change",
       "Enclosure sealing change",
       "Open",
@@ -710,7 +710,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-RND-005",
-      "rnd",
+      "ehw",
       "Prototype",
       "Tracker prototype build",
       "Approved",
@@ -724,7 +724,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PUR-001",
-      "stores",
+      "pur",
       "RFQ",
       "Fictional GNSS/LTE module RFQ",
       "Approved",
@@ -735,7 +735,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PUR-002",
-      "stores",
+      "pur",
       "Purchase order",
       "Fictional prototype material PO",
       "Approved",
@@ -746,7 +746,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PUR-003",
-      "stores",
+      "pur",
       "Receiving",
       "Prototype material receipt",
       "Released",
@@ -757,7 +757,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PUR-004",
-      "stores",
+      "pur",
       "Material issue / kitting",
       "Prototype kit issued",
       "Released",
@@ -768,7 +768,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PRO-001",
-      "production",
+      "emf",
       "Production order",
       "Prototype tracker assembly",
       "Open",
@@ -783,7 +783,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PRO-002",
-      "production",
+      "emf",
       "Serial-numbered units",
       "Two illustrative tracker units",
       "In review",
@@ -798,7 +798,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PRO-003",
-      "production",
+      "tst",
       "Production test",
       "End-of-line functional test",
       "In review",
@@ -812,7 +812,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-PRO-004",
-      "production",
+      "emf",
       "Dispatch",
       "Demo dispatch / handover hold",
       "Draft",
@@ -823,7 +823,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-QLT-001",
-      "quality",
+      "qa",
       "Inspection",
       "Prototype functional inspection",
       "In review",
@@ -834,7 +834,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-QLT-002",
-      "quality",
+      "qa",
       "NCR",
       "Illustrative enclosure sealing NCR",
       "Open",
@@ -845,7 +845,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-QLT-003",
-      "quality",
+      "qa",
       "CAPA",
       "Illustrative sealing CAPA",
       "Open",
@@ -856,7 +856,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-QLT-004",
-      "quality",
+      "qa",
       "Quality release",
       "Human quality release for prototype",
       "In review",
@@ -928,7 +928,7 @@ const demoPortal = (): PortalState => {
   records.push(
     make(
       "DEMO-TASK-001",
-      "rnd",
+      "ehw",
       "Task",
       "Validate tracker prototype evidence",
       "Open",
@@ -945,7 +945,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "DEMO-TASK-002",
-      "quality",
+      "qa",
       "Task",
       "Review human quality release inputs",
       "Open",
@@ -1050,7 +1050,7 @@ const demoPortal = (): PortalState => {
         title: "DEMO-AIS140-OBD-01 datasheet / specification summary · NOT VALIDATED",
         url: "",
         type: "DEMO controlled datasheet",
-        departmentId: "demo-dept-rnd",
+        departmentId: "demo-dept-ehw",
         group: "Product/Device Audit Packs",
         device: "DEMO-AIS140-OBD-01",
         part: "DEMO-PART-GNSS-LTE-01 · fictional",
