@@ -1656,63 +1656,6 @@ function CommandCenter({
     ? records.filter((record) => record.departmentId === departmentContext)
     : records;
   const pending = portal.approvals.filter((item) => item.outcome === "Pending").length;
-  records.push(
-    make(
-      "DEMO-ESW-001",
-      "esw",
-      "HSI register",
-      "HSI interface register",
-      "Draft",
-      "Normal",
-      "G0–G2",
-      ["DEMO-RND-001"],
-      { gate: "G0", hsi: "HLPL-DEMO-ESW-HSI-01 · NOT VALIDATED" },
-    ),
-    make(
-      "DEMO-MECH-001",
-      "mech",
-      "STEP clearance",
-      "Enclosure clearance check",
-      "Open",
-      "Normal",
-      "STEP clearance",
-      ["DEMO-RND-001"],
-      { drawing: "HLPL-DEMO-MECH-DRW-01 · NOT VALIDATED" },
-    ),
-    make(
-      "DEMO-TST-001",
-      "tst",
-      "EOL test run",
-      "Illustrative EOL test jig run",
-      "Draft",
-      "High",
-      "Pre-flash",
-      ["DEMO-PRO-002"],
-      { fpy: "Not calculated · DEMO ONLY", qr: "No production label generated" },
-    ),
-    make(
-      "DEMO-FIN-001",
-      "fin",
-      "PO & GRN validation",
-      "Illustrative PO / GRN check",
-      "Draft",
-      "Normal",
-      "PO & GRN",
-      ["DEMO-PUR-002", "DEMO-PUR-003"],
-      { financeStatus: "DEMO ONLY · no payment or billing" },
-    ),
-    make(
-      "DEMO-SIT-001",
-      "sit",
-      "Server telemetry",
-      "Illustrative portal telemetry review",
-      "Open",
-      "Normal",
-      "Telemetry",
-      [],
-      { isms: "DEMO ONLY · no live infrastructure monitored" },
-    ),
-  );
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = nextWorkingDay(today);
   const taskRecords = visible.filter((record) => record.type === "Task");
@@ -2305,63 +2248,6 @@ function DepartmentWorkspace({
   onAdmin: () => void;
   onOpenStage: (stage: string) => void;
 }) {
-  records.push(
-    make(
-      "DEMO-ESW-001",
-      "esw",
-      "HSI register",
-      "HSI interface register",
-      "Draft",
-      "Normal",
-      "G0–G2",
-      ["DEMO-RND-001"],
-      { gate: "G0", hsi: "HLPL-DEMO-ESW-HSI-01 · NOT VALIDATED" },
-    ),
-    make(
-      "DEMO-MECH-001",
-      "mech",
-      "STEP clearance",
-      "Enclosure clearance check",
-      "Open",
-      "Normal",
-      "STEP clearance",
-      ["DEMO-RND-001"],
-      { drawing: "HLPL-DEMO-MECH-DRW-01 · NOT VALIDATED" },
-    ),
-    make(
-      "DEMO-TST-001",
-      "tst",
-      "EOL test run",
-      "Illustrative EOL test jig run",
-      "Draft",
-      "High",
-      "Pre-flash",
-      ["DEMO-PRO-002"],
-      { fpy: "Not calculated · DEMO ONLY", qr: "No production label generated" },
-    ),
-    make(
-      "DEMO-FIN-001",
-      "fin",
-      "PO & GRN validation",
-      "Illustrative PO / GRN check",
-      "Draft",
-      "Normal",
-      "PO & GRN",
-      ["DEMO-PUR-002", "DEMO-PUR-003"],
-      { financeStatus: "DEMO ONLY · no payment or billing" },
-    ),
-    make(
-      "DEMO-SIT-001",
-      "sit",
-      "Server telemetry",
-      "Illustrative portal telemetry review",
-      "Open",
-      "Normal",
-      "Telemetry",
-      [],
-      { isms: "DEMO ONLY · no live infrastructure monitored" },
-    ),
-  );
   const today = new Date().toISOString().slice(0, 10);
   const open = records.filter((record) => record.status === "Draft" || record.status === "Open");
   const blocked = records.filter((record) => record.fields["blocker"]);
