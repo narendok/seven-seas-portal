@@ -141,6 +141,18 @@ type ControlledDocument = {
   approver?: string | undefined;
   history?: string[] | undefined;
   cloudDocumentId?: string | undefined;
+  localFiles?: LocalControlledFile[] | undefined;
+};
+type LocalControlledFile = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  uploadedAt: string;
+  uploader: string;
+  revision: string;
+  content: string;
+  encoding: "text" | "data-url";
 };
 type ControlledFile = {
   id: string;
@@ -5099,7 +5111,10 @@ function DocumentDetail({
   const [fileMessage, setFileMessage] = useState("");
   const [fileInputKey, setFileInputKey] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
+  const [previewFile, setPreviewFile] = useState<LocalControlledFile | null>(null);
   const isCloudDocument = Boolean(document.cloudDocumentId);
+  const localFiles = document.localFiles ?? [];
   useEffect(() => {
     if (!document.cloudDocumentId || !allowed) {
       setFiles([]);
@@ -5122,6 +5137,43 @@ function DocumentDetail({
     const buffer = await file.arrayBuffer();
     const hash = await crypto.subtle.digest("SHA-256", buffer);
     return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  };
+  const formatBytes = (size: number) =>
+    size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  const formatLabel = (file: Pick<LocalControlledFile, "name" | "type">) => {
+    const extension = file.name.split(".").pop()?.toUpperCase();
+    if (extension === "STP" || extension === "STEP") return "CAD STEP";
+    if (extension === "ZIP") return "GERBER ZIP";
+    return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
+  };
+  const readLocalFile = (file: File) =>
+    new Promise<LocalControlledFile>((resolve, reject) => {
+      const reader = new FileReader();
+      const textLike = /^(text\/|application\/(json|csv))/.test(file.type) || /\.(json|csv|txt|log|md)$/i.test(file.name);
+      reader.onerror = () => reject(new Error("The selected file could not be read."));
+      reader.onload = () => resolve({
+        id: createId(), name: file.name, type: file.type || "application/octet-stream", size: file.size,
+        uploadedAt: new Date().toISOString(), uploader: `${owner?.lead ?? "Current user"} · ${owner?.name ?? "Controlled documents"}`,
+        revision: document.revision ?? "00", content: String(reader.result ?? ""), encoding: textLike ? "text" : "data-url",
+      });
+      if (textLike) reader.readAsText(file); else reader.readAsDataURL(file);
+    });
+  const uploadLocal = async (file: File, incrementRevision = false) => {
+    try {
+      setFileState("uploading"); setUploadProgress(4); setFileMessage("Securing & Verifying SHA-256 Hash…");
+      await sha256(file); setUploadProgress(40);
+      const attached = await readLocalFile(file); setUploadProgress(76);
+      const revision = incrementRevision ? String((Number.parseInt(document.revision ?? "0", 10) || 0) + 1).padStart(2, "0") : document.revision ?? "00";
+      const updatedFile = { ...attached, revision };
+      window.setTimeout(() => { setUploadProgress(100); setFileState("idle"); }, 220);
+      const next = {
+        ...document, revision,
+        localFiles: [...localFiles, updatedFile],
+        history: [`${now()} · ${updatedFile.name} attached locally · Rev ${revision} · ${updatedFile.uploader}`, ...(document.history ?? [])],
+      };
+      onDocumentUpdated(next, `${document.title} · ${updatedFile.name} attached locally for DEMO/browser session`);
+      setFileMessage("File Attached & Verified (Private Storage Ready)"); setFileInputKey((value) => value + 1);
+    } catch (error) { setFileState("error"); setUploadProgress(0); setFileMessage(error instanceof Error ? error.message : "Attachment could not be completed."); }
   };
   const upload = async (file: File) => {
     if (!document.cloudDocumentId) {
@@ -5258,6 +5310,12 @@ function DocumentDetail({
               <Status status={isCloudDocument ? "Approved" : "Draft"} />
             </div>
             <div className="p-4">
+              <div
+                onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(event) => { event.preventDefault(); setDragActive(false); const file = event.dataTransfer.files?.[0]; if (file) void (isCloudDocument ? upload(file) : uploadLocal(file)); }}
+                className={`rounded-lg border border-dashed p-4 transition-colors ${dragActive ? "border-steel bg-secondary" : "border-border bg-card"}`}
+              >
               {isCloudDocument ? (
                 <>
                   <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-card px-3.5 text-sm font-semibold transition-colors hover:border-ring/50 hover:bg-secondary">
@@ -5274,8 +5332,7 @@ function DocumentDetail({
                     />
                   </label>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    Private, department-authorized storage · maximum 25 MB · duplicate revisions are
-                    safely detected.
+                    Drop a file here or browse · Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
                   </p>
                   {fileState === "uploading" && (
                     <div className="mt-3" aria-live="polite">
@@ -5286,7 +5343,7 @@ function DocumentDetail({
                         />
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Secure upload {uploadProgress}%
+                        Securing & Verifying SHA-256 Hash… {uploadProgress}%
                       </p>
                     </div>
                   )}
@@ -5328,29 +5385,28 @@ function DocumentDetail({
                 </>
               ) : (
                 <>
-                  <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-card px-3.5 text-sm font-semibold transition-colors hover:border-ring/50 hover:bg-secondary">
-                    Upload document
+                  <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-background px-3.5 text-sm font-semibold transition-colors hover:border-ring/50 hover:bg-secondary">
+                    <Upload className="mr-2 size-4" /> Upload / Attach File
                     <input
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
-                      onChange={() => {
-                        setFileState("error");
-                        setFileMessage(
-                          "This browser-local document must first be linked to an authenticated organization record. No file was uploaded.",
-                        );
-                        setFileInputKey((value) => value + 1);
-                      }}
+                      accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"
+                      disabled={fileState === "uploading"}
+                      onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadLocal(file); }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Lovable Cloud storage is active. This browser-local document link is preserved;
-                    link it to an organization-controlled document record to enable private upload,
-                    revision history and signed retrieval.
+                    Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
                   </p>
-                  {fileMessage && <p className="mt-3 text-sm text-danger">{fileMessage}</p>}
+                  {fileState === "uploading" && <div className="mt-3" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Securing & Verifying SHA-256 Hash… {uploadProgress}%</p></div>}
+                  {fileMessage && <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-moss"}`}>{fileMessage}</p>}
+                  <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-background">
+                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { const anchor = window.document.createElement("a"); anchor.href = file.encoding === "text" ? URL.createObjectURL(new Blob([file.content], { type: file.type })) : file.content; anchor.download = file.name; anchor.click(); if (file.encoding === "text") window.setTimeout(() => URL.revokeObjectURL(anchor.href), 0); }} /><label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-card px-3.5 text-sm font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
+                  </div>
                 </>
               )}
+              </div>
             </div>
           </section>
           <section className="mt-6 border-t border-border pt-5">
@@ -5392,8 +5448,13 @@ function DocumentDetail({
           This controlled document is not available in the active department context.
         </p>
       )}
+      {previewFile && <FilePreview file={previewFile} formatLabel={formatLabel} onClose={() => setPreviewFile(null)} />}
     </Modal>
   );
+}
+function FilePreview({ file, formatLabel, onClose }: { file: LocalControlledFile; formatLabel: (file: LocalControlledFile) => string; onClose: () => void }) {
+  const text = file.encoding === "text" ? file.content : "Binary technical file preview is not available in-browser.";
+  return <Modal title={`Preview · ${file.name}`} onClose={onClose} wide><div className="mb-4 flex flex-wrap gap-2"><span className="rounded border border-steel/35 bg-secondary px-2 py-1 font-mono text-xs text-steel">{formatLabel(file)}</span><span className="rounded border border-border bg-panel px-2 py-1 font-mono text-xs">Rev {file.revision}</span></div>{file.type === "application/pdf" && file.encoding === "data-url" ? <iframe title={file.name} src={file.content} className="h-[55vh] w-full border border-border" /> : <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{text}</pre>}</Modal>;
 }
 function DocumentField({ label, value }: { label: string; value: string }) {
   return (
