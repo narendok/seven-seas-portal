@@ -5992,8 +5992,21 @@ function DocumentDetail({
   );
 }
 function FilePreview({ file, formatLabel, onClose }: { file: LocalControlledFile; formatLabel: (file: LocalControlledFile) => string; onClose: () => void }) {
-  const text = file.encoding === "text" ? file.content : "Binary technical file preview is not available in-browser.";
-  return <Modal title={`Preview · ${file.name}`} onClose={onClose} wide><div className="mb-4 flex flex-wrap gap-2"><span className="rounded border border-steel/35 bg-secondary px-2 py-1 font-mono text-xs text-steel">{formatLabel(file)}</span><span className="rounded border border-border bg-panel px-2 py-1 font-mono text-xs">Rev {file.revision}</span></div>{file.type === "application/pdf" && file.encoding === "data-url" ? <iframe title={file.name} src={file.content} className="h-[55vh] w-full border border-border" /> : <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{text}</pre>}</Modal>;
+  const [archive, setArchive] = useState<string[] | null>(null);
+  const [message, setMessage] = useState("");
+  const inspectZip = () => {
+    try {
+      const encoded = file.content.split(",")[1];
+      if (!encoded) throw new Error("This archive has no local binary payload.");
+      const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+      const files = unzipSync(bytes);
+      setArchive(Object.entries(files).map(([name, body]) => `${name} · ${body.byteLength} bytes`).slice(0, 250));
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to inspect this ZIP archive."); }
+  };
+  const isZip = /\.zip$/i.test(file.name);
+  const isStep = /\.(stp|step)$/i.test(file.name);
+  const text = file.encoding === "text" ? file.content : isStep ? "3D STEP model preview is not rendered in-browser. Download the verified package for CAD inspection." : "Binary technical file preview is not available in-browser.";
+  return <Modal title={`Preview · ${file.name}`} onClose={onClose} wide><div className="mb-4 flex flex-wrap items-center gap-2"><span className="rounded border border-steel/35 bg-secondary px-2 py-1 font-mono text-xs text-steel">{formatLabel(file)}</span><span className="rounded border border-border bg-panel px-2 py-1 font-mono text-xs">Rev {file.revision}</span>{isZip && <Action label="Inspect ZIP contents" onClick={inspectZip} />}</div>{file.type === "application/pdf" && file.encoding === "data-url" ? <iframe title={file.name} src={file.content} className="h-[55vh] w-full border border-border" /> : archive ? <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{archive.join("\n")}</pre> : <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{text}</pre>}{message && <p className="mt-3 text-sm text-danger">{message}</p>}</Modal>;
 }
 type PrintableDocument = {
   title: string;
