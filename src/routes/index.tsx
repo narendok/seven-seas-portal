@@ -2556,6 +2556,8 @@ function AutoDraftHub({
   onOpenSettings?: () => void;
 }) {
   const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
+  const [project, setProject] = useState("HLPL-AI4T-01");
+  const profile = projectDocumentProfiles[project] ?? projectDocumentProfiles["HLPL-AI4T-01"];
   return (
     <Modal title="Auto-Draft Document Templates" onClose={onClose} wide>
       <div className="rounded-lg border border-warning/35 bg-accent p-4 text-sm">
@@ -2571,6 +2573,7 @@ function AutoDraftHub({
           </button>
         ))}
       </div>
+      <div className="mt-5 max-w-md"><SelectField label="Project document baseline" value={project} onChange={setProject} options={Object.keys(projectDocumentProfiles)} /></div>
       {selected && (
         <section className="mt-5 border border-steel/35 bg-panel p-5">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
@@ -2578,11 +2581,11 @@ function AutoDraftHub({
             <Status status="Draft" />
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <DocumentField label="Document ID" value={selected[1]} /><DocumentField label="Project" value="HLPL-SLCT-01 · DEMO" /><DocumentField label="Revision" value="00 · next draft revision" />
+             <DocumentField label="Document ID" value={createPrintableDocument(selected, settings, project).documentId} /><DocumentField label="Project" value={`${project} · DEMO`} /><DocumentField label="Revision" value="00 · next draft revision" />
             <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
           </div>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">Auto-drafted using the SLCT project baseline: 12V/24V nominal, −40°C to +85°C, IP67, and illustrative AIS-140/AEC/ISO targets. Validate all technical and commercial information before any controlled release.</p>
-          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Full-page template view" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">{profile.customer} · {profile.quantity} · {profile.techSpec} · {profile.commercialValue}. Validate all technical and commercial information before any controlled release.</p>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Full-page template view" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
         </section>
       )}
     </Modal>
@@ -5879,8 +5882,7 @@ type PrintableDocument = {
   project: string;
 };
 
-function createPrintableDocument(template: readonly [string, string, string], settings: TemplateSettings): PrintableDocument {
-  const project = "HLPL-AI4T-01";
+function createPrintableDocument(template: readonly [string, string, string], settings: TemplateSettings, project = "HLPL-AI4T-01"): PrintableDocument {
   const type = template[0].includes("SOR") ? "SOR" : template[0].includes("Requirement") ? "PRS" : template[0].includes("DVP") ? "DVP" : template[1].split("-").at(-2) ?? "DOC";
   const department = template[2] === "HR/OPS" ? "HR" : template[2];
   return { title: template[0].toUpperCase(), documentId: documentNumber(project, department, type, "01", settings.prefix), department, revision: "Rev 01", status: "Draft", project };
