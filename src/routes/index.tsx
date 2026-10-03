@@ -6122,12 +6122,14 @@ function NotificationCenter({
   onClose,
   onResolve,
   onDismiss,
+  onReview,
 }: {
   alerts: DemoAlert[];
   departments: Department[];
   onClose: () => void;
   onResolve: (id: string) => void;
   onDismiss: (id: string) => void;
+  onReview: (departmentId: string) => void;
 }) {
   const active = alerts.filter((alert) => !alert.resolved);
   return (
@@ -6153,6 +6155,7 @@ function NotificationCenter({
                 {departments.find((department) => department.id === alert.departmentId)?.name ?? "Department"}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
+                <Action label="Review handoff" onClick={() => onReview(alert.departmentId)} primary />
                 <Action label="Resolve" onClick={() => onResolve(alert.id)} primary />
                 <Action label="Dismiss" onClick={() => onDismiss(alert.id)} />
               </div>
