@@ -5909,7 +5909,7 @@ function controlledDocumentPrintable(document: ControlledDocument, department: s
 function recordPrintable(record: RecordItem): PrintableDocument {
   const documentId = record.reference || record.fields["controlledNumber"] || `HLPL-AI4T-${record.area.toUpperCase()}-DOC-01`;
   const project = documentId.includes("SLCT") ? "HLPL-SLCT-01" : documentId.includes("XLINK") ? "HLPL-XLINK-03" : "HLPL-AI4T-01";
-  const department = record.area === "sales" ? "SAL" : record.area === "rnd" ? "EHW" : record.area === "qa" ? "QA" : record.area === "manufacturing" ? "EMF" : record.area === "production" ? "TST" : record.area === "finance" ? "FIN" : "OPS";
+  const department = record.area === "ehw" ? "EHW" : record.area === "esw" ? "ESW" : record.area === "mech" ? "MECH" : record.area === "pur" ? "PUR" : record.area === "quality" ? "QA" : record.area === "emf" ? "EMF" : record.area === "tst" || record.area === "production" ? "TST" : record.area === "fin" ? "FIN" : record.area === "sit" ? "SIT" : record.area === "hrops" || record.area === "people" ? "HR" : "SAL";
   return { title: record.title.toUpperCase(), documentId, department, revision: "Rev 01", status: record.status, project, stage: autoDraftStage(`${record.type} ${record.title} ${documentId}`) };
 }
 
