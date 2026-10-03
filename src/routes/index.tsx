@@ -4000,7 +4000,7 @@ function AdminCommandCenter({
   onResetDemo: () => void;
 }) {
   const [tab, setTab] = useState<
-    "company" | "templates" | "departments" | "roles" | "masters" | "settings" | "team" | "demo"
+    "company" | "templates" | "raci" | "departments" | "roles" | "masters" | "settings" | "team" | "demo"
   >("company");
   const [query, setQuery] = useState("");
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
@@ -4075,7 +4075,7 @@ function AdminCommandCenter({
   return (
     <Modal title="Administration command center" onClose={onClose} wide>
       <div className="mb-5 flex flex-wrap gap-2 border-b border-border pb-4">
-        {(["company", "templates", "departments", "roles", "masters", "settings", "team", "demo"] as const).map(
+        {(["company", "templates", "raci", "departments", "roles", "masters", "settings", "team", "demo"] as const).map(
           (item) => (
             <button
               key={item}
@@ -4088,6 +4088,8 @@ function AdminCommandCenter({
                   ? "Department settings"
                   : item === "templates"
                     ? "Template settings"
+                    : item === "raci"
+                      ? "Responsibility matrix"
                   : item}
             </button>
           ),
@@ -4106,6 +4108,8 @@ function AdminCommandCenter({
           onChange={(templateSettings) => onUpdate((state) => ({ ...state, templateSettings }))}
           onSave={() => onLog("Document template settings saved", "Header, footer, locations and numbering updated")}
         />
+      ) : tab === "raci" ? (
+        <RaciMatrixEditor matrix={portal.raciMatrix ?? defaultRaciMatrix()} onChange={(raciMatrix) => onUpdate((state) => ({ ...state, raciMatrix }))} onSave={() => onLog("Responsibility matrix saved", "Stage handoff notification routing updated")} />
       ) : tab === "company" ? (
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">
