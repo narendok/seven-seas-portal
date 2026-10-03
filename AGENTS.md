@@ -23,3 +23,4 @@
 
 - Model department hubs through a canonical SCMS area map, migrating legacy browser-local area IDs at read time so existing records remain usable.
 - Keep interactive lifecycle walkthroughs and competency examples in the replaceable DEMO browser-local state, so feature tests never affect configured operational records.
+- Keep demo task, project, alert, and document samples inside the replaceable browser-local DEMO state so no illustrative activity can affect configured operations.
