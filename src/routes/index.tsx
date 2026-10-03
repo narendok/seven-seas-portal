@@ -1928,8 +1928,7 @@ function Portal() {
                 setRfqOpen(true);
               }}
               onOpenSyncHub={() => setSyncHubOpen(true)}
-              onOpenDraftHub={() => setDraftHubOpen(true)}
-              onOpenDrive={() => setModal("documents")}
+               onOpenDraftHub={() => setDraftHubOpen(true)}
               onOpenAi4t={() => setAi4tOpen(true)}
               persona={persona}
             />
@@ -2140,8 +2139,6 @@ function Portal() {
           onClose={() => setDraftHubOpen(false)}
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onOpenPrintable={setPrintTemplate}
-          documents={portal.documents}
-          onOpenDocument={openDocument}
           onOpenSettings={() => setTemplateSettingsOpen(true)}
           templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
           onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
@@ -2196,6 +2193,8 @@ function Portal() {
             log("AI4T lifecycle simulation reset", "Simulation reset to Stage 1");
           }}
           onOpenPrintable={setPrintTemplate}
+           documents={portal.documents}
+           onOpenDocument={openDocument}
         />
       )}
       {rfqOpen && (
