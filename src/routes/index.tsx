@@ -31,8 +31,14 @@ import {
   UsersRound,
   Wrench,
   X,
+  FolderOpen,
+  Eye,
+  Download,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { unzipSync } from "fflate";
 import {
   beginControlledDocumentUpload,
   completeControlledDocumentUpload,
@@ -174,6 +180,8 @@ type ControlledDocument = {
   draftHtml?: string | undefined;
   releaseNotes?: string | undefined;
   designer?: string | undefined;
+  deliverableKind?: "Schematic PDF" | "Gerber ZIP" | "3D STEP" | "Firmware binary" | "BOM tracker" | "Technical document" | undefined;
+  lifecycleStage?: string | undefined;
 };
 type LocalControlledFile = {
   id: string;
@@ -185,6 +193,7 @@ type LocalControlledFile = {
   revision: string;
   content: string;
   encoding: "text" | "data-url";
+  checksum?: string | undefined;
 };
 type ControlledFile = {
   id: string;
@@ -1300,6 +1309,16 @@ const demoPortal = (): PortalState => {
     approver: "Human approval required",
     history: ["DEMO record seeded for interconnected portal validation"],
     linkedRecordRefs,
+    lifecycleStage: phase.match(/Stage\s+\d+/)?.[0],
+    deliverableKind: /schematic/i.test(title)
+      ? "Schematic PDF"
+      : /gerber|pcb/i.test(title)
+        ? "Gerber ZIP"
+        : /step|cad/i.test(title)
+          ? "3D STEP"
+          : /bom/i.test(title)
+            ? "BOM tracker"
+            : undefined,
   });
   return {
     ...base,
@@ -1815,6 +1834,7 @@ function Portal() {
               }}
             />
             <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
+            <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
             <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
             <HeaderAction
               label="Administration"
@@ -1908,7 +1928,7 @@ function Portal() {
                 setRfqOpen(true);
               }}
               onOpenSyncHub={() => setSyncHubOpen(true)}
-              onOpenDraftHub={() => setDraftHubOpen(true)}
+               onOpenDraftHub={() => setDraftHubOpen(true)}
               onOpenAi4t={() => setAi4tOpen(true)}
               persona={persona}
             />
@@ -1973,6 +1993,7 @@ function Portal() {
                 setView("queue");
               }}
               onOpenDraftHub={() => setDraftHubOpen(true)}
+            onOpenDrive={() => setModal("documents")}
             />
           )}
         </div>
@@ -2172,6 +2193,8 @@ function Portal() {
             log("AI4T lifecycle simulation reset", "Simulation reset to Stage 1");
           }}
           onOpenPrintable={setPrintTemplate}
+           documents={portal.documents}
+           onOpenDocument={openDocument}
         />
       )}
       {rfqOpen && (
@@ -2452,6 +2475,8 @@ function Ai4tLifecycleHub({
   onRun,
   onReset,
   onOpenPrintable,
+  documents,
+  onOpenDocument,
 }: {
   persona: Persona;
   simulation: Ai4tSimulation;
@@ -2461,6 +2486,8 @@ function Ai4tLifecycleHub({
   onRun: () => void;
   onReset: () => void;
   onOpenPrintable: (document: PrintableDocument) => void;
+  documents: ControlledDocument[];
+  onOpenDocument: (document: ControlledDocument) => void;
 }) {
   const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
   const [tab, setTab] = useState<"stages" | "binder">("stages");
@@ -2500,6 +2527,7 @@ function Ai4tLifecycleHub({
           </button>
         ))}
       </section>
+      <LifecycleDeliverables documents={documents} stage={current[0]} onOpenDocument={onOpenDocument} />
       <section className="ops-section mt-5 overflow-hidden">
         <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Role-filtered binder view. Preview content is a formatted DEMO draft.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
         <div className="divide-y divide-border">
@@ -3155,6 +3183,7 @@ function DepartmentWorkspace({
   onAdmin,
   onOpenStage,
   onOpenDraftHub,
+  onOpenDrive,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -3171,6 +3200,7 @@ function DepartmentWorkspace({
   onAdmin: () => void;
   onOpenStage: (stage: string) => void;
   onOpenDraftHub: () => void;
+  onOpenDrive: () => void;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -3199,6 +3229,7 @@ function DepartmentWorkspace({
               onClick={() => onView(view === "queue" ? "summary" : "queue")}
               label={view === "queue" ? "Summary" : "Queue"}
             />
+            <Action onClick={onOpenDrive} label="Department Cloud Drive" />
             <Action onClick={onCreate} label={`Create ${area.recordType}`} primary />
           </>
         }
@@ -3245,6 +3276,7 @@ function DepartmentWorkspace({
         />
       </section>
       <DepartmentFlow flow={flow} onOpenStage={onOpenStage} />
+      <DepartmentProcessMenu area={area.id} onOpenDrive={onOpenDrive} onCreate={onCreate} />
       <SmartNextStep records={scopedRecords} onOpenDraftHub={onOpenDraftHub} />
       {area.id === "hrops" && (
         <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
@@ -3430,6 +3462,32 @@ function DepartmentFlow({
       </div>
     </section>
   );
+}
+
+const departmentProcesses: Partial<Record<AreaId, { drive: string; items: string[] }>> = {
+  sales: { drive: "01_Governance_and_QMS", items: ["Customer enquiry & lead intake", "Customer SOR intake & analysis", "Mutual NDA generator", "Commercial quotation builder", "Contract review record"] },
+  pur: { drive: "03_Hardware_Deliverables_ECAD", items: ["Purchase orders & tracking", "Supplier scorecard · F-PUR-16", "RFQ vendor price comparison", "Supplier PPAP Level 3 · F-PUR-15", "Second-source component matrix"] },
+  ehw: { drive: "03_Hardware_Deliverables_ECAD", items: ["Product requirement specification", "Schematic package", "Production Gerber & drill ZIP", "Production BOM cost tracker", "Hardware DFMEA risk analysis"] },
+  esw: { drive: "05_Firmware_and_Software", items: ["Hardware-software interface spec", "Firmware flash binaries", "CAN J1939 parser & DBC", "Git PR reviews & unit coverage"] },
+  mech: { drive: "04_Mechanical_Deliverables_MCAD", items: ["3D STEP enclosure CAD package", "2D dimension & tooling drawings", "Thermal & ingress analysis", "IP67 gasket & connector spec"] },
+  qa: { drive: "06_Quality_and_Compliance", items: ["DVP&R verification plan", "AIS-140 & ARAI/ICAT dossier", "IATF / ISO audit checklist", "CAPA / 8D record"] },
+  emf: { drive: "07_Production_and_Testing", items: ["SMT process flow & control plan", "10-zone reflow profile log", "3D AOI & SPI criteria", "SOPs & work instructions"] },
+  tst: { drive: "07_Production_and_Testing", items: ["Serialized PDI certificate", "Automated EOL jig calibration", "Cellular RF & GPS TTFF reports", "IMEI / MAC registry export"] },
+  fin: { drive: "01_Governance_and_QMS", items: ["Commercial tax invoice & GST", "e-Way bill & dispatch documents", "Advance billing authorization", "Project margin & cost-center P&L"] },
+  sit: { drive: "05_Firmware_and_Software", items: ["Offsite encrypted backup log", "OTA firmware rollout manager", "Telemetry cloud health & uptime"] },
+  hrops: { drive: "01_Governance_and_QMS", items: ["Annual competency & skill matrix", "IPC-A-610 training log", "ESD & cleanroom certification"] },
+};
+
+function DepartmentProcessMenu({ area, onOpenDrive, onCreate }: { area: AreaId; onOpenDrive: () => void; onCreate: () => void }) {
+  const menu = departmentProcesses[area];
+  if (!menu) return null;
+  return <section className="ops-section mt-8 overflow-hidden bg-panel"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Department processes</p><p className="mt-1 text-xs text-muted-foreground">Shortcuts keep controlled work and its department drive together.</p></div><Action label="Department Cloud Drive" onClick={onOpenDrive} primary /></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">{menu.items.map((item, index) => <button key={item} onClick={onCreate} className="flex min-h-14 items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-secondary"><span className="font-mono text-[10px] text-steel">{String(index + 1).padStart(2, "0")}</span><span className="text-xs font-semibold">{item}</span></button>)}</div><div className="border-t border-border px-4 py-2 font-mono text-[10px] text-muted-foreground">Drive folder · /{menu.drive}</div></section>;
+}
+
+function LifecycleDeliverables({ documents, stage, onOpenDocument }: { documents: ControlledDocument[]; stage: string; onOpenDocument: (document: ControlledDocument) => void }) {
+  const linked = documents.filter((document) => document.lifecycleStage === stage || document.phase?.includes(stage));
+  if (!linked.length) return null;
+  return <section className="ops-section mt-5 overflow-hidden"><div className="ops-section-header flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Linked project deliverables</p><p className="mt-1 text-xs text-muted-foreground">Open the controlled file record or download its authorized revision from the Drive.</p></div><FolderOpen className="size-4 text-steel" /></div><div className="divide-y divide-border">{linked.map((document) => <button key={document.id} onClick={() => onOpenDocument(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left hover:bg-secondary"><span className="min-w-0"><strong className="block text-xs">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.part ?? document.type} · {document.deliverableKind ?? "Controlled evidence"}</small></span><span className="self-center text-xs text-steel">Open file</span></button>)}</div></section>;
 }
 
 function AreaSummary({ records }: { records: RecordItem[] }) {
@@ -5428,7 +5486,7 @@ function DocumentsPanel({
           Private Cloud storage
         </span>
       </section>
-      {tab === "drive" && <UnifiedStorageView documents={documents} onSelectDocument={onSelectDocument} />}
+      {tab === "drive" && <HardwareDeliverablesDrive documents={documents} departments={departments} departmentContext={departmentContext} onSelectDocument={onSelectDocument} />}
       {tab === "repository" && <><section className="ops-section mb-6 overflow-hidden bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
@@ -5547,9 +5605,34 @@ function DocumentsPanel({
   );
 }
 
-function UnifiedStorageView({ documents, onSelectDocument }: { documents: ControlledDocument[]; onSelectDocument: (document: ControlledDocument) => void }) {
-  const folders = ["01_Governance_and_QMS", "02_Product_Platforms", "03_Supplier_Quality_and_PPAP", "04_Equipment_and_Calibration"];
-  return <section className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Unified Drive & Cloud storage</p><p className="mt-1 text-xs text-muted-foreground">Logical department folders; private Cloud files are available only when an authorized organization link exists. Drive remains optional.</p></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">{folders.map((folder) => <div key={folder} className="p-4"><p className="font-mono text-xs text-steel">/{folder}</p><p className="mt-2 text-xs text-muted-foreground">Generated HTML drafts, controlled records and authorized hardware release packages.</p></div>)}</div></section><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Project artifact register</p><p className="mt-1 text-xs text-muted-foreground">Includes editable document records and attached PDF / ZIP / STEP deliverables.</p></div><div className="divide-y divide-border">{documents.map((document) => { const files = document.localFiles ?? []; return <button key={document.id} onClick={() => onSelectDocument(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3 text-left hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.group ?? "Unfiled"} · Rev {document.revision ?? "—"} · {files.length} attached file{files.length === 1 ? "" : "s"}</small></span><span className="text-xs text-steel">Open</span></button>; })}</div></section></section>;
+const driveFolders = [
+  ["00_Root_Audit_Repository", "Controlled project evidence and release history"],
+  ["01_Governance_and_QMS", "SORs, NDAs, quotations and invoices"],
+  ["02_Product_Platforms", "Device specifications and PMSS baselines"],
+  ["03_Hardware_Deliverables_ECAD", "Schematic PDFs, PCB sources, Gerber ZIPs and BOMs"],
+  ["04_Mechanical_Deliverables_MCAD", "3D STEP models, CAD bundles and 2D drawings"],
+  ["05_Firmware_and_Software", "Firmware binaries, release notes and flashing packages"],
+  ["06_Quality_and_Compliance", "DVP&R, AIS-140 and laboratory evidence"],
+  ["07_Production_and_Testing", "Control plans, PDI logs and EOL calibration"],
+] as const;
+
+function driveFolderFor(document: ControlledDocument) {
+  if (/schematic|gerber|pcb|bom|dfmea/i.test(`${document.title} ${document.type}`)) return "03_Hardware_Deliverables_ECAD";
+  if (/step|cad|enclosure|mechanical/i.test(`${document.title} ${document.type}`)) return "04_Mechanical_Deliverables_MCAD";
+  if (/firmware|binary|hsi|software/i.test(`${document.title} ${document.type}`)) return "05_Firmware_and_Software";
+  if (/dvp|quality|ppap|audit|certificate/i.test(`${document.title} ${document.type}`)) return "06_Quality_and_Compliance";
+  if (/control plan|pdi|eol|production|manufactur/i.test(`${document.title} ${document.type}`)) return "07_Production_and_Testing";
+  if (/sor|nda|quotation|invoice|contract/i.test(`${document.title} ${document.type}`)) return "01_Governance_and_QMS";
+  return "02_Product_Platforms";
+}
+
+function HardwareDeliverablesDrive({ documents, departments, departmentContext, onSelectDocument }: { documents: ControlledDocument[]; departments: Department[]; departmentContext: string | null; onSelectDocument: (document: ControlledDocument) => void }) {
+  const [folder, setFolder] = useState("00_Root_Audit_Repository");
+  const [query, setQuery] = useState("");
+  const canSee = (document: ControlledDocument) => !departmentContext || document.departmentId === departmentContext;
+  const visible = documents.filter((document) => canSee(document) && `${document.title} ${document.type} ${document.part ?? ""}`.toLowerCase().includes(query.toLowerCase()) && (folder === "00_Root_Audit_Repository" || driveFolderFor(document) === folder));
+  const fileCount = (document: ControlledDocument) => document.localFiles?.length ?? 0;
+  return <section className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Hardware Deliverables Drive</p><p className="mt-1 text-xs text-muted-foreground">Private Cloud storage is active. Google Drive remains optional; folders are logical project paths.</p></div><span className="rounded-md border border-moss/25 bg-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase text-accent-foreground">Cloud active</span></div><div className="grid divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">{driveFolders.map(([name, detail]) => <button key={name} onClick={() => setFolder(name)} className={`p-3 text-left transition-colors ${folder === name ? "bg-accent" : "hover:bg-secondary"}`}><span className="flex items-center gap-2 font-mono text-xs text-steel"><FolderOpen className="size-4" />/{name}</span><span className="mt-1 block text-xs text-muted-foreground">{detail}</span></button>)}</div></section><section className="ops-section overflow-hidden"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.1em] text-steel">/{folder}</p><p className="mt-1 text-sm font-semibold">Project artifact register</p></div><input aria-label="Search deliverables" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search files or document ID" className="h-9 rounded-lg border border-input bg-background px-3 text-sm" /></div><div className="divide-y divide-border">{visible.length ? visible.map((document) => <button key={document.id} onClick={() => onSelectDocument(document)} className="grid w-full gap-3 px-4 py-3 text-left hover:bg-secondary sm:grid-cols-[minmax(0,1fr)_auto]"><span className="min-w-0"><strong className="block text-sm">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.part ?? document.type} · Rev {document.revision ?? "—"} · {document.deliverableKind ?? "Controlled document"}</small><small className="mt-1 block text-xs text-muted-foreground">{fileCount(document)} file revision{fileCount(document) === 1 ? "" : "s"} · {departments.find((department) => department.id === document.departmentId)?.name ?? "Unassigned"}</small></span><span className="self-center text-xs font-semibold text-steel">Open</span></button>) : <p className="p-8 text-center text-sm text-muted-foreground">No authorized deliverables in this folder.</p>}</div></section></section>;
 }
 function DocumentDetail({
   document,
@@ -5591,7 +5674,7 @@ function DocumentDetail({
   const [dragActive, setDragActive] = useState(false);
   const [previewFile, setPreviewFile] = useState<LocalControlledFile | null>(null);
   const isCloudDocument = Boolean(document.cloudDocumentId);
-  const isHardwareDeliverable = /schematic|gerber|pcb|step|cad/i.test(`${document.title} ${document.type}`);
+  const isHardwareDeliverable = Boolean(document.deliverableKind) || /schematic|gerber|pcb|step|cad|firmware|binary/i.test(`${document.title} ${document.type}`);
   const localFiles = document.localFiles ?? [];
   useEffect(() => {
     if (!document.cloudDocumentId || !allowed) {
@@ -5632,15 +5715,15 @@ function DocumentDetail({
       reader.onload = () => resolve({
         id: createId(), name: file.name, type: file.type || "application/octet-stream", size: file.size,
         uploadedAt: new Date().toISOString(), uploader: `${owner?.lead ?? "Current user"} · ${owner?.name ?? "Controlled documents"}`,
-        revision: document.revision ?? "00", content: String(reader.result ?? ""), encoding: textLike ? "text" : "data-url",
+       revision: document.revision ?? "00", content: String(reader.result ?? ""), encoding: textLike ? "text" : "data-url",
       });
       if (textLike) reader.readAsText(file); else reader.readAsDataURL(file);
     });
   const uploadLocal = async (file: File, incrementRevision = false) => {
     try {
       setFileState("uploading"); setUploadProgress(4); setFileMessage("Securing & Verifying SHA-256 Hash…");
-      await sha256(file); setUploadProgress(40);
-      const attached = await readLocalFile(file); setUploadProgress(76);
+       const checksum = await sha256(file); setUploadProgress(40);
+       const attached = { ...(await readLocalFile(file)), checksum }; setUploadProgress(76);
       const revision = incrementRevision ? String((Number.parseInt(document.revision ?? "0", 10) || 0) + 1).padStart(2, "0") : document.revision ?? "00";
       const updatedFile = { ...attached, revision };
       window.setTimeout(() => { setUploadProgress(100); setFileState("idle"); }, 220);
@@ -5804,7 +5887,7 @@ function DocumentDetail({
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
-                      accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp" : undefined}
+                       accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp,.hex,.bin,.csv,.xlsx,.docx" : undefined}
                       disabled={fileState === "uploading"}
                       onChange={(event) => {
                         const file = event.target.files?.[0];
@@ -5813,7 +5896,7 @@ function DocumentDetail({
                     />
                   </label>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    Drop a file here or browse · {isHardwareDeliverable ? "PDF, Gerber ZIP, or STEP/STP release package · " : ""}Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
+                     Drop a file here or browse · {isHardwareDeliverable ? "PDF, Gerber ZIP, STEP/STP, HEX/BIN, CSV/XLSX, or DOCX release package · " : ""}Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
                   </p>
                   {fileState === "uploading" && (
                     <div className="mt-3" aria-live="polite">
@@ -5872,18 +5955,18 @@ function DocumentDetail({
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
-                      accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp" : ".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"}
+                       accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp,.hex,.bin,.csv,.xlsx,.docx" : ".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"}
                       disabled={fileState === "uploading"}
                       onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadLocal(file); }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {isHardwareDeliverable ? "Attach the PDF schematic, Gerber ZIP, or STEP/STP CAD package. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
+                     {isHardwareDeliverable ? "Attach PDF, Gerber ZIP, STEP/STP, HEX/BIN, CSV/XLSX, or DOCX deliverables. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
                   </p>
                   {fileState === "uploading" && <div className="mt-3" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Securing & Verifying SHA-256 Hash… {uploadProgress}%</p></div>}
                   {fileMessage && <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-moss"}`}>{fileMessage}</p>}
                   <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-background">
-                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { const anchor = window.document.createElement("a"); anchor.href = file.encoding === "text" ? URL.createObjectURL(new Blob([file.content], { type: file.type })) : file.content; anchor.download = file.name; anchor.click(); if (file.encoding === "text") window.setTimeout(() => URL.revokeObjectURL(anchor.href), 0); }} /><label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-card px-3.5 text-sm font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
+                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}{file.checksum ? ` · SHA-256 ${file.checksum.slice(0, 16)}…` : ""}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { const anchor = window.document.createElement("a"); anchor.href = file.encoding === "text" ? URL.createObjectURL(new Blob([file.content], { type: file.type })) : file.content; anchor.download = file.name; anchor.click(); if (file.encoding === "text") window.setTimeout(() => URL.revokeObjectURL(anchor.href), 0); }} /><label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label><Action label="Archive" onClick={() => { const next = { ...document, localFiles: localFiles.filter((item) => item.id !== file.id), history: [`${now()} · ${file.name} archived from browser-local revision history`, ...(document.history ?? [])] }; onDocumentUpdated(next, `${document.title} · ${file.name} archived`); }} /></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
                   </div>
                 </>
               )}
@@ -5934,8 +6017,21 @@ function DocumentDetail({
   );
 }
 function FilePreview({ file, formatLabel, onClose }: { file: LocalControlledFile; formatLabel: (file: LocalControlledFile) => string; onClose: () => void }) {
-  const text = file.encoding === "text" ? file.content : "Binary technical file preview is not available in-browser.";
-  return <Modal title={`Preview · ${file.name}`} onClose={onClose} wide><div className="mb-4 flex flex-wrap gap-2"><span className="rounded border border-steel/35 bg-secondary px-2 py-1 font-mono text-xs text-steel">{formatLabel(file)}</span><span className="rounded border border-border bg-panel px-2 py-1 font-mono text-xs">Rev {file.revision}</span></div>{file.type === "application/pdf" && file.encoding === "data-url" ? <iframe title={file.name} src={file.content} className="h-[55vh] w-full border border-border" /> : <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{text}</pre>}</Modal>;
+  const [archive, setArchive] = useState<string[] | null>(null);
+  const [message, setMessage] = useState("");
+  const inspectZip = () => {
+    try {
+      const encoded = file.content.split(",")[1];
+      if (!encoded) throw new Error("This archive has no local binary payload.");
+      const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+      const files = unzipSync(bytes);
+      setArchive(Object.entries(files).map(([name, body]) => `${name} · ${body.byteLength} bytes`).slice(0, 250));
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to inspect this ZIP archive."); }
+  };
+  const isZip = /\.zip$/i.test(file.name);
+  const isStep = /\.(stp|step)$/i.test(file.name);
+  const text = file.encoding === "text" ? file.content : isStep ? "3D STEP model preview is not rendered in-browser. Download the verified package for CAD inspection." : "Binary technical file preview is not available in-browser.";
+  return <Modal title={`Preview · ${file.name}`} onClose={onClose} wide><div className="mb-4 flex flex-wrap items-center gap-2"><span className="rounded border border-steel/35 bg-secondary px-2 py-1 font-mono text-xs text-steel">{formatLabel(file)}</span><span className="rounded border border-border bg-panel px-2 py-1 font-mono text-xs">Rev {file.revision}</span>{isZip && <Action label="Inspect ZIP contents" onClick={inspectZip} />}</div>{file.type === "application/pdf" && file.encoding === "data-url" ? <iframe title={file.name} src={file.content} className="h-[55vh] w-full border border-border" /> : archive ? <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{archive.join("\n")}</pre> : <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{text}</pre>}{message && <p className="mt-3 text-sm text-danger">{message}</p>}</Modal>;
 }
 type PrintableDocument = {
   title: string;

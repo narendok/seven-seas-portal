@@ -25,3 +25,4 @@
 - [x] Replace summary-only document previews with complete multi-section sheets, portable print output, Markdown export, and text copy actions.
 - [x] Replace blank print output with a fully isolated A4 iframe print sheet and standardize full document viewer actions.
 - [ ] Build the interactive Hardware Deliverables Cloud Drive and File Manager with revision lifecycle linking.
+- [ ] Add department-wise process menus, shortcuts, and direct Cloud Drive links for every workspace.
