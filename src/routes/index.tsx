@@ -1623,7 +1623,7 @@ function Portal() {
             <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} />
           </div>
         </header>
-        <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-10">
+        <div className="mx-auto max-w-[1600px] space-y-6 px-6 py-6 pb-28 lg:pb-10">
           {view === "pmss" ? (
               <PMSSWorkspace
               portal={portal}
@@ -1967,11 +1967,11 @@ function CommandCenter({
       {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-SLCT-01" />}
       <PageHeader
         eyebrow={departmentContext ? "Administrator context" : "Operational workspace"}
-        title="Command center"
+        title="Command Center"
         description={
           departmentContext
             ? "Department-wise quick management and today checklist."
-            : "Department-wise quick management and today checklist."
+            : "Department-wise quick management, lifecycle tracking, and daily task checklist."
         }
         actions={
           <>
@@ -1979,14 +1979,13 @@ function CommandCenter({
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
-            <Action onClick={onSetup} label="Continue setup" />
             <Action onClick={onCreate} label="Create Task" primary />
           </>
         }
       />
       {portal.demoLoaded && <ExecutiveKpis />}
       <SmartNextStep records={visible} onOpenDraftHub={onOpenDraftHub} />
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric
           label="Today"
           value={String(
@@ -2028,7 +2027,7 @@ function CommandCenter({
         onOpenProject={onOpenProject}
         onOpenAssignee={onOpenAssignee}
       />
-      <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="ops-section overflow-hidden">
           <div className="ops-section-header">
             <p className="text-sm font-semibold">Department management</p>
@@ -2061,11 +2060,11 @@ function CommandCenter({
                   <button
                     key={department.id}
                     onClick={() => onNavigate(area)}
-                    className="grid w-full grid-cols-[minmax(9rem,1fr)_auto] items-center gap-4 border-b border-border px-4 py-2 text-left transition-colors hover:bg-secondary/65 last:border-0"
+                    className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border px-4 py-2 text-left transition-colors hover:bg-secondary/65 last:border-0"
                   >
-                    <span>
-                      <span className="block text-sm font-medium">{department.name}</span>
-                      <span className="mt-1 block text-xs text-muted-foreground">
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{department.name}</span>
+                      <span className="mt-1 block truncate text-xs text-muted-foreground">
                         {department.lead || "No lead assigned · administrator fallback"} ·{" "}
                         {
                           portal.roles.filter(
@@ -2284,12 +2283,12 @@ function TodayChecklist({
   const move = (task: RecordItem, dueDate: string, action: string) =>
     onUpdateTask(task.id, { fields: { ...task.fields, dueDate } }, action);
   return (
-    <section className="mt-8">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <section className="ops-section overflow-hidden">
+      <div className="ops-section-header grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <div><p className="text-sm font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
-        <div className="flex gap-2"><Action label={expandAll ? "Collapse all" : "Expand all"} onClick={() => setExpandAll((value) => !value)} /><Action label="Open expanded modal" onClick={() => setInspectionOpen(true)} /></div>
+        <div className="flex shrink-0 gap-2"><Action label={expandAll ? "Collapse all" : "Expand all"} onClick={() => setExpandAll((value) => !value)} /><Action label="Open expanded modal" onClick={() => setInspectionOpen(true)} /></div>
       </div>
-    <div className="grid gap-6 xl:grid-cols-2">
+    <div className="grid gap-6 p-4 lg:grid-cols-2">
       <ChecklistLane
         title="Today"
         description="Short department-wise checklist"
@@ -2653,7 +2652,7 @@ function LifecycleProgress({ records, projectId }: { records: RecordItem[]; proj
     ],
   ] as const;
   return (
-    <section className="surface-card mb-6 overflow-hidden border border-border bg-panel">
+    <section className="surface-card ops-section overflow-hidden">
       <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border p-4">
         <div>
           <p className="font-mono text-[10px] uppercase text-moss">Nine-stage lifecycle</p>
@@ -2703,7 +2702,7 @@ function LifecycleProgress({ records, projectId }: { records: RecordItem[]; proj
 
 function ExecutiveKpis() {
   return (
-    <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <Metric label="Active project" value="SLCT-01" detail="AIS-140 tracker · DEMO" tone="steel" />
       <Metric label="Order volume" value="50,000" detail="Illustrative units" tone="moss" />
       <Metric label="Revenue" value="₹20.33 Cr" detail="Illustrative order value" tone="steel" />
@@ -5507,17 +5506,17 @@ function PageHeader({
   actions: ReactNode;
 }) {
   return (
-    <div className="mb-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+    <div className="mb-6 flex flex-col gap-4 border-b border-border/40 pb-4 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0">
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-steel">
+        <p className="font-mono text-xs font-semibold uppercase tracking-[.16em] text-muted-foreground">
           {eyebrow}
         </p>
-        <h1 className="mt-1 text-xl font-semibold tracking-normal text-foreground md:text-2xl">
+        <h1 className="mt-1 truncate text-xl font-bold tracking-normal text-foreground">
           {title}
         </h1>
-        <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">{description}</p>
+        <p className="mt-0.5 truncate text-sm leading-5 text-muted-foreground">{description}</p>
       </div>
-      <div className="flex flex-wrap gap-2 md:justify-end">{actions}</div>
+      {actions && <div className="flex flex-wrap items-center gap-2 md:justify-end">{actions}</div>}
     </div>
   );
 }
