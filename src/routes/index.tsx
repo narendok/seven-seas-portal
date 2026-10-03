@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   Bell,
   CheckCircle2,
+  Check,
+  ChevronsDownUp,
   ChevronRight,
   ClipboardCheck,
   Factory,
@@ -18,6 +20,7 @@ import {
   Search,
   Settings2,
   ShieldCheck,
+  Sparkles,
   UsersRound,
   Wrench,
   X,
@@ -1404,6 +1407,7 @@ function Portal() {
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [syncHubOpen, setSyncHubOpen] = useState(false);
+  const [draftHubOpen, setDraftHubOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-AI4T-01");
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
@@ -1510,7 +1514,7 @@ function Portal() {
     setModal("document");
   };
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="ops-dark min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-border bg-sidebar p-4 lg:flex lg:flex-col">
         <Brand />
         <nav className="mt-8 space-y-1" aria-label="Primary navigation">
@@ -1655,6 +1659,7 @@ function Portal() {
                 setRfqOpen(true);
               }}
               onOpenSyncHub={() => setSyncHubOpen(true)}
+              onOpenDraftHub={() => setDraftHubOpen(true)}
             />
           ) : view === "detail" && selected ? (
             <RecordDetail
@@ -1772,6 +1777,7 @@ function Portal() {
             setSelectedDocumentId(document.id);
             setModal("document");
           }}
+          onOpenDraftHub={() => setDraftHubOpen(true)}
         />
       )}{" "}
       {modal === "document" && selectedDocument && (
@@ -1843,6 +1849,7 @@ function Portal() {
         />
       )}
       {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
+      {draftHubOpen && <AutoDraftHub onClose={() => setDraftHubOpen(false)} />}
       {rfqOpen && (
         <RfqCycleTest
           step={rfqStep}
