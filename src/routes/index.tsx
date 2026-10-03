@@ -447,6 +447,10 @@ const mergeAutomotiveDemoDocuments = (documents: ControlledDocument[]) => {
   ];
   return [...documents, ...seed.filter((document) => !existing.has(document.id))];
 };
+const hasCompleteDemoDocumentSet = (documents: ControlledDocument[]) =>
+  ["demo-doc-pmss", "demo-doc-prs", "demo-doc-bom", "demo-doc-datasheet"].every((id) =>
+    documents.some((document) => document.id === id),
+  );
 const setupSteps = [
   "Company, locations, calendars & numbering",
   "Departments, leads, roles & sub-roles",
@@ -1344,7 +1348,7 @@ const readPortal = (): PortalState => {
           };
         })
       : [];
-    return {
+    const hydrated = {
       ...base,
       ...value,
       demoLoaded: value.demoLoaded === true,
@@ -1377,6 +1381,20 @@ const readPortal = (): PortalState => {
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
       alerts: Array.isArray(value.alerts) ? value.alerts : [],
     };
+    // A legacy browser snapshot may retain the DEMO marker while losing its arrays.
+    // Restore the complete DEMO workspace rather than leaving document controls unreachable.
+    if (
+      hydrated.demoLoaded &&
+      (!hasCompleteDemoDocumentSet(hydrated.documents) || !hydrated.departments.length || !hydrated.records.length)
+    ) {
+      const restored = demoPortal();
+      return {
+        ...restored,
+        audit: [...hydrated.audit, ...restored.audit].slice(0, 100),
+        notifications: [...hydrated.notifications, ...restored.notifications].slice(0, 100),
+      };
+    }
+    return hydrated;
   } catch {
     return base;
   }
