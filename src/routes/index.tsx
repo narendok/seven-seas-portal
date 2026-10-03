@@ -1582,9 +1582,13 @@ function Portal() {
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
-        <div className={`flex items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
+        <div className={`relative flex items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
           <Brand compact={!sidebarExpanded} />
-          <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded((value) => !value)} />
+          <SidebarToggle
+            expanded={sidebarExpanded}
+            onToggle={() => setSidebarExpanded((value) => !value)}
+            compact={!sidebarExpanded}
+          />
         </div>
         <nav className={`mt-6 space-y-1 ${sidebarExpanded ? "" : "flex flex-1 flex-col items-center"}`} aria-label="Primary navigation">
           {areas.map((area) => (
@@ -5811,7 +5815,7 @@ function ThemeToggle({ darkMode, onToggle, expanded = false }: { darkMode: boole
     </button>
   );
 }
-function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+function SidebarToggle({ expanded, onToggle, compact = false }: { expanded: boolean; onToggle: () => void; compact?: boolean }) {
   const Icon = expanded ? PanelLeftClose : PanelLeftOpen;
   const label = expanded ? "Collapse navigation" : "Expand navigation";
   return (
@@ -5819,16 +5823,16 @@ function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: ()
       aria-label={label}
       title={`${label} ([)`}
       onClick={onToggle}
-      className="grid size-7 shrink-0 place-items-center rounded-md text-current/75 transition-colors hover:bg-sidebar-primary-foreground/15 hover:text-current"
+      className={`grid shrink-0 place-items-center rounded-md text-current/75 transition-colors hover:bg-sidebar-primary-foreground/15 hover:text-current ${compact ? "absolute -bottom-1 -right-1 size-5 border border-sidebar-border bg-sidebar shadow-sm" : "size-7"}`}
     >
-      <Icon className="size-3.5" />
+      <Icon className={compact ? "size-3" : "size-3.5"} />
     </button>
   );
 }
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`flex min-w-0 items-center ${compact ? "" : "gap-3"}`}>
-      <div className="grid size-10 place-items-center rounded-lg bg-sidebar-primary font-mono text-[11px] font-semibold text-sidebar-primary-foreground shadow-sm">
+      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-steel font-sans text-sm font-bold leading-none tracking-[0.08em] text-primary-foreground shadow-sm shadow-primary/20">
         SS
       </div>
       {!compact && <div className="min-w-0">
