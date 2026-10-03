@@ -4,6 +4,7 @@ import {
   Archive,
   ArrowLeft,
   Bell,
+  BriefcaseBusiness,
   CheckCircle2,
   Check,
   ChevronsDownUp,
@@ -25,6 +26,7 @@ import {
   Sparkles,
   Sun,
   Moon,
+  UserRoundCog,
   UsersRound,
   Wrench,
   X,
@@ -200,6 +202,54 @@ const rfqStages = [
   ["Stage 8", "Type approval & PPAP cleared", "Illustrative AIS-140 TAC #842 reference and PPAP Level 3 gate cleared · not a certification claim"],
   ["Stage 9", "Production & EOL package generated", "DEMO SMT Line 2 · SLCT-2026-0101 to 0120 PASS · FPY 97.4% · QR, PDI and invoice simulated"],
 ] as const;
+const personas: Persona[] = [
+  { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
+  { id: "sales", label: "SAL Lead", person: "Priya Sharma · Sales & BD", departmentId: "sales", kind: "lead" },
+  { id: "ehw", label: "EHW Lead", person: "Avery Vale · Embedded Hardware", departmentId: "ehw", kind: "lead" },
+  { id: "esw", label: "ESW Lead", person: "Devon Lane · Firmware & SW", departmentId: "esw", kind: "lead" },
+  { id: "mech", label: "MECH Lead", person: "Samira Holt · Mechanical Engineering", departmentId: "mech", kind: "lead" },
+  { id: "pur", label: "PUR Lead", person: "Morgan Reed · Purchasing & SCM", departmentId: "pur", kind: "lead" },
+  { id: "qa", label: "QA Lead", person: "Jordan Blake · Quality Assurance", departmentId: "qa", kind: "lead" },
+  { id: "emf", label: "EMF Lead", person: "Casey Rowan · Manufacturing", departmentId: "emf", kind: "lead" },
+  { id: "tst", label: "TST Lead", person: "Mina Cross · Production & EOL Testing", departmentId: "tst", kind: "lead" },
+  { id: "fin", label: "FIN Lead", person: "Priya Voss · Finance & Accounts", departmentId: "fin", kind: "lead" },
+  { id: "sit", label: "SIT Lead", person: "Kai Morgan · Service & IT", departmentId: "sit", kind: "lead" },
+  { id: "hrops", label: "HR Lead", person: "Taylor Quinn · HR & Operations", departmentId: "hrops", kind: "lead" },
+  { id: "client", label: "Client Portal", person: "Rohan Verma · Tata Motors Fleet Manager", kind: "client" },
+];
+const ai4tStages = [
+  ["Stage 1", "Client & Sales Intake", "SOR HLPL-AI4T-SAL-SOR-01 and Mutual NDA HLPL-AI4T-SAL-mNDA-01 are recorded."],
+  ["Stage 2", "Feasibility & Contract Review", "EHW, ESW, MECH, PUR and QA feasibility inputs compile Contract Review HLPL/F/MKT/01."],
+  ["Stage 3", "Requirement & Commercial Lock", "Frozen PRS HLPL-AI4T-EHW-PRS-01 and quotation HLPL-AI4T-SAL-QUO-01 are generated."],
+  ["Stage 4", "Design & Development PoC", "SCH-01, preliminary BOM, MCU bring-up and CAN J1939 firmware PoC are checked."],
+  ["Stage 5", "Pilot Build & SMT Setup", "SMT Line 2 thermal profile, EMF-CP-01 and prototype tooling are confirmed."],
+  ["Stage 6", "DVP&R Pre-Compliance", "QA-DVP-01 records 18 illustrative electrical and environmental verification checks."],
+  ["Stage 7", "Production Release & PPAP", "Gerber Rev B, EHW-DFMEA-01 and supplier PPAP Level 3 package are released."],
+  ["Stage 8", "Type Approval & Production Authorization", "Illustrative TAC evidence and the 50,000-unit authorization are human-reviewed."],
+  ["Stage 9", "PDI & Commercial Invoice", "TST-PDI-01 and FIN-INV-01 complete the simulated delivery record."],
+] as const;
+const ai4tDossier = [
+  ["Customer SOR", "HLPL-AI4T-SAL-SOR-01", "SAL", "Stage 1"],
+  ["Mutual NDA", "HLPL-AI4T-SAL-mNDA-01", "SAL", "Stage 1"],
+  ["Contract Review Record", "HLPL/F/MKT/01", "SAL", "Stage 2"],
+  ["Product Requirement Specification", "HLPL-AI4T-EHW-PRS-01", "EHW", "Stage 3"],
+  ["Commercial Quotation", "HLPL-AI4T-SAL-QUO-01", "SAL", "Stage 3"],
+  ["Schematic package", "HLPL-AI4T-EHW-SCH-01", "EHW", "Stage 4"],
+  ["Preliminary BOM", "HLPL-AI4T-EHW-BOM-01", "EHW", "Stage 4"],
+  ["Control Plan", "HLPL-AI4T-EMF-CP-01", "EMF", "Stage 5"],
+  ["DVP&R Verification Plan", "HLPL-AI4T-QA-DVP-01", "QA", "Stage 6"],
+  ["Hardware DFMEA", "HLPL-AI4T-EHW-DFMEA-01", "EHW", "Stage 7"],
+  ["Pre-Dispatch Inspection Certificate", "HLPL-AI4T-TST-PDI-01", "TST", "Stage 9"],
+  ["Commercial Tax Invoice", "HLPL-AI4T-FIN-INV-01", "FIN", "Stage 9"],
+] as const;
+type Persona = {
+  id: string;
+  label: string;
+  person: string;
+  departmentId?: AreaId | undefined;
+  kind: "admin" | "lead" | "client";
+};
+type Ai4tSimulation = { stage: number; history: string[] };
 type PortalState = {
   demoLoaded: boolean;
   demoSnapshot?: PortalState | undefined;
