@@ -19,3 +19,4 @@
 - [x] Enable drag-and-drop and browser-local controlled-document attachments with preview, download, and revision metadata for DEMO and local modes.
 - [x] Add a persistent dark/light interface toggle and compact operational layout hierarchy across portal workspaces.
 - [x] Add the AI4T end-to-end lifecycle hub entry point, stage/binder navigation, and per-department dual project scopes.
+- [x] Add automatic automotive document numbering, live template settings, location/data auto-fill, and printable full-page document views.
