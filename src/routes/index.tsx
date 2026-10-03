@@ -1562,6 +1562,8 @@ function Portal() {
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [syncHubOpen, setSyncHubOpen] = useState(false);
   const [draftHubOpen, setDraftHubOpen] = useState(false);
+  const [templateSettingsOpen, setTemplateSettingsOpen] = useState(false);
+  const [printTemplate, setPrintTemplate] = useState<PrintableDocument | null>(null);
   const [ai4tOpen, setAi4tOpen] = useState(false);
   const [ai4tSimulation, setAi4tSimulation] = useState<Ai4tSimulation>({ stage: 0, history: [] });
   const [projectScopes, setProjectScopes] = useState<Partial<Record<AreaId, ProjectScope>>>({});
@@ -1763,6 +1765,7 @@ function Portal() {
               }}
             />
             <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
+            <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
             <HeaderAction
               label="Administration"
               icon={Settings2}
@@ -2052,6 +2055,21 @@ function Portal() {
       )}
       {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
       {draftHubOpen && <AutoDraftHub onClose={() => setDraftHubOpen(false)} />}
+      {templateSettingsOpen && (
+        <TemplateSettingsPanel
+          settings={portal.templateSettings ?? defaultTemplateSettings()}
+          onClose={() => setTemplateSettingsOpen(false)}
+          onChange={(settings) => update((state) => ({ ...state, templateSettings: settings }))}
+        />
+      )}
+      {printTemplate && (
+        <PrintableTemplateView
+          document={printTemplate}
+          settings={portal.templateSettings ?? defaultTemplateSettings()}
+          onClose={() => setPrintTemplate(null)}
+          onOpenSettings={() => setTemplateSettingsOpen(true)}
+        />
+      )}
       {ai4tOpen && (
         <Ai4tLifecycleHub
           persona={persona}
