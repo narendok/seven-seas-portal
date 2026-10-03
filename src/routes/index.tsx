@@ -2230,6 +2230,8 @@ function TodayChecklist({
   onOpenAssignee: (assignee: string) => void;
 }) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [expandAll, setExpandAll] = useState(false);
+  const [inspectionOpen, setInspectionOpen] = useState(false);
   const todayTasks = tasks.filter(
     (task) => task.fields["dueDate"] === today && task.status !== "Released",
   );
@@ -2239,7 +2241,12 @@ function TodayChecklist({
   const move = (task: RecordItem, dueDate: string, action: string) =>
     onUpdateTask(task.id, { fields: { ...task.fields, dueDate } }, action);
   return (
-    <section className="mt-6 grid gap-5 xl:grid-cols-2">
+    <section className="mt-6">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div><p className="font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
+        <div className="flex gap-2"><Action label={expandAll ? "Collapse all" : "Expand all"} onClick={() => setExpandAll((value) => !value)} /><Action label="Open expanded modal" onClick={() => setInspectionOpen(true)} /></div>
+      </div>
+    <div className="grid gap-5 xl:grid-cols-2">
       <ChecklistLane
         title="Today"
         description="Short department-wise checklist"
@@ -2255,6 +2262,7 @@ function TodayChecklist({
         onMove={(task) => move(task, tomorrow, "Task moved to pending / tomorrow")}
         onOpenProject={onOpenProject}
         onOpenAssignee={onOpenAssignee}
+        expandAll={expandAll}
       />
       <ChecklistLane
         title="Pending / Tomorrow"
@@ -2271,7 +2279,10 @@ function TodayChecklist({
         onMove={(task) => move(task, today, "Task reprioritized to today")}
         onOpenProject={onOpenProject}
         onOpenAssignee={onOpenAssignee}
+        expandAll={expandAll}
       />
+    </div>
+    {inspectionOpen && <TaskInspectionModal tasks={[...todayTasks, ...pendingTasks]} departments={departments} onClose={() => setInspectionOpen(false)} onDone={(task) => onUpdateTask(task.id, { status: "Released" }, "Task marked done from inspection")} />}
     </section>
   );
 }
@@ -2286,6 +2297,7 @@ function ChecklistLane({
   onMove,
   onOpenProject,
   onOpenAssignee,
+  expandAll,
 }: {
   title: string;
   description: string;
@@ -2297,6 +2309,7 @@ function ChecklistLane({
   onMove: (task: RecordItem) => void;
   onOpenProject: (projectId: string) => void;
   onOpenAssignee: (assignee: string) => void;
+  expandAll: boolean;
 }) {
   return (
     <section
@@ -2321,6 +2334,7 @@ function ChecklistLane({
               onMove={onMove}
               onOpenProject={onOpenProject}
               onOpenAssignee={onOpenAssignee}
+              expanded={expandAll}
             />
           ))
         ) : (
@@ -2338,6 +2352,7 @@ function TaskCard({
   onMove,
   onOpenProject,
   onOpenAssignee,
+  expanded,
 }: {
   task: RecordItem;
   department: Department | undefined;
@@ -2346,7 +2361,10 @@ function TaskCard({
   onMove: (task: RecordItem) => void;
   onOpenProject: (projectId: string) => void;
   onOpenAssignee: (assignee: string) => void;
+  expanded: boolean;
 }) {
+  const [open, setOpen] = useState(expanded);
+  useEffect(() => setOpen(expanded), [expanded]);
   const projectId = task.fields["projectId"];
   const projectLabel = task.fields["project"] ?? "No linked project";
   const assignee = task.fields["assignee"] ?? "Unassigned";
@@ -2354,17 +2372,19 @@ function TaskCard({
     <article
       draggable
       onDragStart={() => onDragStart(task.id)}
-      className="border-b border-border px-5 py-4 transition-colors hover:bg-secondary/45 last:border-0"
+      className="border-b border-border last:border-0"
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <p className="font-medium">{task.title}</p>
-        <Status status={task.status} />
+      <div className="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto_auto_auto] items-center gap-2 px-3 py-2.5 transition-colors hover:bg-secondary/70" onClick={() => setOpen((value) => !value)}>
+        <span className="rounded border border-steel/35 bg-steel/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-steel">{department?.code.replace("DEMO-", "") ?? "—"}</span>
+        <span className={`size-2 rounded-full ${task.priority === "Critical" ? "bg-danger" : task.priority === "High" ? "bg-warning" : "bg-steel"}`} />
+        <p className="truncate text-sm font-medium">{task.title}</p>
+        <span className="grid size-6 place-items-center rounded-full border border-border bg-panel font-mono text-[9px] text-muted-foreground" title={assignee}>{assignee.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span>
+        <span className="hidden font-mono text-[10px] text-muted-foreground sm:block">{task.fields["dueDate"] || "Unscheduled"}</span>
+        <div className="flex items-center gap-1"><button aria-label={`Mark ${task.title} done`} onClick={(event) => { event.stopPropagation(); onDone(task); }} className="grid size-7 place-items-center rounded border border-moss/35 text-moss hover:bg-accent"><Check className="size-3.5" /></button><ChevronRight className={`size-4 text-muted-foreground transition-transform motion-reduce:transition-none ${open ? "rotate-90" : ""}`} /></div>
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[.08em] text-muted-foreground">
-        <span>{task.priority}</span>
-        <span>Due {task.fields["dueDate"] || "Unscheduled"}</span>
-        <span>{department?.name ?? "Department not set"}</span>
-      </div>
+      {open && <div className="task-disclosure grid px-4 pb-4"><div className="min-h-0 overflow-hidden border-l-2 border-steel/35 pl-3">
+      <p className="text-sm leading-6 text-muted-foreground">{task.notes || "No further task description recorded."}</p>
+      <p className="mt-2 text-xs font-medium text-steel">Next action: Completing this task enables the next unblocked lifecycle handoff.</p>
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-xs">
         <button
           disabled={!projectId}
@@ -2381,7 +2401,7 @@ function TaskCard({
           Assignee: {assignee}
         </button>
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <Action onClick={() => onDone(task)} label="Mark done" />
         <Action
           onClick={() => onMove(task)}
@@ -2391,9 +2411,13 @@ function TaskCard({
               : "Move to Today"
           }
         />
-      </div>
+      </div></div></div>}
     </article>
   );
+}
+
+function TaskInspectionModal({ tasks, departments, onClose, onDone }: { tasks: RecordItem[]; departments: Department[]; onClose: () => void; onDone: (task: RecordItem) => void }) {
+  return <Modal title="Expanded task inspection" onClose={onClose} wide><div className="space-y-3">{tasks.map((task) => <article key={task.id} className="border border-border bg-panel p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-mono text-[10px] text-steel">{departments.find((item) => item.id === task.departmentId)?.code ?? "—"} · {task.reference}</p><h3 className="mt-1 font-semibold">{task.title}</h3></div><Status status={task.status} /></div><p className="mt-2 text-sm text-muted-foreground">{task.notes || "No further description recorded."}</p><p className="mt-3 text-xs font-medium text-steel">Next action: Completion unblocks the next controlled lifecycle handoff.</p><div className="mt-4"><Action label="Mark done" onClick={() => onDone(task)} /></div></article>)}</div></Modal>;
 }
 function ProjectDetail({
   project,
