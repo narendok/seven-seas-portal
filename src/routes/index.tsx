@@ -1728,8 +1728,9 @@ function Portal() {
           onClose={() => setRfqOpen(false)}
           onAdvance={() => {
             const next = Math.min(rfqStages.length - 1, rfqStep + 1);
+            const nextStage = rfqStages[next] ?? rfqStages[0];
             setRfqStep(next);
-            log("DEMO RFQ feature test advanced", `${rfqStages[next][0]} · ${rfqStages[next][1]}`);
+            log("DEMO RFQ feature test advanced", `${nextStage[0]} · ${nextStage[1]}`);
             if (next === rfqStages.length - 1) announce("DEMO RFQ project cycle reached Stage 9.");
           }}
           onReset={() => setRfqStep(0)}
