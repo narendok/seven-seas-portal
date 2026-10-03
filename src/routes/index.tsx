@@ -447,6 +447,10 @@ const mergeAutomotiveDemoDocuments = (documents: ControlledDocument[]) => {
   ];
   return [...documents, ...seed.filter((document) => !existing.has(document.id))];
 };
+const hasCompleteDemoDocumentSet = (documents: ControlledDocument[]) =>
+  ["demo-doc-pmss", "demo-doc-prs", "demo-doc-bom", "demo-doc-datasheet"].every((id) =>
+    documents.some((document) => document.id === id),
+  );
 const setupSteps = [
   "Company, locations, calendars & numbering",
   "Departments, leads, roles & sub-roles",
@@ -1381,7 +1385,7 @@ const readPortal = (): PortalState => {
     // Restore the complete DEMO workspace rather than leaving document controls unreachable.
     if (
       hydrated.demoLoaded &&
-      (!hydrated.documents.length || !hydrated.departments.length || !hydrated.records.length)
+      (!hasCompleteDemoDocumentSet(hydrated.documents) || !hydrated.departments.length || !hydrated.records.length)
     ) {
       const restored = demoPortal();
       return {
