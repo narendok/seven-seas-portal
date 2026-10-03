@@ -115,7 +115,7 @@
   --sidebar-ring: oklch(0.58 0.13 250);
 }
 
-.ops-dark {
+.dark {
   --background: oklch(0.095 0.016 258);
   --foreground: oklch(0.93 0.012 245);
   --card: oklch(0.125 0.017 255);
@@ -150,7 +150,7 @@
   --sidebar-ring: oklch(0.7 0.13 219);
 }
 
-.ops-dark .surface-card {
+.dark .surface-card {
   box-shadow: 0 1px 1px oklch(0.02 0.01 255 / 70%), 0 10px 28px oklch(0.02 0.01 255 / 26%);
 }
 
@@ -163,41 +163,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .task-disclosure { animation: none; }
-}
-
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
 @layer base {
@@ -271,4 +236,20 @@
 @utility surface-panel {
   border-radius: var(--radius-lg);
   box-shadow: 0 1px 2px oklch(0.25 0.02 251 / 3%);
+}
+
+@utility ops-section {
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+}
+
+@utility ops-section-header {
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  padding: 0.625rem 0.875rem;
+}
+
+@utility ops-dense-row {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }

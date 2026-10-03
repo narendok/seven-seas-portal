@@ -21,6 +21,8 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
+  Sun,
+  Moon,
   UsersRound,
   Wrench,
   X,
@@ -1439,7 +1441,15 @@ function Portal() {
   const [syncHubOpen, setSyncHubOpen] = useState(false);
   const [draftHubOpen, setDraftHubOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
+  const [darkMode, setDarkMode] = useState(true);
   useEffect(() => setPortal(readPortal()), []);
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("hexense-scms-theme");
+    setDarkMode(savedTheme !== "light");
+  }, []);
+  useEffect(() => {
+    window.localStorage.setItem("hexense-scms-theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
   }, [portal]);
@@ -1544,7 +1554,7 @@ function Portal() {
     setModal("document");
   };
   return (
-    <main className="ops-dark min-h-screen bg-background text-foreground">
+    <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-border bg-sidebar p-4 lg:flex lg:flex-col">
         <Brand />
         <nav className="mt-8 space-y-1" aria-label="Primary navigation">
@@ -1567,6 +1577,7 @@ function Portal() {
             {portal.setupStep + 1}/{setupSteps.length}
           </span>
         </button>
+        <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} expanded />
       </aside>
       <section className="min-h-screen lg:pl-72">
         <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
@@ -1609,6 +1620,7 @@ function Portal() {
               badge={portal.alerts.filter((alert) => !alert.resolved).length}
               onClick={() => setAlertsOpen(true)}
             />
+            <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} />
           </div>
         </header>
         <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-10">
@@ -1771,7 +1783,7 @@ function Portal() {
           <span>More</span>
         </button>
       </nav>
-      {mobileMenu && <MobileMenu onClose={() => setMobileMenu(false)} onNavigate={navigate} />}{" "}
+      {mobileMenu && <MobileMenu onClose={() => setMobileMenu(false)} onNavigate={navigate} darkMode={darkMode} onToggleTheme={() => setDarkMode((value) => !value)} />} 
       {modal === "create" && (
         <RecordForm
           area={activeArea}
@@ -2016,10 +2028,10 @@ function CommandCenter({
         onOpenProject={onOpenProject}
         onOpenAssignee={onOpenAssignee}
       />
-      <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <p className="font-semibold">Department management</p>
+      <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="ops-section overflow-hidden">
+          <div className="ops-section-header">
+            <p className="text-sm font-semibold">Department management</p>
             <p className="text-xs text-muted-foreground">
               Open a department to manage its lead, roles, queue and department-owned records.
             </p>
@@ -2049,7 +2061,7 @@ function CommandCenter({
                   <button
                     key={department.id}
                     onClick={() => onNavigate(area)}
-                    className="grid w-full grid-cols-[minmax(9rem,1fr)_auto] items-center gap-4 border-b border-border px-4 py-4 text-left last:border-0"
+                    className="grid w-full grid-cols-[minmax(9rem,1fr)_auto] items-center gap-4 border-b border-border px-4 py-2 text-left transition-colors hover:bg-secondary/65 last:border-0"
                   >
                     <span>
                       <span className="block text-sm font-medium">{department.name}</span>
@@ -2069,8 +2081,8 @@ function CommandCenter({
               })}
           </div>
         </div>
-        <aside className="border border-border bg-panel p-4">
-          <p className="font-semibold">Quick actions</p>
+        <aside className="ops-section bg-panel p-4">
+          <p className="text-sm font-semibold">Quick actions</p>
           <div className="mt-3 grid gap-2">
             <Action onClick={onCreate} label="Create task" />
             <Action onClick={() => onNavigate("quality")} label="Review quality queue" />
@@ -2272,12 +2284,12 @@ function TodayChecklist({
   const move = (task: RecordItem, dueDate: string, action: string) =>
     onUpdateTask(task.id, { fields: { ...task.fields, dueDate } }, action);
   return (
-    <section className="mt-6">
+    <section className="mt-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div><p className="font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
+        <div><p className="text-sm font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
         <div className="flex gap-2"><Action label={expandAll ? "Collapse all" : "Expand all"} onClick={() => setExpandAll((value) => !value)} /><Action label="Open expanded modal" onClick={() => setInspectionOpen(true)} /></div>
       </div>
-    <div className="grid gap-5 xl:grid-cols-2">
+    <div className="grid gap-6 xl:grid-cols-2">
       <ChecklistLane
         title="Today"
         description="Short department-wise checklist"
@@ -2347,10 +2359,10 @@ function ChecklistLane({
       aria-label={`${title} checklist`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
-      className="surface-card overflow-hidden border border-border bg-card"
+      className="surface-card ops-section overflow-hidden"
     >
-      <div className="border-b border-border bg-panel px-5 py-4">
-        <p className="font-semibold">{title}</p>
+      <div className="ops-section-header bg-panel">
+        <p className="text-sm font-semibold">{title}</p>
         <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       </div>
       <div>
@@ -2838,8 +2850,8 @@ function DepartmentWorkspace({
       {area.id === "hrops" && (
         <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
       )}
-      <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="overflow-hidden border border-border bg-card">
+      <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="ops-section overflow-hidden">
           {view === "summary" ? (
             <AreaSummary records={records} />
           ) : records.length ? (
@@ -2848,7 +2860,7 @@ function DepartmentWorkspace({
                 <button
                   key={record.id}
                   onClick={() => onSelect(record.id)}
-                  className="grid w-full gap-3 border-b border-border px-4 py-4 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
+                  className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
                 >
                   <span className="font-mono text-xs text-muted-foreground">
                     {record.reference}
@@ -2870,8 +2882,8 @@ function DepartmentWorkspace({
             <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
           )}
         </div>
-        <aside className="border border-border bg-panel p-4">
-          <p className="font-semibold">Lead view</p>
+        <aside className="ops-section bg-panel p-4">
+          <p className="text-sm font-semibold">Lead view</p>
           <dl className="mt-4 space-y-3 text-sm">
             <div>
               <dt className="font-mono text-[10px] uppercase text-muted-foreground">
@@ -2967,10 +2979,10 @@ function DepartmentFlow({
 }) {
   if (!flow.length) return null;
   return (
-    <section className="mt-6 overflow-hidden border border-border bg-panel">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3">
+    <section className="ops-section surface-panel mt-8 overflow-hidden bg-panel">
+      <div className="ops-section-header flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="font-semibold">Department flow</p>
+          <p className="text-sm font-semibold">Department flow</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Record progress through this department’s controlled work stages.
           </p>
@@ -2986,7 +2998,7 @@ function DepartmentFlow({
             <button
               key={stage.label}
               onClick={() => onOpenStage(stage.label)}
-              className="relative min-h-36 bg-card px-4 py-4 text-left transition-colors hover:bg-secondary"
+              className="relative min-h-32 bg-card px-4 py-3 text-left transition-colors hover:bg-secondary"
             >
               <div className="flex items-start justify-between gap-3">
                 <span className="font-mono text-[10px] text-muted-foreground">
@@ -2994,7 +3006,7 @@ function DepartmentFlow({
                 </span>
                 <span className="font-mono text-sm font-semibold text-steel">{percent}%</span>
               </div>
-              <p className="mt-2 text-sm font-semibold">{stage.label}</p>
+              <p className="mt-2 text-xs font-semibold">{stage.label}</p>
               <div
                 className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"
                 aria-label={`${stage.label} ${percent}% complete`}
@@ -4978,7 +4990,7 @@ function DocumentsPanel({
           Private Cloud storage
         </span>
       </section>
-      <section className="mb-5 overflow-hidden rounded-lg border border-border bg-panel">
+      <section className="ops-section mb-6 overflow-hidden bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
             Canonical repository path
@@ -5008,12 +5020,12 @@ function DocumentsPanel({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search document, device or part"
-          className="h-11 border border-input bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
         />
         <select
           value={group}
           onChange={(event) => setGroup(event.target.value)}
-          className="h-11 border border-input bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
         >
           <option>All groups</option>
           {groups.map((item) => (
@@ -5023,7 +5035,7 @@ function DocumentsPanel({
         <select
           value={phase}
           onChange={(event) => setPhase(event.target.value)}
-          className="h-11 border border-input bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
         >
           <option>All phases</option>
           {phases.map((item) => (
@@ -5031,12 +5043,12 @@ function DocumentsPanel({
           ))}
         </select>
       </div>
-      <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
+      <div className="ops-section mt-4 overflow-hidden">
         {visible.length ? (
           visible.map((document) => (
             <div
               key={document.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-4 last:border-0"
+              className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-2.5 last:border-0"
             >
               <button onClick={() => onSelectDocument(document)} className="min-w-0 text-left">
                 <span>
@@ -5495,15 +5507,15 @@ function PageHeader({
   actions: ReactNode;
 }) {
   return (
-    <div className="mb-7 grid gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+    <div className="mb-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
       <div className="min-w-0">
         <p className="font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-steel">
           {eyebrow}
         </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-normal text-foreground md:text-4xl">
+        <h1 className="mt-1 text-xl font-semibold tracking-normal text-foreground md:text-2xl">
           {title}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
+        <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">{description}</p>
       </div>
       <div className="flex flex-wrap gap-2 md:justify-end">{actions}</div>
     </div>
@@ -5528,8 +5540,8 @@ function Modal({
         aria-label={title}
         className={`surface-card max-h-[92vh] w-full overflow-auto border border-border bg-popover ${wide ? "max-w-5xl" : "max-w-xl"}`}
       >
-        <header className="sticky top-0 flex items-center justify-between border-b border-border bg-popover/95 px-5 py-4 backdrop-blur">
-          <h2 className="text-lg font-semibold">{title}</h2>
+        <header className="sticky top-0 flex items-center justify-between border-b border-border bg-popover/95 px-4 py-3 backdrop-blur">
+          <h2 className="text-sm font-semibold">{title}</h2>
           <button
             aria-label="Close"
             onClick={onClose}
@@ -5538,7 +5550,7 @@ function Modal({
             <X className="size-4" />
           </button>
         </header>
-        <div className="p-5">{children}</div>
+        <div className="p-4">{children}</div>
       </section>
     </div>
   );
@@ -5557,7 +5569,7 @@ function TextField({
   type?: string;
 }) {
   return (
-    <label className="block text-sm font-medium">
+    <label className="block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
       {label}
       {required ? " *" : ""}
       <input
@@ -5565,7 +5577,7 @@ function TextField({
         required={required}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm transition-colors placeholder:text-muted-foreground hover:border-ring/60 focus:border-ring"
+        className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal text-foreground transition-colors placeholder:text-muted-foreground hover:border-ring/60 focus:border-ring"
       />
     </label>
   );
@@ -5582,12 +5594,12 @@ function SelectField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block text-sm font-medium">
+    <label className="block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm transition-colors hover:border-ring/60 focus:border-ring"
+        className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal text-foreground transition-colors hover:border-ring/60 focus:border-ring"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -5613,7 +5625,7 @@ function Action({
     <button
       type={submit ? "submit" : "button"}
       onClick={onClick}
-      className={`inline-flex h-10 items-center justify-center rounded-lg px-3.5 text-sm font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 ${primary ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90" : "border border-border bg-card text-foreground hover:border-ring/50 hover:bg-secondary"}`}
+      className={`inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 ${primary ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90" : "border border-border bg-card text-foreground hover:border-ring/50 hover:bg-secondary"}`}
     >
       {label}
     </button>
@@ -5639,14 +5651,14 @@ function Metric({
           ? "bg-moss"
           : "bg-warning";
   return (
-    <div className="surface-card border border-border bg-card p-4">
+    <div className="surface-card ops-section p-3">
       <div className="flex justify-between">
         <p className="font-mono text-[10px] font-medium uppercase tracking-[.12em] text-muted-foreground">
           {label}
         </p>
         <span className={`mt-1 size-2 rounded-full ${color}`} />
       </div>
-      <p className="mt-3 text-3xl font-semibold tracking-normal">{value}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-normal">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
     </div>
   );
@@ -5759,6 +5771,21 @@ function HeaderAction({
     </button>
   );
 }
+function ThemeToggle({ darkMode, onToggle, expanded = false }: { darkMode: boolean; onToggle: () => void; expanded?: boolean }) {
+  const Icon = darkMode ? Sun : Moon;
+  const label = darkMode ? "Switch to light mode" : "Switch to dark mode";
+  return (
+    <button
+      aria-label={label}
+      title={label}
+      onClick={onToggle}
+      className={expanded ? "mt-3 flex w-full items-center gap-3 rounded-lg border border-sidebar-border bg-card px-3 py-2.5 text-left text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent" : "grid size-10 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-ring/50 hover:bg-secondary hover:text-foreground"}
+    >
+      <Icon className="size-4 text-steel" />
+      {expanded && <span>{darkMode ? "Light mode" : "Dark mode"}</span>}
+    </button>
+  );
+}
 function Brand() {
   return (
     <div className="flex items-center gap-3">
@@ -5797,9 +5824,13 @@ function AreaNav({
 function MobileMenu({
   onClose,
   onNavigate,
+  darkMode,
+  onToggleTheme,
 }: {
   onClose: () => void;
   onNavigate: (area: AreaId) => void;
+  darkMode: boolean;
+  onToggleTheme: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-[2px] lg:hidden">
@@ -5827,6 +5858,7 @@ function MobileMenu({
             />
           ))}
         </nav>
+        <ThemeToggle darkMode={darkMode} onToggle={onToggleTheme} expanded />
       </div>
     </div>
   );

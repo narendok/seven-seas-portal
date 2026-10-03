@@ -17,3 +17,4 @@
 
 - [x] Add Smart Next-Step recommendations, auto-draft document template previews, and dense expandable Today/Pending task tables in the compact automotive command-center UI.
 - [x] Enable drag-and-drop and browser-local controlled-document attachments with preview, download, and revision metadata for DEMO and local modes.
+- [x] Add a persistent dark/light interface toggle and compact operational layout hierarchy across portal workspaces.
