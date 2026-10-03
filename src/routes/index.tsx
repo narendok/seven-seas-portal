@@ -505,7 +505,7 @@ const emptyPortal = (): PortalState => ({
 const demoPortal = (): PortalState => {
   const base = emptyPortal();
   const timestamp = "DEMO · 03 Oct 2026";
-  const project = "HLPL-AI4T-01";
+  const project = "HLPL-SLCT-01";
   const demoNote =
     "DEMO DATA ONLY · Fictional, illustrative automotive telematics lifecycle. NOT VALIDATED. No real customer, supplier, certification, procurement, billing, production, shipment, or client communication is represented.";
   const departmentSeeds: {
@@ -720,18 +720,18 @@ const demoPortal = (): PortalState => {
       { signoffs: "Hardware · Firmware · Quality · Purchase HOD · DEMO approvals only" },
     ),
     make(
-      "HLPL-AI4T-01",
+      "HLPL-SLCT-01",
       "ehw",
       "Project",
       "AIS-140 Intelligent 4G Telematics Tracker",
       "In review",
       "Critical",
       "Stage 8 · Type Approval & SCM",
-      ["HLPL-AI4T-EHW-PRS-01", "HLPL-AI4T-EHW-BOM-01", "HLPL-AI4T-QA-DVP-01", "F-PUR-16/AI4T-01"],
+      ["HLPL-SLCT-EHW-PRS-01", "HLPL-SLCT-EHW-BOM-01", "HLPL-SLCT-QA-DVP-01", "F-PUR-16/SLCT-01"],
       {
         client: "DEMO Tata Motors EV Fleet · fictional",
         platform: "DEMO Tata Ace EV & Ultra T.7 · fictional",
-        pmss: "HLPL-AI4T-PMSS-00",
+        pmss: "HLPL-SLCT-PMSS-00",
         currentStage: "Stage 8 · Type Approval & SCM",
         targetBom: "$38.50 · illustrative",
         actualBom: "$35.42 · illustrative",
@@ -741,17 +741,17 @@ const demoPortal = (): PortalState => {
         compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · targets only, NOT certified",
       },
     ),
-    make("HLPL-AI4T-SAL-SOR-01", "sales", "Customer SOR", "Customer SOR · RFQ-2026-TATA-AI4T-088", "Approved", "Critical", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-AI4T-SAL-mNDA-01", "HLPL/F/MKT/01"], { rfq: "RFQ-2026-TATA-AI4T-088 · DEMO only", customer: "DEMO Tata Motors EV Fleet · fictional" }),
-    make("HLPL-AI4T-SAL-mNDA-01", "sales", "mNDA", "Bilateral mutual NDA", "Approved", "High", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-AI4T-SAL-SOR-01", "HLPL/F/MKT/01"], { ndaStatus: "DEMO bilateral signature simulation · no legal effect" }),
-    make("HLPL/F/MKT/01", "sales", "Contract review", "Cross-department feasibility review · five HOD approvals", "Approved", "Critical", "Stage 2 · Cross-Dept Feasibility Analysis", ["HLPL-AI4T-SAL-SOR-01", "HLPL-AI4T-EHW-PRS-01", "HLPL-AI4T-SAL-QUO-01"], { signoffs: "Hardware · Software · Mechanical · Purchase · Quality · all DEMO approvals complete", feasibility: "Approved automatically compiles PRS and quotation" }),
-    make("HLPL-AI4T-EHW-PRS-01", "ehw", "PRS", "Auto-compiled Product Requirement Specification", "Approved", "Critical", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-AI4T-SAL-QUO-01", "HLPL-AI4T-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", baseline: "Frozen · automated baseline · changes require PMSS amendment", requirements: "12V/24V · GNSS · LTE 4G · CAN/OBD · tamper and power-loss alerts · panic/SOS · illustrative" }),
-    make("HLPL-AI4T-SAL-QUO-01", "sales", "Commercial quotation", "Auto-generated commercial quotation", "Approved", "High", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-AI4T-EHW-PRS-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", commercial: "₹20.33 Cr total value · DEMO only" }),
-    make("PO-TATA-AI4T-2026-9041", "sales", "Order", "Customer purchase order sync · 50,000 units", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-01", "HLPL-AI4T-FIN-INV-01", "HLPL-AI4T-EHW-PRS-01"], { volume: "50,000 units · DEMO only", value: "₹20.33 Cr · illustrative only", loi: "Customer LOI confirmed · DEMO simulation" }),
-    make("HLPL-AI4T-FIN-INV-01", "fin", "Commercial billing", "Advance deposit verification and tax invoice", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["PO-TATA-AI4T-2026-9041"], { advance: "₹6.10 Cr · illustrative payment verification only", invoice: "Generated · DEMO only" }),
-    make("HLPL-AI4T-EHW-BOM-01", "ehw", "BOM", "Production BOM release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-AI4T-EHW-PRS-01", "PO-TATA-AI4T-2026-9041"], { release: "Final production BOM · DEMO release" }),
-    make("HLPL-AI4T-EHW-GER-01", "ehw", "Gerber release", "Final Gerber package release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-AI4T-EHW-BOM-01"], { release: "Final Gerber package · DEMO release" }),
-    make("HLPL-AI4T-QA-APQP-01", "qa", "APQP gate", "APQP phases 1–4 closed", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-01", "HLPL-AI4T-QA-DVP-01"], { apqp: "Phases 1–4 closed · DEMO only", auditReadiness: "100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion only" }),
-    make("HLPL-AI4T-QA-DVP-01", "qa", "DVP&R", "AIS-140 evidence pack", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-QA-APQP-01"], { tac: "DEMO reference #ARAI/TAC/2026/AIS140-842 · no certification claim" }),
+    make("HLPL-SLCT-SAL-SOR-01", "sales", "Customer SOR", "Customer SOR · RFQ-2026-TATA-SLCT-088", "Approved", "Critical", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-SLCT-SAL-mNDA-01", "HLPL/F/MKT/01"], { rfq: "RFQ-2026-TATA-SLCT-088 · DEMO only", customer: "DEMO Tata Motors EV Fleet · fictional" }),
+    make("HLPL-SLCT-SAL-mNDA-01", "sales", "mNDA", "Bilateral mutual NDA", "Approved", "High", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-SLCT-SAL-SOR-01", "HLPL/F/MKT/01"], { ndaStatus: "DEMO bilateral signature simulation · no legal effect" }),
+    make("HLPL/F/MKT/01", "sales", "Contract review", "Cross-department feasibility review · five HOD approvals", "Approved", "Critical", "Stage 2 · Cross-Dept Feasibility Analysis", ["HLPL-SLCT-SAL-SOR-01", "HLPL-SLCT-EHW-PRS-01", "HLPL-SLCT-SAL-QUO-01"], { signoffs: "Hardware · Software · Mechanical · Purchase · Quality · all DEMO approvals complete", feasibility: "Approved automatically compiles PRS and quotation" }),
+    make("HLPL-SLCT-EHW-PRS-01", "ehw", "PRS", "Auto-compiled Product Requirement Specification", "Approved", "Critical", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-SLCT-SAL-QUO-01", "HLPL-SLCT-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", baseline: "Frozen · automated baseline · changes require PMSS amendment", requirements: "12V/24V · GNSS · LTE 4G · CAN/OBD · tamper and power-loss alerts · panic/SOS · illustrative" }),
+    make("HLPL-SLCT-SAL-QUO-01", "sales", "Commercial quotation", "Auto-generated commercial quotation", "Approved", "High", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-SLCT-EHW-PRS-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", commercial: "₹20.33 Cr total value · DEMO only" }),
+    make("PO-TATA-SLCT-2026-9041", "sales", "Order", "Customer purchase order sync · 50,000 units", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-SLCT-01", "HLPL-SLCT-FIN-INV-01", "HLPL-SLCT-EHW-PRS-01"], { volume: "50,000 units · DEMO only", value: "₹20.33 Cr · illustrative only", loi: "Customer LOI confirmed · DEMO simulation" }),
+    make("HLPL-SLCT-FIN-INV-01", "fin", "Commercial billing", "Advance deposit verification and tax invoice", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["PO-TATA-SLCT-2026-9041"], { advance: "₹6.10 Cr · illustrative payment verification only", invoice: "Generated · DEMO only" }),
+    make("HLPL-SLCT-EHW-BOM-01", "ehw", "BOM", "Production BOM release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-SLCT-EHW-PRS-01", "PO-TATA-SLCT-2026-9041"], { release: "Final production BOM · DEMO release" }),
+    make("HLPL-SLCT-EHW-GER-01", "ehw", "Gerber release", "Final Gerber package release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-SLCT-EHW-BOM-01"], { release: "Final Gerber package · DEMO release" }),
+    make("HLPL-SLCT-QA-APQP-01", "qa", "APQP gate", "APQP phases 1–4 closed", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-SLCT-01", "HLPL-SLCT-QA-DVP-01"], { apqp: "Phases 1–4 closed · DEMO only", auditReadiness: "100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion only" }),
+    make("HLPL-SLCT-QA-DVP-01", "qa", "DVP&R", "AIS-140 evidence pack", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-SLCT-QA-APQP-01"], { tac: "DEMO reference #ARAI/TAC/2026/AIS140-842 · no certification claim" }),
     make(
       "HLPL-SLCT-EHW-PRS-02",
       "ehw",
@@ -1057,7 +1057,7 @@ const demoPortal = (): PortalState => {
     task("DEMO-TASK-PUR-MLCC", "pur", "Audit lead-time variance report for passive MLCC capacitors", "Normal", tomorrow, "Morgan Reed", "HLPL-EFAN-01", "HLPL-EFAN-01 · High-Power eFan Speed Controller", "Supply risk review · tomorrow"),
   ];
   const projectProfiles = [
-    ["HLPL-AI4T-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors EV Fleet · fictional DEMO", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
+    ["HLPL-SLCT-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors EV Fleet · fictional DEMO", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
     ["HLPL-BCU-02", "Body Control Unit Gen 3", "Mahindra Electric · fictional DEMO", "Stage 5 · Pilot Build", "24V", "IP67", "$52.00"],
     ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Ashok Leyland Fleet · fictional DEMO", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
     ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors · fictional DEMO", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
@@ -1151,7 +1151,7 @@ const demoPortal = (): PortalState => {
         "DEMO AXP2101",
         "DEMO 1000mAh LiPo",
       ],
-      products: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
+      products: ["HLPL-SLCT-01", "HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
       customers: ["DEMO Tata Motors EV · fictional", "DEMO Mahindra Electric · fictional", "DEMO Ashok Leyland Fleet · fictional", "DEMO Sonalika Tractors · fictional", "DEMO Escorts Kubota · fictional"],
       routes: ["DEMO SMT Line 2"],
       documentTypes: [
@@ -1353,7 +1353,7 @@ const readPortal = (): PortalState => {
       records:
         value.demoLoaded === true
           ? (() => {
-              const additions = demoPortal().records.filter((item) => item.reference.startsWith("HLPL-AI4T") || item.reference === "PO-TATA-AI4T-2026-9041");
+              const additions = demoPortal().records.filter((item) => item.reference.startsWith("HLPL-SLCT") || item.reference === "PO-TATA-SLCT-2026-9041");
               const existing = Array.isArray(value.records) ? value.records.map((record) => ({ ...record, area: legacyAreaMap[record.area] ?? record.area })) : [];
               return [...existing, ...additions.filter((item) => !existing.some((record) => record.reference === item.reference))];
             })()
@@ -1408,7 +1408,7 @@ function Portal() {
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [syncHubOpen, setSyncHubOpen] = useState(false);
   const [draftHubOpen, setDraftHubOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-AI4T-01");
+  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
@@ -1922,7 +1922,7 @@ function CommandCenter({
   return (
     <>
       {portal.demoLoaded && <DemoMarker />}
-      {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-AI4T-01" />}
+      {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-SLCT-01" />}
       <PageHeader
         eyebrow={departmentContext ? "Administrator context" : "Operational workspace"}
         title="Command center"
@@ -2159,17 +2159,17 @@ function SmartNextStep({
 }
 
 const autoDraftTemplates = [
-  ["Customer SOR", "HLPL-AI4T-SAL-SOR-01", "SAL"],
-  ["Mutual NDA", "HLPL-AI4T-SAL-mNDA-01", "SAL"],
-  ["Commercial Quotation", "HLPL-AI4T-SAL-QUO-01", "SAL"],
+  ["Customer SOR", "HLPL-SLCT-SAL-SOR-01", "SAL"],
+  ["Mutual NDA", "HLPL-SLCT-SAL-mNDA-01", "SAL"],
+  ["Commercial Quotation", "HLPL-SLCT-SAL-QUO-01", "SAL"],
   ["Contract Review Record", "HLPL/F/MKT/01", "SAL"],
-  ["Product Requirement Spec", "HLPL-AI4T-EHW-PRS-01", "EHW"],
-  ["Production BOM Cost Tracker", "HLPL-AI4T-EHW-BOM-01", "EHW"],
-  ["Hardware DFMEA", "HLPL-AI4T-EHW-DFMEA-01", "EHW"],
-  ["Manufacturing Process Flow & Control Plan", "HLPL-AI4T-EMF-CP-01", "EMF"],
-  ["DVP&R Verification Plan", "HLPL-AI4T-QA-DVP-01", "QA"],
-  ["Pre-Dispatch Inspection Certificate", "HLPL-AI4T-TST-PDI-01", "TST"],
-  ["Commercial Tax Invoice", "HLPL-AI4T-FIN-INV-01", "FIN"],
+  ["Product Requirement Spec", "HLPL-SLCT-EHW-PRS-01", "EHW"],
+  ["Production BOM Cost Tracker", "HLPL-SLCT-EHW-BOM-01", "EHW"],
+  ["Hardware DFMEA", "HLPL-SLCT-EHW-DFMEA-01", "EHW"],
+  ["Manufacturing Process Flow & Control Plan", "HLPL-SLCT-EMF-CP-01", "EMF"],
+  ["DVP&R Verification Plan", "HLPL-SLCT-QA-DVP-01", "QA"],
+  ["Pre-Dispatch Inspection Certificate", "HLPL-SLCT-TST-PDI-01", "TST"],
+  ["Commercial Tax Invoice", "HLPL-SLCT-FIN-INV-01", "FIN"],
   ["Annual Skill Matrix", "HLPL/F/HR/03", "HR/OPS"],
 ] as const;
 
@@ -2179,7 +2179,7 @@ function AutoDraftHub({ onClose }: { onClose: () => void }) {
     <Modal title="Auto-Draft Document Templates" onClose={onClose} wide>
       <div className="rounded-lg border border-warning/35 bg-accent p-4 text-sm">
         <strong>DEMO DRAFTING WORKSPACE</strong>
-        <p className="mt-1 text-muted-foreground">Pre-filled AI4T templates are illustrative drafts only. They are not signed, approved, issued, or externally shared.</p>
+        <p className="mt-1 text-muted-foreground">Pre-filled SLCT templates are illustrative drafts only. They are not signed, approved, issued, or externally shared.</p>
       </div>
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
         {autoDraftTemplates.map((template) => (
@@ -2197,10 +2197,10 @@ function AutoDraftHub({ onClose }: { onClose: () => void }) {
             <Status status="Draft" />
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <DocumentField label="Document ID" value={selected[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · DEMO" /><DocumentField label="Revision" value="00 · next draft revision" />
+            <DocumentField label="Document ID" value={selected[1]} /><DocumentField label="Project" value="HLPL-SLCT-01 · DEMO" /><DocumentField label="Revision" value="00 · next draft revision" />
             <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
           </div>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">Auto-drafted using the AI4T project baseline: 12V/24V nominal, −40°C to +85°C, IP67, and illustrative AIS-140/AEC/ISO targets. Validate all technical and commercial information before any controlled release.</p>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">Auto-drafted using the SLCT project baseline: 12V/24V nominal, −40°C to +85°C, IP67, and illustrative AIS-140/AEC/ISO targets. Validate all technical and commercial information before any controlled release.</p>
           <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Download formatted preview" onClick={() => window.print()} /></div>
         </section>
       )}
@@ -2662,7 +2662,7 @@ function LifecycleProgress({ records, projectId }: { records: RecordItem[]; proj
 function ExecutiveKpis() {
   return (
     <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-      <Metric label="Active project" value="AI4T-01" detail="AIS-140 tracker · DEMO" tone="steel" />
+      <Metric label="Active project" value="SLCT-01" detail="AIS-140 tracker · DEMO" tone="steel" />
       <Metric label="Order volume" value="50,000" detail="Illustrative units" tone="moss" />
       <Metric label="Revenue" value="₹20.33 Cr" detail="Illustrative order value" tone="steel" />
       <Metric label="Stage" value="8" detail="Type Approval & SCM" tone="warning" />
@@ -2674,12 +2674,12 @@ function ExecutiveKpis() {
 
 function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
   const flows = [
-    ["SAL", "Order locked & customer LOI confirmed", "PO-TATA-AI4T-2026-9041 · 50,000 units"],
-    ["FIN", "Advance deposit verified & invoice generated", "₹6.10 Cr illustrative advance · HLPL-AI4T-FIN-INV-01"],
+    ["SAL", "Order locked & customer LOI confirmed", "PO-TATA-SLCT-2026-9041 · 50,000 units"],
+    ["FIN", "Advance deposit verified & invoice generated", "₹6.10 Cr illustrative advance · HLPL-SLCT-FIN-INV-01"],
     ["PUR", "Long-lead IC purchase plan synchronized", "STM32 · Quectel 4G · u-blox GNSS · DEMO ASL"],
     ["R&D", "Design release package synchronized", "Final Gerber · production BOM · mold tooling"],
     ["EMF", "Tranche 1 production scheduled", "SMT Line 2 · 2,500 illustrative units"],
-    ["TST", "EOL capacity preloaded", "AI4T-2026-00001..50000 · 97.4% simulated FPY"],
+    ["TST", "EOL capacity preloaded", "SLCT-2026-00001..50000 · 97.4% simulated FPY"],
     ["QA", "APQP and compliance evidence ready", "Phases 1–4 closed · DEMO TAC reference only"],
   ];
   return (
@@ -2689,11 +2689,11 @@ function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
         <p className="mt-1 text-muted-foreground">Illustrative order, financial, supplier, production and audit signals. Nothing represents an actual customer order, payment, purchase, release, or certification.</p>
       </div>
       <section className="mt-5 grid gap-3 sm:grid-cols-3">
-        <DocumentField label="Customer PO" value="PO-TATA-AI4T-2026-9041" />
+        <DocumentField label="Customer PO" value="PO-TATA-SLCT-2026-9041" />
         <DocumentField label="Order volume" value="50,000 units · illustrative" />
         <DocumentField label="Total value" value="₹20.33 Cr · illustrative" />
         <DocumentField label="Advance" value="₹6.10 Cr · verification simulation" />
-        <DocumentField label="Project" value="HLPL-AI4T-01" />
+        <DocumentField label="Project" value="HLPL-SLCT-01" />
         <DocumentField label="Audit readiness" value="100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion" />
       </section>
       <section className="mt-5 divide-y divide-border border border-border bg-panel">
@@ -3432,8 +3432,8 @@ function RecordForm({
       type === "PRS"
         ? {
             ...values,
-            controlledNumber: values["controlledNumber"] || "HLPL-AI4T-EHW-PRS-01",
-            projectId: values["projectId"] || "HLPL-AI4T-01",
+            controlledNumber: values["controlledNumber"] || "HLPL-SLCT-EHW-PRS-01",
+            projectId: values["projectId"] || "HLPL-SLCT-01",
             lifecycleStage: "Stage 3 · Requirement Freeze & Commercial Confirmation",
             generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01",
             baseline: "Frozen · automated baseline · changes require PMSS amendment",
