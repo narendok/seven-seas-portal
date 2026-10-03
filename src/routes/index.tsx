@@ -1834,6 +1834,7 @@ function Portal() {
               }}
             />
             <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
+            <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
             <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
             <HeaderAction
               label="Administration"
@@ -1928,6 +1929,7 @@ function Portal() {
               }}
               onOpenSyncHub={() => setSyncHubOpen(true)}
               onOpenDraftHub={() => setDraftHubOpen(true)}
+              onOpenDrive={() => setModal("documents")}
               onOpenAi4t={() => setAi4tOpen(true)}
               persona={persona}
             />
@@ -1992,6 +1994,7 @@ function Portal() {
                 setView("queue");
               }}
               onOpenDraftHub={() => setDraftHubOpen(true)}
+            onOpenDrive={() => setModal("documents")}
             />
           )}
         </div>
@@ -2137,6 +2140,8 @@ function Portal() {
           onClose={() => setDraftHubOpen(false)}
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onOpenPrintable={setPrintTemplate}
+          documents={portal.documents}
+          onOpenDocument={openDocument}
           onOpenSettings={() => setTemplateSettingsOpen(true)}
           templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
           onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
