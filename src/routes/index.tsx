@@ -1889,6 +1889,7 @@ function CommandCenter({
   onReturnGlobal,
   onRunRfq,
   onOpenSyncHub,
+  onOpenDraftHub,
 }: {
   portal: PortalState;
   departmentContext: string | null;
@@ -1902,6 +1903,7 @@ function CommandCenter({
   onReturnGlobal: () => void;
   onRunRfq: () => void;
   onOpenSyncHub: () => void;
+  onOpenDraftHub: () => void;
 }) {
   const records = portal.records.filter((record) => !record.archived);
   const visible = departmentContext
@@ -1932,6 +1934,7 @@ function CommandCenter({
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
+            <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={onSetup} label="Continue setup" />
             <Action onClick={onCreate} label="Create Task" primary />
@@ -1939,6 +1942,7 @@ function CommandCenter({
         }
       />
       {portal.demoLoaded && <ExecutiveKpis />}
+      <SmartNextStep records={visible} onOpenDraftHub={onOpenDraftHub} />
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           label="Today"
