@@ -149,6 +149,38 @@ type ControlledFile = {
   superseded_at: string | null;
   audit_note: string;
 };
+type TeamMember = {
+  name: string;
+  area: Exclude<AreaId, "home" | "audit" | "rnd" | "stores" | "production" | "quality" | "people">;
+  role: string;
+  score: string;
+  level: string;
+  skills: string[];
+};
+const demoTeam: TeamMember[] = [
+  { name: "Riley Stone", area: "sales", role: "Sales Lead", score: "3.85/4", level: "Level 4", skills: ["RFQ intake", "Commercial review", "Client communications", "Contract controls"] },
+  { name: "Avery Vale", area: "ehw", role: "Hardware Lead", score: "3.90/4", level: "Level 4", skills: ["Architecture", "Schematics", "PCB release", "DFMEA"] },
+  { name: "Devon Lane", area: "esw", role: "Firmware Lead", score: "3.75/4", level: "Level 4", skills: ["CAN/J1939", "Secure telemetry", "CI/CD", "Release governance"] },
+  { name: "Samira Holt", area: "mech", role: "Mechanical Lead", score: "3.60/4", level: "Level 4", skills: ["STEP model", "Tolerance stack", "Tooling", "Sealing review"] },
+  { name: "Morgan Reed", area: "pur", role: "Purchasing Lead", score: "3.70/4", level: "Level 4", skills: ["Supplier qualification", "PPAP", "Cost controls", "Capacity planning"] },
+  { name: "Jordan Blake", area: "qa", role: "Quality Head", score: "3.95/4", level: "Level 4", skills: ["APQP", "DVP&R", "CAPA", "Release approval"] },
+  { name: "Casey Rowan", area: "emf", role: "Manufacturing Lead", score: "3.65/4", level: "Level 4", skills: ["PFD", "PFMEA", "Line startup", "Control plan"] },
+  { name: "Mina Cross", area: "tst", role: "EOL Test Technician", score: "3.40/4", level: "Level 3", skills: ["Pre-flash", "CAN loopback", "QR labels", "Yield analysis"] },
+  { name: "Priya Voss", area: "fin", role: "Finance Controller", score: "3.80/4", level: "Level 4", skills: ["Invoice control", "GRN validation", "Receivables", "Tax close"] },
+  { name: "Kai Morgan", area: "sit", role: "IT Administrator", score: "3.50/4", level: "Level 3", skills: ["Telemetry", "Backup assurance", "Support", "ISMS"] },
+  { name: "Taylor Quinn", area: "hrops", role: "HR & Operations Manager", score: "3.65/4", level: "Level 4", skills: ["Skill matrix", "TNI", "Compliance calendar", "DMAIC"] },
+];
+const rfqStages = [
+  ["Stage 1", "RFQ logged & mNDA signed", "RFQ-2026-TATA-EV-042 · DEMO Tata Ace EV 4G Telematics Gateway · 50,000 units/year"],
+  ["Stage 2", "Contract review signed", "HLPL/F/MKT/01 · six DEMO HOD sign-offs complete"],
+  ["Stage 3", "Requirement freeze & quotation accepted", "PRS-02 and illustrative commercial quotation accepted"],
+  ["Stage 4", "MCU bring-up & bench PoC passed", "DEMO bring-up, CAN and 4G bench checks passed"],
+  ["Stage 5", "Pilot build & tentative BOM released", "Tentative BOM issued for DEMO pilot planning"],
+  ["Stage 6", "Pre-compliance & DVP&R approved", "DEMO client-review and DVP&R gate complete"],
+  ["Stage 7", "Final Gerber & production BOM released", "Gerber and BOM release package recorded"],
+  ["Stage 8", "Type approval & PPAP cleared", "Illustrative AIS-140 TAC #842 reference and PPAP Level 3 gate cleared · not a certification claim"],
+  ["Stage 9", "Production & EOL package generated", "DEMO SMT Line 2 · SLCT-2026-0101 to 0120 PASS · FPY 97.4% · QR, PDI and invoice simulated"],
+] as const;
 type PortalState = {
   demoLoaded: boolean;
   demoSnapshot?: PortalState | undefined;
@@ -1293,6 +1325,8 @@ function Portal() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
+  const [rfqStep, setRfqStep] = useState(0);
+  const [rfqOpen, setRfqOpen] = useState(false);
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
@@ -1520,6 +1554,10 @@ function Portal() {
                 log("Administrator context returned", "Returned to global command center");
                 navigate("home");
               }}
+              onRunRfq={() => {
+                setRfqStep(0);
+                setRfqOpen(true);
+              }}
             />
           ) : view === "detail" && selected ? (
             <RecordDetail
@@ -1657,6 +1695,7 @@ function Portal() {
             openRecord(record);
             setModal(null);
           }}
+          previewOnly={false}
         />
       )}{" "}
       {modal === "admin" && (
@@ -1683,6 +1722,20 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
+      {rfqOpen && (
+        <RfqCycleTest
+          step={rfqStep}
+          onClose={() => setRfqOpen(false)}
+          onAdvance={() => {
+            const next = Math.min(rfqStages.length - 1, rfqStep + 1);
+            const nextStage = rfqStages[next] ?? rfqStages[0];
+            setRfqStep(next);
+            log("DEMO RFQ feature test advanced", `${nextStage[0]} · ${nextStage[1]}`);
+            if (next === rfqStages.length - 1) announce("DEMO RFQ project cycle reached Stage 9.");
+          }}
+          onReset={() => setRfqStep(0)}
+        />
+      )}
       {notice && (
         <div
           role="status"
@@ -1706,6 +1759,7 @@ function CommandCenter({
   onOpenProject,
   onOpenAssignee,
   onReturnGlobal,
+  onRunRfq,
 }: {
   portal: PortalState;
   departmentContext: string | null;
@@ -1717,6 +1771,7 @@ function CommandCenter({
   onOpenProject: (projectId: string) => void;
   onOpenAssignee: (assignee: string) => void;
   onReturnGlobal: () => void;
+  onRunRfq: () => void;
 }) {
   const records = portal.records.filter((record) => !record.archived);
   const visible = departmentContext
@@ -1746,6 +1801,7 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
+            <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={onSetup} label="Continue setup" />
             <Action onClick={onCreate} label="Create Task" primary />
           </>
@@ -1860,6 +1916,58 @@ function CommandCenter({
         </aside>
       </section>
     </>
+  );
+}
+
+function RfqCycleTest({
+  step,
+  onClose,
+  onAdvance,
+  onReset,
+}: {
+  step: number;
+  onClose: () => void;
+  onAdvance: () => void;
+  onReset: () => void;
+}) {
+  const [label, title, detail] = rfqStages[step] ?? rfqStages[0];
+  const complete = step === rfqStages.length - 1;
+  return (
+    <Modal title="RFQ-to-production feature test" onClose={onClose} wide>
+      <DemoMarker />
+      <p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">
+        RFQ-2026-TATA-EV-042 · Interactive walkthrough · feature test only
+      </p>
+      <h3 className="mt-2 text-xl font-semibold">DEMO · Tata Ace EV 4G Telematics Gateway</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        Fictional 50,000-units/year scenario. Every commercial, manufacturing and approval event is
+        simulated and has no external or operational effect.
+      </p>
+      <ol className="mt-6 grid gap-2 sm:grid-cols-3">
+        {rfqStages.map(([stage, stageTitle], index) => (
+          <li
+            key={stage}
+            className={`border p-3 text-sm ${index === step ? "border-steel bg-accent" : index < step ? "border-moss/40 bg-panel" : "border-border bg-card"}`}
+          >
+            <span className="font-mono text-[10px] text-steel">{stage}</span>
+            <span className="mt-1 block font-medium">{stageTitle}</span>
+          </li>
+        ))}
+      </ol>
+      <section className="mt-6 border border-border bg-panel p-5">
+        <p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Current checkpoint</p>
+        <h4 className="mt-2 text-lg font-semibold">{label} · {title}</h4>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
+        <div className="mt-5 h-2 overflow-hidden rounded-full bg-secondary">
+          <div className="h-full bg-primary transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${((step + 1) / rfqStages.length) * 100}%` }} />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{step + 1} of {rfqStages.length} gates shown</p>
+      </section>
+      <div className="mt-6 flex flex-wrap justify-between gap-2">
+        <Action label="Restart test" onClick={onReset} />
+        <Action label={complete ? "Stage 9 complete" : "Advance simulated gate"} onClick={onAdvance} primary />
+      </div>
+    </Modal>
   );
 }
 function nextWorkingDay(value: string) {
@@ -2380,6 +2488,9 @@ function DepartmentWorkspace({
         />
       </section>
       <DepartmentFlow flow={flow} onOpenStage={onOpenStage} />
+      {area.id === "hrops" && (
+        <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
+      )}
       <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="overflow-hidden border border-border bg-card">
           {view === "summary" ? (
@@ -3126,7 +3237,7 @@ function AdminCommandCenter({
   onResetDemo: () => void;
 }) {
   const [tab, setTab] = useState<
-    "company" | "departments" | "roles" | "masters" | "settings" | "demo"
+    "company" | "departments" | "roles" | "masters" | "settings" | "team" | "demo"
   >("company");
   const [query, setQuery] = useState("");
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
@@ -3201,7 +3312,7 @@ function AdminCommandCenter({
   return (
     <Modal title="Administration command center" onClose={onClose} wide>
       <div className="mb-5 flex flex-wrap gap-2 border-b border-border pb-4">
-        {(["company", "departments", "roles", "masters", "settings", "demo"] as const).map(
+        {(["company", "departments", "roles", "masters", "settings", "team", "demo"] as const).map(
           (item) => (
             <button
               key={item}
@@ -3220,7 +3331,9 @@ function AdminCommandCenter({
           Acting role · Administrator
         </span>
       </div>
-      {tab === "demo" ? (
+      {tab === "team" ? (
+        <TeamCompetencyPanel members={demoTeam} />
+      ) : tab === "demo" ? (
         <DemoDataPanel loaded={portal.demoLoaded} onLoad={onLoadDemo} onReset={onResetDemo} />
       ) : tab === "company" ? (
         <div className="space-y-5">
@@ -3410,6 +3523,44 @@ function AdminCommandCenter({
         <DepartmentSettingsManager department={selected} onUpdate={onUpdate} onLog={onLog} />
       )}
     </Modal>
+  );
+}
+
+function TeamCompetencyPanel({ members }: { members: TeamMember[] }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [tni, setTni] = useState<string[]>([]);
+  return (
+    <section className="mt-6 overflow-hidden border border-border bg-card">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-4">
+        <div>
+          <p className="font-semibold">DEMO competency roster</p>
+          <p className="mt-1 text-sm text-muted-foreground">Illustrative HR/OPS skill-matrix entries only · not personnel records.</p>
+        </div>
+        <span className="font-mono text-[10px] uppercase text-steel">HLPL/F/HR/03</span>
+      </div>
+      <div className="divide-y divide-border">
+        {members.map((member) => (
+          <div key={member.name} className="px-4 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button onClick={() => setExpanded(expanded === member.name ? null : member.name)} className="text-left">
+                <strong className="block">{member.name}</strong>
+                <span className="mt-1 block text-sm text-muted-foreground">{member.role} · {areaById(member.area).short}</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground">{member.score}</span>
+                <span className="rounded-md border border-moss/25 bg-card px-2 py-1 text-xs font-semibold text-moss">{member.level}</span>
+                <Action label={tni.includes(member.name) ? "TNI queued" : "Create TNI"} onClick={() => setTni((items) => items.includes(member.name) ? items : [...items, member.name])} />
+              </div>
+            </div>
+            {expanded === member.name && (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {member.skills.map((skill, index) => <p key={skill} className="border border-border bg-panel px-3 py-2 text-sm">{skill}<span className="float-right font-mono text-xs text-steel">{index < 3 ? "4/4" : "3/4"}</span></p>)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 function MasterManager({
@@ -4547,6 +4698,7 @@ function DocumentDetail({
   onClose,
   onDocumentUpdated,
   onSelectRecord,
+  previewOnly = false,
 }: {
   document: ControlledDocument;
   departments: Department[];
@@ -4555,6 +4707,7 @@ function DocumentDetail({
   onClose: () => void;
   onDocumentUpdated: (document: ControlledDocument, event: string) => void;
   onSelectRecord: (record: RecordItem) => void;
+  previewOnly?: boolean;
 }) {
   const owner = departments.find((item) => item.id === document.departmentId);
   const allowed = !departmentContext || document.departmentId === departmentContext;
@@ -4677,6 +4830,28 @@ function DocumentDetail({
             Department-owned controlled document
           </p>
           <h3 className="mt-2 text-xl font-semibold">{document.title}</h3>
+          <section className="mt-5 overflow-hidden border border-border bg-panel">
+            <div className="grid gap-px bg-border sm:grid-cols-3">
+              <DocumentField label="Document ID" value={document.type} />
+              <DocumentField label="Revision" value={document.revision ?? "Unrevised"} />
+              <DocumentField label="Issue date" value={document.effectiveDate ?? "DEMO issue date"} />
+            </div>
+            <div className="p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Controlled record preview</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {document.device ? `DEMO ${document.device} controlled record. ` : "Controlled record. "}
+                The preview is illustrative only and does not represent a signed, released or externally shared document.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[document.classification ?? "Internal", document.lifecycle ?? "Draft", document.phase ?? "Unmapped"].map((tag) => <span key={tag} className="rounded-md border border-border bg-card px-2 py-1 text-xs font-medium">{tag}</span>)}
+              </div>
+              <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
+                <DocumentField label="Author" value="DEMO record author" />
+                <DocumentField label="Reviewer" value="DEMO technical reviewer" />
+                <DocumentField label="Approver" value={document.approver ?? "Human approval required"} />
+              </div>
+            </div>
+          </section>
           <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <DocumentField label="Owner" value={owner?.name ?? "Department not assigned"} />
             <DocumentField label="Group" value={document.group ?? "Unclassified"} />

@@ -22,3 +22,4 @@
 - Private controlled-document binaries live in Lovable Cloud Storage; server functions create short-lived signed upload/download links only after authenticated database policies authorize the department-scoped document.
 
 - Model department hubs through a canonical SCMS area map, migrating legacy browser-local area IDs at read time so existing records remain usable.
+- Keep interactive lifecycle walkthroughs and competency examples in the replaceable DEMO browser-local state, so feature tests never affect configured operational records.
