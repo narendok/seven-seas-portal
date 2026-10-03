@@ -166,11 +166,13 @@
 }
 
 @media print {
-  body { background: white; color: black; }
-  body > *:not(#root) { display: none; }
-  #root > main > *:not(.print-document) { display: none !important; }
-  .print-document { box-shadow: none; max-width: none; padding: 0; }
-  .print\:hidden { display: none !important; }
+  @page { size: A4 portrait; margin: 12mm; }
+  html, body { background: white !important; color: black !important; }
+  body > *:not(#root), .no-print, nav, aside, header, button { display: none !important; }
+  #root > main > * { display: none !important; }
+  #printable-document, .printable-document-content { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; color: black !important; background: white !important; box-shadow: none !important; }
+  #printable-document *, .printable-document-content * { color: black !important; background: white !important; border-color: black !important; }
+  #printable-document section, #printable-document header, #printable-document footer, #printable-document table { break-inside: avoid; page-break-inside: avoid; }
 }
 
 @layer base {
