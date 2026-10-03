@@ -5806,18 +5806,32 @@ function ThemeToggle({ darkMode, onToggle, expanded = false }: { darkMode: boole
     </button>
   );
 }
-function Brand() {
+function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+  const Icon = expanded ? PanelLeftClose : PanelLeftOpen;
+  const label = expanded ? "Collapse navigation" : "Expand navigation";
   return (
-    <div className="flex items-center gap-3">
+    <button
+      aria-label={label}
+      title={`${label} ([)`}
+      onClick={onToggle}
+      className="grid size-10 place-items-center rounded-lg border border-sidebar-border bg-card text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+    >
+      <Icon className="size-4" />
+    </button>
+  );
+}
+function Brand({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={`flex min-w-0 items-center ${compact ? "justify-center" : "gap-3"}`}>
       <div className="grid size-10 place-items-center rounded-lg bg-sidebar-primary font-mono text-[11px] font-semibold text-sidebar-primary-foreground shadow-sm">
         SS
       </div>
-      <div>
+      {!compact && <div className="min-w-0">
         <p className="text-sm font-semibold">Six Sense Mobility</p>
         <p className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
           Operations portal
         </p>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -5825,19 +5839,34 @@ function AreaNav({
   area,
   active,
   onClick,
+  expanded = true,
+  openCount,
 }: {
   area: (typeof areas)[number];
   active: boolean;
   onClick: () => void;
+  expanded?: boolean;
+  openCount?: number;
 }) {
   const Icon = area.icon;
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${active ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`}
+      title={expanded ? undefined : area.name}
+      aria-label={area.name}
+      className={`group relative flex items-center rounded-lg text-left font-medium transition-colors ${expanded ? "w-full gap-2 px-2.5 py-1.5 text-xs" : "size-10 justify-center"} ${active ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`}
     >
       <Icon className="size-4 shrink-0" />
-      {area.name}
+      {expanded ? (
+        <>
+          <span className="min-w-0 flex-1 truncate">{area.short}</span>
+          {area.id !== "home" && openCount ? (
+            <span className={`grid min-w-4 place-items-center rounded-full px-1 font-mono text-[9px] leading-4 ${active ? "bg-sidebar-primary-foreground/20" : "bg-sidebar-accent text-sidebar-accent-foreground"}`}>{openCount}</span>
+          ) : null}
+        </>
+      ) : (
+        <span className="pointer-events-none absolute left-full z-50 ml-3 hidden whitespace-nowrap rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block group-focus-visible:block">{area.name}</span>
+      )}
     </button>
   );
 }
