@@ -1884,6 +1884,7 @@ function CommandCenter({
   onOpenAssignee,
   onReturnGlobal,
   onRunRfq,
+  onOpenSyncHub,
 }: {
   portal: PortalState;
   departmentContext: string | null;
@@ -1896,6 +1897,7 @@ function CommandCenter({
   onOpenAssignee: (assignee: string) => void;
   onReturnGlobal: () => void;
   onRunRfq: () => void;
+  onOpenSyncHub: () => void;
 }) {
   const records = portal.records.filter((record) => !record.archived);
   const visible = departmentContext
@@ -1913,7 +1915,7 @@ function CommandCenter({
   return (
     <>
       {portal.demoLoaded && <DemoMarker />}
-      {portal.demoLoaded && <LifecycleProgress records={records} />}
+      {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-AI4T-01" />}
       <PageHeader
         eyebrow={departmentContext ? "Administrator context" : "Operational workspace"}
         title="Command center"
@@ -1925,12 +1927,14 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
+            <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={onSetup} label="Continue setup" />
             <Action onClick={onCreate} label="Create Task" primary />
           </>
         }
       />
+      {portal.demoLoaded && <ExecutiveKpis />}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           label="Today"
