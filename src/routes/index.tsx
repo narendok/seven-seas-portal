@@ -5994,8 +5994,9 @@ function stageDocumentContent(stage: string, title: string, profile: ProjectDocu
   return content[stage] ?? base;
 }
 
-function TemplateSettingsPanel({ settings, onChange, onClose }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onClose: () => void }) {
-  return <Modal title="Document Header & Footer Settings" onClose={onClose} wide><TemplateSettingsEditor settings={settings} onChange={onChange} onSave={() => undefined} /><div className="mt-5 flex justify-end"><Action label="Done" primary onClick={onClose} /></div></Modal>;
+function TemplateSettingsPanel({ settings, onChange, onClose, templateBodies, onTemplateBodiesChange }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onClose: () => void; templateBodies: Record<string, string>; onTemplateBodiesChange: (templates: Record<string, string>) => void }) {
+  const [template, setTemplate] = useState(autoDraftTemplates[0]?.[0] ?? "Customer SOR");
+  return <Modal title="Document Header & Footer Settings" onClose={onClose} wide><TemplateSettingsEditor settings={settings} onChange={onChange} onSave={() => undefined} /><section className="ops-section mt-5 overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Base HTML drafting templates</p><p className="mt-1 text-xs text-muted-foreground">Edit the controlled starting content for each document type. Project requirements are injected into each full viewer.</p></div><div className="grid gap-4 p-4"><SelectField label="Document template" value={template} onChange={setTemplate} options={autoDraftTemplates.map(([title]) => title)} /><label className="block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Template body<textarea value={templateBodies[template] ?? templateBlueprint(template)} onChange={(event) => onTemplateBodiesChange({ ...templateBodies, [template]: event.target.value })} className="mt-2 min-h-36 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label></div></section><div className="mt-5 flex justify-end"><Action label="Done" primary onClick={onClose} /></div></Modal>;
 }
 
 function TemplateSettingsEditor({ settings, onChange, onSave }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onSave: () => void }) {
