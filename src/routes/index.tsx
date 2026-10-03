@@ -1572,15 +1572,7 @@ function Portal() {
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
         <div className={`flex items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
           <Brand compact={!sidebarExpanded} />
-          {sidebarExpanded && (
-            <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded(false)} />
-          )}
         </div>
-        {!sidebarExpanded && (
-          <div className="mt-4 flex justify-center">
-            <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded(true)} />
-          </div>
-        )}
         <nav className={`mt-6 space-y-1 ${sidebarExpanded ? "" : "flex flex-1 flex-col items-center"}`} aria-label="Primary navigation">
           {areas.map((area) => (
             <AreaNav
@@ -1590,6 +1582,7 @@ function Portal() {
               onClick={() => navigate(area.id)}
               expanded={sidebarExpanded}
               openCount={portal.records.filter((record) => record.area === area.id && !record.archived && !["Approved", "Released", "Archived"].includes(record.status)).length}
+              sidebarToggle={area.id === "home" ? <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded((value) => !value)} /> : undefined}
             />
           ))}
         </nav>
@@ -5814,9 +5807,9 @@ function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: ()
       aria-label={label}
       title={`${label} ([)`}
       onClick={onToggle}
-      className="grid size-10 place-items-center rounded-lg border border-sidebar-border bg-card text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      className="grid size-7 shrink-0 place-items-center rounded-md text-current/75 transition-colors hover:bg-sidebar-primary-foreground/15 hover:text-current"
     >
-      <Icon className="size-4" />
+      <Icon className="size-3.5" />
     </button>
   );
 }
@@ -5841,12 +5834,14 @@ function AreaNav({
   onClick,
   expanded = true,
   openCount,
+  sidebarToggle,
 }: {
   area: (typeof areas)[number];
   active: boolean;
   onClick: () => void;
   expanded?: boolean;
   openCount?: number;
+  sidebarToggle?: ReactNode;
 }) {
   const Icon = area.icon;
   return (
@@ -5859,13 +5854,17 @@ function AreaNav({
       <Icon className="size-4 shrink-0" />
       {expanded ? (
         <>
-          <span className="min-w-0 flex-1 truncate">{area.short}</span>
+          <span className="min-w-0 flex-1 truncate">{area.name}</span>
           {area.id !== "home" && openCount ? (
             <span className={`grid min-w-4 place-items-center rounded-full px-1 font-mono text-[9px] leading-4 ${active ? "bg-sidebar-primary-foreground/20" : "bg-sidebar-accent text-sidebar-accent-foreground"}`}>{openCount}</span>
           ) : null}
+          {sidebarToggle}
         </>
       ) : (
-        <span className="pointer-events-none absolute left-full z-50 ml-3 hidden whitespace-nowrap rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block group-focus-visible:block">{area.name}</span>
+        <>
+          <span className="font-mono text-[9px] font-semibold leading-none">{area.short.replace(/[^A-Z0-9]/g, "").slice(0, 2)}</span>
+          <span className="pointer-events-none absolute left-full z-50 ml-3 hidden whitespace-nowrap rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block group-focus-visible:block">{area.name}</span>
+        </>
       )}
     </button>
   );
