@@ -31,8 +31,14 @@ import {
   UsersRound,
   Wrench,
   X,
+  FolderOpen,
+  Eye,
+  Download,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { unzipSync, strFromU8 } from "fflate";
 import {
   beginControlledDocumentUpload,
   completeControlledDocumentUpload,
@@ -174,6 +180,8 @@ type ControlledDocument = {
   draftHtml?: string | undefined;
   releaseNotes?: string | undefined;
   designer?: string | undefined;
+  deliverableKind?: "Schematic PDF" | "Gerber ZIP" | "3D STEP" | "Firmware binary" | "BOM tracker" | "Technical document" | undefined;
+  lifecycleStage?: string | undefined;
 };
 type LocalControlledFile = {
   id: string;
@@ -185,6 +193,7 @@ type LocalControlledFile = {
   revision: string;
   content: string;
   encoding: "text" | "data-url";
+  checksum?: string | undefined;
 };
 type ControlledFile = {
   id: string;
