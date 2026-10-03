@@ -234,6 +234,7 @@ const areas = [
   {
     id: "home" as const,
     name: "Home / Command Center",
+    navLabel: "Command Center",
     short: "Home",
     icon: LayoutDashboard,
     recordType: "Task",
@@ -242,6 +243,7 @@ const areas = [
   {
     id: "sales" as const,
     name: "Sales & Business Development",
+    navLabel: "Sales & BD",
     short: "SAL",
     icon: UsersRound,
     recordType: "Lead intake",
@@ -250,6 +252,7 @@ const areas = [
   {
     id: "ehw" as const,
     name: "Embedded Hardware",
+    navLabel: "Hardware Eng.",
     short: "EHW",
     icon: Wrench,
     recordType: "Hardware record",
@@ -258,6 +261,7 @@ const areas = [
   {
     id: "esw" as const,
     name: "Firmware & Software",
+    navLabel: "Firmware & SW",
     short: "ESW",
     icon: Settings2,
     recordType: "Software gate",
@@ -266,6 +270,7 @@ const areas = [
   {
     id: "mech" as const,
     name: "Mechanical Engineering",
+    navLabel: "Mech Eng.",
     short: "MECH",
     icon: PackageSearch,
     recordType: "Mechanical record",
@@ -274,6 +279,7 @@ const areas = [
   {
     id: "pur" as const,
     name: "Purchasing & SCM",
+    navLabel: "Purchasing",
     short: "PUR",
     icon: PackageSearch,
     recordType: "Procurement record",
@@ -282,6 +288,7 @@ const areas = [
   {
     id: "qa" as const,
     name: "Quality Assurance",
+    navLabel: "Quality",
     short: "QA",
     icon: ShieldCheck,
     recordType: "Quality record",
@@ -290,6 +297,7 @@ const areas = [
   {
     id: "emf" as const,
     name: "Manufacturing",
+    navLabel: "Manufacturing",
     short: "EMF",
     icon: Factory,
     recordType: "Manufacturing record",
@@ -297,15 +305,17 @@ const areas = [
   },
   {
     id: "tst" as const,
-    name: "EOL Testing",
-    short: "TST",
+    name: "Production",
+    navLabel: "Production",
+    short: "PRD",
     icon: CheckCircle2,
-    recordType: "EOL test run",
-    summary: "Test jig, serial QR labels and first-pass yield",
+    recordType: "Production test run",
+    summary: "EOL test jig, serial QR labels and first-pass yield",
   },
   {
     id: "fin" as const,
     name: "Accounts & Finance",
+    navLabel: "Finance",
     short: "FIN",
     icon: ClipboardCheck,
     recordType: "Finance control",
@@ -314,6 +324,7 @@ const areas = [
   {
     id: "sit" as const,
     name: "Service & IT",
+    navLabel: "Service & IT",
     short: "SIT",
     icon: Bell,
     recordType: "Service record",
@@ -322,6 +333,7 @@ const areas = [
   {
     id: "hrops" as const,
     name: "HR & Operations",
+    navLabel: "HR & Ops",
     short: "HR/OPS",
     icon: Settings2,
     recordType: "People record",
@@ -1572,6 +1584,7 @@ function Portal() {
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
         <div className={`flex items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
           <Brand compact={!sidebarExpanded} />
+          <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded((value) => !value)} />
         </div>
         <nav className={`mt-6 space-y-1 ${sidebarExpanded ? "" : "flex flex-1 flex-col items-center"}`} aria-label="Primary navigation">
           {areas.map((area) => (
@@ -1582,7 +1595,6 @@ function Portal() {
               onClick={() => navigate(area.id)}
               expanded={sidebarExpanded}
               openCount={portal.records.filter((record) => record.area === area.id && !record.archived && !["Approved", "Released", "Archived"].includes(record.status)).length}
-              sidebarToggle={area.id === "home" ? <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded((value) => !value)} /> : undefined}
             />
           ))}
         </nav>
@@ -5815,7 +5827,7 @@ function SidebarToggle({ expanded, onToggle }: { expanded: boolean; onToggle: ()
 }
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <div className={`flex min-w-0 items-center ${compact ? "justify-center" : "gap-3"}`}>
+    <div className={`flex min-w-0 items-center ${compact ? "" : "gap-3"}`}>
       <div className="grid size-10 place-items-center rounded-lg bg-sidebar-primary font-mono text-[11px] font-semibold text-sidebar-primary-foreground shadow-sm">
         SS
       </div>
@@ -5834,14 +5846,12 @@ function AreaNav({
   onClick,
   expanded = true,
   openCount,
-  sidebarToggle,
 }: {
   area: (typeof areas)[number];
   active: boolean;
   onClick: () => void;
   expanded?: boolean;
   openCount?: number;
-  sidebarToggle?: ReactNode;
 }) {
   const Icon = area.icon;
   return (
@@ -5854,11 +5864,10 @@ function AreaNav({
       <Icon className="size-4 shrink-0" />
       {expanded ? (
         <>
-          <span className="min-w-0 flex-1 truncate">{area.name}</span>
+          <span className="min-w-0 flex-1 truncate">{area.navLabel}</span>
           {area.id !== "home" && openCount ? (
             <span className={`grid min-w-4 place-items-center rounded-full px-1 font-mono text-[9px] leading-4 ${active ? "bg-sidebar-primary-foreground/20" : "bg-sidebar-accent text-sidebar-accent-foreground"}`}>{openCount}</span>
           ) : null}
-          {sidebarToggle}
         </>
       ) : (
         <>
