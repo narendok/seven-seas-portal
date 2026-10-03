@@ -242,6 +242,7 @@ const areas = [
   {
     id: "sales" as const,
     name: "Sales & Business Development",
+    navLabel: "Sales & BD",
     short: "SAL",
     icon: UsersRound,
     recordType: "Lead intake",
@@ -250,6 +251,7 @@ const areas = [
   {
     id: "ehw" as const,
     name: "Embedded Hardware",
+    navLabel: "Hardware Eng.",
     short: "EHW",
     icon: Wrench,
     recordType: "Hardware record",
@@ -258,6 +260,7 @@ const areas = [
   {
     id: "esw" as const,
     name: "Firmware & Software",
+    navLabel: "Firmware & SW",
     short: "ESW",
     icon: Settings2,
     recordType: "Software gate",
@@ -266,6 +269,7 @@ const areas = [
   {
     id: "mech" as const,
     name: "Mechanical Engineering",
+    navLabel: "Mech Eng.",
     short: "MECH",
     icon: PackageSearch,
     recordType: "Mechanical record",
@@ -274,6 +278,7 @@ const areas = [
   {
     id: "pur" as const,
     name: "Purchasing & SCM",
+    navLabel: "Purchasing",
     short: "PUR",
     icon: PackageSearch,
     recordType: "Procurement record",
@@ -282,6 +287,7 @@ const areas = [
   {
     id: "qa" as const,
     name: "Quality Assurance",
+    navLabel: "Quality",
     short: "QA",
     icon: ShieldCheck,
     recordType: "Quality record",
@@ -290,6 +296,7 @@ const areas = [
   {
     id: "emf" as const,
     name: "Manufacturing",
+    navLabel: "Manufacturing",
     short: "EMF",
     icon: Factory,
     recordType: "Manufacturing record",
@@ -297,15 +304,17 @@ const areas = [
   },
   {
     id: "tst" as const,
-    name: "EOL Testing",
-    short: "TST",
+    name: "Production",
+    navLabel: "Production",
+    short: "PRD",
     icon: CheckCircle2,
-    recordType: "EOL test run",
-    summary: "Test jig, serial QR labels and first-pass yield",
+    recordType: "Production test run",
+    summary: "EOL test jig, serial QR labels and first-pass yield",
   },
   {
     id: "fin" as const,
     name: "Accounts & Finance",
+    navLabel: "Finance",
     short: "FIN",
     icon: ClipboardCheck,
     recordType: "Finance control",
@@ -314,6 +323,7 @@ const areas = [
   {
     id: "sit" as const,
     name: "Service & IT",
+    navLabel: "Service & IT",
     short: "SIT",
     icon: Bell,
     recordType: "Service record",
@@ -322,6 +332,7 @@ const areas = [
   {
     id: "hrops" as const,
     name: "HR & Operations",
+    navLabel: "HR & Ops",
     short: "HR/OPS",
     icon: Settings2,
     recordType: "People record",
