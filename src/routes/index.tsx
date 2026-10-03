@@ -21,6 +21,8 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
+  Sun,
+  Moon,
   UsersRound,
   Wrench,
   X,
@@ -1439,7 +1441,15 @@ function Portal() {
   const [syncHubOpen, setSyncHubOpen] = useState(false);
   const [draftHubOpen, setDraftHubOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
+  const [darkMode, setDarkMode] = useState(true);
   useEffect(() => setPortal(readPortal()), []);
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("hexense-scms-theme");
+    setDarkMode(savedTheme !== "light");
+  }, []);
+  useEffect(() => {
+    window.localStorage.setItem("hexense-scms-theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
   }, [portal]);
@@ -1544,7 +1554,7 @@ function Portal() {
     setModal("document");
   };
   return (
-    <main className="ops-dark min-h-screen bg-background text-foreground">
+    <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-border bg-sidebar p-4 lg:flex lg:flex-col">
         <Brand />
         <nav className="mt-8 space-y-1" aria-label="Primary navigation">
@@ -1567,6 +1577,7 @@ function Portal() {
             {portal.setupStep + 1}/{setupSteps.length}
           </span>
         </button>
+        <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} expanded />
       </aside>
       <section className="min-h-screen lg:pl-72">
         <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
@@ -1609,6 +1620,7 @@ function Portal() {
               badge={portal.alerts.filter((alert) => !alert.resolved).length}
               onClick={() => setAlertsOpen(true)}
             />
+            <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} />
           </div>
         </header>
         <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-10">
@@ -1771,7 +1783,7 @@ function Portal() {
           <span>More</span>
         </button>
       </nav>
-      {mobileMenu && <MobileMenu onClose={() => setMobileMenu(false)} onNavigate={navigate} />}{" "}
+      {mobileMenu && <MobileMenu onClose={() => setMobileMenu(false)} onNavigate={navigate} darkMode={darkMode} onToggleTheme={() => setDarkMode((value) => !value)} />} 
       {modal === "create" && (
         <RecordForm
           area={activeArea}
