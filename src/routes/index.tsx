@@ -1360,6 +1360,16 @@ const readPortal = (): PortalState => {
           })
         : [],
       approvals: Array.isArray(value.approvals) ? value.approvals : [],
+      records:
+        value.demoLoaded === true
+          ? (() => {
+              const additions = demoPortal().records.filter((item) => item.reference.startsWith("HLPL-AI4T") || item.reference === "PO-TATA-AI4T-2026-9041");
+              const existing = Array.isArray(value.records) ? value.records.map((record) => ({ ...record, area: legacyAreaMap[record.area] ?? record.area })) : [];
+              return [...existing, ...additions.filter((item) => !existing.some((record) => record.reference === item.reference))];
+            })()
+          : Array.isArray(value.records)
+            ? value.records.map((record) => ({ ...record, area: legacyAreaMap[record.area] ?? record.area }))
+            : [],
       documents: value.demoLoaded === true ? mergeAutomotiveDemoDocuments(documents) : documents,
       audit: Array.isArray(value.audit) ? value.audit : [],
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
