@@ -4894,6 +4894,7 @@ function DocumentsPanel({
   onClose,
   onSelectDocument,
   onUploadDocument,
+  onOpenDraftHub,
 }: {
   documents: ControlledDocument[];
   departments: Department[];
@@ -4901,6 +4902,7 @@ function DocumentsPanel({
   onClose: () => void;
   onSelectDocument: (document: ControlledDocument) => void;
   onUploadDocument: (document: ControlledDocument) => void;
+  onOpenDraftHub: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("All groups");
@@ -4927,6 +4929,7 @@ function DocumentsPanel({
   );
   return (
     <Modal title="Controlled document repository" onClose={onClose} wide>
+      <div className="mb-4 flex justify-end"><Action label="Auto-Draft Document Templates" primary onClick={onOpenDraftHub} /></div>
       <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-moss/25 bg-accent px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-accent-foreground">
