@@ -5369,6 +5369,8 @@ function DocumentsPanel({
   onSelectDocument,
   onUploadDocument,
   onOpenDraftHub,
+  templateBodies,
+  onTemplateBodiesChange,
 }: {
   documents: ControlledDocument[];
   departments: Department[];
@@ -5377,10 +5379,13 @@ function DocumentsPanel({
   onSelectDocument: (document: ControlledDocument) => void;
   onUploadDocument: (document: ControlledDocument) => void;
   onOpenDraftHub: () => void;
+  templateBodies: Record<string, string>;
+  onTemplateBodiesChange: (templates: Record<string, string>) => void;
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("All groups");
   const [phase, setPhase] = useState("All phases");
+  const [tab, setTab] = useState<"repository" | "drive">("repository");
   const groups = [
     "Governance/QMS",
     "Product/Device Audit Packs",
@@ -5403,7 +5408,7 @@ function DocumentsPanel({
   );
   return (
     <Modal title="Controlled document repository" onClose={onClose} wide>
-      <div className="mb-4 flex justify-end"><Action label="Auto-Draft Document Templates" primary onClick={onOpenDraftHub} /></div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="flex gap-2"><Action label="Document repository" primary={tab === "repository"} onClick={() => setTab("repository")} /><Action label="Drive & Cloud storage" primary={tab === "drive"} onClick={() => setTab("drive")} /></div><Action label="Auto-Draft Document Templates" primary onClick={onOpenDraftHub} /></div>
       <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-moss/25 bg-accent px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-accent-foreground">
@@ -5418,7 +5423,8 @@ function DocumentsPanel({
           Private Cloud storage
         </span>
       </section>
-      <section className="ops-section mb-6 overflow-hidden bg-panel">
+      {tab === "drive" && <UnifiedStorageView documents={documents} onSelectDocument={onSelectDocument} />}
+      {tab === "repository" && <><section className="ops-section mb-6 overflow-hidden bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
             Canonical repository path
@@ -5531,8 +5537,14 @@ function DocumentsPanel({
           ))}
         </div>
       </section>
+      </>}
     </Modal>
   );
+}
+
+function UnifiedStorageView({ documents, onSelectDocument }: { documents: ControlledDocument[]; onSelectDocument: (document: ControlledDocument) => void }) {
+  const folders = ["01_Governance_and_QMS", "02_Product_Platforms", "03_Supplier_Quality_and_PPAP", "04_Equipment_and_Calibration"];
+  return <section className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Unified Drive & Cloud storage</p><p className="mt-1 text-xs text-muted-foreground">Logical department folders; private Cloud files are available only when an authorized organization link exists. Drive remains optional.</p></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">{folders.map((folder) => <div key={folder} className="p-4"><p className="font-mono text-xs text-steel">/{folder}</p><p className="mt-2 text-xs text-muted-foreground">Generated HTML drafts, controlled records and authorized hardware release packages.</p></div>)}</div></section><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Project artifact register</p><p className="mt-1 text-xs text-muted-foreground">Includes editable document records and attached PDF / ZIP / STEP deliverables.</p></div><div className="divide-y divide-border">{documents.map((document) => { const files = document.localFiles ?? []; return <button key={document.id} onClick={() => onSelectDocument(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3 text-left hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.group ?? "Unfiled"} · Rev {document.revision ?? "—"} · {files.length} attached file{files.length === 1 ? "" : "s"}</small></span><span className="text-xs text-steel">Open</span></button>; })}</div></section></section>;
 }
 function DocumentDetail({
   document,
