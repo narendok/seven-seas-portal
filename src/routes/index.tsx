@@ -5591,6 +5591,7 @@ function DocumentDetail({
   const [dragActive, setDragActive] = useState(false);
   const [previewFile, setPreviewFile] = useState<LocalControlledFile | null>(null);
   const isCloudDocument = Boolean(document.cloudDocumentId);
+  const isHardwareDeliverable = /schematic|gerber|pcb|step|cad/i.test(`${document.title} ${document.type}`);
   const localFiles = document.localFiles ?? [];
   useEffect(() => {
     if (!document.cloudDocumentId || !allowed) {
@@ -5788,6 +5789,7 @@ function DocumentDetail({
               <Status status={isCloudDocument ? "Approved" : "Draft"} />
             </div>
             <div className="p-4">
+              {isHardwareDeliverable && <section className="mb-4 rounded-lg border border-steel/35 bg-accent p-3"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-steel">Hardware engineering deliverable</p><p className="mt-1 text-sm font-semibold">{document.title.includes("Gerber") ? "Gerber & PCB release · ZIP archive" : document.title.includes("STEP") || document.title.includes("CAD") ? "3D STEP enclosure · ZIP package" : "Schematic package · PDF deliverable"}</p><p className="mt-1 text-xs text-muted-foreground">Include revision notes and designer attribution with each verified release package. Human approval remains required.</p></section>}
               <div
                 onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
                 onDragLeave={() => setDragActive(false)}
@@ -5802,6 +5804,7 @@ function DocumentDetail({
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
+                      accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp" : undefined}
                       disabled={fileState === "uploading"}
                       onChange={(event) => {
                         const file = event.target.files?.[0];
@@ -5810,7 +5813,7 @@ function DocumentDetail({
                     />
                   </label>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    Drop a file here or browse · Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
+                    Drop a file here or browse · {isHardwareDeliverable ? "PDF, Gerber ZIP, or STEP/STP release package · " : ""}Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
                   </p>
                   {fileState === "uploading" && (
                     <div className="mt-3" aria-live="polite">
@@ -5869,13 +5872,13 @@ function DocumentDetail({
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
-                      accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"
+                      accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp" : ".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"}
                       disabled={fileState === "uploading"}
                       onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadLocal(file); }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
+                    {isHardwareDeliverable ? "Attach the PDF schematic, Gerber ZIP, or STEP/STP CAD package. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
                   </p>
                   {fileState === "uploading" && <div className="mt-3" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Securing & Verifying SHA-256 Hash… {uploadProgress}%</p></div>}
                   {fileMessage && <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-moss"}`}>{fileMessage}</p>}
