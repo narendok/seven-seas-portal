@@ -38,7 +38,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { unzipSync, strFromU8 } from "fflate";
+import { unzipSync } from "fflate";
 import {
   beginControlledDocumentUpload,
   completeControlledDocumentUpload,
