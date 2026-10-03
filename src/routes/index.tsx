@@ -1309,6 +1309,16 @@ const demoPortal = (): PortalState => {
     approver: "Human approval required",
     history: ["DEMO record seeded for interconnected portal validation"],
     linkedRecordRefs,
+    lifecycleStage: phase.match(/Stage\s+\d+/)?.[0],
+    deliverableKind: /schematic/i.test(title)
+      ? "Schematic PDF"
+      : /gerber|pcb/i.test(title)
+        ? "Gerber ZIP"
+        : /step|cad/i.test(title)
+          ? "3D STEP"
+          : /bom/i.test(title)
+            ? "BOM tracker"
+            : undefined,
   });
   return {
     ...base,
