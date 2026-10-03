@@ -3197,7 +3197,7 @@ function DepartmentWorkspace({
   contextName: string;
   view: "queue" | "summary";
   onView: (view: "queue" | "summary") => void;
-  onCreate: () => void;
+  onCreate: (recordType?: string) => void;
   onSelect: (id: string) => void;
   onAdmin: () => void;
   onOpenStage: (stage: string) => void;
