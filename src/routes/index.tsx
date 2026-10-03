@@ -140,6 +140,18 @@ type TemplateSettings = {
   confidentialityNotice: string;
   complianceFooter: string;
 };
+type ProjectDocumentProfile = {
+  name: string;
+  customer: string;
+  contact: string;
+  quantity: string;
+  techSpec: string;
+  commercialValue: string;
+  environmental: string;
+  compliance: string;
+};
+type RaciRole = "R" | "A" | "C" | "I" | "";
+type RaciMatrix = Record<string, Record<string, RaciRole>>;
 type ControlledDocument = {
   id: string;
   title: string;
@@ -283,6 +295,7 @@ type PortalState = {
   notifications: string[];
   alerts: DemoAlert[];
   templateSettings?: TemplateSettings | undefined;
+  raciMatrix?: RaciMatrix | undefined;
 };
 type DemoAlert = {
   id: string;
