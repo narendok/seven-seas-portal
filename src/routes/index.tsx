@@ -234,6 +234,7 @@ const areas = [
   {
     id: "home" as const,
     name: "Home / Command Center",
+    navLabel: "Command Center",
     short: "Home",
     icon: LayoutDashboard,
     recordType: "Task",
