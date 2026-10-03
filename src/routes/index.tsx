@@ -3778,8 +3778,16 @@ function RecordForm({
   if (!spec) return null;
   const [type, setType] = useState(spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>({});
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const field = (key: string) => values[key] ?? "";
+  const departmentCode = findAreaDepartment(portal.departments, area)?.code.replace(/^DEMO-/, "") || areaById(area).short;
+  const selectedProject = field("projectId") || field("product") || "HLPL-AI4T-01";
+  const selectedDocumentType = templateDocumentTypes.includes(type.toUpperCase()) ? type.toUpperCase() : type.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8) || "REC";
+  const nextRevision = String(
+    portal.records.filter((record) => record.reference.includes(`-${departmentCode}-${selectedDocumentType}-`)).length + 1,
+  ).padStart(2, "0");
+  const generatedId = documentNumber(selectedProject, departmentCode, selectedDocumentType, nextRevision, portal.templateSettings?.prefix ?? "HLPL");
   const approvedReview = portal.records.find(
     (record) =>
       record.type === "Contract review" &&
@@ -3834,6 +3842,17 @@ function RecordForm({
           blank.
         </p>
         <SelectField label="Record type" value={type} options={spec.types} onChange={setType} />
+        <section className="rounded-lg border border-steel/35 bg-panel p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Automatic document number</p>
+              <p className="mt-1 font-mono text-sm font-semibold text-foreground">{field("controlledNumber") || generatedId}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{portal.templateSettings?.prefix ?? "HLPL"} · Project · Department · Document type · Revision</p>
+            </div>
+            <Action label={copied ? "Copied" : "Copy ID"} onClick={() => { void navigator.clipboard?.writeText(field("controlledNumber") || generatedId); setCopied(true); window.setTimeout(() => setCopied(false), 1500); }} />
+          </div>
+          <input aria-label="Editable document ID" value={field("controlledNumber") || generatedId} onChange={(event) => setValues({ ...values, controlledNumber: event.target.value.toUpperCase() })} className="mt-3 h-9 w-full rounded-lg border border-input bg-background px-3 font-mono text-xs" />
+        </section>
         {type === "PRS" && (
           <div className="rounded-lg border border-moss/30 bg-accent p-4 text-sm">
             <p className="font-semibold">Auto-compiled, frozen PRS baseline</p>
