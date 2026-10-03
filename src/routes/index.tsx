@@ -2058,6 +2058,8 @@ function CommandCenter({
   onRunRfq,
   onOpenSyncHub,
   onOpenDraftHub,
+  onOpenAi4t,
+  persona,
 }: {
   portal: PortalState;
   departmentContext: string | null;
@@ -2071,6 +2073,8 @@ function CommandCenter({
   onRunRfq: () => void;
   onOpenSyncHub: () => void;
   onOpenDraftHub: () => void;
+  onOpenAi4t: () => void;
+  persona: Persona;
 }) {
   const records = portal.records.filter((record) => !record.archived);
   const visible = departmentContext
@@ -2090,7 +2094,7 @@ function CommandCenter({
       {portal.demoLoaded && <DemoMarker />}
       {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-SLCT-01" />}
       <PageHeader
-        eyebrow={departmentContext ? "Administrator context" : "Operational workspace"}
+        eyebrow={persona.kind === "admin" ? (departmentContext ? "Administrator context" : "Operational workspace") : `${persona.label} · active persona`}
         title="Command Center"
         description={
           departmentContext
@@ -2100,6 +2104,7 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
+            <Action onClick={onOpenAi4t} label="AI4T Lifecycle Hub" primary />
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
@@ -2107,6 +2112,16 @@ function CommandCenter({
           </>
         }
       />
+      {persona.kind !== "admin" && (
+        <section className="ops-section flex flex-wrap items-center justify-between gap-3 border-steel/35 bg-accent/35 px-4 py-3">
+          <div>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Active persona · DEMO context</p>
+            <p className="mt-1 text-sm font-semibold">{persona.person}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Queues, owned records and human approval visibility are filtered for this persona. No account impersonation occurs.</p>
+          </div>
+          <Action label="Switch back to Admin" onClick={onReturnGlobal} />
+        </section>
+      )}
       {portal.demoLoaded && <ExecutiveKpis />}
       <SmartNextStep records={visible} onOpenDraftHub={onOpenDraftHub} />
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
