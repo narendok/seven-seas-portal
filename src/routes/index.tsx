@@ -1717,6 +1717,7 @@ function Portal() {
                 setQueueStage(stage);
                 setView("queue");
               }}
+              onOpenDraftHub={() => setDraftHubOpen(true)}
             />
           )}
         </div>
