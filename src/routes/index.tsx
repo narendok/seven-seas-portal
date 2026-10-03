@@ -1525,6 +1525,7 @@ const readPortal = (): PortalState => {
       audit: Array.isArray(value.audit) ? value.audit : [],
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
       alerts: Array.isArray(value.alerts) ? value.alerts : [],
+      raciMatrix: value.raciMatrix ?? defaultRaciMatrix(),
     };
     // A legacy browser snapshot may retain the DEMO marker while losing its arrays.
     // Restore the complete DEMO workspace rather than leaving document controls unreachable.
@@ -2109,6 +2110,9 @@ function Portal() {
               const stage = Math.min(state.stage + 1, ai4tStages.length - 1);
               const entry = ai4tStages[stage] ?? ai4tStages[0];
               if (!entry) return state;
+              const matrix = portal.raciMatrix ?? defaultRaciMatrix();
+              const recipients = Object.entries(matrix[entry[0]] ?? {}).filter(([, role]) => role && role !== "I").map(([department]) => department);
+              update((currentPortal) => ({ ...currentPortal, alerts: [...currentPortal.alerts, ...recipients.map((department) => ({ id: createId(), severity: "Warning" as const, title: `${entry[0]} handoff ready`, detail: `${entry[1]} — review the stage handoff and proceed with the assigned controlled work.`, departmentId: currentPortal.departments.find((item) => item.code.replace(/^DEMO-/, "") === department)?.id ?? "sales", resolved: false }))].slice(-100) }));
               log("AI4T lifecycle simulation advanced", `${entry[0]} · ${entry[1]}`);
               return { stage, history: [`${now()} · ${entry[0]} · ${entry[1]}`, ...state.history] };
             });
