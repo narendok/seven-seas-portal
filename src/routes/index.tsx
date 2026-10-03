@@ -2506,7 +2506,17 @@ const autoDraftTemplates = [
   ["Annual Skill Matrix", "HLPL/F/HR/03", "HR/OPS"],
 ] as const;
 
-function AutoDraftHub({ onClose }: { onClose: () => void }) {
+function AutoDraftHub({
+  onClose,
+  settings = defaultTemplateSettings(),
+  onOpenPrintable,
+  onOpenSettings,
+}: {
+  onClose: () => void;
+  settings?: TemplateSettings;
+  onOpenPrintable?: (document: PrintableDocument) => void;
+  onOpenSettings?: () => void;
+}) {
   const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
   return (
     <Modal title="Auto-Draft Document Templates" onClose={onClose} wide>
@@ -2534,7 +2544,7 @@ function AutoDraftHub({ onClose }: { onClose: () => void }) {
             <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
           </div>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">Auto-drafted using the SLCT project baseline: 12V/24V nominal, −40°C to +85°C, IP67, and illustrative AIS-140/AEC/ISO targets. Validate all technical and commercial information before any controlled release.</p>
-          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Download formatted preview" onClick={() => window.print()} /></div>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Full-page template view" onClick={() => onOpenPrintable?.(createPrintableDocument(selected, settings))} /><Action label="Customize header & footer" onClick={onOpenSettings} /></div>
         </section>
       )}
     </Modal>
