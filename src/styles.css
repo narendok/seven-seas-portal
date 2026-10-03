@@ -166,9 +166,9 @@
 }
 
 @media print {
-  @page { size: A4 portrait; margin: 12mm; }
-  html, body { background: white !important; color: black !important; }
-  body > *:not(#root), .no-print, nav, aside, header, button { display: none !important; }
+  @page { size: A4 portrait; margin: 10mm; }
+  html, body { background: white !important; color: black !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  body > *:not(#root), .no-print, nav, aside, button { display: none !important; }
   #root > main > * { display: none !important; }
   #printable-document, .printable-document-content { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; color: black !important; background: white !important; box-shadow: none !important; }
   #printable-document *, .printable-document-content * { color: black !important; background: white !important; border-color: black !important; }
