@@ -1695,6 +1695,7 @@ function Portal() {
             openRecord(record);
             setModal(null);
           }}
+          previewOnly={false}
         />
       )}{" "}
       {modal === "admin" && (
@@ -4696,6 +4697,7 @@ function DocumentDetail({
   onClose,
   onDocumentUpdated,
   onSelectRecord,
+  previewOnly = false,
 }: {
   document: ControlledDocument;
   departments: Department[];
@@ -4704,6 +4706,7 @@ function DocumentDetail({
   onClose: () => void;
   onDocumentUpdated: (document: ControlledDocument, event: string) => void;
   onSelectRecord: (record: RecordItem) => void;
+  previewOnly?: boolean;
 }) {
   const owner = departments.find((item) => item.id === document.departmentId);
   const allowed = !departmentContext || document.departmentId === departmentContext;
@@ -4826,6 +4829,29 @@ function DocumentDetail({
             Department-owned controlled document
           </p>
           <h3 className="mt-2 text-xl font-semibold">{document.title}</h3>
+          <section className="mt-5 overflow-hidden border border-border bg-panel">
+            <div className="grid gap-px bg-border sm:grid-cols-3">
+              <DocumentField label="Document ID" value={document.type} />
+              <DocumentField label="Revision" value={document.revision ?? "Unrevised"} />
+              <DocumentField label="Issue date" value={document.effectiveDate ?? "DEMO issue date"} />
+            </div>
+            <div className="p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Controlled record preview</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {document.device ? `DEMO ${document.device} controlled record. ` : "Controlled record. "}
+                The preview is illustrative only and does not represent a signed, released or externally shared document.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[document.classification ?? "Internal", document.lifecycle ?? "Draft", document.phase ?? "Unmapped"].map((tag) => <span key={tag} className="rounded-md border border-border bg-card px-2 py-1 text-xs font-medium">{tag}</span>)}
+              </div>
+              <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
+                <DocumentField label="Author" value="DEMO record author" />
+                <DocumentField label="Reviewer" value="DEMO technical reviewer" />
+                <DocumentField label="Approver" value={document.approver ?? "Human approval required"} />
+              </div>
+            </div>
+          </section>
+          {!previewOnly &&
           <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <DocumentField label="Owner" value={owner?.name ?? "Department not assigned"} />
             <DocumentField label="Group" value={document.group ?? "Unclassified"} />
@@ -4847,6 +4873,7 @@ function DocumentDetail({
               value="Department-owned · internal by default · no external sharing"
             />
           </section>
+          }
           <section className="mt-6 overflow-hidden rounded-lg border border-border bg-panel">
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-4">
               <div>
