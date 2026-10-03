@@ -3465,6 +3465,32 @@ function DepartmentFlow({
   );
 }
 
+const departmentProcesses: Partial<Record<AreaId, { drive: string; items: string[] }>> = {
+  sales: { drive: "01_Governance_and_QMS", items: ["Customer enquiry & lead intake", "Customer SOR intake & analysis", "Mutual NDA generator", "Commercial quotation builder", "Contract review record"] },
+  pur: { drive: "03_Hardware_Deliverables_ECAD", items: ["Purchase orders & tracking", "Supplier scorecard · F-PUR-16", "RFQ vendor price comparison", "Supplier PPAP Level 3 · F-PUR-15", "Second-source component matrix"] },
+  ehw: { drive: "03_Hardware_Deliverables_ECAD", items: ["Product requirement specification", "Schematic package", "Production Gerber & drill ZIP", "Production BOM cost tracker", "Hardware DFMEA risk analysis"] },
+  esw: { drive: "05_Firmware_and_Software", items: ["Hardware-software interface spec", "Firmware flash binaries", "CAN J1939 parser & DBC", "Git PR reviews & unit coverage"] },
+  mech: { drive: "04_Mechanical_Deliverables_MCAD", items: ["3D STEP enclosure CAD package", "2D dimension & tooling drawings", "Thermal & ingress analysis", "IP67 gasket & connector spec"] },
+  qa: { drive: "06_Quality_and_Compliance", items: ["DVP&R verification plan", "AIS-140 & ARAI/ICAT dossier", "IATF / ISO audit checklist", "CAPA / 8D record"] },
+  emf: { drive: "07_Production_and_Testing", items: ["SMT process flow & control plan", "10-zone reflow profile log", "3D AOI & SPI criteria", "SOPs & work instructions"] },
+  tst: { drive: "07_Production_and_Testing", items: ["Serialized PDI certificate", "Automated EOL jig calibration", "Cellular RF & GPS TTFF reports", "IMEI / MAC registry export"] },
+  fin: { drive: "01_Governance_and_QMS", items: ["Commercial tax invoice & GST", "e-Way bill & dispatch documents", "Advance billing authorization", "Project margin & cost-center P&L"] },
+  sit: { drive: "05_Firmware_and_Software", items: ["Offsite encrypted backup log", "OTA firmware rollout manager", "Telemetry cloud health & uptime"] },
+  hrops: { drive: "01_Governance_and_QMS", items: ["Annual competency & skill matrix", "IPC-A-610 training log", "ESD & cleanroom certification"] },
+};
+
+function DepartmentProcessMenu({ area, onOpenDrive, onCreate }: { area: AreaId; onOpenDrive: () => void; onCreate: () => void }) {
+  const menu = departmentProcesses[area];
+  if (!menu) return null;
+  return <section className="ops-section mt-8 overflow-hidden bg-panel"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Department processes</p><p className="mt-1 text-xs text-muted-foreground">Shortcuts keep controlled work and its department drive together.</p></div><Action label="Department Cloud Drive" onClick={onOpenDrive} primary /></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">{menu.items.map((item, index) => <button key={item} onClick={onCreate} className="flex min-h-14 items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-secondary"><span className="font-mono text-[10px] text-steel">{String(index + 1).padStart(2, "0")}</span><span className="text-xs font-semibold">{item}</span></button>)}</div><div className="border-t border-border px-4 py-2 font-mono text-[10px] text-muted-foreground">Drive folder · /{menu.drive}</div></section>;
+}
+
+function LifecycleDeliverables({ documents, stage, onOpenDocument }: { documents: ControlledDocument[]; stage: string; onOpenDocument: (document: ControlledDocument) => void }) {
+  const linked = documents.filter((document) => document.lifecycleStage === stage || document.phase?.includes(stage));
+  if (!linked.length) return null;
+  return <section className="ops-section mt-5 overflow-hidden"><div className="ops-section-header flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Linked project deliverables</p><p className="mt-1 text-xs text-muted-foreground">Open the controlled file record or download its authorized revision from the Drive.</p></div><FolderOpen className="size-4 text-steel" /></div><div className="divide-y divide-border">{linked.map((document) => <button key={document.id} onClick={() => onOpenDocument(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left hover:bg-secondary"><span className="min-w-0"><strong className="block text-xs">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.part ?? document.type} · {document.deliverableKind ?? "Controlled evidence"}</small></span><span className="self-center text-xs text-steel">Open file</span></button>)}</div></section>;
+}
+
 function AreaSummary({ records }: { records: RecordItem[] }) {
   const statuses: RecordStatus[] = ["Draft", "Open", "In review", "Approved", "Released"];
   return (
