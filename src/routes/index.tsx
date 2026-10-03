@@ -1675,7 +1675,6 @@ function Portal() {
               onCreate={() => setModal("create")}
               onNavigate={navigate}
               onAdmin={() => setModal("admin")}
-              onSetup={() => setModal("wizard")}
               onUpdateTask={updateTask}
               onOpenProject={(id) => {
                 const projectRecord = activeRecords.find(
@@ -1925,7 +1924,6 @@ function CommandCenter({
   onCreate,
   onNavigate,
   onAdmin,
-  onSetup,
   onUpdateTask,
   onOpenProject,
   onOpenAssignee,
@@ -1939,7 +1937,6 @@ function CommandCenter({
   onCreate: () => void;
   onNavigate: (area: AreaId) => void;
   onAdmin: () => void;
-  onSetup: () => void;
   onUpdateTask: (taskId: string, patch: Partial<RecordItem>, action: string) => void;
   onOpenProject: (projectId: string) => void;
   onOpenAssignee: (assignee: string) => void;
