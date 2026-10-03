@@ -171,6 +171,9 @@ type ControlledDocument = {
   history?: string[] | undefined;
   cloudDocumentId?: string | undefined;
   localFiles?: LocalControlledFile[] | undefined;
+  draftHtml?: string | undefined;
+  releaseNotes?: string | undefined;
+  designer?: string | undefined;
 };
 type LocalControlledFile = {
   id: string;
@@ -304,6 +307,7 @@ type PortalState = {
   notifications: string[];
   alerts: DemoAlert[];
   templateSettings?: TemplateSettings | undefined;
+  templateBodies?: Record<string, string> | undefined;
   raciMatrix?: RaciMatrix | undefined;
 };
 type DemoAlert = {
@@ -618,6 +622,7 @@ const emptyPortal = (): PortalState => ({
   notifications: [],
   alerts: [],
   templateSettings: defaultTemplateSettings(),
+  templateBodies: defaultTemplateBodies(),
 });
 
 function defaultTemplateSettings(): TemplateSettings {
@@ -631,6 +636,28 @@ function defaultTemplateSettings(): TemplateSettings {
     confidentialityNotice: "CONFIDENTIAL & PROPRIETARY — HEXENSE LABS PVT LTD. All rights reserved. Reproduction or distribution without written permission is strictly prohibited.",
     complianceFooter: "IATF 16949:2016 & ISO 9001:2015 Certified Automotive Tier-1 Electronic Systems Facility | Doc Ref: Standard Format 4.2",
   };
+}
+
+function defaultTemplateBodies() {
+  return Object.fromEntries(autoDraftTemplates.map(([title]) => [title, templateBlueprint(title)]));
+}
+
+function templateBlueprint(title: string) {
+  const templates: Record<string, string> = {
+    "Customer SOR": "OEM requirements, fleet connectivity, CAN telemetry scope, rollout schedule, commercial SLA, warranty and delivery terms.",
+    "Mutual NDA": "Confidential information definitions, non-disclosure obligations, intellectual property protections and governing law.",
+    "Commercial Quotation": "Tiered volume pricing, NRE engineering costs, tooling charges, payment milestones and delivery lead-time.",
+    "Contract Review Record": "Cross-department feasibility matrix for SAL, EHW, ESW, MECH, PUR, QA, EMF and FIN with risk score and human gate approval.",
+    "Product Requirement Spec": "STM32/ESP32, 4G LTE Cat-1, GNSS, 9–36V ISO 7637-2 power topology, CAN J1939, IP67 enclosure and pinout definitions.",
+    "Production BOM Cost Tracker": "Item number, MPN, manufacturer, description, package, sourcing lead time, unit cost and AEC-Q grade.",
+    "Hardware DFMEA": "Severity, occurrence, detection, RPN scoring, potential failure causes, design controls and corrective actions.",
+    "Manufacturing Process Flow & Control Plan": "SMT process flow, stencil thickness, 10-zone reflow profile, 3D AOI inspection, ICT fixtures and packaging controls.",
+    "DVP&R Verification Plan": "Thermal shock, ISO 7637-2 pulses, ISO 16750-3 vibration, IP67 submersion and CISPR 25 EMC/EMI test cases.",
+    "Pre-Dispatch Inspection Certificate": "Serialized IMEI/MAC list, cellular RF test, GPS TTFF, flashing checksum and QA sign-off stamp.",
+    "Commercial Tax Invoice": "GST/HSN table, invoice and e-Way bill details, buyer/consignee addresses, tax calculations and bank remittance instructions.",
+    "Annual Skill Matrix": "Operator competency scores, IPC-A-610 certifications, ESD safety training and audit validity dates.",
+  };
+  return templates[title] ?? "Controlled project-specific requirement baseline requiring human review before release.";
 }
 
 const templateProjects = ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03", "VCU", "BMS"];
@@ -2007,6 +2034,8 @@ function Portal() {
             setModal("document");
           }}
           onOpenDraftHub={() => setDraftHubOpen(true)}
+          templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
+          onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
         />
       )}{" "}
       {modal === "document" && selectedDocument && (
@@ -2090,6 +2119,8 @@ function Portal() {
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onOpenPrintable={setPrintTemplate}
           onOpenSettings={() => setTemplateSettingsOpen(true)}
+          templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
+          onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
         />
       )}
       {templateSettingsOpen && (
@@ -2097,6 +2128,8 @@ function Portal() {
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onClose={() => setTemplateSettingsOpen(false)}
           onChange={(settings) => update((state) => ({ ...state, templateSettings: settings }))}
+          templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
+          onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
         />
       )}
       {printTemplate && (
@@ -2554,11 +2587,15 @@ function AutoDraftHub({
   settings = defaultTemplateSettings(),
   onOpenPrintable,
   onOpenSettings,
+  templateBodies,
+  onTemplateBodiesChange,
 }: {
   onClose: () => void;
   settings?: TemplateSettings;
   onOpenPrintable?: (document: PrintableDocument) => void;
   onOpenSettings?: () => void;
+  templateBodies: Record<string, string>;
+  onTemplateBodiesChange: (templates: Record<string, string>) => void;
 }) {
   const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
   const [project, setProject] = useState("HLPL-AI4T-01");
@@ -2590,7 +2627,8 @@ function AutoDraftHub({
             <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
           </div>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">{profile.customer} · {profile.quantity} · {profile.techSpec} · {profile.commercialValue}. Validate all technical and commercial information before any controlled release.</p>
-          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Full-page template view" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
+          <label className="mt-4 block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Editable template content<textarea value={templateBodies[selected[0]] ?? templateBlueprint(selected[0])} onChange={(event) => onTemplateBodiesChange({ ...templateBodies, [selected[0]]: event.target.value })} className="mt-2 min-h-28 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => onTemplateBodiesChange({ ...templateBodies })} /><Action label="Full Document Viewer & Print" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
         </section>
       )}
     </Modal>
@@ -5336,6 +5374,8 @@ function DocumentsPanel({
   onSelectDocument,
   onUploadDocument,
   onOpenDraftHub,
+  templateBodies,
+  onTemplateBodiesChange,
 }: {
   documents: ControlledDocument[];
   departments: Department[];
@@ -5344,10 +5384,13 @@ function DocumentsPanel({
   onSelectDocument: (document: ControlledDocument) => void;
   onUploadDocument: (document: ControlledDocument) => void;
   onOpenDraftHub: () => void;
+  templateBodies: Record<string, string>;
+  onTemplateBodiesChange: (templates: Record<string, string>) => void;
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("All groups");
   const [phase, setPhase] = useState("All phases");
+  const [tab, setTab] = useState<"repository" | "drive">("repository");
   const groups = [
     "Governance/QMS",
     "Product/Device Audit Packs",
@@ -5370,7 +5413,7 @@ function DocumentsPanel({
   );
   return (
     <Modal title="Controlled document repository" onClose={onClose} wide>
-      <div className="mb-4 flex justify-end"><Action label="Auto-Draft Document Templates" primary onClick={onOpenDraftHub} /></div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="flex gap-2"><Action label="Document repository" primary={tab === "repository"} onClick={() => setTab("repository")} /><Action label="Drive & Cloud storage" primary={tab === "drive"} onClick={() => setTab("drive")} /></div><Action label="Auto-Draft Document Templates" primary onClick={onOpenDraftHub} /></div>
       <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-moss/25 bg-accent px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-accent-foreground">
@@ -5385,7 +5428,8 @@ function DocumentsPanel({
           Private Cloud storage
         </span>
       </section>
-      <section className="ops-section mb-6 overflow-hidden bg-panel">
+      {tab === "drive" && <UnifiedStorageView documents={documents} onSelectDocument={onSelectDocument} />}
+      {tab === "repository" && <><section className="ops-section mb-6 overflow-hidden bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
             Canonical repository path
@@ -5498,8 +5542,14 @@ function DocumentsPanel({
           ))}
         </div>
       </section>
+      </>}
     </Modal>
   );
+}
+
+function UnifiedStorageView({ documents, onSelectDocument }: { documents: ControlledDocument[]; onSelectDocument: (document: ControlledDocument) => void }) {
+  const folders = ["01_Governance_and_QMS", "02_Product_Platforms", "03_Supplier_Quality_and_PPAP", "04_Equipment_and_Calibration"];
+  return <section className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Unified Drive & Cloud storage</p><p className="mt-1 text-xs text-muted-foreground">Logical department folders; private Cloud files are available only when an authorized organization link exists. Drive remains optional.</p></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">{folders.map((folder) => <div key={folder} className="p-4"><p className="font-mono text-xs text-steel">/{folder}</p><p className="mt-2 text-xs text-muted-foreground">Generated HTML drafts, controlled records and authorized hardware release packages.</p></div>)}</div></section><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Project artifact register</p><p className="mt-1 text-xs text-muted-foreground">Includes editable document records and attached PDF / ZIP / STEP deliverables.</p></div><div className="divide-y divide-border">{documents.map((document) => { const files = document.localFiles ?? []; return <button key={document.id} onClick={() => onSelectDocument(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3 text-left hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.group ?? "Unfiled"} · Rev {document.revision ?? "—"} · {files.length} attached file{files.length === 1 ? "" : "s"}</small></span><span className="text-xs text-steel">Open</span></button>; })}</div></section></section>;
 }
 function DocumentDetail({
   document,
@@ -5541,6 +5591,7 @@ function DocumentDetail({
   const [dragActive, setDragActive] = useState(false);
   const [previewFile, setPreviewFile] = useState<LocalControlledFile | null>(null);
   const isCloudDocument = Boolean(document.cloudDocumentId);
+  const isHardwareDeliverable = /schematic|gerber|pcb|step|cad/i.test(`${document.title} ${document.type}`);
   const localFiles = document.localFiles ?? [];
   useEffect(() => {
     if (!document.cloudDocumentId || !allowed) {
@@ -5738,6 +5789,7 @@ function DocumentDetail({
               <Status status={isCloudDocument ? "Approved" : "Draft"} />
             </div>
             <div className="p-4">
+              {isHardwareDeliverable && <section className="mb-4 rounded-lg border border-steel/35 bg-accent p-3"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-steel">Hardware engineering deliverable</p><p className="mt-1 text-sm font-semibold">{document.title.includes("Gerber") ? "Gerber & PCB release · ZIP archive" : document.title.includes("STEP") || document.title.includes("CAD") ? "3D STEP enclosure · ZIP package" : "Schematic package · PDF deliverable"}</p><p className="mt-1 text-xs text-muted-foreground">Include revision notes and designer attribution with each verified release package. Human approval remains required.</p></section>}
               <div
                 onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
                 onDragLeave={() => setDragActive(false)}
@@ -5752,6 +5804,7 @@ function DocumentDetail({
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
+                      accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp" : undefined}
                       disabled={fileState === "uploading"}
                       onChange={(event) => {
                         const file = event.target.files?.[0];
@@ -5760,7 +5813,7 @@ function DocumentDetail({
                     />
                   </label>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    Drop a file here or browse · Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
+                    Drop a file here or browse · {isHardwareDeliverable ? "PDF, Gerber ZIP, or STEP/STP release package · " : ""}Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
                   </p>
                   {fileState === "uploading" && (
                     <div className="mt-3" aria-live="polite">
@@ -5819,13 +5872,13 @@ function DocumentDetail({
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
-                      accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"
+                      accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp" : ".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"}
                       disabled={fileState === "uploading"}
                       onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadLocal(file); }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
+                    {isHardwareDeliverable ? "Attach the PDF schematic, Gerber ZIP, or STEP/STP CAD package. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
                   </p>
                   {fileState === "uploading" && <div className="mt-3" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Securing & Verifying SHA-256 Hash… {uploadProgress}%</p></div>}
                   {fileMessage && <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-moss"}`}>{fileMessage}</p>}
@@ -5944,8 +5997,9 @@ function stageDocumentContent(stage: string, title: string, profile: ProjectDocu
   return content[stage] ?? base;
 }
 
-function TemplateSettingsPanel({ settings, onChange, onClose }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onClose: () => void }) {
-  return <Modal title="Document Header & Footer Settings" onClose={onClose} wide><TemplateSettingsEditor settings={settings} onChange={onChange} onSave={() => undefined} /><div className="mt-5 flex justify-end"><Action label="Done" primary onClick={onClose} /></div></Modal>;
+function TemplateSettingsPanel({ settings, onChange, onClose, templateBodies, onTemplateBodiesChange }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onClose: () => void; templateBodies: Record<string, string>; onTemplateBodiesChange: (templates: Record<string, string>) => void }) {
+  const [template, setTemplate] = useState<string>(autoDraftTemplates[0]?.[0] ?? "Customer SOR");
+  return <Modal title="Document Header & Footer Settings" onClose={onClose} wide><TemplateSettingsEditor settings={settings} onChange={onChange} onSave={() => undefined} /><section className="ops-section mt-5 overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Base HTML drafting templates</p><p className="mt-1 text-xs text-muted-foreground">Edit the controlled starting content for each document type. Project requirements are injected into each full viewer.</p></div><div className="grid gap-4 p-4"><SelectField label="Document template" value={template} onChange={setTemplate} options={autoDraftTemplates.map(([title]) => title)} /><label className="block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Template body<textarea value={templateBodies[template] ?? templateBlueprint(template)} onChange={(event) => onTemplateBodiesChange({ ...templateBodies, [template]: event.target.value })} className="mt-2 min-h-36 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label></div></section><div className="mt-5 flex justify-end"><Action label="Done" primary onClick={onClose} /></div></Modal>;
 }
 
 function TemplateSettingsEditor({ settings, onChange, onSave }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onSave: () => void }) {
