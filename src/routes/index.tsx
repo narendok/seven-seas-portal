@@ -2486,6 +2486,9 @@ function DepartmentWorkspace({
         />
       </section>
       <DepartmentFlow flow={flow} onOpenStage={onOpenStage} />
+      {area.id === "hrops" && (
+        <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
+      )}
       <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="overflow-hidden border border-border bg-card">
           {view === "summary" ? (
@@ -3232,7 +3235,7 @@ function AdminCommandCenter({
   onResetDemo: () => void;
 }) {
   const [tab, setTab] = useState<
-    "company" | "departments" | "roles" | "masters" | "settings" | "demo"
+    "company" | "departments" | "roles" | "masters" | "settings" | "team" | "demo"
   >("company");
   const [query, setQuery] = useState("");
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
@@ -3307,7 +3310,7 @@ function AdminCommandCenter({
   return (
     <Modal title="Administration command center" onClose={onClose} wide>
       <div className="mb-5 flex flex-wrap gap-2 border-b border-border pb-4">
-        {(["company", "departments", "roles", "masters", "settings", "demo"] as const).map(
+        {(["company", "departments", "roles", "masters", "settings", "team", "demo"] as const).map(
           (item) => (
             <button
               key={item}
@@ -3326,7 +3329,9 @@ function AdminCommandCenter({
           Acting role · Administrator
         </span>
       </div>
-      {tab === "demo" ? (
+      {tab === "team" ? (
+        <TeamCompetencyPanel members={demoTeam} />
+      ) : tab === "demo" ? (
         <DemoDataPanel loaded={portal.demoLoaded} onLoad={onLoadDemo} onReset={onResetDemo} />
       ) : tab === "company" ? (
         <div className="space-y-5">
@@ -3516,6 +3521,44 @@ function AdminCommandCenter({
         <DepartmentSettingsManager department={selected} onUpdate={onUpdate} onLog={onLog} />
       )}
     </Modal>
+  );
+}
+
+function TeamCompetencyPanel({ members }: { members: TeamMember[] }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [tni, setTni] = useState<string[]>([]);
+  return (
+    <section className="mt-6 overflow-hidden border border-border bg-card">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-4">
+        <div>
+          <p className="font-semibold">DEMO competency roster</p>
+          <p className="mt-1 text-sm text-muted-foreground">Illustrative HR/OPS skill-matrix entries only · not personnel records.</p>
+        </div>
+        <span className="font-mono text-[10px] uppercase text-steel">HLPL/F/HR/03</span>
+      </div>
+      <div className="divide-y divide-border">
+        {members.map((member) => (
+          <div key={member.name} className="px-4 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button onClick={() => setExpanded(expanded === member.name ? null : member.name)} className="text-left">
+                <strong className="block">{member.name}</strong>
+                <span className="mt-1 block text-sm text-muted-foreground">{member.role} · {areaById(member.area).short}</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground">{member.score}</span>
+                <span className="rounded-md border border-moss/25 bg-card px-2 py-1 text-xs font-semibold text-moss">{member.level}</span>
+                <Action label={tni.includes(member.name) ? "TNI queued" : "Create TNI"} onClick={() => setTni((items) => items.includes(member.name) ? items : [...items, member.name])} />
+              </div>
+            </div>
+            {expanded === member.name && (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {member.skills.map((skill, index) => <p key={skill} className="border border-border bg-panel px-3 py-2 text-sm">{skill}<span className="float-right font-mono text-xs text-steel">{index < 3 ? "4/4" : "3/4"}</span></p>)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 function MasterManager({
