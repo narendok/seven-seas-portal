@@ -12,3 +12,4 @@
 
 - [ ] Expand the portal from six areas to the eleven SCMS functional departments, with lifecycle control, PMSS, and numbering.
 - [ ] Populate a clearly labeled fictional SCMS sample lifecycle across all 11 hubs for HLPL-SLCT-01, without representing real customer, certification, commercial, or production activity.
+- [ ] Add the clearly labeled RFQ-2026-TATA-EV-042 feature-test walkthrough, controlled document previews, and 11-department demo competency roster.

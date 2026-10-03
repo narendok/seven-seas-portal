@@ -149,6 +149,38 @@ type ControlledFile = {
   superseded_at: string | null;
   audit_note: string;
 };
+type TeamMember = {
+  name: string;
+  area: Exclude<AreaId, "home" | "audit" | "rnd" | "stores" | "production" | "quality" | "people">;
+  role: string;
+  score: string;
+  level: string;
+  skills: string[];
+};
+const demoTeam: TeamMember[] = [
+  { name: "Riley Stone", area: "sales", role: "Sales Lead", score: "3.85/4", level: "Level 4", skills: ["RFQ intake", "Commercial review", "Client communications", "Contract controls"] },
+  { name: "Avery Vale", area: "ehw", role: "Hardware Lead", score: "3.90/4", level: "Level 4", skills: ["Architecture", "Schematics", "PCB release", "DFMEA"] },
+  { name: "Devon Lane", area: "esw", role: "Firmware Lead", score: "3.75/4", level: "Level 4", skills: ["CAN/J1939", "Secure telemetry", "CI/CD", "Release governance"] },
+  { name: "Samira Holt", area: "mech", role: "Mechanical Lead", score: "3.60/4", level: "Level 4", skills: ["STEP model", "Tolerance stack", "Tooling", "Sealing review"] },
+  { name: "Morgan Reed", area: "pur", role: "Purchasing Lead", score: "3.70/4", level: "Level 4", skills: ["Supplier qualification", "PPAP", "Cost controls", "Capacity planning"] },
+  { name: "Jordan Blake", area: "qa", role: "Quality Head", score: "3.95/4", level: "Level 4", skills: ["APQP", "DVP&R", "CAPA", "Release approval"] },
+  { name: "Casey Rowan", area: "emf", role: "Manufacturing Lead", score: "3.65/4", level: "Level 4", skills: ["PFD", "PFMEA", "Line startup", "Control plan"] },
+  { name: "Mina Cross", area: "tst", role: "EOL Test Technician", score: "3.40/4", level: "Level 3", skills: ["Pre-flash", "CAN loopback", "QR labels", "Yield analysis"] },
+  { name: "Priya Voss", area: "fin", role: "Finance Controller", score: "3.80/4", level: "Level 4", skills: ["Invoice control", "GRN validation", "Receivables", "Tax close"] },
+  { name: "Kai Morgan", area: "sit", role: "IT Administrator", score: "3.50/4", level: "Level 3", skills: ["Telemetry", "Backup assurance", "Support", "ISMS"] },
+  { name: "Taylor Quinn", area: "hrops", role: "HR & Operations Manager", score: "3.65/4", level: "Level 4", skills: ["Skill matrix", "TNI", "Compliance calendar", "DMAIC"] },
+];
+const rfqStages = [
+  ["Stage 1", "RFQ logged & mNDA signed", "RFQ-2026-TATA-EV-042 · DEMO Tata Ace EV 4G Telematics Gateway · 50,000 units/year"],
+  ["Stage 2", "Contract review signed", "HLPL/F/MKT/01 · six DEMO HOD sign-offs complete"],
+  ["Stage 3", "Requirement freeze & quotation accepted", "PRS-02 and illustrative commercial quotation accepted"],
+  ["Stage 4", "MCU bring-up & bench PoC passed", "DEMO bring-up, CAN and 4G bench checks passed"],
+  ["Stage 5", "Pilot build & tentative BOM released", "Tentative BOM issued for DEMO pilot planning"],
+  ["Stage 6", "Pre-compliance & DVP&R approved", "DEMO client-review and DVP&R gate complete"],
+  ["Stage 7", "Final Gerber & production BOM released", "Gerber and BOM release package recorded"],
+  ["Stage 8", "Type approval & PPAP cleared", "Illustrative AIS-140 TAC #842 reference and PPAP Level 3 gate cleared · not a certification claim"],
+  ["Stage 9", "Production & EOL package generated", "DEMO SMT Line 2 · SLCT-2026-0101 to 0120 PASS · FPY 97.4% · QR, PDI and invoice simulated"],
+] as const;
 type PortalState = {
   demoLoaded: boolean;
   demoSnapshot?: PortalState | undefined;
