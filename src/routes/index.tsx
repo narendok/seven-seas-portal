@@ -3179,6 +3179,7 @@ function DepartmentWorkspace({
   onAdmin,
   onOpenStage,
   onOpenDraftHub,
+  onOpenDrive,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -3195,6 +3196,7 @@ function DepartmentWorkspace({
   onAdmin: () => void;
   onOpenStage: (stage: string) => void;
   onOpenDraftHub: () => void;
+  onOpenDrive: () => void;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -3223,6 +3225,7 @@ function DepartmentWorkspace({
               onClick={() => onView(view === "queue" ? "summary" : "queue")}
               label={view === "queue" ? "Summary" : "Queue"}
             />
+            <Action onClick={onOpenDrive} label="Department Cloud Drive" />
             <Action onClick={onCreate} label={`Create ${area.recordType}`} primary />
           </>
         }
@@ -3269,6 +3272,7 @@ function DepartmentWorkspace({
         />
       </section>
       <DepartmentFlow flow={flow} onOpenStage={onOpenStage} />
+      <DepartmentProcessMenu area={area.id} onOpenDrive={onOpenDrive} onCreate={onCreate} />
       <SmartNextStep records={scopedRecords} onOpenDraftHub={onOpenDraftHub} />
       {area.id === "hrops" && (
         <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
