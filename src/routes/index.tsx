@@ -487,6 +487,7 @@ const emptyPortal = (): PortalState => ({
   documents: [],
   audit: [],
   notifications: [],
+  alerts: [],
 });
 
 const demoPortal = (): PortalState => {
@@ -634,6 +635,29 @@ const demoPortal = (): PortalState => {
     notes: demoNote,
     fields: fields(stage, links, extra),
   });
+  const task = (
+    id: string,
+    area: Exclude<AreaId, "home" | "audit" | "rnd" | "stores" | "production" | "quality" | "people">,
+    title: string,
+    priority: Priority,
+    dueDate: string,
+    assignee: string,
+    projectId: string,
+    projectLabel: string,
+    detail: string,
+    approval = false,
+  ): RecordItem =>
+    make(id, area, "Task", title, "Open", priority, "Today / pending checklist", [projectId], {
+      dueDate,
+      assignee,
+      projectId,
+      project: projectLabel,
+      detail,
+      approval: approval ? "Human approval required" : "Not required",
+      progress: "0%",
+    });
+  const today = new Date().toISOString().slice(0, 10);
+  const tomorrow = nextWorkingDay(today);
   const records: RecordItem[] = [
     make(
       "HLPL-F-SAL-01/2026/088",
@@ -994,7 +1018,31 @@ const demoPortal = (): PortalState => {
       ["HLPL-SLCT-QA-DVP-01", "HLPL-SLCT-TST-EOL-01"],
       { approval: "PENDING · NEVER AUTO-APPROVED", release: "Not released" },
     ),
+    task("DEMO-TASK-EHW-ECN-002", "ehw", "Review & approve ECN-002 MOSFET package layout change", "Critical", today, "Avery Vale", "HLPL-BCU-02", "HLPL-BCU-02 · Body Control Unit Gen 3", "Thermal dissipation layout review · due today 14:00", true),
+    task("DEMO-TASK-QA-CONTRACT", "qa", "Sign Contract Review Record HLPL/F/MKT/01 for Tata Ace EV Telematics", "High", today, "Jordan Blake", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Cross-functional sign-off · due today 16:30", true),
+    task("DEMO-TASK-EMF-REFLOW", "emf", "Verify reflow oven 10-zone thermal profile for SMT Line 2 lot BATCH-04", "High", today, "Casey Rowan", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Process verification · due today 11:00"),
+    task("DEMO-TASK-ESW-PR142", "esw", "Merge PR #142 CAN J1939 telemetry parser with unit test coverage above 90%", "Normal", today, "Devon Lane", "HLPL-XLINK-03", "HLPL-XLINK-03 · Commercial Vehicle Gateway", "Peer review and CI check · due today 17:00"),
+    task("DEMO-TASK-FIN-ADVANCE", "fin", "Approve advance billing payment release for EC200U reel batch", "High", today, "Priya Voss", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Financial commitment · due today 15:00", true),
+    task("DEMO-TASK-PUR-FIBOCOM", "pur", "Verify second-source vendor capacity scorecard F-PUR-16 for Fibocom", "Normal", today, "Morgan Reed", "HLPL-XLINK-03", "HLPL-XLINK-03 · Commercial Vehicle Gateway", "Capacity scorecard review · due today 18:00"),
+    task("DEMO-TASK-HR-IPC", "hrops", "Log IPC-A-610 workmanship training attendance in Skill Matrix HLPL/F/HR/03", "Low", today, "Taylor Quinn", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Competency record update · due today 17:30"),
+    task("DEMO-TASK-SIT-BACKUP", "sit", "Execute offsite encrypted backup replication drill for telemetry DB", "Normal", today, "Kai Morgan", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Recovery evidence capture · due today 19:00"),
+    task("DEMO-TASK-MECH-CLEARANCE", "mech", "Conduct 3D STEP clearance check for BCU Gen 3 connector harness", "High", tomorrow, "Samira Holt", "HLPL-BCU-02", "HLPL-BCU-02 · Body Control Unit Gen 3", "Harness clearance review · tomorrow"),
+    task("DEMO-TASK-TST-CAL", "tst", "Calibrate automated EOL jig JIG-SLCT-01 optical barcode scanner", "Normal", tomorrow, "Mina Cross", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Jig calibration check · tomorrow"),
+    task("DEMO-TASK-SAL-QUO", "sales", "Transmit revised quotation HLPL-BCU-SAL-QUO-02 to Mahindra Electric", "High", tomorrow, "Riley Stone", "HLPL-BCU-02", "HLPL-BCU-02 · Body Control Unit Gen 3", "Commercial response draft · tomorrow"),
+    task("DEMO-TASK-QA-PPAP", "qa", "Review Supplier PPAP Level 3 submission F-PUR-15 for Molex connector", "High", tomorrow, "Jordan Blake", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Supplier evidence review · tomorrow"),
+    task("DEMO-TASK-EMF-5S", "emf", "Conduct pre-manufacturing 5S audit for through-hole assembly station", "Normal", tomorrow, "Casey Rowan", "HLPL-PST-01", "HLPL-PST-01 · Power Shuttle Transmission Unit", "Readiness audit · tomorrow"),
+    task("DEMO-TASK-PUR-MLCC", "pur", "Audit lead-time variance report for passive MLCC capacitors", "Normal", tomorrow, "Morgan Reed", "HLPL-EFAN-01", "HLPL-EFAN-01 · High-Power eFan Speed Controller", "Supply risk review · tomorrow"),
   ];
+  const projectProfiles = [
+    ["HLPL-SLCT-01", "AIS-140 GPS/4G Telematics Gateway", "Tata Motors EV · fictional DEMO", "Stage 8 · Type Approval & SCM Planning", "12V / 24V", "IP67", "$35.42"],
+    ["HLPL-BCU-02", "Body Control Unit Gen 3", "Mahindra Electric · fictional DEMO", "Stage 5 · Pilot Build", "24V", "IP67", "$52.00"],
+    ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Ashok Leyland Fleet · fictional DEMO", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
+    ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors · fictional DEMO", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
+    ["HLPL-PST-01", "Power Shuttle Transmission Unit", "Escorts Kubota · fictional DEMO", "Stage 9 · Mass Production", "24V", "IP67", "$64.50"],
+  ] as const;
+  projectProfiles.slice(1).forEach(([id, title, client, stage, voltage, enclosure, bom]) => {
+    records.push(make(id, "ehw", "Project", title, "In review", "High", stage, [], { client, currentStage: stage, voltage, enclosure, actualBom: `${bom} · illustrative`, pmss: `${id}-PMSS-00` }));
+  });
   const roles: DepartmentRole[] = departments.flatMap((department, index) => [
     {
       id: `demo-role-${department.id}-lead`,
@@ -1080,8 +1128,8 @@ const demoPortal = (): PortalState => {
         "DEMO AXP2101",
         "DEMO 1000mAh LiPo",
       ],
-      products: [project],
-      customers: ["DEMO Ashok Leyland Commercial Vehicles · fictional"],
+      products: ["HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
+      customers: ["DEMO Tata Motors EV · fictional", "DEMO Mahindra Electric · fictional", "DEMO Ashok Leyland Fleet · fictional", "DEMO Sonalika Tractors · fictional", "DEMO Escorts Kubota · fictional"],
       routes: ["DEMO SMT Line 2"],
       documentTypes: [
         "PRS",
@@ -1096,13 +1144,9 @@ const demoPortal = (): PortalState => {
       ],
     },
     approvals: [
-      {
-        id: "demo-approval-quality-release",
-        title: `DEMO · Human quality release — ${project}`,
-        recordId: "HLPL-SLCT-QA-REL-01",
-        outcome: "Pending",
-        updatedAt: timestamp,
-      },
+      { id: "demo-approval-quality-release", title: `DEMO · Human quality release — ${project}`, recordId: "HLPL-SLCT-QA-REL-01", outcome: "Pending", updatedAt: timestamp },
+      { id: "demo-approval-ecn-002", title: "DEMO · EHW ECN-002 thermal layout review", recordId: "DEMO-TASK-EHW-ECN-002", outcome: "Pending", updatedAt: timestamp },
+      { id: "demo-approval-fin-advance", title: "DEMO · FIN advance billing payment release", recordId: "DEMO-TASK-FIN-ADVANCE", outcome: "Pending", updatedAt: timestamp },
     ],
     documents: mergeAutomotiveDemoDocuments([
       document(
@@ -1155,6 +1199,16 @@ const demoPortal = (): PortalState => {
         "In review",
         ["HLPL-SLCT-EMF-CP-01", "SS-SLCT-02"],
       ),
+      document("demo-doc-quotation", "Commercial quotation · $41.20 unit volume tier", "demo-dept-sales", "Governance/QMS", "HLPL-SLCT-SAL-QUO-01", "Stage 3 · Requirement Freeze", "Approved", ["HLPL-SLCT-SAL-QUO-01"]),
+      document("demo-doc-contract", "Cross-functional feasibility record", "demo-dept-sales", "Governance/QMS", "HLPL/F/MKT/01", "Stage 2 · Feasibility", "In review", ["HLPL/F/MKT/01"]),
+      document("demo-doc-schematic", "Approved schematic package", "demo-dept-ehw", "Product/Device Audit Packs", "HLPL-SLCT-EHW-SCH-02", "Phase_4_Schematic_Design · HW_15–16", "Approved", ["HLPL-SLCT-EHW-SCH-02"]),
+      document("demo-doc-gerber", "Gerber and PCB release", "demo-dept-ehw", "Product/Device Audit Packs", "HLPL-SLCT-EHW-GER-01", "Phase_7_Fabrication_and_Precompliance · HW_24–27", "Approved", ["HLPL-SLCT-EHW-GER-01"]),
+      document("demo-doc-hsi", "Hardware-software interface specification", "demo-dept-esw", "Product/Device Audit Packs", "HLPL-SLCT-ESW-HSI-01", "Phase_8_Hardware_Software_Integration · HW_28–29", "Approved", ["HLPL-SLCT-ESW-HSI-01"]),
+      document("demo-doc-step", "3D STEP enclosure clearance report", "demo-dept-mech", "Product/Device Audit Packs", "HLPL-SLCT-MECH-CAD-01", "Phase_5_Mechanical_and_Enclosure · HW_17–18", "Approved", ["HLPL-SLCT-MECH-CAD-01"]),
+      document("demo-doc-ppap", "Supplier PPAP Level 3 dossier", "demo-dept-pur", "Supplier Quality/IQC", "F-PUR-15/SLCT-01", "Stage 8 · Type Approval & SCM Planning", "In review", ["F-PUR-15/SLCT-01"]),
+      document("demo-doc-eol", "Pre-dispatch inspection and serialized EOL certificate", "demo-dept-tst", "Product/Device Audit Packs", "HLPL-SLCT-TST-PDI-01", "Phase_9_Production_and_Verification · HW_30–35", "Approved", ["HLPL-SLCT-TST-EOL-01"]),
+      document("demo-doc-invoice", "Commercial tax invoice and e-Way bill", "demo-dept-fin", "Governance/QMS", "HLPL-SLCT-FIN-INV-01", "Stage 9 · Mass Production", "In review", ["HLPL-INV-2026-089"]),
+      document("demo-doc-skill", "Annual skill matrix and competency evaluation", "demo-dept-hrops", "Governance/QMS", "HLPL/F/HR/03", "Stage 9 · Mass Production", "Approved", ["HLPL/F/HR/03"]),
     ]),
     audit: [
       {
@@ -1164,9 +1218,12 @@ const demoPortal = (): PortalState => {
         detail: `${project} Stage 8 sample data loaded. ${demoNote}`,
       },
     ],
-    notifications: [
-      `DEMO DATA ONLY · ${project} Stage 8 lifecycle is active`,
-      "Human quality release is pending; no automatic approval is possible.",
+    notifications: [`DEMO DATA ONLY · ${project} Stage 8 lifecycle is active`, "Human quality release is pending; no automatic approval is possible."],
+    alerts: [
+      { id: "ALERT_HW_01", severity: "Critical", title: "Key MOSFET selected on EFAN-01 lacks AEC-Q qualification", detail: "R&D risk waiver is required before the fictional DEMO part selection can advance.", departmentId: "demo-dept-ehw", resolved: false },
+      { id: "ALERT_SAL_02", severity: "Warning", title: "Contract Review pending functional sign-offs beyond 48 hours", detail: "DEMO Tata Ace EV contract review is awaiting simulated functional acknowledgement.", departmentId: "demo-dept-sales", resolved: false },
+      { id: "ALERT_TST_01", severity: "Critical", title: "First-pass yield below 95% threshold on Line 1", detail: "Current DEMO FPY: 92.4%. Review the simulated failure trend before release.", departmentId: "demo-dept-tst", resolved: false },
+      { id: "ALERT_FIN_03", severity: "Warning", title: "Customer payment overdue beyond 45 days for Ashok Leyland Batch 02", detail: "Illustrative exposure: ₹8,40,000. No actual receivable is represented.", departmentId: "demo-dept-fin", resolved: false },
     ],
   };
 };
@@ -1286,6 +1343,7 @@ const readPortal = (): PortalState => {
       documents: value.demoLoaded === true ? mergeAutomotiveDemoDocuments(documents) : documents,
       audit: Array.isArray(value.audit) ? value.audit : [],
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
+      alerts: Array.isArray(value.alerts) ? value.alerts : [],
     };
   } catch {
     return base;
