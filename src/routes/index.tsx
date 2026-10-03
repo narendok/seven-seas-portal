@@ -2028,10 +2028,10 @@ function CommandCenter({
         onOpenProject={onOpenProject}
         onOpenAssignee={onOpenAssignee}
       />
-      <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="border border-border bg-card">
-          <div className="border-b border-border p-4">
-            <p className="font-semibold">Department management</p>
+      <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="ops-section overflow-hidden">
+          <div className="ops-section-header">
+            <p className="text-sm font-semibold">Department management</p>
             <p className="text-xs text-muted-foreground">
               Open a department to manage its lead, roles, queue and department-owned records.
             </p>
@@ -2061,7 +2061,7 @@ function CommandCenter({
                   <button
                     key={department.id}
                     onClick={() => onNavigate(area)}
-                    className="grid w-full grid-cols-[minmax(9rem,1fr)_auto] items-center gap-4 border-b border-border px-4 py-4 text-left last:border-0"
+                    className="grid w-full grid-cols-[minmax(9rem,1fr)_auto] items-center gap-4 border-b border-border px-4 py-2 text-left transition-colors hover:bg-secondary/65 last:border-0"
                   >
                     <span>
                       <span className="block text-sm font-medium">{department.name}</span>
@@ -2081,8 +2081,8 @@ function CommandCenter({
               })}
           </div>
         </div>
-        <aside className="border border-border bg-panel p-4">
-          <p className="font-semibold">Quick actions</p>
+        <aside className="ops-section bg-panel p-4">
+          <p className="text-sm font-semibold">Quick actions</p>
           <div className="mt-3 grid gap-2">
             <Action onClick={onCreate} label="Create task" />
             <Action onClick={() => onNavigate("quality")} label="Review quality queue" />
@@ -2284,12 +2284,12 @@ function TodayChecklist({
   const move = (task: RecordItem, dueDate: string, action: string) =>
     onUpdateTask(task.id, { fields: { ...task.fields, dueDate } }, action);
   return (
-    <section className="mt-6">
+    <section className="mt-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div><p className="font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
+        <div><p className="text-sm font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
         <div className="flex gap-2"><Action label={expandAll ? "Collapse all" : "Expand all"} onClick={() => setExpandAll((value) => !value)} /><Action label="Open expanded modal" onClick={() => setInspectionOpen(true)} /></div>
       </div>
-    <div className="grid gap-5 xl:grid-cols-2">
+    <div className="grid gap-6 xl:grid-cols-2">
       <ChecklistLane
         title="Today"
         description="Short department-wise checklist"
@@ -2359,10 +2359,10 @@ function ChecklistLane({
       aria-label={`${title} checklist`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
-      className="surface-card overflow-hidden border border-border bg-card"
+      className="surface-card ops-section overflow-hidden"
     >
-      <div className="border-b border-border bg-panel px-5 py-4">
-        <p className="font-semibold">{title}</p>
+      <div className="ops-section-header bg-panel">
+        <p className="text-sm font-semibold">{title}</p>
         <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       </div>
       <div>
@@ -2850,8 +2850,8 @@ function DepartmentWorkspace({
       {area.id === "hrops" && (
         <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
       )}
-      <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="overflow-hidden border border-border bg-card">
+      <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="ops-section overflow-hidden">
           {view === "summary" ? (
             <AreaSummary records={records} />
           ) : records.length ? (
@@ -2860,7 +2860,7 @@ function DepartmentWorkspace({
                 <button
                   key={record.id}
                   onClick={() => onSelect(record.id)}
-                  className="grid w-full gap-3 border-b border-border px-4 py-4 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
+                  className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
                 >
                   <span className="font-mono text-xs text-muted-foreground">
                     {record.reference}
@@ -2882,8 +2882,8 @@ function DepartmentWorkspace({
             <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
           )}
         </div>
-        <aside className="border border-border bg-panel p-4">
-          <p className="font-semibold">Lead view</p>
+        <aside className="ops-section bg-panel p-4">
+          <p className="text-sm font-semibold">Lead view</p>
           <dl className="mt-4 space-y-3 text-sm">
             <div>
               <dt className="font-mono text-[10px] uppercase text-muted-foreground">
@@ -2979,10 +2979,10 @@ function DepartmentFlow({
 }) {
   if (!flow.length) return null;
   return (
-    <section className="mt-6 overflow-hidden border border-border bg-panel">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3">
+    <section className="ops-section surface-panel mt-8 overflow-hidden bg-panel">
+      <div className="ops-section-header flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="font-semibold">Department flow</p>
+          <p className="text-sm font-semibold">Department flow</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Record progress through this department’s controlled work stages.
           </p>
@@ -2998,7 +2998,7 @@ function DepartmentFlow({
             <button
               key={stage.label}
               onClick={() => onOpenStage(stage.label)}
-              className="relative min-h-36 bg-card px-4 py-4 text-left transition-colors hover:bg-secondary"
+              className="relative min-h-32 bg-card px-4 py-3 text-left transition-colors hover:bg-secondary"
             >
               <div className="flex items-start justify-between gap-3">
                 <span className="font-mono text-[10px] text-muted-foreground">
@@ -3006,7 +3006,7 @@ function DepartmentFlow({
                 </span>
                 <span className="font-mono text-sm font-semibold text-steel">{percent}%</span>
               </div>
-              <p className="mt-2 text-sm font-semibold">{stage.label}</p>
+              <p className="mt-2 text-xs font-semibold">{stage.label}</p>
               <div
                 className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"
                 aria-label={`${stage.label} ${percent}% complete`}
