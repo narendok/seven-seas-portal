@@ -5649,7 +5649,7 @@ function DocumentDetail({
   const [dragActive, setDragActive] = useState(false);
   const [previewFile, setPreviewFile] = useState<LocalControlledFile | null>(null);
   const isCloudDocument = Boolean(document.cloudDocumentId);
-  const isHardwareDeliverable = /schematic|gerber|pcb|step|cad/i.test(`${document.title} ${document.type}`);
+  const isHardwareDeliverable = Boolean(document.deliverableKind) || /schematic|gerber|pcb|step|cad|firmware|binary/i.test(`${document.title} ${document.type}`);
   const localFiles = document.localFiles ?? [];
   useEffect(() => {
     if (!document.cloudDocumentId || !allowed) {
@@ -5862,7 +5862,7 @@ function DocumentDetail({
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
-                      accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp" : undefined}
+                       accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp,.hex,.bin,.csv,.xlsx,.docx" : undefined}
                       disabled={fileState === "uploading"}
                       onChange={(event) => {
                         const file = event.target.files?.[0];
@@ -5871,7 +5871,7 @@ function DocumentDetail({
                     />
                   </label>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    Drop a file here or browse · {isHardwareDeliverable ? "PDF, Gerber ZIP, or STEP/STP release package · " : ""}Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
+                     Drop a file here or browse · {isHardwareDeliverable ? "PDF, Gerber ZIP, STEP/STP, HEX/BIN, CSV/XLSX, or DOCX release package · " : ""}Private, department-authorized storage · maximum 25 MB · duplicate revisions are safely detected.
                   </p>
                   {fileState === "uploading" && (
                     <div className="mt-3" aria-live="polite">
@@ -5930,18 +5930,18 @@ function DocumentDetail({
                       key={fileInputKey}
                       className="sr-only"
                       type="file"
-                      accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp" : ".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"}
+                       accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp,.hex,.bin,.csv,.xlsx,.docx" : ".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"}
                       disabled={fileState === "uploading"}
                       onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadLocal(file); }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {isHardwareDeliverable ? "Attach the PDF schematic, Gerber ZIP, or STEP/STP CAD package. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
+                     {isHardwareDeliverable ? "Attach PDF, Gerber ZIP, STEP/STP, HEX/BIN, CSV/XLSX, or DOCX deliverables. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
                   </p>
                   {fileState === "uploading" && <div className="mt-3" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Securing & Verifying SHA-256 Hash… {uploadProgress}%</p></div>}
                   {fileMessage && <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-moss"}`}>{fileMessage}</p>}
                   <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-background">
-                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { const anchor = window.document.createElement("a"); anchor.href = file.encoding === "text" ? URL.createObjectURL(new Blob([file.content], { type: file.type })) : file.content; anchor.download = file.name; anchor.click(); if (file.encoding === "text") window.setTimeout(() => URL.revokeObjectURL(anchor.href), 0); }} /><label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-border bg-card px-3.5 text-sm font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
+                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}{file.checksum ? ` · SHA-256 ${file.checksum.slice(0, 16)}…` : ""}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { const anchor = window.document.createElement("a"); anchor.href = file.encoding === "text" ? URL.createObjectURL(new Blob([file.content], { type: file.type })) : file.content; anchor.download = file.name; anchor.click(); if (file.encoding === "text") window.setTimeout(() => URL.revokeObjectURL(anchor.href), 0); }} /><label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label><Action label="Archive" onClick={() => { const next = { ...document, localFiles: localFiles.filter((item) => item.id !== file.id), history: [`${now()} · ${file.name} archived from browser-local revision history`, ...(document.history ?? [])] }; onDocumentUpdated(next, `${document.title} · ${file.name} archived`); }} /></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
                   </div>
                 </>
               )}
