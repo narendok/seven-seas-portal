@@ -1325,6 +1325,8 @@ function Portal() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
+  const [rfqStep, setRfqStep] = useState(0);
+  const [rfqOpen, setRfqOpen] = useState(false);
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
@@ -1552,6 +1554,10 @@ function Portal() {
                 log("Administrator context returned", "Returned to global command center");
                 navigate("home");
               }}
+              onRunRfq={() => {
+                setRfqStep(0);
+                setRfqOpen(true);
+              }}
             />
           ) : view === "detail" && selected ? (
             <RecordDetail
@@ -1715,6 +1721,19 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
+      {rfqOpen && (
+        <RfqCycleTest
+          step={rfqStep}
+          onClose={() => setRfqOpen(false)}
+          onAdvance={() => {
+            const next = Math.min(rfqStages.length - 1, rfqStep + 1);
+            setRfqStep(next);
+            log("DEMO RFQ feature test advanced", `${rfqStages[next][0]} · ${rfqStages[next][1]}`);
+            if (next === rfqStages.length - 1) announce("DEMO RFQ project cycle reached Stage 9.");
+          }}
+          onReset={() => setRfqStep(0)}
+        />
+      )}
       {notice && (
         <div
           role="status"
@@ -1738,6 +1757,7 @@ function CommandCenter({
   onOpenProject,
   onOpenAssignee,
   onReturnGlobal,
+  onRunRfq,
 }: {
   portal: PortalState;
   departmentContext: string | null;
@@ -1749,6 +1769,7 @@ function CommandCenter({
   onOpenProject: (projectId: string) => void;
   onOpenAssignee: (assignee: string) => void;
   onReturnGlobal: () => void;
+  onRunRfq: () => void;
 }) {
   const records = portal.records.filter((record) => !record.archived);
   const visible = departmentContext
@@ -1778,6 +1799,7 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
+            <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={onSetup} label="Continue setup" />
             <Action onClick={onCreate} label="Create Task" primary />
           </>
