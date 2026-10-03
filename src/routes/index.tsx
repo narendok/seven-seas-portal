@@ -1499,7 +1499,7 @@ function Portal() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
-  const [persona, setPersona] = useState<Persona>(personas[0]);
+  const [persona, setPersona] = useState<Persona>(() => personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
@@ -1788,7 +1788,7 @@ function Portal() {
               }}
               onReturnGlobal={() => {
                 setDepartmentContext(null);
-                setPersona(personas[0]);
+                setPersona(personas[0] ?? persona);
                 log("Administrator context returned", "Returned to global command center");
                 navigate("home");
               }}
@@ -1999,13 +1999,15 @@ function Portal() {
           onAdvance={() => {
             setAi4tSimulation((state) => {
               const stage = Math.min(state.stage + 1, ai4tStages.length - 1);
-              const entry = ai4tStages[stage];
+              const entry = ai4tStages[stage] ?? ai4tStages[0];
+              if (!entry) return state;
               log("AI4T lifecycle simulation advanced", `${entry[0]} · ${entry[1]}`);
               return { stage, history: [`${now()} · ${entry[0]} · ${entry[1]}`, ...state.history] };
             });
           }}
           onJump={(stage) => {
-            const entry = ai4tStages[stage];
+            const entry = ai4tStages[stage] ?? ai4tStages[0];
+            if (!entry) return;
             setAi4tSimulation((state) => ({ stage, history: [`${now()} · Jumped to ${entry[0]}`, ...state.history] }));
             log("AI4T lifecycle simulation jumped", entry[0]);
           }}
@@ -5980,7 +5982,7 @@ function PersonaSwitcher({ persona, onSelect }: { persona: Persona; onSelect: (p
       <select
         aria-label="Switch role and department"
         value={persona.id}
-        onChange={(event) => onSelect(personas.find((item) => item.id === event.target.value) ?? personas[0])}
+        onChange={(event) => onSelect(personas.find((item) => item.id === event.target.value) ?? personas[0] ?? persona)}
         className="min-w-0 flex-1 bg-transparent text-xs font-semibold outline-none"
       >
         {personas.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
