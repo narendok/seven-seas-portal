@@ -3227,9 +3227,30 @@ function RecordForm({
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const field = (key: string) => values[key] ?? "";
+  const approvedReview = portal.records.find(
+    (record) =>
+      record.type === "Contract review" &&
+      record.status === "Approved" &&
+      record.reference === "HLPL/F/MKT/01",
+  );
+  const visibleFields = type === "PRS" ? spec.fields.filter((item) => item.key !== "hwStage") : spec.fields;
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const missing = spec.fields.find(
+    if (type === "PRS" && !approvedReview) {
+      return setError("PRS is generated only after an approved Contract Review HLPL/F/MKT/01.");
+    }
+    const preparedValues =
+      type === "PRS"
+        ? {
+            ...values,
+            controlledNumber: values["controlledNumber"] || "HLPL-AI4T-EHW-PRS-01",
+            projectId: values["projectId"] || "HLPL-AI4T-01",
+            lifecycleStage: "Stage 3 · Requirement Freeze & Commercial Confirmation",
+            generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01",
+            baseline: "Frozen · automated baseline · changes require PMSS amendment",
+          }
+        : values;
+    const missing = visibleFields.find(
       (item) => item.required && item.key !== "controlledNumber" && !field(item.key).trim(),
     );
     if (missing) return setError(`${missing.label} is required.`);
@@ -3249,7 +3270,7 @@ function RecordForm({
       status: "Draft",
       priority: (field("priority") as Priority) || "Normal",
       notes: field("scope"),
-      fields: values,
+      fields: preparedValues,
     });
   };
   return (
@@ -3260,8 +3281,19 @@ function RecordForm({
           blank.
         </p>
         <SelectField label="Record type" value={type} options={spec.types} onChange={setType} />
+        {type === "PRS" && (
+          <div className="rounded-lg border border-moss/30 bg-accent p-4 text-sm">
+            <p className="font-semibold">Auto-compiled, frozen PRS baseline</p>
+            <p className="mt-1 text-muted-foreground">
+              Generated automatically from approved Contract Review HLPL/F/MKT/01. No stage selection is required.
+            </p>
+            <p className="mt-2 font-mono text-xs text-steel">
+              {approvedReview ? "Feasibility approvals complete" : "Awaiting approved feasibility review"}
+            </p>
+          </div>
+        )}
         <div className="grid gap-4 md:grid-cols-2">
-          {spec.fields.map((item) =>
+          {visibleFields.map((item) =>
             item.master ? (
               <ManagedField
                 key={item.key}
