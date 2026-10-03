@@ -8,6 +8,8 @@ import {
   Check,
   ChevronsDownUp,
   ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   ClipboardCheck,
   Factory,
   FileText,
@@ -1442,6 +1444,7 @@ function Portal() {
   const [draftHubOpen, setDraftHubOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   const [darkMode, setDarkMode] = useState(true);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("hexense-scms-theme");
@@ -1450,6 +1453,17 @@ function Portal() {
   useEffect(() => {
     window.localStorage.setItem("hexense-scms-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.key !== "[" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
+      event.preventDefault();
+      setSidebarExpanded((value) => !value);
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
   }, [portal]);
@@ -1555,31 +1569,41 @@ function Portal() {
   };
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-border bg-sidebar p-4 lg:flex lg:flex-col">
-        <Brand />
-        <nav className="mt-8 space-y-1" aria-label="Primary navigation">
+      <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
+        <div className={`flex items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
+          <Brand compact={!sidebarExpanded} />
+          {sidebarExpanded && (
+            <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded(false)} />
+          )}
+        </div>
+        {!sidebarExpanded && (
+          <div className="mt-4 flex justify-center">
+            <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded(true)} />
+          </div>
+        )}
+        <nav className={`mt-6 space-y-1 ${sidebarExpanded ? "" : "flex flex-1 flex-col items-center"}`} aria-label="Primary navigation">
           {areas.map((area) => (
             <AreaNav
               key={area.id}
               area={area}
               active={activeArea === area.id && view !== "index"}
               onClick={() => navigate(area.id)}
+              expanded={sidebarExpanded}
+              openCount={portal.records.filter((record) => record.area === area.id && !record.archived && !["Approved", "Released", "Archived"].includes(record.status)).length}
             />
           ))}
         </nav>
         <button
+          title={sidebarExpanded ? "Portal setup" : "Portal setup"}
           onClick={() => setModal("wizard")}
-          className="mt-auto flex w-full items-center gap-3 rounded-lg border border-sidebar-border bg-card px-3 py-3 text-left text-sm font-semibold transition-colors hover:bg-sidebar-accent"
+          className={`mt-auto flex h-10 items-center rounded-lg border border-sidebar-border bg-card text-left text-sm font-semibold transition-colors hover:bg-sidebar-accent ${sidebarExpanded ? "w-full gap-3 px-3" : "w-10 justify-center"}`}
         >
           <Settings2 className="size-4 text-steel" />
-          Portal setup{" "}
-          <span className="ml-auto font-mono text-[10px]">
-            {portal.setupStep + 1}/{setupSteps.length}
-          </span>
+          {sidebarExpanded && <><span>Portal setup</span><span className="ml-auto font-mono text-[10px]">{portal.setupStep + 1}/{setupSteps.length}</span></>}
         </button>
-        <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} expanded />
+        <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} expanded={sidebarExpanded} />
       </aside>
-      <section className="min-h-screen lg:pl-72">
+      <section className={`min-h-screen transition-[padding] duration-200 motion-reduce:transition-none ${sidebarExpanded ? "lg:pl-64" : "lg:pl-16"}`}>
         <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
           <div className="flex h-16 items-center gap-3 px-4 md:px-8">
             <button
