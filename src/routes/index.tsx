@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   Bell,
   CheckCircle2,
+  Check,
+  ChevronsDownUp,
   ChevronRight,
   ClipboardCheck,
   Factory,
@@ -18,6 +20,7 @@ import {
   Search,
   Settings2,
   ShieldCheck,
+  Sparkles,
   UsersRound,
   Wrench,
   X,
@@ -502,7 +505,7 @@ const emptyPortal = (): PortalState => ({
 const demoPortal = (): PortalState => {
   const base = emptyPortal();
   const timestamp = "DEMO · 03 Oct 2026";
-  const project = "HLPL-AI4T-01";
+  const project = "HLPL-SLCT-01";
   const demoNote =
     "DEMO DATA ONLY · Fictional, illustrative automotive telematics lifecycle. NOT VALIDATED. No real customer, supplier, certification, procurement, billing, production, shipment, or client communication is represented.";
   const departmentSeeds: {
@@ -717,18 +720,18 @@ const demoPortal = (): PortalState => {
       { signoffs: "Hardware · Firmware · Quality · Purchase HOD · DEMO approvals only" },
     ),
     make(
-      "HLPL-AI4T-01",
+      "HLPL-SLCT-01",
       "ehw",
       "Project",
       "AIS-140 Intelligent 4G Telematics Tracker",
       "In review",
       "Critical",
       "Stage 8 · Type Approval & SCM",
-      ["HLPL-AI4T-EHW-PRS-01", "HLPL-AI4T-EHW-BOM-01", "HLPL-AI4T-QA-DVP-01", "F-PUR-16/AI4T-01"],
+      ["HLPL-SLCT-EHW-PRS-01", "HLPL-SLCT-EHW-BOM-01", "HLPL-SLCT-QA-DVP-01", "F-PUR-16/SLCT-01"],
       {
         client: "DEMO Tata Motors EV Fleet · fictional",
         platform: "DEMO Tata Ace EV & Ultra T.7 · fictional",
-        pmss: "HLPL-AI4T-PMSS-00",
+        pmss: "HLPL-SLCT-PMSS-00",
         currentStage: "Stage 8 · Type Approval & SCM",
         targetBom: "$38.50 · illustrative",
         actualBom: "$35.42 · illustrative",
@@ -738,17 +741,17 @@ const demoPortal = (): PortalState => {
         compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · targets only, NOT certified",
       },
     ),
-    make("HLPL-AI4T-SAL-SOR-01", "sales", "Customer SOR", "Customer SOR · RFQ-2026-TATA-AI4T-088", "Approved", "Critical", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-AI4T-SAL-mNDA-01", "HLPL/F/MKT/01"], { rfq: "RFQ-2026-TATA-AI4T-088 · DEMO only", customer: "DEMO Tata Motors EV Fleet · fictional" }),
-    make("HLPL-AI4T-SAL-mNDA-01", "sales", "mNDA", "Bilateral mutual NDA", "Approved", "High", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-AI4T-SAL-SOR-01", "HLPL/F/MKT/01"], { ndaStatus: "DEMO bilateral signature simulation · no legal effect" }),
-    make("HLPL/F/MKT/01", "sales", "Contract review", "Cross-department feasibility review · five HOD approvals", "Approved", "Critical", "Stage 2 · Cross-Dept Feasibility Analysis", ["HLPL-AI4T-SAL-SOR-01", "HLPL-AI4T-EHW-PRS-01", "HLPL-AI4T-SAL-QUO-01"], { signoffs: "Hardware · Software · Mechanical · Purchase · Quality · all DEMO approvals complete", feasibility: "Approved automatically compiles PRS and quotation" }),
-    make("HLPL-AI4T-EHW-PRS-01", "ehw", "PRS", "Auto-compiled Product Requirement Specification", "Approved", "Critical", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-AI4T-SAL-QUO-01", "HLPL-AI4T-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", baseline: "Frozen · automated baseline · changes require PMSS amendment", requirements: "12V/24V · GNSS · LTE 4G · CAN/OBD · tamper and power-loss alerts · panic/SOS · illustrative" }),
-    make("HLPL-AI4T-SAL-QUO-01", "sales", "Commercial quotation", "Auto-generated commercial quotation", "Approved", "High", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-AI4T-EHW-PRS-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", commercial: "₹20.33 Cr total value · DEMO only" }),
-    make("PO-TATA-AI4T-2026-9041", "sales", "Order", "Customer purchase order sync · 50,000 units", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-01", "HLPL-AI4T-FIN-INV-01", "HLPL-AI4T-EHW-PRS-01"], { volume: "50,000 units · DEMO only", value: "₹20.33 Cr · illustrative only", loi: "Customer LOI confirmed · DEMO simulation" }),
-    make("HLPL-AI4T-FIN-INV-01", "fin", "Commercial billing", "Advance deposit verification and tax invoice", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["PO-TATA-AI4T-2026-9041"], { advance: "₹6.10 Cr · illustrative payment verification only", invoice: "Generated · DEMO only" }),
-    make("HLPL-AI4T-EHW-BOM-01", "ehw", "BOM", "Production BOM release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-AI4T-EHW-PRS-01", "PO-TATA-AI4T-2026-9041"], { release: "Final production BOM · DEMO release" }),
-    make("HLPL-AI4T-EHW-GER-01", "ehw", "Gerber release", "Final Gerber package release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-AI4T-EHW-BOM-01"], { release: "Final Gerber package · DEMO release" }),
-    make("HLPL-AI4T-QA-APQP-01", "qa", "APQP gate", "APQP phases 1–4 closed", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-01", "HLPL-AI4T-QA-DVP-01"], { apqp: "Phases 1–4 closed · DEMO only", auditReadiness: "100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion only" }),
-    make("HLPL-AI4T-QA-DVP-01", "qa", "DVP&R", "AIS-140 evidence pack", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-QA-APQP-01"], { tac: "DEMO reference #ARAI/TAC/2026/AIS140-842 · no certification claim" }),
+    make("HLPL-SLCT-SAL-SOR-01", "sales", "Customer SOR", "Customer SOR · RFQ-2026-TATA-SLCT-088", "Approved", "Critical", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-SLCT-SAL-mNDA-01", "HLPL/F/MKT/01"], { rfq: "RFQ-2026-TATA-SLCT-088 · DEMO only", customer: "DEMO Tata Motors EV Fleet · fictional" }),
+    make("HLPL-SLCT-SAL-mNDA-01", "sales", "mNDA", "Bilateral mutual NDA", "Approved", "High", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-SLCT-SAL-SOR-01", "HLPL/F/MKT/01"], { ndaStatus: "DEMO bilateral signature simulation · no legal effect" }),
+    make("HLPL/F/MKT/01", "sales", "Contract review", "Cross-department feasibility review · five HOD approvals", "Approved", "Critical", "Stage 2 · Cross-Dept Feasibility Analysis", ["HLPL-SLCT-SAL-SOR-01", "HLPL-SLCT-EHW-PRS-01", "HLPL-SLCT-SAL-QUO-01"], { signoffs: "Hardware · Software · Mechanical · Purchase · Quality · all DEMO approvals complete", feasibility: "Approved automatically compiles PRS and quotation" }),
+    make("HLPL-SLCT-EHW-PRS-01", "ehw", "PRS", "Auto-compiled Product Requirement Specification", "Approved", "Critical", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-SLCT-SAL-QUO-01", "HLPL-SLCT-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", baseline: "Frozen · automated baseline · changes require PMSS amendment", requirements: "12V/24V · GNSS · LTE 4G · CAN/OBD · tamper and power-loss alerts · panic/SOS · illustrative" }),
+    make("HLPL-SLCT-SAL-QUO-01", "sales", "Commercial quotation", "Auto-generated commercial quotation", "Approved", "High", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-SLCT-EHW-PRS-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", commercial: "₹20.33 Cr total value · DEMO only" }),
+    make("PO-TATA-SLCT-2026-9041", "sales", "Order", "Customer purchase order sync · 50,000 units", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-SLCT-01", "HLPL-SLCT-FIN-INV-01", "HLPL-SLCT-EHW-PRS-01"], { volume: "50,000 units · DEMO only", value: "₹20.33 Cr · illustrative only", loi: "Customer LOI confirmed · DEMO simulation" }),
+    make("HLPL-SLCT-FIN-INV-01", "fin", "Commercial billing", "Advance deposit verification and tax invoice", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["PO-TATA-SLCT-2026-9041"], { advance: "₹6.10 Cr · illustrative payment verification only", invoice: "Generated · DEMO only" }),
+    make("HLPL-SLCT-EHW-BOM-01", "ehw", "BOM", "Production BOM release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-SLCT-EHW-PRS-01", "PO-TATA-SLCT-2026-9041"], { release: "Final production BOM · DEMO release" }),
+    make("HLPL-SLCT-EHW-GER-01", "ehw", "Gerber release", "Final Gerber package release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-SLCT-EHW-BOM-01"], { release: "Final Gerber package · DEMO release" }),
+    make("HLPL-SLCT-QA-APQP-01", "qa", "APQP gate", "APQP phases 1–4 closed", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-SLCT-01", "HLPL-SLCT-QA-DVP-01"], { apqp: "Phases 1–4 closed · DEMO only", auditReadiness: "100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion only" }),
+    make("HLPL-SLCT-QA-DVP-01", "qa", "DVP&R", "AIS-140 evidence pack", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-SLCT-QA-APQP-01"], { tac: "DEMO reference #ARAI/TAC/2026/AIS140-842 · no certification claim" }),
     make(
       "HLPL-SLCT-EHW-PRS-02",
       "ehw",
@@ -1054,7 +1057,7 @@ const demoPortal = (): PortalState => {
     task("DEMO-TASK-PUR-MLCC", "pur", "Audit lead-time variance report for passive MLCC capacitors", "Normal", tomorrow, "Morgan Reed", "HLPL-EFAN-01", "HLPL-EFAN-01 · High-Power eFan Speed Controller", "Supply risk review · tomorrow"),
   ];
   const projectProfiles = [
-    ["HLPL-AI4T-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors EV Fleet · fictional DEMO", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
+    ["HLPL-SLCT-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors EV Fleet · fictional DEMO", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
     ["HLPL-BCU-02", "Body Control Unit Gen 3", "Mahindra Electric · fictional DEMO", "Stage 5 · Pilot Build", "24V", "IP67", "$52.00"],
     ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Ashok Leyland Fleet · fictional DEMO", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
     ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors · fictional DEMO", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
@@ -1148,7 +1151,7 @@ const demoPortal = (): PortalState => {
         "DEMO AXP2101",
         "DEMO 1000mAh LiPo",
       ],
-      products: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
+      products: ["HLPL-SLCT-01", "HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
       customers: ["DEMO Tata Motors EV · fictional", "DEMO Mahindra Electric · fictional", "DEMO Ashok Leyland Fleet · fictional", "DEMO Sonalika Tractors · fictional", "DEMO Escorts Kubota · fictional"],
       routes: ["DEMO SMT Line 2"],
       documentTypes: [
@@ -1350,7 +1353,7 @@ const readPortal = (): PortalState => {
       records:
         value.demoLoaded === true
           ? (() => {
-              const additions = demoPortal().records.filter((item) => item.reference.startsWith("HLPL-AI4T") || item.reference === "PO-TATA-AI4T-2026-9041");
+              const additions = demoPortal().records.filter((item) => item.reference.startsWith("HLPL-SLCT") || item.reference === "PO-TATA-SLCT-2026-9041");
               const existing = Array.isArray(value.records) ? value.records.map((record) => ({ ...record, area: legacyAreaMap[record.area] ?? record.area })) : [];
               return [...existing, ...additions.filter((item) => !existing.some((record) => record.reference === item.reference))];
             })()
@@ -1404,7 +1407,8 @@ function Portal() {
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [syncHubOpen, setSyncHubOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-AI4T-01");
+  const [draftHubOpen, setDraftHubOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
@@ -1510,7 +1514,7 @@ function Portal() {
     setModal("document");
   };
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="ops-dark min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-border bg-sidebar p-4 lg:flex lg:flex-col">
         <Brand />
         <nav className="mt-8 space-y-1" aria-label="Primary navigation">
@@ -1655,6 +1659,7 @@ function Portal() {
                 setRfqOpen(true);
               }}
               onOpenSyncHub={() => setSyncHubOpen(true)}
+              onOpenDraftHub={() => setDraftHubOpen(true)}
             />
           ) : view === "detail" && selected ? (
             <RecordDetail
@@ -1712,6 +1717,7 @@ function Portal() {
                 setQueueStage(stage);
                 setView("queue");
               }}
+              onOpenDraftHub={() => setDraftHubOpen(true)}
             />
           )}
         </div>
@@ -1772,6 +1778,7 @@ function Portal() {
             setSelectedDocumentId(document.id);
             setModal("document");
           }}
+          onOpenDraftHub={() => setDraftHubOpen(true)}
         />
       )}{" "}
       {modal === "document" && selectedDocument && (
@@ -1843,6 +1850,7 @@ function Portal() {
         />
       )}
       {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
+      {draftHubOpen && <AutoDraftHub onClose={() => setDraftHubOpen(false)} />}
       {rfqOpen && (
         <RfqCycleTest
           step={rfqStep}
@@ -1882,6 +1890,7 @@ function CommandCenter({
   onReturnGlobal,
   onRunRfq,
   onOpenSyncHub,
+  onOpenDraftHub,
 }: {
   portal: PortalState;
   departmentContext: string | null;
@@ -1895,6 +1904,7 @@ function CommandCenter({
   onReturnGlobal: () => void;
   onRunRfq: () => void;
   onOpenSyncHub: () => void;
+  onOpenDraftHub: () => void;
 }) {
   const records = portal.records.filter((record) => !record.archived);
   const visible = departmentContext
@@ -1912,7 +1922,7 @@ function CommandCenter({
   return (
     <>
       {portal.demoLoaded && <DemoMarker />}
-      {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-AI4T-01" />}
+      {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-SLCT-01" />}
       <PageHeader
         eyebrow={departmentContext ? "Administrator context" : "Operational workspace"}
         title="Command center"
@@ -1925,6 +1935,7 @@ function CommandCenter({
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
+            <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={onSetup} label="Continue setup" />
             <Action onClick={onCreate} label="Create Task" primary />
@@ -1932,6 +1943,7 @@ function CommandCenter({
         }
       />
       {portal.demoLoaded && <ExecutiveKpis />}
+      <SmartNextStep records={visible} onOpenDraftHub={onOpenDraftHub} />
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           label="Today"
@@ -2095,6 +2107,106 @@ function RfqCycleTest({
     </Modal>
   );
 }
+
+function SmartNextStep({
+  records,
+  onOpenDraftHub,
+}: {
+  records: RecordItem[];
+  onOpenDraftHub: () => void;
+}) {
+  const review = records.find(
+    (record) => record.reference === "HLPL/F/MKT/01" && record.status === "Approved",
+  );
+  const openCritical = records.find(
+    (record) => record.priority === "Critical" && !["Approved", "Released", "Archived"].includes(record.status),
+  );
+  const suggestion = openCritical
+    ? {
+        status: `Critical activity open · ${openCritical.reference}`,
+        next: `Resolve ${openCritical.title}`,
+        detail: "Completing this task unlocks the following controlled lifecycle handoff.",
+      }
+    : review
+      ? {
+          status: "Feasibility approved · Contract Review HLPL/F/MKT/01",
+          next: "Auto-compile PRS-01 & issue quotation",
+          detail: "The approved feasibility record unblocks the frozen requirement baseline and commercial quotation.",
+        }
+      : {
+          status: "Lifecycle evidence is being assessed",
+          next: "Review the next open controlled record",
+          detail: "The recommendation refreshes whenever lifecycle tasks or stage records are completed.",
+        };
+  return (
+    <section className="surface-card mt-6 overflow-hidden border border-steel/35 bg-panel">
+      <div className="grid gap-4 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-steel">
+            <Sparkles className="size-3" /> Smart next-step suggestion
+          </p>
+          <div className="mt-3 grid gap-2 text-sm md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center">
+            <span className="text-muted-foreground">{suggestion.status}</span>
+            <ChevronRight className="hidden size-4 text-steel md:block" />
+            <strong className="text-foreground">Recommended next move: {suggestion.next}</strong>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">{suggestion.detail}</p>
+        </div>
+        <Action label="Execute next step" primary onClick={onOpenDraftHub} />
+      </div>
+    </section>
+  );
+}
+
+const autoDraftTemplates = [
+  ["Customer SOR", "HLPL-SLCT-SAL-SOR-01", "SAL"],
+  ["Mutual NDA", "HLPL-SLCT-SAL-mNDA-01", "SAL"],
+  ["Commercial Quotation", "HLPL-SLCT-SAL-QUO-01", "SAL"],
+  ["Contract Review Record", "HLPL/F/MKT/01", "SAL"],
+  ["Product Requirement Spec", "HLPL-SLCT-EHW-PRS-01", "EHW"],
+  ["Production BOM Cost Tracker", "HLPL-SLCT-EHW-BOM-01", "EHW"],
+  ["Hardware DFMEA", "HLPL-SLCT-EHW-DFMEA-01", "EHW"],
+  ["Manufacturing Process Flow & Control Plan", "HLPL-SLCT-EMF-CP-01", "EMF"],
+  ["DVP&R Verification Plan", "HLPL-SLCT-QA-DVP-01", "QA"],
+  ["Pre-Dispatch Inspection Certificate", "HLPL-SLCT-TST-PDI-01", "TST"],
+  ["Commercial Tax Invoice", "HLPL-SLCT-FIN-INV-01", "FIN"],
+  ["Annual Skill Matrix", "HLPL/F/HR/03", "HR/OPS"],
+] as const;
+
+function AutoDraftHub({ onClose }: { onClose: () => void }) {
+  const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
+  return (
+    <Modal title="Auto-Draft Document Templates" onClose={onClose} wide>
+      <div className="rounded-lg border border-warning/35 bg-accent p-4 text-sm">
+        <strong>DEMO DRAFTING WORKSPACE</strong>
+        <p className="mt-1 text-muted-foreground">Pre-filled SLCT templates are illustrative drafts only. They are not signed, approved, issued, or externally shared.</p>
+      </div>
+      <div className="mt-5 grid gap-2 sm:grid-cols-2">
+        {autoDraftTemplates.map((template) => (
+          <button key={template[1]} onClick={() => setSelected(template)} className="flex items-center gap-3 border border-border bg-card px-3 py-3 text-left transition-colors hover:border-steel/50 hover:bg-secondary">
+            <FileText className="size-4 shrink-0 text-steel" />
+            <span className="min-w-0 flex-1"><strong className="block text-sm">{template[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{template[1]} · {template[2]}</small></span>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </button>
+        ))}
+      </div>
+      {selected && (
+        <section className="mt-5 border border-steel/35 bg-panel p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+            <div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Document control header · auto-drafted</p><h3 className="mt-1 text-lg font-semibold">{selected[0]}</h3></div>
+            <Status status="Draft" />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <DocumentField label="Document ID" value={selected[1]} /><DocumentField label="Project" value="HLPL-SLCT-01 · DEMO" /><DocumentField label="Revision" value="00 · next draft revision" />
+            <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
+          </div>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">Auto-drafted using the SLCT project baseline: 12V/24V nominal, −40°C to +85°C, IP67, and illustrative AIS-140/AEC/ISO targets. Validate all technical and commercial information before any controlled release.</p>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Download formatted preview" onClick={() => window.print()} /></div>
+        </section>
+      )}
+    </Modal>
+  );
+}
 function nextWorkingDay(value: string) {
   const date = new Date(`${value}T12:00:00`);
   date.setDate(date.getDate() + 1);
@@ -2119,6 +2231,8 @@ function TodayChecklist({
   onOpenAssignee: (assignee: string) => void;
 }) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [expandAll, setExpandAll] = useState(false);
+  const [inspectionOpen, setInspectionOpen] = useState(false);
   const todayTasks = tasks.filter(
     (task) => task.fields["dueDate"] === today && task.status !== "Released",
   );
@@ -2128,7 +2242,12 @@ function TodayChecklist({
   const move = (task: RecordItem, dueDate: string, action: string) =>
     onUpdateTask(task.id, { fields: { ...task.fields, dueDate } }, action);
   return (
-    <section className="mt-6 grid gap-5 xl:grid-cols-2">
+    <section className="mt-6">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div><p className="font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
+        <div className="flex gap-2"><Action label={expandAll ? "Collapse all" : "Expand all"} onClick={() => setExpandAll((value) => !value)} /><Action label="Open expanded modal" onClick={() => setInspectionOpen(true)} /></div>
+      </div>
+    <div className="grid gap-5 xl:grid-cols-2">
       <ChecklistLane
         title="Today"
         description="Short department-wise checklist"
@@ -2144,6 +2263,7 @@ function TodayChecklist({
         onMove={(task) => move(task, tomorrow, "Task moved to pending / tomorrow")}
         onOpenProject={onOpenProject}
         onOpenAssignee={onOpenAssignee}
+        expandAll={expandAll}
       />
       <ChecklistLane
         title="Pending / Tomorrow"
@@ -2160,7 +2280,10 @@ function TodayChecklist({
         onMove={(task) => move(task, today, "Task reprioritized to today")}
         onOpenProject={onOpenProject}
         onOpenAssignee={onOpenAssignee}
+        expandAll={expandAll}
       />
+    </div>
+    {inspectionOpen && <TaskInspectionModal tasks={[...todayTasks, ...pendingTasks]} departments={departments} onClose={() => setInspectionOpen(false)} onDone={(task) => onUpdateTask(task.id, { status: "Released" }, "Task marked done from inspection")} />}
     </section>
   );
 }
@@ -2175,6 +2298,7 @@ function ChecklistLane({
   onMove,
   onOpenProject,
   onOpenAssignee,
+  expandAll,
 }: {
   title: string;
   description: string;
@@ -2186,6 +2310,7 @@ function ChecklistLane({
   onMove: (task: RecordItem) => void;
   onOpenProject: (projectId: string) => void;
   onOpenAssignee: (assignee: string) => void;
+  expandAll: boolean;
 }) {
   return (
     <section
@@ -2210,6 +2335,7 @@ function ChecklistLane({
               onMove={onMove}
               onOpenProject={onOpenProject}
               onOpenAssignee={onOpenAssignee}
+              expanded={expandAll}
             />
           ))
         ) : (
@@ -2227,6 +2353,7 @@ function TaskCard({
   onMove,
   onOpenProject,
   onOpenAssignee,
+  expanded,
 }: {
   task: RecordItem;
   department: Department | undefined;
@@ -2235,7 +2362,10 @@ function TaskCard({
   onMove: (task: RecordItem) => void;
   onOpenProject: (projectId: string) => void;
   onOpenAssignee: (assignee: string) => void;
+  expanded: boolean;
 }) {
+  const [open, setOpen] = useState(expanded);
+  useEffect(() => setOpen(expanded), [expanded]);
   const projectId = task.fields["projectId"];
   const projectLabel = task.fields["project"] ?? "No linked project";
   const assignee = task.fields["assignee"] ?? "Unassigned";
@@ -2243,17 +2373,19 @@ function TaskCard({
     <article
       draggable
       onDragStart={() => onDragStart(task.id)}
-      className="border-b border-border px-5 py-4 transition-colors hover:bg-secondary/45 last:border-0"
+      className="border-b border-border last:border-0"
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <p className="font-medium">{task.title}</p>
-        <Status status={task.status} />
+      <div className="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto_auto_auto] items-center gap-2 px-3 py-2.5 transition-colors hover:bg-secondary/70" onClick={() => setOpen((value) => !value)}>
+        <span className="rounded border border-steel/35 bg-steel/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-steel">{department?.code.replace("DEMO-", "") ?? "—"}</span>
+        <span className={`size-2 rounded-full ${task.priority === "Critical" ? "bg-danger" : task.priority === "High" ? "bg-warning" : "bg-steel"}`} />
+        <p className="truncate text-sm font-medium">{task.title}</p>
+        <span className="grid size-6 place-items-center rounded-full border border-border bg-panel font-mono text-[9px] text-muted-foreground" title={assignee}>{assignee.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span>
+        <span className="hidden font-mono text-[10px] text-muted-foreground sm:block">{task.fields["dueDate"] || "Unscheduled"}</span>
+        <div className="flex items-center gap-1"><button aria-label={`Mark ${task.title} done`} onClick={(event) => { event.stopPropagation(); onDone(task); }} className="grid size-7 place-items-center rounded border border-moss/35 text-moss hover:bg-accent"><Check className="size-3.5" /></button><ChevronRight className={`size-4 text-muted-foreground transition-transform motion-reduce:transition-none ${open ? "rotate-90" : ""}`} /></div>
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[.08em] text-muted-foreground">
-        <span>{task.priority}</span>
-        <span>Due {task.fields["dueDate"] || "Unscheduled"}</span>
-        <span>{department?.name ?? "Department not set"}</span>
-      </div>
+      {open && <div className="task-disclosure grid px-4 pb-4"><div className="min-h-0 overflow-hidden border-l-2 border-steel/35 pl-3">
+      <p className="text-sm leading-6 text-muted-foreground">{task.notes || "No further task description recorded."}</p>
+      <p className="mt-2 text-xs font-medium text-steel">Next action: Completing this task enables the next unblocked lifecycle handoff.</p>
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-xs">
         <button
           disabled={!projectId}
@@ -2270,7 +2402,7 @@ function TaskCard({
           Assignee: {assignee}
         </button>
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <Action onClick={() => onDone(task)} label="Mark done" />
         <Action
           onClick={() => onMove(task)}
@@ -2280,9 +2412,13 @@ function TaskCard({
               : "Move to Today"
           }
         />
-      </div>
+      </div></div></div>}
     </article>
   );
+}
+
+function TaskInspectionModal({ tasks, departments, onClose, onDone }: { tasks: RecordItem[]; departments: Department[]; onClose: () => void; onDone: (task: RecordItem) => void }) {
+  return <Modal title="Expanded task inspection" onClose={onClose} wide><div className="space-y-3">{tasks.map((task) => <article key={task.id} className="border border-border bg-panel p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-mono text-[10px] text-steel">{departments.find((item) => item.id === task.departmentId)?.code ?? "—"} · {task.reference}</p><h3 className="mt-1 font-semibold">{task.title}</h3></div><Status status={task.status} /></div><p className="mt-2 text-sm text-muted-foreground">{task.notes || "No further description recorded."}</p><p className="mt-3 text-xs font-medium text-steel">Next action: Completion unblocks the next controlled lifecycle handoff.</p><div className="mt-4"><Action label="Mark done" onClick={() => onDone(task)} /></div></article>)}</div></Modal>;
 }
 function ProjectDetail({
   project,
@@ -2526,7 +2662,7 @@ function LifecycleProgress({ records, projectId }: { records: RecordItem[]; proj
 function ExecutiveKpis() {
   return (
     <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-      <Metric label="Active project" value="AI4T-01" detail="AIS-140 tracker · DEMO" tone="steel" />
+      <Metric label="Active project" value="SLCT-01" detail="AIS-140 tracker · DEMO" tone="steel" />
       <Metric label="Order volume" value="50,000" detail="Illustrative units" tone="moss" />
       <Metric label="Revenue" value="₹20.33 Cr" detail="Illustrative order value" tone="steel" />
       <Metric label="Stage" value="8" detail="Type Approval & SCM" tone="warning" />
@@ -2538,12 +2674,12 @@ function ExecutiveKpis() {
 
 function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
   const flows = [
-    ["SAL", "Order locked & customer LOI confirmed", "PO-TATA-AI4T-2026-9041 · 50,000 units"],
-    ["FIN", "Advance deposit verified & invoice generated", "₹6.10 Cr illustrative advance · HLPL-AI4T-FIN-INV-01"],
+    ["SAL", "Order locked & customer LOI confirmed", "PO-TATA-SLCT-2026-9041 · 50,000 units"],
+    ["FIN", "Advance deposit verified & invoice generated", "₹6.10 Cr illustrative advance · HLPL-SLCT-FIN-INV-01"],
     ["PUR", "Long-lead IC purchase plan synchronized", "STM32 · Quectel 4G · u-blox GNSS · DEMO ASL"],
     ["R&D", "Design release package synchronized", "Final Gerber · production BOM · mold tooling"],
     ["EMF", "Tranche 1 production scheduled", "SMT Line 2 · 2,500 illustrative units"],
-    ["TST", "EOL capacity preloaded", "AI4T-2026-00001..50000 · 97.4% simulated FPY"],
+    ["TST", "EOL capacity preloaded", "SLCT-2026-00001..50000 · 97.4% simulated FPY"],
     ["QA", "APQP and compliance evidence ready", "Phases 1–4 closed · DEMO TAC reference only"],
   ];
   return (
@@ -2553,11 +2689,11 @@ function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
         <p className="mt-1 text-muted-foreground">Illustrative order, financial, supplier, production and audit signals. Nothing represents an actual customer order, payment, purchase, release, or certification.</p>
       </div>
       <section className="mt-5 grid gap-3 sm:grid-cols-3">
-        <DocumentField label="Customer PO" value="PO-TATA-AI4T-2026-9041" />
+        <DocumentField label="Customer PO" value="PO-TATA-SLCT-2026-9041" />
         <DocumentField label="Order volume" value="50,000 units · illustrative" />
         <DocumentField label="Total value" value="₹20.33 Cr · illustrative" />
         <DocumentField label="Advance" value="₹6.10 Cr · verification simulation" />
-        <DocumentField label="Project" value="HLPL-AI4T-01" />
+        <DocumentField label="Project" value="HLPL-SLCT-01" />
         <DocumentField label="Audit readiness" value="100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion" />
       </section>
       <section className="mt-5 divide-y divide-border border border-border bg-panel">
@@ -2588,6 +2724,7 @@ function DepartmentWorkspace({
   onSelect,
   onAdmin,
   onOpenStage,
+  onOpenDraftHub,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -2600,6 +2737,7 @@ function DepartmentWorkspace({
   onSelect: (id: string) => void;
   onAdmin: () => void;
   onOpenStage: (stage: string) => void;
+  onOpenDraftHub: () => void;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const open = records.filter((record) => record.status === "Draft" || record.status === "Open");
@@ -2666,6 +2804,7 @@ function DepartmentWorkspace({
         />
       </section>
       <DepartmentFlow flow={flow} onOpenStage={onOpenStage} />
+      <SmartNextStep records={records} onOpenDraftHub={onOpenDraftHub} />
       {area.id === "hrops" && (
         <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
       )}
@@ -3293,8 +3432,8 @@ function RecordForm({
       type === "PRS"
         ? {
             ...values,
-            controlledNumber: values["controlledNumber"] || "HLPL-AI4T-EHW-PRS-01",
-            projectId: values["projectId"] || "HLPL-AI4T-01",
+            controlledNumber: values["controlledNumber"] || "HLPL-SLCT-EHW-PRS-01",
+            projectId: values["projectId"] || "HLPL-SLCT-01",
             lifecycleStage: "Stage 3 · Requirement Freeze & Commercial Confirmation",
             generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01",
             baseline: "Frozen · automated baseline · changes require PMSS amendment",
@@ -4759,6 +4898,7 @@ function DocumentsPanel({
   onClose,
   onSelectDocument,
   onUploadDocument,
+  onOpenDraftHub,
 }: {
   documents: ControlledDocument[];
   departments: Department[];
@@ -4766,6 +4906,7 @@ function DocumentsPanel({
   onClose: () => void;
   onSelectDocument: (document: ControlledDocument) => void;
   onUploadDocument: (document: ControlledDocument) => void;
+  onOpenDraftHub: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("All groups");
@@ -4792,6 +4933,7 @@ function DocumentsPanel({
   );
   return (
     <Modal title="Controlled document repository" onClose={onClose} wide>
+      <div className="mb-4 flex justify-end"><Action label="Auto-Draft Document Templates" primary onClick={onOpenDraftHub} /></div>
       <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-moss/25 bg-accent px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-accent-foreground">
