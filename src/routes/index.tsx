@@ -2106,6 +2106,106 @@ function RfqCycleTest({
     </Modal>
   );
 }
+
+function SmartNextStep({
+  records,
+  onOpenDraftHub,
+}: {
+  records: RecordItem[];
+  onOpenDraftHub: () => void;
+}) {
+  const review = records.find(
+    (record) => record.reference === "HLPL/F/MKT/01" && record.status === "Approved",
+  );
+  const openCritical = records.find(
+    (record) => record.priority === "Critical" && !["Approved", "Released", "Archived"].includes(record.status),
+  );
+  const suggestion = openCritical
+    ? {
+        status: `Critical activity open · ${openCritical.reference}`,
+        next: `Resolve ${openCritical.title}`,
+        detail: "Completing this task unlocks the following controlled lifecycle handoff.",
+      }
+    : review
+      ? {
+          status: "Feasibility approved · Contract Review HLPL/F/MKT/01",
+          next: "Auto-compile PRS-01 & issue quotation",
+          detail: "The approved feasibility record unblocks the frozen requirement baseline and commercial quotation.",
+        }
+      : {
+          status: "Lifecycle evidence is being assessed",
+          next: "Review the next open controlled record",
+          detail: "The recommendation refreshes whenever lifecycle tasks or stage records are completed.",
+        };
+  return (
+    <section className="surface-card mt-6 overflow-hidden border border-steel/35 bg-panel">
+      <div className="grid gap-4 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-steel">
+            <Sparkles className="size-3" /> Smart next-step suggestion
+          </p>
+          <div className="mt-3 grid gap-2 text-sm md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center">
+            <span className="text-muted-foreground">{suggestion.status}</span>
+            <ChevronRight className="hidden size-4 text-steel md:block" />
+            <strong className="text-foreground">Recommended next move: {suggestion.next}</strong>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">{suggestion.detail}</p>
+        </div>
+        <Action label="Execute next step" primary onClick={onOpenDraftHub} />
+      </div>
+    </section>
+  );
+}
+
+const autoDraftTemplates = [
+  ["Customer SOR", "HLPL-AI4T-SAL-SOR-01", "SAL"],
+  ["Mutual NDA", "HLPL-AI4T-SAL-mNDA-01", "SAL"],
+  ["Commercial Quotation", "HLPL-AI4T-SAL-QUO-01", "SAL"],
+  ["Contract Review Record", "HLPL/F/MKT/01", "SAL"],
+  ["Product Requirement Spec", "HLPL-AI4T-EHW-PRS-01", "EHW"],
+  ["Production BOM Cost Tracker", "HLPL-AI4T-EHW-BOM-01", "EHW"],
+  ["Hardware DFMEA", "HLPL-AI4T-EHW-DFMEA-01", "EHW"],
+  ["Manufacturing Process Flow & Control Plan", "HLPL-AI4T-EMF-CP-01", "EMF"],
+  ["DVP&R Verification Plan", "HLPL-AI4T-QA-DVP-01", "QA"],
+  ["Pre-Dispatch Inspection Certificate", "HLPL-AI4T-TST-PDI-01", "TST"],
+  ["Commercial Tax Invoice", "HLPL-AI4T-FIN-INV-01", "FIN"],
+  ["Annual Skill Matrix", "HLPL/F/HR/03", "HR/OPS"],
+] as const;
+
+function AutoDraftHub({ onClose }: { onClose: () => void }) {
+  const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
+  return (
+    <Modal title="Auto-Draft Document Templates" onClose={onClose} wide>
+      <div className="rounded-lg border border-warning/35 bg-accent p-4 text-sm">
+        <strong>DEMO DRAFTING WORKSPACE</strong>
+        <p className="mt-1 text-muted-foreground">Pre-filled AI4T templates are illustrative drafts only. They are not signed, approved, issued, or externally shared.</p>
+      </div>
+      <div className="mt-5 grid gap-2 sm:grid-cols-2">
+        {autoDraftTemplates.map((template) => (
+          <button key={template[1]} onClick={() => setSelected(template)} className="flex items-center gap-3 border border-border bg-card px-3 py-3 text-left transition-colors hover:border-steel/50 hover:bg-secondary">
+            <FileText className="size-4 shrink-0 text-steel" />
+            <span className="min-w-0 flex-1"><strong className="block text-sm">{template[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{template[1]} · {template[2]}</small></span>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </button>
+        ))}
+      </div>
+      {selected && (
+        <section className="mt-5 border border-steel/35 bg-panel p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+            <div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Document control header · auto-drafted</p><h3 className="mt-1 text-lg font-semibold">{selected[0]}</h3></div>
+            <Status status="Draft" />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <DocumentField label="Document ID" value={selected[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · DEMO" /><DocumentField label="Revision" value="00 · next draft revision" />
+            <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
+          </div>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">Auto-drafted using the AI4T project baseline: 12V/24V nominal, −40°C to +85°C, IP67, and illustrative AIS-140/AEC/ISO targets. Validate all technical and commercial information before any controlled release.</p>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Download formatted preview" onClick={() => window.print()} /></div>
+        </section>
+      )}
+    </Modal>
+  );
+}
 function nextWorkingDay(value: string) {
   const date = new Date(`${value}T12:00:00`);
   date.setDate(date.getDate() + 1);
