@@ -200,6 +200,15 @@ type PortalState = {
   documents: ControlledDocument[];
   audit: AuditEvent[];
   notifications: string[];
+  alerts: DemoAlert[];
+};
+type DemoAlert = {
+  id: string;
+  severity: "Critical" | "Warning";
+  title: string;
+  detail: string;
+  departmentId: string;
+  resolved: boolean;
 };
 
 const areas = [
