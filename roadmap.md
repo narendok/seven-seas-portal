@@ -23,3 +23,4 @@
 - [x] Add project-aware document templates, print/PDF formatting, stage handoff alerts, and editable RACI routing.
 - [x] Make all document sheets stage-aware with project-specific engineering content and A4 print styling.
 - [x] Replace summary-only document previews with complete multi-section sheets, portable print output, Markdown export, and text copy actions.
+- [x] Replace blank print output with a fully isolated A4 iframe print sheet and standardize full document viewer actions.
