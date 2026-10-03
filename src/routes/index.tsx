@@ -5906,6 +5906,13 @@ function controlledDocumentPrintable(document: ControlledDocument, department: s
   return { title: document.title.toUpperCase(), documentId: document.type || document.title, department, revision: `Rev ${document.revision ?? "01"}`, status: document.lifecycle === "Approved" ? "Approved" : document.lifecycle === "In review" ? "In review" : "Draft", project: inferredProject, stage: autoDraftStage(`${document.title} ${document.type}`) };
 }
 
+function recordPrintable(record: RecordItem): PrintableDocument {
+  const documentId = record.reference || record.fields["controlledNumber"] || `HLPL-AI4T-${record.area.toUpperCase()}-DOC-01`;
+  const project = documentId.includes("SLCT") ? "HLPL-SLCT-01" : documentId.includes("XLINK") ? "HLPL-XLINK-03" : "HLPL-AI4T-01";
+  const department = record.area === "sales" ? "SAL" : record.area === "rnd" ? "EHW" : record.area === "qa" ? "QA" : record.area === "manufacturing" ? "EMF" : record.area === "production" ? "TST" : record.area === "finance" ? "FIN" : "OPS";
+  return { title: record.title.toUpperCase(), documentId, department, revision: "Rev 01", status: record.status, project, stage: autoDraftStage(`${record.type} ${record.title} ${documentId}`) };
+}
+
 function autoDraftStage(title: string) {
   if (title.includes("SOR") || title.includes("NDA")) return "Stage 1";
   if (title.includes("Contract Review")) return "Stage 2";
