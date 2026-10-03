@@ -1572,15 +1572,7 @@ function Portal() {
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
         <div className={`flex items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
           <Brand compact={!sidebarExpanded} />
-          {sidebarExpanded && (
-            <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded(false)} />
-          )}
         </div>
-        {!sidebarExpanded && (
-          <div className="mt-4 flex justify-center">
-            <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded(true)} />
-          </div>
-        )}
         <nav className={`mt-6 space-y-1 ${sidebarExpanded ? "" : "flex flex-1 flex-col items-center"}`} aria-label="Primary navigation">
           {areas.map((area) => (
             <AreaNav
@@ -1590,6 +1582,7 @@ function Portal() {
               onClick={() => navigate(area.id)}
               expanded={sidebarExpanded}
               openCount={portal.records.filter((record) => record.area === area.id && !record.archived && !["Approved", "Released", "Archived"].includes(record.status)).length}
+              sidebarToggle={area.id === "home" ? <SidebarToggle expanded={sidebarExpanded} onToggle={() => setSidebarExpanded((value) => !value)} /> : undefined}
             />
           ))}
         </nav>
