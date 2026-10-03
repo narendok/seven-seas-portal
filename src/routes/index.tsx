@@ -2476,6 +2476,8 @@ function Ai4tLifecycleHub({
   onRun,
   onReset,
   onOpenPrintable,
+  documents,
+  onOpenDocument,
 }: {
   persona: Persona;
   simulation: Ai4tSimulation;
@@ -2485,6 +2487,8 @@ function Ai4tLifecycleHub({
   onRun: () => void;
   onReset: () => void;
   onOpenPrintable: (document: PrintableDocument) => void;
+  documents: ControlledDocument[];
+  onOpenDocument: (document: ControlledDocument) => void;
 }) {
   const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
   const [tab, setTab] = useState<"stages" | "binder">("stages");
@@ -2524,6 +2528,7 @@ function Ai4tLifecycleHub({
           </button>
         ))}
       </section>
+      <LifecycleDeliverables documents={documents} stage={current[0]} onOpenDocument={onOpenDocument} />
       <section className="ops-section mt-5 overflow-hidden">
         <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Role-filtered binder view. Preview content is a formatted DEMO draft.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
         <div className="divide-y divide-border">
