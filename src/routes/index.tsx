@@ -1346,19 +1346,6 @@ const readPortal = (): PortalState => {
           }))
         : [],
       roles: Array.isArray(value.roles) ? value.roles : [],
-      records: Array.isArray(value.records)
-        ? value.records.map((record) => {
-            const area = legacyAreaMap[record.area] ?? record.area;
-            return {
-              ...record,
-              area,
-              departmentId:
-                record.departmentId ??
-                findAreaDepartment(Array.isArray(value.departments) ? value.departments : [], area)
-                  ?.id,
-            };
-          })
-        : [],
       approvals: Array.isArray(value.approvals) ? value.approvals : [],
       records:
         value.demoLoaded === true
