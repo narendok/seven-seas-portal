@@ -2054,7 +2054,14 @@ function Portal() {
         />
       )}
       {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
-      {draftHubOpen && <AutoDraftHub onClose={() => setDraftHubOpen(false)} />}
+      {draftHubOpen && (
+        <AutoDraftHub
+          onClose={() => setDraftHubOpen(false)}
+          settings={portal.templateSettings ?? defaultTemplateSettings()}
+          onOpenPrintable={setPrintTemplate}
+          onOpenSettings={() => setTemplateSettingsOpen(true)}
+        />
+      )}
       {templateSettingsOpen && (
         <TemplateSettingsPanel
           settings={portal.templateSettings ?? defaultTemplateSettings()}
