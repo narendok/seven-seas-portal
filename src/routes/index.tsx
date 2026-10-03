@@ -502,7 +502,7 @@ const emptyPortal = (): PortalState => ({
 const demoPortal = (): PortalState => {
   const base = emptyPortal();
   const timestamp = "DEMO · 03 Oct 2026";
-  const project = "HLPL-SLCT-01";
+  const project = "HLPL-AI4T-01";
   const demoNote =
     "DEMO DATA ONLY · Fictional, illustrative automotive telematics lifecycle. NOT VALIDATED. No real customer, supplier, certification, procurement, billing, production, shipment, or client communication is represented.";
   const departmentSeeds: {
@@ -717,27 +717,38 @@ const demoPortal = (): PortalState => {
       { signoffs: "Hardware · Firmware · Quality · Purchase HOD · DEMO approvals only" },
     ),
     make(
-      "HLPL-SLCT-01",
+      "HLPL-AI4T-01",
       "ehw",
       "Project",
-      "AIS-140 4G Telematics Unit",
+      "AIS-140 Intelligent 4G Telematics Tracker",
       "In review",
       "Critical",
-      "Stage 8 · Type Approval & SCM Planning",
-      ["HLPL-SLCT-EHW-PRS-02", "HLPL-SLCT-EHW-BOM-01", "HLPL-SLCT-QA-DVP-01", "F-PUR-16"],
+      "Stage 8 · Type Approval & SCM",
+      ["HLPL-AI4T-EHW-PRS-01", "HLPL-AI4T-EHW-BOM-01", "HLPL-AI4T-QA-DVP-01", "F-PUR-16/AI4T-01"],
       {
-        client: "DEMO Ashok Leyland Commercial Vehicles · fictional",
-        platform: "DEMO Dost & Bada Dost Fleet · fictional",
-        pmss: "HLPL-SLCT-PMSS-00",
-        currentStage: "Stage 8 · Type Approval & SCM Planning",
+        client: "DEMO Tata Motors EV Fleet · fictional",
+        platform: "DEMO Tata Ace EV & Ultra T.7 · fictional",
+        pmss: "HLPL-AI4T-PMSS-00",
+        currentStage: "Stage 8 · Type Approval & SCM",
         targetBom: "$38.50 · illustrative",
-        actualBom: "$36.80 · illustrative",
+        actualBom: "$35.42 · illustrative",
         voltage: "12V / 24V",
         temperature: "-40°C to +85°C",
         enclosure: "IP67",
-        compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS/REACH · targets only, NOT certified",
+        compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · targets only, NOT certified",
       },
     ),
+    make("HLPL-AI4T-SAL-SOR-01", "sales", "Customer SOR", "Customer SOR · RFQ-2026-TATA-AI4T-088", "Approved", "Critical", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-AI4T-SAL-mNDA-01", "HLPL/F/MKT/01"], { rfq: "RFQ-2026-TATA-AI4T-088 · DEMO only", customer: "DEMO Tata Motors EV Fleet · fictional" }),
+    make("HLPL-AI4T-SAL-mNDA-01", "sales", "mNDA", "Bilateral mutual NDA", "Approved", "High", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-AI4T-SAL-SOR-01", "HLPL/F/MKT/01"], { ndaStatus: "DEMO bilateral signature simulation · no legal effect" }),
+    make("HLPL/F/MKT/01", "sales", "Contract review", "Cross-department feasibility review · five HOD approvals", "Approved", "Critical", "Stage 2 · Cross-Dept Feasibility Analysis", ["HLPL-AI4T-SAL-SOR-01", "HLPL-AI4T-EHW-PRS-01", "HLPL-AI4T-SAL-QUO-01"], { signoffs: "Hardware · Software · Mechanical · Purchase · Quality · all DEMO approvals complete", feasibility: "Approved automatically compiles PRS and quotation" }),
+    make("HLPL-AI4T-EHW-PRS-01", "ehw", "PRS", "Auto-compiled Product Requirement Specification", "Approved", "Critical", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-AI4T-SAL-QUO-01", "HLPL-AI4T-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", baseline: "Frozen · automated baseline · changes require PMSS amendment", requirements: "12V/24V · GNSS · LTE 4G · CAN/OBD · tamper and power-loss alerts · panic/SOS · illustrative" }),
+    make("HLPL-AI4T-SAL-QUO-01", "sales", "Commercial quotation", "Auto-generated commercial quotation", "Approved", "High", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-AI4T-EHW-PRS-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", commercial: "₹20.33 Cr total value · DEMO only" }),
+    make("PO-TATA-AI4T-2026-9041", "sales", "Order", "Customer purchase order sync · 50,000 units", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-01", "HLPL-AI4T-FIN-INV-01", "HLPL-AI4T-EHW-PRS-01"], { volume: "50,000 units · DEMO only", value: "₹20.33 Cr · illustrative only", loi: "Customer LOI confirmed · DEMO simulation" }),
+    make("HLPL-AI4T-FIN-INV-01", "fin", "Commercial billing", "Advance deposit verification and tax invoice", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["PO-TATA-AI4T-2026-9041"], { advance: "₹6.10 Cr · illustrative payment verification only", invoice: "Generated · DEMO only" }),
+    make("HLPL-AI4T-EHW-BOM-01", "ehw", "BOM", "Production BOM release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-AI4T-EHW-PRS-01", "PO-TATA-AI4T-2026-9041"], { release: "Final production BOM · DEMO release" }),
+    make("HLPL-AI4T-EHW-GER-01", "ehw", "Gerber release", "Final Gerber package release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-AI4T-EHW-BOM-01"], { release: "Final Gerber package · DEMO release" }),
+    make("HLPL-AI4T-QA-APQP-01", "qa", "APQP gate", "APQP phases 1–4 closed", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-01", "HLPL-AI4T-QA-DVP-01"], { apqp: "Phases 1–4 closed · DEMO only", auditReadiness: "100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion only" }),
+    make("HLPL-AI4T-QA-DVP-01", "qa", "DVP&R", "AIS-140 evidence pack", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-QA-APQP-01"], { tac: "DEMO reference #ARAI/TAC/2026/AIS140-842 · no certification claim" }),
     make(
       "HLPL-SLCT-EHW-PRS-02",
       "ehw",
@@ -1043,7 +1054,7 @@ const demoPortal = (): PortalState => {
     task("DEMO-TASK-PUR-MLCC", "pur", "Audit lead-time variance report for passive MLCC capacitors", "Normal", tomorrow, "Morgan Reed", "HLPL-EFAN-01", "HLPL-EFAN-01 · High-Power eFan Speed Controller", "Supply risk review · tomorrow"),
   ];
   const projectProfiles = [
-    ["HLPL-SLCT-01", "AIS-140 GPS/4G Telematics Gateway", "Tata Motors EV · fictional DEMO", "Stage 8 · Type Approval & SCM Planning", "12V / 24V", "IP67", "$35.42"],
+    ["HLPL-AI4T-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors EV Fleet · fictional DEMO", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
     ["HLPL-BCU-02", "Body Control Unit Gen 3", "Mahindra Electric · fictional DEMO", "Stage 5 · Pilot Build", "24V", "IP67", "$52.00"],
     ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Ashok Leyland Fleet · fictional DEMO", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
     ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors · fictional DEMO", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
@@ -1115,7 +1126,7 @@ const demoPortal = (): PortalState => {
         pmssCompliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS/REACH · DEMO targets only",
         pmssTargetBom: "$38.50 · illustrative",
         pmssActualBom: "$36.80 · illustrative",
-        pmssLifecycleStage: "Stage 8 · Type Approval & SCM Planning",
+        pmssLifecycleStage: "Stage 8 · Type Approval & SCM",
         departmentModel: "11 department DEMO SCMS model",
         projectStages: "Nine-stage lifecycle with human gates",
         qualityRelease: "Human quality release required; never auto-approved",
@@ -1137,7 +1148,7 @@ const demoPortal = (): PortalState => {
         "DEMO AXP2101",
         "DEMO 1000mAh LiPo",
       ],
-      products: ["HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
+      products: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
       customers: ["DEMO Tata Motors EV · fictional", "DEMO Mahindra Electric · fictional", "DEMO Ashok Leyland Fleet · fictional", "DEMO Sonalika Tractors · fictional", "DEMO Escorts Kubota · fictional"],
       routes: ["DEMO SMT Line 2"],
       documentTypes: [
@@ -1335,20 +1346,17 @@ const readPortal = (): PortalState => {
           }))
         : [],
       roles: Array.isArray(value.roles) ? value.roles : [],
-      records: Array.isArray(value.records)
-        ? value.records.map((record) => {
-            const area = legacyAreaMap[record.area] ?? record.area;
-            return {
-              ...record,
-              area,
-              departmentId:
-                record.departmentId ??
-                findAreaDepartment(Array.isArray(value.departments) ? value.departments : [], area)
-                  ?.id,
-            };
-          })
-        : [],
       approvals: Array.isArray(value.approvals) ? value.approvals : [],
+      records:
+        value.demoLoaded === true
+          ? (() => {
+              const additions = demoPortal().records.filter((item) => item.reference.startsWith("HLPL-AI4T") || item.reference === "PO-TATA-AI4T-2026-9041");
+              const existing = Array.isArray(value.records) ? value.records.map((record) => ({ ...record, area: legacyAreaMap[record.area] ?? record.area })) : [];
+              return [...existing, ...additions.filter((item) => !existing.some((record) => record.reference === item.reference))];
+            })()
+          : Array.isArray(value.records)
+            ? value.records.map((record) => ({ ...record, area: legacyAreaMap[record.area] ?? record.area }))
+            : [],
       documents: value.demoLoaded === true ? mergeAutomotiveDemoDocuments(documents) : documents,
       audit: Array.isArray(value.audit) ? value.audit : [],
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
@@ -1395,7 +1403,8 @@ function Portal() {
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
+  const [syncHubOpen, setSyncHubOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-AI4T-01");
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
@@ -1570,7 +1579,7 @@ function Portal() {
         </header>
         <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-10">
           {view === "pmss" ? (
-            <PMSSWorkspace
+              <PMSSWorkspace
               portal={portal}
               project={selectedProjectProfile}
               projects={activeRecords.filter((record) => record.type === "Project")}
@@ -1645,6 +1654,7 @@ function Portal() {
                 setRfqStep(0);
                 setRfqOpen(true);
               }}
+              onOpenSyncHub={() => setSyncHubOpen(true)}
             />
           ) : view === "detail" && selected ? (
             <RecordDetail
@@ -1832,6 +1842,7 @@ function Portal() {
           }}
         />
       )}
+      {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
       {rfqOpen && (
         <RfqCycleTest
           step={rfqStep}
@@ -1870,6 +1881,7 @@ function CommandCenter({
   onOpenAssignee,
   onReturnGlobal,
   onRunRfq,
+  onOpenSyncHub,
 }: {
   portal: PortalState;
   departmentContext: string | null;
@@ -1882,6 +1894,7 @@ function CommandCenter({
   onOpenAssignee: (assignee: string) => void;
   onReturnGlobal: () => void;
   onRunRfq: () => void;
+  onOpenSyncHub: () => void;
 }) {
   const records = portal.records.filter((record) => !record.archived);
   const visible = departmentContext
@@ -1899,7 +1912,7 @@ function CommandCenter({
   return (
     <>
       {portal.demoLoaded && <DemoMarker />}
-      {portal.demoLoaded && <LifecycleProgress records={records} />}
+      {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-AI4T-01" />}
       <PageHeader
         eyebrow={departmentContext ? "Administrator context" : "Operational workspace"}
         title="Command center"
@@ -1911,12 +1924,14 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
+            <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={onSetup} label="Continue setup" />
             <Action onClick={onCreate} label="Create Task" primary />
           </>
         }
       />
+      {portal.demoLoaded && <ExecutiveKpis />}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           label="Today"
@@ -2440,9 +2455,9 @@ function AssigneeWorkload({
   );
 }
 
-function LifecycleProgress({ records }: { records: RecordItem[] }) {
+function LifecycleProgress({ records, projectId }: { records: RecordItem[]; projectId: string }) {
   const lifecycleRecords = records.filter(
-    (record) => record.fields["lifecycleId"] === "DEMO-AIS140-OBD-01",
+    (record) => record.fields["lifecycleId"] === projectId,
   );
   const stages = [
     ["1", "Sales & NDA", ["Customer requirement", "Enquiry"]],
@@ -2464,7 +2479,7 @@ function LifecycleProgress({ records }: { records: RecordItem[] }) {
       <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border p-4">
         <div>
           <p className="font-mono text-[10px] uppercase text-moss">Nine-stage lifecycle</p>
-          <h2 className="mt-1 font-semibold">DEMO-AIS140-OBD-01 · controlled lifecycle</h2>
+          <h2 className="mt-1 font-semibold">{projectId} · controlled lifecycle</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Illustrative only · NOT VALIDATED · human gate sign-offs remain required
           </p>
@@ -2505,6 +2520,59 @@ function LifecycleProgress({ records }: { records: RecordItem[] }) {
         })}
       </div>
     </section>
+  );
+}
+
+function ExecutiveKpis() {
+  return (
+    <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <Metric label="Active project" value="AI4T-01" detail="AIS-140 tracker · DEMO" tone="steel" />
+      <Metric label="Order volume" value="50,000" detail="Illustrative units" tone="moss" />
+      <Metric label="Revenue" value="₹20.33 Cr" detail="Illustrative order value" tone="steel" />
+      <Metric label="Stage" value="8" detail="Type Approval & SCM" tone="warning" />
+      <Metric label="Audit score" value="100%" detail="DEMO readiness assertion" tone="moss" />
+      <Metric label="System sync" value="11/11" detail="Department handoffs" tone="steel" />
+    </section>
+  );
+}
+
+function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
+  const flows = [
+    ["SAL", "Order locked & customer LOI confirmed", "PO-TATA-AI4T-2026-9041 · 50,000 units"],
+    ["FIN", "Advance deposit verified & invoice generated", "₹6.10 Cr illustrative advance · HLPL-AI4T-FIN-INV-01"],
+    ["PUR", "Long-lead IC purchase plan synchronized", "STM32 · Quectel 4G · u-blox GNSS · DEMO ASL"],
+    ["R&D", "Design release package synchronized", "Final Gerber · production BOM · mold tooling"],
+    ["EMF", "Tranche 1 production scheduled", "SMT Line 2 · 2,500 illustrative units"],
+    ["TST", "EOL capacity preloaded", "AI4T-2026-00001..50000 · 97.4% simulated FPY"],
+    ["QA", "APQP and compliance evidence ready", "Phases 1–4 closed · DEMO TAC reference only"],
+  ];
+  return (
+    <Modal title="Cross-Department Sync & Order Hub" onClose={onClose} wide>
+      <div className="rounded-lg border border-warning/40 bg-accent p-4 text-sm">
+        <strong>DEMO DATA ONLY</strong>
+        <p className="mt-1 text-muted-foreground">Illustrative order, financial, supplier, production and audit signals. Nothing represents an actual customer order, payment, purchase, release, or certification.</p>
+      </div>
+      <section className="mt-5 grid gap-3 sm:grid-cols-3">
+        <DocumentField label="Customer PO" value="PO-TATA-AI4T-2026-9041" />
+        <DocumentField label="Order volume" value="50,000 units · illustrative" />
+        <DocumentField label="Total value" value="₹20.33 Cr · illustrative" />
+        <DocumentField label="Advance" value="₹6.10 Cr · verification simulation" />
+        <DocumentField label="Project" value="HLPL-AI4T-01" />
+        <DocumentField label="Audit readiness" value="100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion" />
+      </section>
+      <section className="mt-5 divide-y divide-border border border-border bg-panel">
+        {flows.map(([code, title, detail]) => (
+          <div key={code} className="grid gap-2 p-4 sm:grid-cols-[4rem_1fr]">
+            <span className="font-mono text-xs font-semibold text-steel">{code}</span>
+            <div>
+              <p className="text-sm font-semibold">{title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+      <p className="mt-5 text-xs text-muted-foreground">All department outputs are represented as department-owned, access-checked records in the logical 00_Automotive_Hardware_Audit_Repository audit vault.</p>
+    </Modal>
   );
 }
 
@@ -3209,9 +3277,30 @@ function RecordForm({
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const field = (key: string) => values[key] ?? "";
+  const approvedReview = portal.records.find(
+    (record) =>
+      record.type === "Contract review" &&
+      record.status === "Approved" &&
+      record.reference === "HLPL/F/MKT/01",
+  );
+  const visibleFields = type === "PRS" ? spec.fields.filter((item) => item.key !== "hwStage") : spec.fields;
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const missing = spec.fields.find(
+    if (type === "PRS" && !approvedReview) {
+      return setError("PRS is generated only after an approved Contract Review HLPL/F/MKT/01.");
+    }
+    const preparedValues =
+      type === "PRS"
+        ? {
+            ...values,
+            controlledNumber: values["controlledNumber"] || "HLPL-AI4T-EHW-PRS-01",
+            projectId: values["projectId"] || "HLPL-AI4T-01",
+            lifecycleStage: "Stage 3 · Requirement Freeze & Commercial Confirmation",
+            generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01",
+            baseline: "Frozen · automated baseline · changes require PMSS amendment",
+          }
+        : values;
+    const missing = visibleFields.find(
       (item) => item.required && item.key !== "controlledNumber" && !field(item.key).trim(),
     );
     if (missing) return setError(`${missing.label} is required.`);
@@ -3231,7 +3320,7 @@ function RecordForm({
       status: "Draft",
       priority: (field("priority") as Priority) || "Normal",
       notes: field("scope"),
-      fields: values,
+      fields: preparedValues,
     });
   };
   return (
@@ -3242,8 +3331,19 @@ function RecordForm({
           blank.
         </p>
         <SelectField label="Record type" value={type} options={spec.types} onChange={setType} />
+        {type === "PRS" && (
+          <div className="rounded-lg border border-moss/30 bg-accent p-4 text-sm">
+            <p className="font-semibold">Auto-compiled, frozen PRS baseline</p>
+            <p className="mt-1 text-muted-foreground">
+              Generated automatically from approved Contract Review HLPL/F/MKT/01. No stage selection is required.
+            </p>
+            <p className="mt-2 font-mono text-xs text-steel">
+              {approvedReview ? "Feasibility approvals complete" : "Awaiting approved feasibility review"}
+            </p>
+          </div>
+        )}
         <div className="grid gap-4 md:grid-cols-2">
-          {spec.fields.map((item) =>
+          {visibleFields.map((item) =>
             item.master ? (
               <ManagedField
                 key={item.key}
