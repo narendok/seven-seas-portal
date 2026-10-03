@@ -1622,6 +1622,7 @@ function Portal() {
   const [modal, setModal] = useState<
     "create" | "wizard" | "approvals" | "documents" | "document" | "history" | "admin" | null
   >(null);
+  const [createType, setCreateType] = useState<string | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
@@ -1899,7 +1900,7 @@ function Portal() {
             <CommandCenter
               portal={portal}
               departmentContext={departmentContext}
-              onCreate={() => setModal("create")}
+              onCreate={(type) => { setCreateType(type ?? null); setModal("create"); }}
               onNavigate={navigate}
               onAdmin={() => setModal("admin")}
               onUpdateTask={updateTask}
@@ -1982,7 +1983,7 @@ function Portal() {
               contextName={departmentContext ? "Administrator" : "Workspace"}
               view={view === "summary" ? "summary" : "queue"}
               onView={setView}
-              onCreate={() => setModal("create")}
+              onCreate={(type) => { setCreateType(type ?? null); setModal("create"); }}
               onSelect={(id) => {
                 setSelectedId(id);
                 setView("detail");
@@ -2022,7 +2023,8 @@ function Portal() {
         <RecordForm
           area={activeArea}
           portal={portal}
-          onClose={() => setModal(null)}
+          initialType={createType}
+          onClose={() => { setCreateType(null); setModal(null); }}
           onSave={addRecord}
         />
       )}{" "}
@@ -2241,7 +2243,7 @@ function CommandCenter({
 }: {
   portal: PortalState;
   departmentContext: string | null;
-  onCreate: () => void;
+  onCreate: (recordType?: string) => void;
   onNavigate: (area: AreaId) => void;
   onAdmin: () => void;
   onUpdateTask: (taskId: string, patch: Partial<RecordItem>, action: string) => void;
@@ -3195,7 +3197,7 @@ function DepartmentWorkspace({
   contextName: string;
   view: "queue" | "summary";
   onView: (view: "queue" | "summary") => void;
-  onCreate: () => void;
+  onCreate: (recordType?: string) => void;
   onSelect: (id: string) => void;
   onAdmin: () => void;
   onOpenStage: (stage: string) => void;
@@ -3478,10 +3480,10 @@ const departmentProcesses: Partial<Record<AreaId, { drive: string; items: string
   hrops: { drive: "01_Governance_and_QMS", items: ["Annual competency & skill matrix", "IPC-A-610 training log", "ESD & cleanroom certification"] },
 };
 
-function DepartmentProcessMenu({ area, onOpenDrive, onCreate }: { area: AreaId; onOpenDrive: () => void; onCreate: () => void }) {
+function DepartmentProcessMenu({ area, onOpenDrive, onCreate }: { area: AreaId; onOpenDrive: () => void; onCreate: (recordType?: string) => void }) {
   const menu = departmentProcesses[area];
   if (!menu) return null;
-  return <section className="ops-section mt-8 overflow-hidden bg-panel"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Department processes</p><p className="mt-1 text-xs text-muted-foreground">Shortcuts keep controlled work and its department drive together.</p></div><Action label="Department Cloud Drive" onClick={onOpenDrive} primary /></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">{menu.items.map((item, index) => <button key={item} onClick={onCreate} className="flex min-h-14 items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-secondary"><span className="font-mono text-[10px] text-steel">{String(index + 1).padStart(2, "0")}</span><span className="text-xs font-semibold">{item}</span></button>)}</div><div className="border-t border-border px-4 py-2 font-mono text-[10px] text-muted-foreground">Drive folder · /{menu.drive}</div></section>;
+  return <section className="ops-section mt-8 overflow-hidden bg-panel"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Department processes</p><p className="mt-1 text-xs text-muted-foreground">Select a process to start a linked, department-owned record.</p></div><Action label="Department Cloud Drive" onClick={onOpenDrive} primary /></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">{menu.items.map((item, index) => <button key={item} onClick={() => onCreate(item)} className="flex min-h-14 items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-secondary"><span className="font-mono text-[10px] text-steel">{String(index + 1).padStart(2, "0")}</span><span className="text-xs font-semibold">{item}</span></button>)}</div><div className="border-t border-border px-4 py-2 font-mono text-[10px] text-muted-foreground">Drive folder · /{menu.drive}</div></section>;
 }
 
 function LifecycleDeliverables({ documents, stage, onOpenDocument }: { documents: ControlledDocument[]; stage: string; onOpenDocument: (document: ControlledDocument) => void }) {
@@ -3904,17 +3906,20 @@ const formSpecs: Partial<
 function RecordForm({
   area,
   portal,
+  initialType,
   onClose,
   onSave,
 }: {
   area: AreaId;
   portal: PortalState;
+  initialType: string | null;
   onClose: () => void;
   onSave: (record: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => void;
 }) {
   const spec = formSpecs[area] ?? formSpecs.ehw;
   if (!spec) return null;
-  const [type, setType] = useState(spec.types[0] ?? "Record");
+  const availableTypes = Array.from(new Set([...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
+  const [type, setType] = useState(initialType ?? spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -3976,10 +3981,9 @@ function RecordForm({
     <Modal title={`Create ${type}`} onClose={onClose} wide>
       <form onSubmit={submit} className="space-y-5">
         <p className="rounded-lg border border-border bg-panel px-3 py-2 text-xs text-muted-foreground">
-          The portal generates an HLPL document number on save when you leave the controlled number
-          blank.
+          This {areaById(area).name} record is linked to a managed project, people, suppliers, customers, and locations where applicable. The portal generates an HLPL document number when you leave the controlled number blank.
         </p>
-        <SelectField label="Record type" value={type} options={spec.types} onChange={setType} />
+        <SelectField label="Record type" value={type} options={availableTypes} onChange={setType} />
         <section className="rounded-lg border border-steel/35 bg-panel p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
