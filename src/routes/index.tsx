@@ -2526,6 +2526,59 @@ function LifecycleProgress({ records, projectId }: { records: RecordItem[]; proj
   );
 }
 
+function ExecutiveKpis() {
+  return (
+    <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <Metric label="Active project" value="AI4T-01" detail="AIS-140 tracker · DEMO" tone="steel" />
+      <Metric label="Order volume" value="50,000" detail="Illustrative units" tone="moss" />
+      <Metric label="Revenue" value="₹20.33 Cr" detail="Illustrative order value" tone="steel" />
+      <Metric label="Stage" value="8" detail="Type Approval & SCM" tone="warning" />
+      <Metric label="Audit score" value="100%" detail="DEMO readiness assertion" tone="moss" />
+      <Metric label="System sync" value="11/11" detail="Department handoffs" tone="steel" />
+    </section>
+  );
+}
+
+function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
+  const flows = [
+    ["SAL", "Order locked & customer LOI confirmed", "PO-TATA-AI4T-2026-9041 · 50,000 units"],
+    ["FIN", "Advance deposit verified & invoice generated", "₹6.10 Cr illustrative advance · HLPL-AI4T-FIN-INV-01"],
+    ["PUR", "Long-lead IC purchase plan synchronized", "STM32 · Quectel 4G · u-blox GNSS · DEMO ASL"],
+    ["R&D", "Design release package synchronized", "Final Gerber · production BOM · mold tooling"],
+    ["EMF", "Tranche 1 production scheduled", "SMT Line 2 · 2,500 illustrative units"],
+    ["TST", "EOL capacity preloaded", "AI4T-2026-00001..50000 · 97.4% simulated FPY"],
+    ["QA", "APQP and compliance evidence ready", "Phases 1–4 closed · DEMO TAC reference only"],
+  ];
+  return (
+    <Modal title="Cross-Department Sync & Order Hub" onClose={onClose} wide>
+      <div className="rounded-lg border border-warning/40 bg-accent p-4 text-sm">
+        <strong>DEMO DATA ONLY</strong>
+        <p className="mt-1 text-muted-foreground">Illustrative order, financial, supplier, production and audit signals. Nothing represents an actual customer order, payment, purchase, release, or certification.</p>
+      </div>
+      <section className="mt-5 grid gap-3 sm:grid-cols-3">
+        <DocumentField label="Customer PO" value="PO-TATA-AI4T-2026-9041" />
+        <DocumentField label="Order volume" value="50,000 units · illustrative" />
+        <DocumentField label="Total value" value="₹20.33 Cr · illustrative" />
+        <DocumentField label="Advance" value="₹6.10 Cr · verification simulation" />
+        <DocumentField label="Project" value="HLPL-AI4T-01" />
+        <DocumentField label="Audit readiness" value="100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion" />
+      </section>
+      <section className="mt-5 divide-y divide-border border border-border bg-panel">
+        {flows.map(([code, title, detail]) => (
+          <div key={code} className="grid gap-2 p-4 sm:grid-cols-[4rem_1fr]">
+            <span className="font-mono text-xs font-semibold text-steel">{code}</span>
+            <div>
+              <p className="text-sm font-semibold">{title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+      <p className="mt-5 text-xs text-muted-foreground">All department outputs are represented as department-owned, access-checked records in the logical 00_Automotive_Hardware_Audit_Repository audit vault.</p>
+    </Modal>
+  );
+}
+
 function DepartmentWorkspace({
   area,
   records,
