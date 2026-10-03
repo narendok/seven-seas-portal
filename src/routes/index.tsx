@@ -1499,11 +1499,14 @@ function Portal() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
+  const [persona, setPersona] = useState<Persona>(personas[0]);
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [syncHubOpen, setSyncHubOpen] = useState(false);
   const [draftHubOpen, setDraftHubOpen] = useState(false);
+  const [ai4tOpen, setAi4tOpen] = useState(false);
+  const [ai4tSimulation, setAi4tSimulation] = useState<Ai4tSimulation>({ stage: 0, history: [] });
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   const [darkMode, setDarkMode] = useState(true);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -1554,6 +1557,15 @@ function Portal() {
     setSelectedAssignee(null);
     setQueueStage(null);
     setMobileMenu(false);
+  };
+  const switchPersona = (next: Persona) => {
+    setPersona(next);
+    const nextDepartment = next.kind === "lead" ? findAreaDepartment(portal.departments, next.departmentId ?? "home")?.id ?? null : null;
+    setDepartmentContext(nextDepartment);
+    setActiveArea(next.kind === "lead" && next.departmentId ? next.departmentId : "home");
+    setView("queue");
+    log("Persona context changed", `${next.label} · ${next.person}`);
+    announce(`${next.label} context active.`);
   };
   const loadDemo = () => {
     setPortal(demoPortal());
@@ -1682,6 +1694,7 @@ function Portal() {
                   : `All departments · ${portal.setup.location}`}
               </p>
             </button>
+            <PersonaSwitcher persona={persona} onSelect={switchPersona} />
             <HeaderAction label="PMSS" icon={ClipboardCheck} onClick={() => setView("pmss")} />
             <HeaderAction
               label="Search"
@@ -1775,6 +1788,7 @@ function Portal() {
               }}
               onReturnGlobal={() => {
                 setDepartmentContext(null);
+                setPersona(personas[0]);
                 log("Administrator context returned", "Returned to global command center");
                 navigate("home");
               }}
@@ -1784,6 +1798,8 @@ function Portal() {
               }}
               onOpenSyncHub={() => setSyncHubOpen(true)}
               onOpenDraftHub={() => setDraftHubOpen(true)}
+              onOpenAi4t={() => setAi4tOpen(true)}
+              persona={persona}
             />
           ) : view === "detail" && selected ? (
             <RecordDetail
@@ -1975,6 +1991,34 @@ function Portal() {
       )}
       {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
       {draftHubOpen && <AutoDraftHub onClose={() => setDraftHubOpen(false)} />}
+      {ai4tOpen && (
+        <Ai4tLifecycleHub
+          persona={persona}
+          simulation={ai4tSimulation}
+          onClose={() => setAi4tOpen(false)}
+          onAdvance={() => {
+            setAi4tSimulation((state) => {
+              const stage = Math.min(state.stage + 1, ai4tStages.length - 1);
+              const entry = ai4tStages[stage];
+              log("AI4T lifecycle simulation advanced", `${entry[0]} · ${entry[1]}`);
+              return { stage, history: [`${now()} · ${entry[0]} · ${entry[1]}`, ...state.history] };
+            });
+          }}
+          onJump={(stage) => {
+            const entry = ai4tStages[stage];
+            setAi4tSimulation((state) => ({ stage, history: [`${now()} · Jumped to ${entry[0]}`, ...state.history] }));
+            log("AI4T lifecycle simulation jumped", entry[0]);
+          }}
+          onRun={() => {
+            setAi4tSimulation({ stage: ai4tStages.length - 1, history: [`${now()} · Full DEMO lifecycle run completed`, ...ai4tStages.map(([stage, title]) => `${stage} · ${title}`)] });
+            log("AI4T lifecycle simulation completed", "All nine DEMO stages were simulated");
+          }}
+          onReset={() => {
+            setAi4tSimulation({ stage: 0, history: [] });
+            log("AI4T lifecycle simulation reset", "Simulation reset to Stage 1");
+          }}
+        />
+      )}
       {rfqOpen && (
         <RfqCycleTest
           step={rfqStep}
