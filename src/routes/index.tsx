@@ -1910,6 +1910,7 @@ function Portal() {
                 log("Record archived", `${selected.reference} archived`);
                 setView("queue");
               }}
+              onOpenPrintable={setPrintTemplate}
             />
           ) : (
             <DepartmentWorkspace
@@ -3421,11 +3422,13 @@ function RecordDetail({
   onBack,
   onSave,
   onArchive,
+  onOpenPrintable,
 }: {
   record: RecordItem;
   onBack: () => void;
   onSave: (patch: Partial<RecordItem>) => void;
   onArchive: () => void;
+  onOpenPrintable: (document: PrintableDocument) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(record.title);
@@ -3449,6 +3452,7 @@ function RecordDetail({
             <h1 className="mt-2 text-3xl font-semibold">{record.title}</h1>
           </div>
           <div className="flex gap-2">
+            <Action onClick={() => onOpenPrintable(recordPrintable(record))} label="Open full document" primary />
             <Action onClick={() => setEditing(!editing)} label={editing ? "Cancel" : "Edit"} />
             <Action onClick={onArchive} label="Archive" />
           </div>
