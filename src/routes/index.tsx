@@ -141,6 +141,18 @@ type ControlledDocument = {
   approver?: string | undefined;
   history?: string[] | undefined;
   cloudDocumentId?: string | undefined;
+  localFiles?: LocalControlledFile[] | undefined;
+};
+type LocalControlledFile = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  uploadedAt: string;
+  uploader: string;
+  revision: string;
+  content: string;
+  encoding: "text" | "data-url";
 };
 type ControlledFile = {
   id: string;
