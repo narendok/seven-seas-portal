@@ -502,7 +502,7 @@ const emptyPortal = (): PortalState => ({
 const demoPortal = (): PortalState => {
   const base = emptyPortal();
   const timestamp = "DEMO · 03 Oct 2026";
-  const project = "HLPL-SLCT-01";
+  const project = "HLPL-AI4T-01";
   const demoNote =
     "DEMO DATA ONLY · Fictional, illustrative automotive telematics lifecycle. NOT VALIDATED. No real customer, supplier, certification, procurement, billing, production, shipment, or client communication is represented.";
   const departmentSeeds: {
@@ -717,27 +717,38 @@ const demoPortal = (): PortalState => {
       { signoffs: "Hardware · Firmware · Quality · Purchase HOD · DEMO approvals only" },
     ),
     make(
-      "HLPL-SLCT-01",
+      "HLPL-AI4T-01",
       "ehw",
       "Project",
-      "AIS-140 4G Telematics Unit",
+      "AIS-140 Intelligent 4G Telematics Tracker",
       "In review",
       "Critical",
-      "Stage 8 · Type Approval & SCM Planning",
-      ["HLPL-SLCT-EHW-PRS-02", "HLPL-SLCT-EHW-BOM-01", "HLPL-SLCT-QA-DVP-01", "F-PUR-16"],
+      "Stage 8 · Type Approval & SCM",
+      ["HLPL-AI4T-EHW-PRS-01", "HLPL-AI4T-EHW-BOM-01", "HLPL-AI4T-QA-DVP-01", "F-PUR-16/AI4T-01"],
       {
-        client: "DEMO Ashok Leyland Commercial Vehicles · fictional",
-        platform: "DEMO Dost & Bada Dost Fleet · fictional",
-        pmss: "HLPL-SLCT-PMSS-00",
-        currentStage: "Stage 8 · Type Approval & SCM Planning",
+        client: "DEMO Tata Motors EV Fleet · fictional",
+        platform: "DEMO Tata Ace EV & Ultra T.7 · fictional",
+        pmss: "HLPL-AI4T-PMSS-00",
+        currentStage: "Stage 8 · Type Approval & SCM",
         targetBom: "$38.50 · illustrative",
-        actualBom: "$36.80 · illustrative",
+        actualBom: "$35.42 · illustrative",
         voltage: "12V / 24V",
         temperature: "-40°C to +85°C",
         enclosure: "IP67",
-        compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS/REACH · targets only, NOT certified",
+        compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · targets only, NOT certified",
       },
     ),
+    make("HLPL-AI4T-SAL-SOR-01", "sales", "Customer SOR", "Customer SOR · RFQ-2026-TATA-AI4T-088", "Approved", "Critical", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-AI4T-SAL-mNDA-01", "HLPL/F/MKT/01"], { rfq: "RFQ-2026-TATA-AI4T-088 · DEMO only", customer: "DEMO Tata Motors EV Fleet · fictional" }),
+    make("HLPL-AI4T-SAL-mNDA-01", "sales", "mNDA", "Bilateral mutual NDA", "Approved", "High", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-AI4T-SAL-SOR-01", "HLPL/F/MKT/01"], { ndaStatus: "DEMO bilateral signature simulation · no legal effect" }),
+    make("HLPL/F/MKT/01", "sales", "Contract review", "Cross-department feasibility review · five HOD approvals", "Approved", "Critical", "Stage 2 · Cross-Dept Feasibility Analysis", ["HLPL-AI4T-SAL-SOR-01", "HLPL-AI4T-EHW-PRS-01", "HLPL-AI4T-SAL-QUO-01"], { signoffs: "Hardware · Software · Mechanical · Purchase · Quality · all DEMO approvals complete", feasibility: "Approved automatically compiles PRS and quotation" }),
+    make("HLPL-AI4T-EHW-PRS-01", "ehw", "PRS", "Auto-compiled Product Requirement Specification", "Approved", "Critical", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-AI4T-SAL-QUO-01", "HLPL-AI4T-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", baseline: "Frozen · automated baseline · changes require PMSS amendment", requirements: "12V/24V · GNSS · LTE 4G · CAN/OBD · tamper and power-loss alerts · panic/SOS · illustrative" }),
+    make("HLPL-AI4T-SAL-QUO-01", "sales", "Commercial quotation", "Auto-generated commercial quotation", "Approved", "High", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-AI4T-EHW-PRS-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", commercial: "₹20.33 Cr total value · DEMO only" }),
+    make("PO-TATA-AI4T-2026-9041", "sales", "Order", "Customer purchase order sync · 50,000 units", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-01", "HLPL-AI4T-FIN-INV-01", "HLPL-AI4T-EHW-PRS-01"], { volume: "50,000 units · DEMO only", value: "₹20.33 Cr · illustrative only", loi: "Customer LOI confirmed · DEMO simulation" }),
+    make("HLPL-AI4T-FIN-INV-01", "fin", "Commercial billing", "Advance deposit verification and tax invoice", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["PO-TATA-AI4T-2026-9041"], { advance: "₹6.10 Cr · illustrative payment verification only", invoice: "Generated · DEMO only" }),
+    make("HLPL-AI4T-EHW-BOM-01", "ehw", "BOM", "Production BOM release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-AI4T-EHW-PRS-01", "PO-TATA-AI4T-2026-9041"], { release: "Final production BOM · DEMO release" }),
+    make("HLPL-AI4T-EHW-GER-01", "ehw", "Gerber release", "Final Gerber package release", "Approved", "High", "Stage 7 · Final Hardware & Mechanical Design Release", ["HLPL-AI4T-EHW-BOM-01"], { release: "Final Gerber package · DEMO release" }),
+    make("HLPL-AI4T-QA-APQP-01", "qa", "APQP gate", "APQP phases 1–4 closed", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-01", "HLPL-AI4T-QA-DVP-01"], { apqp: "Phases 1–4 closed · DEMO only", auditReadiness: "100% IATF 16949 & AIS-140 compliant · 0 NCRs · DEMO assertion only" }),
+    make("HLPL-AI4T-QA-DVP-01", "qa", "DVP&R", "AIS-140 evidence pack", "Approved", "Critical", "Stage 8 · Type Approval & SCM", ["HLPL-AI4T-QA-APQP-01"], { tac: "DEMO reference #ARAI/TAC/2026/AIS140-842 · no certification claim" }),
     make(
       "HLPL-SLCT-EHW-PRS-02",
       "ehw",
@@ -1043,7 +1054,7 @@ const demoPortal = (): PortalState => {
     task("DEMO-TASK-PUR-MLCC", "pur", "Audit lead-time variance report for passive MLCC capacitors", "Normal", tomorrow, "Morgan Reed", "HLPL-EFAN-01", "HLPL-EFAN-01 · High-Power eFan Speed Controller", "Supply risk review · tomorrow"),
   ];
   const projectProfiles = [
-    ["HLPL-SLCT-01", "AIS-140 GPS/4G Telematics Gateway", "Tata Motors EV · fictional DEMO", "Stage 8 · Type Approval & SCM Planning", "12V / 24V", "IP67", "$35.42"],
+    ["HLPL-AI4T-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors EV Fleet · fictional DEMO", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
     ["HLPL-BCU-02", "Body Control Unit Gen 3", "Mahindra Electric · fictional DEMO", "Stage 5 · Pilot Build", "24V", "IP67", "$52.00"],
     ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Ashok Leyland Fleet · fictional DEMO", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
     ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors · fictional DEMO", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
@@ -1115,7 +1126,7 @@ const demoPortal = (): PortalState => {
         pmssCompliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS/REACH · DEMO targets only",
         pmssTargetBom: "$38.50 · illustrative",
         pmssActualBom: "$36.80 · illustrative",
-        pmssLifecycleStage: "Stage 8 · Type Approval & SCM Planning",
+        pmssLifecycleStage: "Stage 8 · Type Approval & SCM",
         departmentModel: "11 department DEMO SCMS model",
         projectStages: "Nine-stage lifecycle with human gates",
         qualityRelease: "Human quality release required; never auto-approved",
@@ -1137,7 +1148,7 @@ const demoPortal = (): PortalState => {
         "DEMO AXP2101",
         "DEMO 1000mAh LiPo",
       ],
-      products: ["HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
+      products: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
       customers: ["DEMO Tata Motors EV · fictional", "DEMO Mahindra Electric · fictional", "DEMO Ashok Leyland Fleet · fictional", "DEMO Sonalika Tractors · fictional", "DEMO Escorts Kubota · fictional"],
       routes: ["DEMO SMT Line 2"],
       documentTypes: [
@@ -1395,7 +1406,8 @@ function Portal() {
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
+  const [syncHubOpen, setSyncHubOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-AI4T-01");
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
