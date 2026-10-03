@@ -2074,6 +2074,11 @@ function Portal() {
             }));
             log("DEMO alert dismissed", id);
           }}
+          onReview={(departmentId) => {
+            const department = portal.departments.find((item) => item.id === departmentId);
+            if (department) navigate(areaForDepartment(department));
+            setAlertsOpen(false);
+          }}
         />
       )}
       {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
