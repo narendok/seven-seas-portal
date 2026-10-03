@@ -4,6 +4,7 @@ import {
   Archive,
   ArrowLeft,
   Bell,
+  BriefcaseBusiness,
   CheckCircle2,
   Check,
   ChevronsDownUp,
@@ -25,6 +26,7 @@ import {
   Sparkles,
   Sun,
   Moon,
+  UserRoundCog,
   UsersRound,
   Wrench,
   X,
@@ -200,6 +202,54 @@ const rfqStages = [
   ["Stage 8", "Type approval & PPAP cleared", "Illustrative AIS-140 TAC #842 reference and PPAP Level 3 gate cleared · not a certification claim"],
   ["Stage 9", "Production & EOL package generated", "DEMO SMT Line 2 · SLCT-2026-0101 to 0120 PASS · FPY 97.4% · QR, PDI and invoice simulated"],
 ] as const;
+const personas: Persona[] = [
+  { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
+  { id: "sales", label: "SAL Lead", person: "Priya Sharma · Sales & BD", departmentId: "sales", kind: "lead" },
+  { id: "ehw", label: "EHW Lead", person: "Avery Vale · Embedded Hardware", departmentId: "ehw", kind: "lead" },
+  { id: "esw", label: "ESW Lead", person: "Devon Lane · Firmware & SW", departmentId: "esw", kind: "lead" },
+  { id: "mech", label: "MECH Lead", person: "Samira Holt · Mechanical Engineering", departmentId: "mech", kind: "lead" },
+  { id: "pur", label: "PUR Lead", person: "Morgan Reed · Purchasing & SCM", departmentId: "pur", kind: "lead" },
+  { id: "qa", label: "QA Lead", person: "Jordan Blake · Quality Assurance", departmentId: "qa", kind: "lead" },
+  { id: "emf", label: "EMF Lead", person: "Casey Rowan · Manufacturing", departmentId: "emf", kind: "lead" },
+  { id: "tst", label: "TST Lead", person: "Mina Cross · Production & EOL Testing", departmentId: "tst", kind: "lead" },
+  { id: "fin", label: "FIN Lead", person: "Priya Voss · Finance & Accounts", departmentId: "fin", kind: "lead" },
+  { id: "sit", label: "SIT Lead", person: "Kai Morgan · Service & IT", departmentId: "sit", kind: "lead" },
+  { id: "hrops", label: "HR Lead", person: "Taylor Quinn · HR & Operations", departmentId: "hrops", kind: "lead" },
+  { id: "client", label: "Client Portal", person: "Rohan Verma · Tata Motors Fleet Manager", kind: "client" },
+];
+const ai4tStages = [
+  ["Stage 1", "Client & Sales Intake", "SOR HLPL-AI4T-SAL-SOR-01 and Mutual NDA HLPL-AI4T-SAL-mNDA-01 are recorded."],
+  ["Stage 2", "Feasibility & Contract Review", "EHW, ESW, MECH, PUR and QA feasibility inputs compile Contract Review HLPL/F/MKT/01."],
+  ["Stage 3", "Requirement & Commercial Lock", "Frozen PRS HLPL-AI4T-EHW-PRS-01 and quotation HLPL-AI4T-SAL-QUO-01 are generated."],
+  ["Stage 4", "Design & Development PoC", "SCH-01, preliminary BOM, MCU bring-up and CAN J1939 firmware PoC are checked."],
+  ["Stage 5", "Pilot Build & SMT Setup", "SMT Line 2 thermal profile, EMF-CP-01 and prototype tooling are confirmed."],
+  ["Stage 6", "DVP&R Pre-Compliance", "QA-DVP-01 records 18 illustrative electrical and environmental verification checks."],
+  ["Stage 7", "Production Release & PPAP", "Gerber Rev B, EHW-DFMEA-01 and supplier PPAP Level 3 package are released."],
+  ["Stage 8", "Type Approval & Production Authorization", "Illustrative TAC evidence and the 50,000-unit authorization are human-reviewed."],
+  ["Stage 9", "PDI & Commercial Invoice", "TST-PDI-01 and FIN-INV-01 complete the simulated delivery record."],
+] as const;
+const ai4tDossier = [
+  ["Customer SOR", "HLPL-AI4T-SAL-SOR-01", "SAL", "Stage 1"],
+  ["Mutual NDA", "HLPL-AI4T-SAL-mNDA-01", "SAL", "Stage 1"],
+  ["Contract Review Record", "HLPL/F/MKT/01", "SAL", "Stage 2"],
+  ["Product Requirement Specification", "HLPL-AI4T-EHW-PRS-01", "EHW", "Stage 3"],
+  ["Commercial Quotation", "HLPL-AI4T-SAL-QUO-01", "SAL", "Stage 3"],
+  ["Schematic package", "HLPL-AI4T-EHW-SCH-01", "EHW", "Stage 4"],
+  ["Preliminary BOM", "HLPL-AI4T-EHW-BOM-01", "EHW", "Stage 4"],
+  ["Control Plan", "HLPL-AI4T-EMF-CP-01", "EMF", "Stage 5"],
+  ["DVP&R Verification Plan", "HLPL-AI4T-QA-DVP-01", "QA", "Stage 6"],
+  ["Hardware DFMEA", "HLPL-AI4T-EHW-DFMEA-01", "EHW", "Stage 7"],
+  ["Pre-Dispatch Inspection Certificate", "HLPL-AI4T-TST-PDI-01", "TST", "Stage 9"],
+  ["Commercial Tax Invoice", "HLPL-AI4T-FIN-INV-01", "FIN", "Stage 9"],
+] as const;
+type Persona = {
+  id: string;
+  label: string;
+  person: string;
+  departmentId?: AreaId | undefined;
+  kind: "admin" | "lead" | "client";
+};
+type Ai4tSimulation = { stage: number; history: string[] };
 type PortalState = {
   demoLoaded: boolean;
   demoSnapshot?: PortalState | undefined;
@@ -1449,11 +1499,14 @@ function Portal() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
+  const [persona, setPersona] = useState<Persona>(() => personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [syncHubOpen, setSyncHubOpen] = useState(false);
   const [draftHubOpen, setDraftHubOpen] = useState(false);
+  const [ai4tOpen, setAi4tOpen] = useState(false);
+  const [ai4tSimulation, setAi4tSimulation] = useState<Ai4tSimulation>({ stage: 0, history: [] });
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   const [darkMode, setDarkMode] = useState(true);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -1504,6 +1557,15 @@ function Portal() {
     setSelectedAssignee(null);
     setQueueStage(null);
     setMobileMenu(false);
+  };
+  const switchPersona = (next: Persona) => {
+    setPersona(next);
+    const nextDepartment = next.kind === "lead" ? findAreaDepartment(portal.departments, next.departmentId ?? "home")?.id ?? null : null;
+    setDepartmentContext(nextDepartment);
+    setActiveArea(next.kind === "lead" && next.departmentId ? next.departmentId : "home");
+    setView("queue");
+    log("Persona context changed", `${next.label} · ${next.person}`);
+    announce(`${next.label} context active.`);
   };
   const loadDemo = () => {
     setPortal(demoPortal());
@@ -1632,6 +1694,7 @@ function Portal() {
                   : `All departments · ${portal.setup.location}`}
               </p>
             </button>
+            <PersonaSwitcher persona={persona} onSelect={switchPersona} />
             <HeaderAction label="PMSS" icon={ClipboardCheck} onClick={() => setView("pmss")} />
             <HeaderAction
               label="Search"
@@ -1725,6 +1788,7 @@ function Portal() {
               }}
               onReturnGlobal={() => {
                 setDepartmentContext(null);
+                setPersona(personas[0] ?? persona);
                 log("Administrator context returned", "Returned to global command center");
                 navigate("home");
               }}
@@ -1734,6 +1798,8 @@ function Portal() {
               }}
               onOpenSyncHub={() => setSyncHubOpen(true)}
               onOpenDraftHub={() => setDraftHubOpen(true)}
+              onOpenAi4t={() => setAi4tOpen(true)}
+              persona={persona}
             />
           ) : view === "detail" && selected ? (
             <RecordDetail
@@ -1925,6 +1991,36 @@ function Portal() {
       )}
       {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
       {draftHubOpen && <AutoDraftHub onClose={() => setDraftHubOpen(false)} />}
+      {ai4tOpen && (
+        <Ai4tLifecycleHub
+          persona={persona}
+          simulation={ai4tSimulation}
+          onClose={() => setAi4tOpen(false)}
+          onAdvance={() => {
+            setAi4tSimulation((state) => {
+              const stage = Math.min(state.stage + 1, ai4tStages.length - 1);
+              const entry = ai4tStages[stage] ?? ai4tStages[0];
+              if (!entry) return state;
+              log("AI4T lifecycle simulation advanced", `${entry[0]} · ${entry[1]}`);
+              return { stage, history: [`${now()} · ${entry[0]} · ${entry[1]}`, ...state.history] };
+            });
+          }}
+          onJump={(stage) => {
+            const entry = ai4tStages[stage] ?? ai4tStages[0];
+            if (!entry) return;
+            setAi4tSimulation((state) => ({ stage, history: [`${now()} · Jumped to ${entry[0]}`, ...state.history] }));
+            log("AI4T lifecycle simulation jumped", entry[0]);
+          }}
+          onRun={() => {
+            setAi4tSimulation({ stage: ai4tStages.length - 1, history: [`${now()} · Full DEMO lifecycle run completed`, ...ai4tStages.map(([stage, title]) => `${stage} · ${title}`)] });
+            log("AI4T lifecycle simulation completed", "All nine DEMO stages were simulated");
+          }}
+          onReset={() => {
+            setAi4tSimulation({ stage: 0, history: [] });
+            log("AI4T lifecycle simulation reset", "Simulation reset to Stage 1");
+          }}
+        />
+      )}
       {rfqOpen && (
         <RfqCycleTest
           step={rfqStep}
@@ -1964,6 +2060,8 @@ function CommandCenter({
   onRunRfq,
   onOpenSyncHub,
   onOpenDraftHub,
+  onOpenAi4t,
+  persona,
 }: {
   portal: PortalState;
   departmentContext: string | null;
@@ -1977,6 +2075,8 @@ function CommandCenter({
   onRunRfq: () => void;
   onOpenSyncHub: () => void;
   onOpenDraftHub: () => void;
+  onOpenAi4t: () => void;
+  persona: Persona;
 }) {
   const records = portal.records.filter((record) => !record.archived);
   const visible = departmentContext
@@ -1996,7 +2096,7 @@ function CommandCenter({
       {portal.demoLoaded && <DemoMarker />}
       {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-SLCT-01" />}
       <PageHeader
-        eyebrow={departmentContext ? "Administrator context" : "Operational workspace"}
+        eyebrow={persona.kind === "admin" ? (departmentContext ? "Administrator context" : "Operational workspace") : `${persona.label} · active persona`}
         title="Command Center"
         description={
           departmentContext
@@ -2006,6 +2106,7 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
+            <Action onClick={onOpenAi4t} label="AI4T Lifecycle Hub" primary />
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
@@ -2013,6 +2114,16 @@ function CommandCenter({
           </>
         }
       />
+      {persona.kind !== "admin" && (
+        <section className="ops-section flex flex-wrap items-center justify-between gap-3 border-steel/35 bg-accent/35 px-4 py-3">
+          <div>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Active persona · DEMO context</p>
+            <p className="mt-1 text-sm font-semibold">{persona.person}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Queues, owned records and human approval visibility are filtered for this persona. No account impersonation occurs.</p>
+          </div>
+          <Action label="Switch back to Admin" onClick={onReturnGlobal} />
+        </section>
+      )}
       {portal.demoLoaded && <ExecutiveKpis />}
       <SmartNextStep records={visible} onOpenDraftHub={onOpenDraftHub} />
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -2175,6 +2286,69 @@ function RfqCycleTest({
         <Action label="Restart test" onClick={onReset} />
         <Action label={complete ? "Stage 9 complete" : "Advance simulated gate"} onClick={onAdvance} primary />
       </div>
+    </Modal>
+  );
+}
+
+function Ai4tLifecycleHub({
+  persona,
+  simulation,
+  onClose,
+  onAdvance,
+  onJump,
+  onRun,
+  onReset,
+}: {
+  persona: Persona;
+  simulation: Ai4tSimulation;
+  onClose: () => void;
+  onAdvance: () => void;
+  onJump: (stage: number) => void;
+  onRun: () => void;
+  onReset: () => void;
+}) {
+  const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
+  const current = ai4tStages[simulation.stage] ?? ai4tStages[0];
+  const progress = Math.round(((simulation.stage + 1) / ai4tStages.length) * 100);
+  const accessibleDossier = persona.kind === "client"
+    ? ai4tDossier.filter(([, , owner]) => owner === "SAL" || owner === "TST" || owner === "FIN")
+    : persona.kind === "lead" && persona.departmentId
+      ? ai4tDossier.filter(([, , owner]) => owner === areaById(persona.departmentId ?? "home").short)
+      : ai4tDossier;
+  return (
+    <Modal title="HLPL-AI4T-01 · End-to-End Lifecycle" onClose={onClose} wide>
+      <DemoMarker />
+      <section className="ops-section overflow-hidden">
+        <div className="ops-section-header flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Interactive lifecycle & requirement engine · DEMO only</p>
+            <h3 className="mt-1 text-base font-semibold">HLPL-AI4T-01 · Tata Ace EV 4G Telematics Gateway</h3>
+            <p className="mt-1 text-xs text-muted-foreground">50,000 units · ₹20.33 Cr · illustrative scenario; not a customer order, approval, certification, or production instruction.</p>
+          </div>
+          <Status status={simulation.stage === ai4tStages.length - 1 ? "Released" : "In review"} />
+        </div>
+        <div className="p-4">
+          <div className="flex items-end justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">Overall simulated progress</p><p className="mt-1 text-2xl font-semibold">{progress}%</p></div><p className="max-w-md text-right text-sm font-medium">{current[0]} · {current[1]}</p></div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full bg-primary transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} /></div>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">{current[2]}</p>
+        </div>
+      </section>
+      <section className="mt-5 grid gap-2 sm:grid-cols-3">
+        {ai4tStages.map(([stage, title], index) => (
+          <button key={stage} onClick={() => onJump(index)} className={`rounded-lg border p-3 text-left transition-colors ${index === simulation.stage ? "border-steel bg-accent" : index < simulation.stage ? "border-moss/40 bg-panel hover:bg-secondary" : "border-border bg-card hover:bg-secondary"}`}>
+            <span className="font-mono text-[10px] text-steel">{stage}</span><strong className="mt-1 block text-xs">{title}</strong><span className="mt-1 block text-[10px] text-muted-foreground">{index < simulation.stage ? "Complete" : index === simulation.stage ? "In progress" : "Upcoming"}</span>
+          </button>
+        ))}
+      </section>
+      <section className="ops-section mt-5 overflow-hidden">
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Role-filtered binder view. Preview content is a formatted DEMO draft.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
+        <div className="divide-y divide-border">
+          {accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}
+        </div>
+      </section>
+      {dossier && <section className="mt-5 rounded-lg border border-steel/35 bg-panel p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Formatted DEMO document preview</p><h4 className="mt-1 text-sm font-semibold">{dossier[0]}</h4></div><Status status="Draft" /></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><DocumentField label="Document ID" value={dossier[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · DEMO" /><DocumentField label="Stage" value={dossier[3]} /><DocumentField label="Owner" value={`${dossier[2]} · department-owned`} /><DocumentField label="Revision" value="00 · DEMO draft" /><DocumentField label="Approval" value="Human approval required" /></div></section>}
+      <section className="mt-5 rounded-lg border border-border bg-panel p-4"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Simulation history</p>{simulation.history.length ? <ol className="mt-2 space-y-1 text-xs text-muted-foreground">{simulation.history.slice(0, 8).map((entry, index) => <li key={`${entry}-${index}`}>{entry}</li>)}</ol> : <p className="mt-2 text-xs text-muted-foreground">No simulated stage changes yet.</p>}</section>
+      <div className="mt-5 flex flex-wrap justify-between gap-2"><div className="flex flex-wrap gap-2"><Action label="Reset Simulation" onClick={onReset} /><Action label="Auto-Run Full Cycle Test" onClick={onRun} /></div><Action label={simulation.stage === ai4tStages.length - 1 ? "Lifecycle Complete" : "Advance to Next Stage"} primary onClick={onAdvance} /></div>
     </Modal>
   );
 }
@@ -5798,6 +5972,22 @@ function HeaderAction({
         </span>
       ) : null}
     </button>
+  );
+}
+function PersonaSwitcher({ persona, onSelect }: { persona: Persona; onSelect: (persona: Persona) => void }) {
+  return (
+    <label className="hidden min-w-48 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-ring/50 md:flex">
+      <UserRoundCog className="size-4 shrink-0 text-steel" />
+      <span className="sr-only">Switch role and department</span>
+      <select
+        aria-label="Switch role and department"
+        value={persona.id}
+        onChange={(event) => onSelect(personas.find((item) => item.id === event.target.value) ?? personas[0] ?? persona)}
+        className="min-w-0 flex-1 bg-transparent text-xs font-semibold outline-none"
+      >
+        {personas.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+      </select>
+    </label>
   );
 }
 function ThemeToggle({ darkMode, onToggle, expanded = false }: { darkMode: boolean; onToggle: () => void; expanded?: boolean }) {
