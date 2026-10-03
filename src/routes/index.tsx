@@ -2587,11 +2587,15 @@ function AutoDraftHub({
   settings = defaultTemplateSettings(),
   onOpenPrintable,
   onOpenSettings,
+  templateBodies,
+  onTemplateBodiesChange,
 }: {
   onClose: () => void;
   settings?: TemplateSettings;
   onOpenPrintable?: (document: PrintableDocument) => void;
   onOpenSettings?: () => void;
+  templateBodies: Record<string, string>;
+  onTemplateBodiesChange: (templates: Record<string, string>) => void;
 }) {
   const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
   const [project, setProject] = useState("HLPL-AI4T-01");
@@ -2623,7 +2627,8 @@ function AutoDraftHub({
             <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
           </div>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">{profile.customer} · {profile.quantity} · {profile.techSpec} · {profile.commercialValue}. Validate all technical and commercial information before any controlled release.</p>
-          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Full-page template view" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
+          <label className="mt-4 block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Editable template content<textarea value={templateBodies[selected[0]] ?? templateBlueprint(selected[0])} onChange={(event) => onTemplateBodiesChange({ ...templateBodies, [selected[0]]: event.target.value })} className="mt-2 min-h-28 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => onTemplateBodiesChange({ ...templateBodies })} /><Action label="Full Document Viewer & Print" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
         </section>
       )}
     </Modal>
