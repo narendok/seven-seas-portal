@@ -4405,11 +4405,19 @@ function SharedIndex({
 }
 function PMSSWorkspace({
   portal,
+  project,
+  projects,
+  selectedProjectId,
+  onSelectProject,
   onBack,
   onUpdate,
   onLog,
 }: {
   portal: PortalState;
+  project: RecordItem | undefined;
+  projects: RecordItem[];
+  selectedProjectId: string;
+  onSelectProject: (projectId: string) => void;
   onBack: () => void;
   onUpdate: (patch: Record<string, string>) => void;
   onLog: (action: string, detail: string) => void;
@@ -4417,10 +4425,10 @@ function PMSSWorkspace({
   const config = portal.setup.configuration;
   const [amendment, setAmendment] = useState(config["pmssStatus"] === "Under Amendment");
   const fields = [
-    ["Nominal voltage", config["pmssVoltage"] ?? "12V / 24V"],
-    ["Operating temperature", config["pmssTemperature"] ?? "-40°C to +85°C"],
-    ["Enclosure rating", config["pmssIp"] ?? "IP67 / IP68"],
-    ["Compliance flags", config["pmssCompliance"] ?? "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS"],
+    ["Nominal voltage", project?.fields["voltage"] ?? config["pmssVoltage"] ?? "12V / 24V"],
+    ["Operating temperature", project?.fields["temperature"] ?? config["pmssTemperature"] ?? "-40°C to +85°C"],
+    ["Enclosure rating", project?.fields["enclosure"] ?? config["pmssIp"] ?? "IP67 / IP68"],
+    ["Target BOM", project?.fields["actualBom"] ?? config["pmssActualBom"] ?? "Not set"],
   ];
   const trigger = () => {
     setAmendment(true);
@@ -4448,12 +4456,26 @@ function PMSSWorkspace({
         description="The shared project baseline for engineering, compliance and lifecycle gate decisions."
         actions={<Action onClick={trigger} label="Trigger scope change" primary />}
       />
+      <label className="mb-5 block max-w-xl text-sm font-medium">
+        Active project
+        <select
+          value={selectedProjectId}
+          onChange={(event) => onSelectProject(event.target.value)}
+          className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+        >
+          {projects.map((item) => (
+            <option key={item.id} value={item.reference}>
+              {item.reference} · {item.title.replace(/^DEMO · /, "")}
+            </option>
+          ))}
+        </select>
+      </label>
       <section className="surface-card border border-border bg-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
           <div>
             <p className="font-mono text-[10px] uppercase text-muted-foreground">PMSS status</p>
             <p className="mt-1 font-semibold">
-              {amendment ? "Under Amendment" : "Controlled baseline"}
+              {amendment ? "Under Amendment" : project?.fields["currentStage"] ?? "Controlled baseline"}
             </p>
           </div>
           <Status status={amendment ? "In review" : "Approved"} />
