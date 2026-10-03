@@ -5909,6 +5909,22 @@ function HeaderAction({
     </button>
   );
 }
+function PersonaSwitcher({ persona, onSelect }: { persona: Persona; onSelect: (persona: Persona) => void }) {
+  return (
+    <label className="hidden min-w-48 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-ring/50 md:flex">
+      <UserRoundCog className="size-4 shrink-0 text-steel" />
+      <span className="sr-only">Switch role and department</span>
+      <select
+        aria-label="Switch role and department"
+        value={persona.id}
+        onChange={(event) => onSelect(personas.find((item) => item.id === event.target.value) ?? personas[0])}
+        className="min-w-0 flex-1 bg-transparent text-xs font-semibold outline-none"
+      >
+        {personas.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+      </select>
+    </label>
+  );
+}
 function ThemeToggle({ darkMode, onToggle, expanded = false }: { darkMode: boolean; onToggle: () => void; expanded?: boolean }) {
   const Icon = darkMode ? Sun : Moon;
   const label = darkMode ? "Switch to light mode" : "Switch to dark mode";
