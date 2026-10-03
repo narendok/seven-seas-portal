@@ -4990,7 +4990,7 @@ function DocumentsPanel({
           Private Cloud storage
         </span>
       </section>
-      <section className="mb-5 overflow-hidden rounded-lg border border-border bg-panel">
+      <section className="ops-section mb-6 overflow-hidden bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
             Canonical repository path
@@ -5020,12 +5020,12 @@ function DocumentsPanel({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search document, device or part"
-          className="h-11 border border-input bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
         />
         <select
           value={group}
           onChange={(event) => setGroup(event.target.value)}
-          className="h-11 border border-input bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
         >
           <option>All groups</option>
           {groups.map((item) => (
@@ -5035,7 +5035,7 @@ function DocumentsPanel({
         <select
           value={phase}
           onChange={(event) => setPhase(event.target.value)}
-          className="h-11 border border-input bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
         >
           <option>All phases</option>
           {phases.map((item) => (
@@ -5043,12 +5043,12 @@ function DocumentsPanel({
           ))}
         </select>
       </div>
-      <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
+      <div className="ops-section mt-4 overflow-hidden">
         {visible.length ? (
           visible.map((document) => (
             <div
               key={document.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-4 last:border-0"
+              className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-2.5 last:border-0"
             >
               <button onClick={() => onSelectDocument(document)} className="min-w-0 text-left">
                 <span>
@@ -5507,15 +5507,15 @@ function PageHeader({
   actions: ReactNode;
 }) {
   return (
-    <div className="mb-7 grid gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+    <div className="mb-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
       <div className="min-w-0">
         <p className="font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-steel">
           {eyebrow}
         </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-normal text-foreground md:text-4xl">
+        <h1 className="mt-1 text-xl font-semibold tracking-normal text-foreground md:text-2xl">
           {title}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
+        <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">{description}</p>
       </div>
       <div className="flex flex-wrap gap-2 md:justify-end">{actions}</div>
     </div>
@@ -5540,8 +5540,8 @@ function Modal({
         aria-label={title}
         className={`surface-card max-h-[92vh] w-full overflow-auto border border-border bg-popover ${wide ? "max-w-5xl" : "max-w-xl"}`}
       >
-        <header className="sticky top-0 flex items-center justify-between border-b border-border bg-popover/95 px-5 py-4 backdrop-blur">
-          <h2 className="text-lg font-semibold">{title}</h2>
+        <header className="sticky top-0 flex items-center justify-between border-b border-border bg-popover/95 px-4 py-3 backdrop-blur">
+          <h2 className="text-sm font-semibold">{title}</h2>
           <button
             aria-label="Close"
             onClick={onClose}
@@ -5550,7 +5550,7 @@ function Modal({
             <X className="size-4" />
           </button>
         </header>
-        <div className="p-5">{children}</div>
+        <div className="p-4">{children}</div>
       </section>
     </div>
   );
@@ -5569,7 +5569,7 @@ function TextField({
   type?: string;
 }) {
   return (
-    <label className="block text-sm font-medium">
+    <label className="block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
       {label}
       {required ? " *" : ""}
       <input
@@ -5577,7 +5577,7 @@ function TextField({
         required={required}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm transition-colors placeholder:text-muted-foreground hover:border-ring/60 focus:border-ring"
+        className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal text-foreground transition-colors placeholder:text-muted-foreground hover:border-ring/60 focus:border-ring"
       />
     </label>
   );
@@ -5594,12 +5594,12 @@ function SelectField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block text-sm font-medium">
+    <label className="block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm transition-colors hover:border-ring/60 focus:border-ring"
+        className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal text-foreground transition-colors hover:border-ring/60 focus:border-ring"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -5625,7 +5625,7 @@ function Action({
     <button
       type={submit ? "submit" : "button"}
       onClick={onClick}
-      className={`inline-flex h-10 items-center justify-center rounded-lg px-3.5 text-sm font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 ${primary ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90" : "border border-border bg-card text-foreground hover:border-ring/50 hover:bg-secondary"}`}
+      className={`inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 ${primary ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90" : "border border-border bg-card text-foreground hover:border-ring/50 hover:bg-secondary"}`}
     >
       {label}
     </button>
@@ -5651,14 +5651,14 @@ function Metric({
           ? "bg-moss"
           : "bg-warning";
   return (
-    <div className="surface-card border border-border bg-card p-4">
+    <div className="surface-card ops-section p-3">
       <div className="flex justify-between">
         <p className="font-mono text-[10px] font-medium uppercase tracking-[.12em] text-muted-foreground">
           {label}
         </p>
         <span className={`mt-1 size-2 rounded-full ${color}`} />
       </div>
-      <p className="mt-3 text-3xl font-semibold tracking-normal">{value}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-normal">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
     </div>
   );
@@ -5771,6 +5771,21 @@ function HeaderAction({
     </button>
   );
 }
+function ThemeToggle({ darkMode, onToggle, expanded = false }: { darkMode: boolean; onToggle: () => void; expanded?: boolean }) {
+  const Icon = darkMode ? Sun : Moon;
+  const label = darkMode ? "Switch to light mode" : "Switch to dark mode";
+  return (
+    <button
+      aria-label={label}
+      title={label}
+      onClick={onToggle}
+      className={expanded ? "mt-3 flex w-full items-center gap-3 rounded-lg border border-sidebar-border bg-card px-3 py-2.5 text-left text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent" : "grid size-10 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-ring/50 hover:bg-secondary hover:text-foreground"}
+    >
+      <Icon className="size-4 text-steel" />
+      {expanded && <span>{darkMode ? "Light mode" : "Dark mode"}</span>}
+    </button>
+  );
+}
 function Brand() {
   return (
     <div className="flex items-center gap-3">
@@ -5809,9 +5824,13 @@ function AreaNav({
 function MobileMenu({
   onClose,
   onNavigate,
+  darkMode,
+  onToggleTheme,
 }: {
   onClose: () => void;
   onNavigate: (area: AreaId) => void;
+  darkMode: boolean;
+  onToggleTheme: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-[2px] lg:hidden">
@@ -5839,6 +5858,7 @@ function MobileMenu({
             />
           ))}
         </nav>
+        <ThemeToggle darkMode={darkMode} onToggle={onToggleTheme} expanded />
       </div>
     </div>
   );
