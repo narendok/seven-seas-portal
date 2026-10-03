@@ -1657,7 +1657,7 @@ function Portal() {
         .toUpperCase()
         .replace(/[^A-Z0-9]+/g, "-")
         .slice(0, 12) || "REC";
-    const generatedNumber = `HLPL-${projectId.replace(/[^A-Z0-9]/gi, "").slice(0, 12) || "GEN"}-${departmentCode}-${docType}-${String(count).padStart(2, "0")}`;
+    const generatedNumber = documentNumber(projectId, departmentCode, docType, String(count).padStart(2, "0"), portal.templateSettings?.prefix ?? "HLPL");
     const record: RecordItem = {
       ...input,
       departmentId,
