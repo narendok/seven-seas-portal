@@ -2288,6 +2288,69 @@ function RfqCycleTest({
   );
 }
 
+function Ai4tLifecycleHub({
+  persona,
+  simulation,
+  onClose,
+  onAdvance,
+  onJump,
+  onRun,
+  onReset,
+}: {
+  persona: Persona;
+  simulation: Ai4tSimulation;
+  onClose: () => void;
+  onAdvance: () => void;
+  onJump: (stage: number) => void;
+  onRun: () => void;
+  onReset: () => void;
+}) {
+  const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
+  const current = ai4tStages[simulation.stage] ?? ai4tStages[0];
+  const progress = Math.round(((simulation.stage + 1) / ai4tStages.length) * 100);
+  const accessibleDossier = persona.kind === "client"
+    ? ai4tDossier.filter(([, , owner]) => owner === "SAL" || owner === "TST" || owner === "FIN")
+    : persona.kind === "lead" && persona.departmentId
+      ? ai4tDossier.filter(([, , owner]) => owner === areaById(persona.departmentId ?? "home").short)
+      : ai4tDossier;
+  return (
+    <Modal title="HLPL-AI4T-01 · End-to-End Lifecycle" onClose={onClose} wide>
+      <DemoMarker />
+      <section className="ops-section overflow-hidden">
+        <div className="ops-section-header flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Interactive lifecycle & requirement engine · DEMO only</p>
+            <h3 className="mt-1 text-base font-semibold">HLPL-AI4T-01 · Tata Ace EV 4G Telematics Gateway</h3>
+            <p className="mt-1 text-xs text-muted-foreground">50,000 units · ₹20.33 Cr · illustrative scenario; not a customer order, approval, certification, or production instruction.</p>
+          </div>
+          <Status status={simulation.stage === ai4tStages.length - 1 ? "Released" : "In review"} />
+        </div>
+        <div className="p-4">
+          <div className="flex items-end justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">Overall simulated progress</p><p className="mt-1 text-2xl font-semibold">{progress}%</p></div><p className="max-w-md text-right text-sm font-medium">{current[0]} · {current[1]}</p></div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full bg-primary transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} /></div>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">{current[2]}</p>
+        </div>
+      </section>
+      <section className="mt-5 grid gap-2 sm:grid-cols-3">
+        {ai4tStages.map(([stage, title], index) => (
+          <button key={stage} onClick={() => onJump(index)} className={`rounded-lg border p-3 text-left transition-colors ${index === simulation.stage ? "border-steel bg-accent" : index < simulation.stage ? "border-moss/40 bg-panel hover:bg-secondary" : "border-border bg-card hover:bg-secondary"}`}>
+            <span className="font-mono text-[10px] text-steel">{stage}</span><strong className="mt-1 block text-xs">{title}</strong><span className="mt-1 block text-[10px] text-muted-foreground">{index < simulation.stage ? "Complete" : index === simulation.stage ? "In progress" : "Upcoming"}</span>
+          </button>
+        ))}
+      </section>
+      <section className="ops-section mt-5 overflow-hidden">
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Role-filtered binder view. Preview content is a formatted DEMO draft.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
+        <div className="divide-y divide-border">
+          {accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}
+        </div>
+      </section>
+      {dossier && <section className="mt-5 rounded-lg border border-steel/35 bg-panel p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Formatted DEMO document preview</p><h4 className="mt-1 text-sm font-semibold">{dossier[0]}</h4></div><Status status="Draft" /></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><DocumentField label="Document ID" value={dossier[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · DEMO" /><DocumentField label="Stage" value={dossier[3]} /><DocumentField label="Owner" value={`${dossier[2]} · department-owned`} /><DocumentField label="Revision" value="00 · DEMO draft" /><DocumentField label="Approval" value="Human approval required" /></div></section>}
+      <section className="mt-5 rounded-lg border border-border bg-panel p-4"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Simulation history</p>{simulation.history.length ? <ol className="mt-2 space-y-1 text-xs text-muted-foreground">{simulation.history.slice(0, 8).map((entry, index) => <li key={`${entry}-${index}`}>{entry}</li>)}</ol> : <p className="mt-2 text-xs text-muted-foreground">No simulated stage changes yet.</p>}</section>
+      <div className="mt-5 flex flex-wrap justify-between gap-2"><div className="flex flex-wrap gap-2"><Action label="Reset Simulation" onClick={onReset} /><Action label="Auto-Run Full Cycle Test" onClick={onRun} /></div><Action label={simulation.stage === ai4tStages.length - 1 ? "Lifecycle Complete" : "Advance to Next Stage"} primary onClick={onAdvance} /></div>
+    </Modal>
+  );
+}
+
 function SmartNextStep({
   records,
   onOpenDraftHub,
