@@ -4851,7 +4851,6 @@ function DocumentDetail({
               </div>
             </div>
           </section>
-          {!previewOnly &&
           <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <DocumentField label="Owner" value={owner?.name ?? "Department not assigned"} />
             <DocumentField label="Group" value={document.group ?? "Unclassified"} />
@@ -4873,7 +4872,6 @@ function DocumentDetail({
               value="Department-owned · internal by default · no external sharing"
             />
           </section>
-          }
           <section className="mt-6 overflow-hidden rounded-lg border border-border bg-panel">
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-4">
               <div>
