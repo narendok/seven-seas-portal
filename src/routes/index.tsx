@@ -2034,6 +2034,8 @@ function Portal() {
             setModal("document");
           }}
           onOpenDraftHub={() => setDraftHubOpen(true)}
+          templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
+          onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
         />
       )}{" "}
       {modal === "document" && selectedDocument && (
@@ -2117,6 +2119,8 @@ function Portal() {
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onOpenPrintable={setPrintTemplate}
           onOpenSettings={() => setTemplateSettingsOpen(true)}
+          templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
+          onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
         />
       )}
       {templateSettingsOpen && (
@@ -2124,6 +2128,8 @@ function Portal() {
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onClose={() => setTemplateSettingsOpen(false)}
           onChange={(settings) => update((state) => ({ ...state, templateSettings: settings }))}
+          templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
+          onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
         />
       )}
       {printTemplate && (
