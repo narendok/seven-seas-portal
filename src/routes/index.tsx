@@ -1582,7 +1582,7 @@ function Portal() {
         </header>
         <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-10">
           {view === "pmss" ? (
-            <PMSSWorkspace
+              <PMSSWorkspace
               portal={portal}
               project={selectedProjectProfile}
               projects={activeRecords.filter((record) => record.type === "Project")}
@@ -1657,6 +1657,7 @@ function Portal() {
                 setRfqStep(0);
                 setRfqOpen(true);
               }}
+              onOpenSyncHub={() => setSyncHubOpen(true)}
             />
           ) : view === "detail" && selected ? (
             <RecordDetail
@@ -1844,6 +1845,7 @@ function Portal() {
           }}
         />
       )}
+      {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
       {rfqOpen && (
         <RfqCycleTest
           step={rfqStep}
