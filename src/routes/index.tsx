@@ -15,6 +15,7 @@ import {
   Factory,
   FileText,
   History,
+  Copy,
   LayoutDashboard,
   Menu,
   PackageSearch,
@@ -128,6 +129,16 @@ type SetupState = {
   timezone: string;
   numbering: string;
   configuration: Record<string, string>;
+};
+type TemplateSettings = {
+  companyName: string;
+  techCenter: string;
+  plantLocation: string;
+  accreditationMarks: string;
+  prefix: string;
+  logoBadge: string;
+  confidentialityNotice: string;
+  complianceFooter: string;
 };
 type ControlledDocument = {
   id: string;
@@ -271,6 +282,7 @@ type PortalState = {
   audit: AuditEvent[];
   notifications: string[];
   alerts: DemoAlert[];
+  templateSettings?: TemplateSettings | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -583,7 +595,51 @@ const emptyPortal = (): PortalState => ({
   audit: [],
   notifications: [],
   alerts: [],
+  templateSettings: defaultTemplateSettings(),
 });
+
+function defaultTemplateSettings(): TemplateSettings {
+  return {
+    companyName: "Hexense Labs Private Limited / Six Sense Mobility",
+    techCenter: "B-12, Sector 63, Noida Tech Center, UP - 201301",
+    plantLocation: "Plot 45, Ecotech III, Greater Noida SMT Plant 2, UP - 201306",
+    accreditationMarks: "IATF 16949:2016 · ISO 9001:2015 · AIS-140 · CE / RoHS",
+    prefix: "HLPL",
+    logoBadge: "SS",
+    confidentialityNotice: "CONFIDENTIAL & PROPRIETARY — HEXENSE LABS PVT LTD. All rights reserved. Reproduction or distribution without written permission is strictly prohibited.",
+    complianceFooter: "IATF 16949:2016 & ISO 9001:2015 Certified Automotive Tier-1 Electronic Systems Facility | Doc Ref: Standard Format 4.2",
+  };
+}
+
+const templateProjects = ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03", "VCU", "BMS"];
+const templateDepartments = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "PROD", "FIN", "SIT", "HR"];
+const templateDocumentTypes = ["PRS", "SOR", "DVP", "DFMEA", "PFMEA", "CP", "BOM", "PPAP", "WI", "SOP", "QUO", "INV"];
+const formDocumentTypes = ["Contract Review", "Skill Matrix", "Form"];
+const projectSeed = {
+  customer: "Tata Motors Limited (EV Fleet Division, Pune)",
+  contact: "Mr. Rajesh Sharma (Lead D&D EV)",
+  quantity: "50,000 units / annum",
+  techSpec: "AIS-140 / 4G Cat-1 / IP67 / CAN J1939 / Dual SIM / GNSS",
+  commercialValue: "₹20.33 Cr",
+};
+const departmentSignatories: Record<string, { author: string; reviewer: string; approver: string }> = {
+  SAL: { author: "Priya Sharma", reviewer: "Priya Sharma", approver: "Executive Admin / MD" },
+  EHW: { author: "Avery Vale", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  ESW: { author: "Devon Lane", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  MECH: { author: "Samira Holt", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  PUR: { author: "Morgan Reed", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  QA: { author: "Jordan Blake", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  EMF: { author: "Casey Rowan", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  PROD: { author: "Mina Cross", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  FIN: { author: "Priya Voss", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
+  SIT: { author: "Kai Morgan", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
+  HR: { author: "Taylor Quinn", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
+};
+
+function documentNumber(project: string, department: string, type: string, revision = "01", prefix = "HLPL") {
+  const shortProject = project.replace(/^HLPL-/, "").replace(/-\d+$/, "").replace(/[^A-Z0-9]/gi, "").toUpperCase() || "GEN";
+  return formDocumentTypes.includes(type) ? `${prefix}/F/${department}/${revision}` : `${prefix}-${shortProject}-${department}-${type}-${revision}`;
+}
 
 const demoPortal = (): PortalState => {
   const base = emptyPortal();
@@ -1506,6 +1562,8 @@ function Portal() {
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [syncHubOpen, setSyncHubOpen] = useState(false);
   const [draftHubOpen, setDraftHubOpen] = useState(false);
+  const [templateSettingsOpen, setTemplateSettingsOpen] = useState(false);
+  const [printTemplate, setPrintTemplate] = useState<PrintableDocument | null>(null);
   const [ai4tOpen, setAi4tOpen] = useState(false);
   const [ai4tSimulation, setAi4tSimulation] = useState<Ai4tSimulation>({ stage: 0, history: [] });
   const [projectScopes, setProjectScopes] = useState<Partial<Record<AreaId, ProjectScope>>>({});
@@ -1599,7 +1657,7 @@ function Portal() {
         .toUpperCase()
         .replace(/[^A-Z0-9]+/g, "-")
         .slice(0, 12) || "REC";
-    const generatedNumber = `HLPL-${projectId.replace(/[^A-Z0-9]/gi, "").slice(0, 12) || "GEN"}-${departmentCode}-${docType}-${String(count).padStart(2, "0")}`;
+    const generatedNumber = documentNumber(projectId, departmentCode, docType, String(count).padStart(2, "0"), portal.templateSettings?.prefix ?? "HLPL");
     const record: RecordItem = {
       ...input,
       departmentId,
@@ -1707,6 +1765,7 @@ function Portal() {
               }}
             />
             <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
+            <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
             <HeaderAction
               label="Administration"
               icon={Settings2}
@@ -1995,7 +2054,29 @@ function Portal() {
         />
       )}
       {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
-      {draftHubOpen && <AutoDraftHub onClose={() => setDraftHubOpen(false)} />}
+      {draftHubOpen && (
+        <AutoDraftHub
+          onClose={() => setDraftHubOpen(false)}
+          settings={portal.templateSettings ?? defaultTemplateSettings()}
+          onOpenPrintable={setPrintTemplate}
+          onOpenSettings={() => setTemplateSettingsOpen(true)}
+        />
+      )}
+      {templateSettingsOpen && (
+        <TemplateSettingsPanel
+          settings={portal.templateSettings ?? defaultTemplateSettings()}
+          onClose={() => setTemplateSettingsOpen(false)}
+          onChange={(settings) => update((state) => ({ ...state, templateSettings: settings }))}
+        />
+      )}
+      {printTemplate && (
+        <PrintableTemplateView
+          document={printTemplate}
+          settings={portal.templateSettings ?? defaultTemplateSettings()}
+          onClose={() => setPrintTemplate(null)}
+          onOpenSettings={() => setTemplateSettingsOpen(true)}
+        />
+      )}
       {ai4tOpen && (
         <Ai4tLifecycleHub
           persona={persona}
@@ -2432,7 +2513,17 @@ const autoDraftTemplates = [
   ["Annual Skill Matrix", "HLPL/F/HR/03", "HR/OPS"],
 ] as const;
 
-function AutoDraftHub({ onClose }: { onClose: () => void }) {
+function AutoDraftHub({
+  onClose,
+  settings = defaultTemplateSettings(),
+  onOpenPrintable,
+  onOpenSettings,
+}: {
+  onClose: () => void;
+  settings?: TemplateSettings;
+  onOpenPrintable?: (document: PrintableDocument) => void;
+  onOpenSettings?: () => void;
+}) {
   const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
   return (
     <Modal title="Auto-Draft Document Templates" onClose={onClose} wide>
@@ -2460,7 +2551,7 @@ function AutoDraftHub({ onClose }: { onClose: () => void }) {
             <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
           </div>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">Auto-drafted using the SLCT project baseline: 12V/24V nominal, −40°C to +85°C, IP67, and illustrative AIS-140/AEC/ISO targets. Validate all technical and commercial information before any controlled release.</p>
-          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Download formatted preview" onClick={() => window.print()} /></div>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => undefined} /><Action label="Full-page template view" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
         </section>
       )}
     </Modal>
@@ -3687,8 +3778,16 @@ function RecordForm({
   if (!spec) return null;
   const [type, setType] = useState(spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>({});
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const field = (key: string) => values[key] ?? "";
+  const departmentCode = findAreaDepartment(portal.departments, area)?.code.replace(/^DEMO-/, "") || areaById(area).short;
+  const selectedProject = field("projectId") || field("product") || "HLPL-AI4T-01";
+  const selectedDocumentType = templateDocumentTypes.includes(type.toUpperCase()) ? type.toUpperCase() : type.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8) || "REC";
+  const nextRevision = String(
+    portal.records.filter((record) => record.reference.includes(`-${departmentCode}-${selectedDocumentType}-`)).length + 1,
+  ).padStart(2, "0");
+  const generatedId = documentNumber(selectedProject, departmentCode, selectedDocumentType, nextRevision, portal.templateSettings?.prefix ?? "HLPL");
   const approvedReview = portal.records.find(
     (record) =>
       record.type === "Contract review" &&
@@ -3743,6 +3842,17 @@ function RecordForm({
           blank.
         </p>
         <SelectField label="Record type" value={type} options={spec.types} onChange={setType} />
+        <section className="rounded-lg border border-steel/35 bg-panel p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Automatic document number</p>
+              <p className="mt-1 font-mono text-sm font-semibold text-foreground">{field("controlledNumber") || generatedId}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{portal.templateSettings?.prefix ?? "HLPL"} · Project · Department · Document type · Revision</p>
+            </div>
+            <Action label={copied ? "Copied" : "Copy ID"} onClick={() => { void navigator.clipboard?.writeText(field("controlledNumber") || generatedId); setCopied(true); window.setTimeout(() => setCopied(false), 1500); }} />
+          </div>
+          <input aria-label="Editable document ID" value={field("controlledNumber") || generatedId} onChange={(event) => setValues({ ...values, controlledNumber: event.target.value.toUpperCase() })} className="mt-3 h-9 w-full rounded-lg border border-input bg-background px-3 font-mono text-xs" />
+        </section>
         {type === "PRS" && (
           <div className="rounded-lg border border-moss/30 bg-accent p-4 text-sm">
             <p className="font-semibold">Auto-compiled, frozen PRS baseline</p>
@@ -3859,7 +3969,7 @@ function AdminCommandCenter({
   onResetDemo: () => void;
 }) {
   const [tab, setTab] = useState<
-    "company" | "departments" | "roles" | "masters" | "settings" | "team" | "demo"
+    "company" | "templates" | "departments" | "roles" | "masters" | "settings" | "team" | "demo"
   >("company");
   const [query, setQuery] = useState("");
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
@@ -3934,7 +4044,7 @@ function AdminCommandCenter({
   return (
     <Modal title="Administration command center" onClose={onClose} wide>
       <div className="mb-5 flex flex-wrap gap-2 border-b border-border pb-4">
-        {(["company", "departments", "roles", "masters", "settings", "team", "demo"] as const).map(
+        {(["company", "templates", "departments", "roles", "masters", "settings", "team", "demo"] as const).map(
           (item) => (
             <button
               key={item}
@@ -3945,6 +4055,8 @@ function AdminCommandCenter({
                 ? "Company & calendar"
                 : item === "settings"
                   ? "Department settings"
+                  : item === "templates"
+                    ? "Template settings"
                   : item}
             </button>
           ),
@@ -3957,6 +4069,12 @@ function AdminCommandCenter({
         <TeamCompetencyPanel members={demoTeam} />
       ) : tab === "demo" ? (
         <DemoDataPanel loaded={portal.demoLoaded} onLoad={onLoadDemo} onReset={onResetDemo} />
+      ) : tab === "templates" ? (
+        <TemplateSettingsEditor
+          settings={portal.templateSettings ?? defaultTemplateSettings()}
+          onChange={(templateSettings) => onUpdate((state) => ({ ...state, templateSettings }))}
+          onSave={() => onLog("Document template settings saved", "Header, footer, locations and numbering updated")}
+        />
       ) : tab === "company" ? (
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">
@@ -5716,6 +5834,37 @@ function DocumentDetail({
 function FilePreview({ file, formatLabel, onClose }: { file: LocalControlledFile; formatLabel: (file: LocalControlledFile) => string; onClose: () => void }) {
   const text = file.encoding === "text" ? file.content : "Binary technical file preview is not available in-browser.";
   return <Modal title={`Preview · ${file.name}`} onClose={onClose} wide><div className="mb-4 flex flex-wrap gap-2"><span className="rounded border border-steel/35 bg-secondary px-2 py-1 font-mono text-xs text-steel">{formatLabel(file)}</span><span className="rounded border border-border bg-panel px-2 py-1 font-mono text-xs">Rev {file.revision}</span></div>{file.type === "application/pdf" && file.encoding === "data-url" ? <iframe title={file.name} src={file.content} className="h-[55vh] w-full border border-border" /> : <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{text}</pre>}</Modal>;
+}
+type PrintableDocument = {
+  title: string;
+  documentId: string;
+  department: string;
+  revision: string;
+  status: RecordStatus;
+  project: string;
+};
+
+function createPrintableDocument(template: readonly [string, string, string], settings: TemplateSettings): PrintableDocument {
+  const project = "HLPL-AI4T-01";
+  const type = template[0].includes("SOR") ? "SOR" : template[0].includes("Requirement") ? "PRS" : template[0].includes("DVP") ? "DVP" : template[1].split("-").at(-2) ?? "DOC";
+  const department = template[2] === "HR/OPS" ? "HR" : template[2];
+  return { title: template[0].toUpperCase(), documentId: documentNumber(project, department, type, "01", settings.prefix), department, revision: "Rev 01", status: "Draft", project };
+}
+
+function TemplateSettingsPanel({ settings, onChange, onClose }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onClose: () => void }) {
+  return <Modal title="Document Header & Footer Settings" onClose={onClose} wide><TemplateSettingsEditor settings={settings} onChange={onChange} onSave={() => undefined} /><div className="mt-5 flex justify-end"><Action label="Done" primary onClick={onClose} /></div></Modal>;
+}
+
+function TemplateSettingsEditor({ settings, onChange, onSave }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onSave: () => void }) {
+  const update = (key: keyof TemplateSettings, value: string) => onChange({ ...settings, [key]: value });
+  return <div className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Organization & document settings</p><p className="mt-1 text-xs text-muted-foreground">Changes update every full-page template preview immediately in this browser.</p></div><div className="grid gap-4 p-4 md:grid-cols-2"><TextField label="Company name" value={settings.companyName} onChange={(value) => update("companyName", value)} /><TextField label="Header logo / badge text" value={settings.logoBadge} onChange={(value) => update("logoBadge", value)} /><TextField label="Document prefix" value={settings.prefix} onChange={(value) => update("prefix", value.toUpperCase())} /><TextField label="Accreditation marks" value={settings.accreditationMarks} onChange={(value) => update("accreditationMarks", value)} /><TextField label="Tech Center address" value={settings.techCenter} onChange={(value) => update("techCenter", value)} /><TextField label="Manufacturing plant location" value={settings.plantLocation} onChange={(value) => update("plantLocation", value)} /></div></section><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Footer controls</p></div><div className="space-y-4 p-4"><label className="block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">Confidentiality notice<textarea value={settings.confidentialityNotice} onChange={(event) => update("confidentialityNotice", event.target.value)} className="mt-1 min-h-20 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label><label className="block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">Compliance footer line<textarea value={settings.complianceFooter} onChange={(event) => update("complianceFooter", event.target.value)} className="mt-1 min-h-16 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label></div></section><div className="flex justify-end"><Action label="Save template settings" primary onClick={onSave} /></div></div>;
+}
+
+function PrintableTemplateView({ document, settings, onClose, onOpenSettings }: { document: PrintableDocument; settings: TemplateSettings; onClose: () => void; onOpenSettings: () => void }) {
+  const signatories = departmentSignatories[document.department] ?? departmentSignatories["EHW"];
+  if (!signatories) return null;
+  const date = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date());
+  return <Modal title="Full-Page Template View" onClose={onClose} wide><div className="mb-4 flex flex-wrap justify-end gap-2 print:hidden"><Action label="Customize Header & Footer" onClick={onOpenSettings} /><Action label="Print / Export PDF" primary onClick={() => window.print()} /></div><article className="print-document mx-auto max-w-[794px] bg-card p-5 text-foreground md:p-8"><header className="grid gap-px overflow-hidden border-2 border-foreground/50 bg-border sm:grid-cols-[1.15fr_1.7fr_1.15fr]"><div className="bg-card p-3"><div className="flex items-center gap-2"><span className="grid size-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">{settings.logoBadge}</span><div><p className="text-xs font-bold">HEXENSE LABS</p><p className="text-[10px] text-muted-foreground">SIX SENSE MOBILITY</p></div></div><p className="mt-3 text-[9px] leading-4 text-muted-foreground">{settings.accreditationMarks}</p></div><div className="bg-card p-3 text-center"><p className="text-sm font-bold">{document.title}</p><p className="mt-1 text-[10px] font-medium">{document.project} · Tata Ace EV 4G Telematics Gateway</p></div><div className="bg-card p-3 text-[10px]"><p><strong>Document ID:</strong> {document.documentId}</p><p className="mt-1"><strong>Revision:</strong> {document.revision}</p><p className="mt-1"><strong>Effective date:</strong> {date}</p><p className="mt-1"><strong>Page:</strong> 1 of 1</p><p className="mt-2"><Status status={document.status} /></p></div></header><section className="mt-5 border border-border"><div className="border-b border-border bg-panel px-3 py-2"><p className="text-xs font-bold">Organization & facility details</p></div><div className="grid gap-px bg-border sm:grid-cols-2"><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Tech Center</p><p className="mt-1 text-xs">{settings.techCenter}</p></div><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Manufacturing plant</p><p className="mt-1 text-xs">{settings.plantLocation}</p></div></div></section><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">1. Scope & customer information</h3><div className="mt-3 grid gap-3 text-xs sm:grid-cols-2"><DocumentField label="Customer" value={projectSeed.customer} /><DocumentField label="Customer SPOC" value={projectSeed.contact} /><DocumentField label="Target quantity" value={projectSeed.quantity} /><DocumentField label="Commercial value" value={projectSeed.commercialValue} /></div></section><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">2. Technical specification & acceptance matrix</h3><div className="mt-3 overflow-hidden border border-border"><table className="w-full text-left text-xs"><thead className="bg-panel"><tr><th className="p-2">Parameter</th><th className="p-2">Requirement</th><th className="p-2">Acceptance criteria</th></tr></thead><tbody><tr className="border-t border-border"><td className="p-2">Platform</td><td className="p-2">{projectSeed.techSpec}</td><td className="p-2">Controlled baseline review</td></tr><tr className="border-t border-border"><td className="p-2">Environmental</td><td className="p-2">12V / 24V · −40°C to +85°C · IP67</td><td className="p-2">DVP&R evidence required</td></tr><tr className="border-t border-border"><td className="p-2">Compliance</td><td className="p-2">AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · RoHS</td><td className="p-2">Human approval required</td></tr></tbody></table></div></section><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">3. Approval grid</h3><div className="mt-3 grid gap-px overflow-hidden border border-border bg-border sm:grid-cols-3">{[["Prepared by", signatories.author], ["Reviewed by", signatories.reviewer], ["Approved by", signatories.approver]].map(([label, name]) => <div key={label} className="min-h-24 bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">{label}</p><p className="mt-5 text-xs font-semibold">{name}</p><p className="mt-2 text-[10px] text-muted-foreground">{date} · Electronic sign-off pending</p></div>)}</div></section><footer className="mt-8 border-t-2 border-foreground/50 pt-3 text-center text-[9px] leading-4 text-muted-foreground"><p>{settings.confidentialityNotice}</p><p className="mt-2">{settings.complianceFooter}</p><p className="mt-2">Classification: Internal controlled draft · Printed {new Date().toLocaleString("en-IN")} · Page 1 of 1</p></footer></article></Modal>;
 }
 function DocumentField({ label, value }: { label: string; value: string }) {
   return (
