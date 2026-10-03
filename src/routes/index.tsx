@@ -2458,9 +2458,9 @@ function AssigneeWorkload({
   );
 }
 
-function LifecycleProgress({ records }: { records: RecordItem[] }) {
+function LifecycleProgress({ records, projectId }: { records: RecordItem[]; projectId: string }) {
   const lifecycleRecords = records.filter(
-    (record) => record.fields["lifecycleId"] === "DEMO-AIS140-OBD-01",
+    (record) => record.fields["lifecycleId"] === projectId,
   );
   const stages = [
     ["1", "Sales & NDA", ["Customer requirement", "Enquiry"]],
@@ -2482,7 +2482,7 @@ function LifecycleProgress({ records }: { records: RecordItem[] }) {
       <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border p-4">
         <div>
           <p className="font-mono text-[10px] uppercase text-moss">Nine-stage lifecycle</p>
-          <h2 className="mt-1 font-semibold">DEMO-AIS140-OBD-01 · controlled lifecycle</h2>
+          <h2 className="mt-1 font-semibold">{projectId} · controlled lifecycle</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Illustrative only · NOT VALIDATED · human gate sign-offs remain required
           </p>
