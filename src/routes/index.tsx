@@ -2241,7 +2241,7 @@ function CommandCenter({
 }: {
   portal: PortalState;
   departmentContext: string | null;
-  onCreate: () => void;
+  onCreate: (recordType?: string) => void;
   onNavigate: (area: AreaId) => void;
   onAdmin: () => void;
   onUpdateTask: (taskId: string, patch: Partial<RecordItem>, action: string) => void;
