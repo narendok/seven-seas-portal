@@ -5864,7 +5864,7 @@ function AreaNav({
       <Icon className="size-4 shrink-0" />
       {expanded ? (
         <>
-          <span className="min-w-0 flex-1 truncate">{area.navLabel ?? area.name}</span>
+          <span className="min-w-0 flex-1 truncate">{area.navLabel}</span>
           {area.id !== "home" && openCount ? (
             <span className={`grid min-w-4 place-items-center rounded-full px-1 font-mono text-[9px] leading-4 ${active ? "bg-sidebar-primary-foreground/20" : "bg-sidebar-accent text-sidebar-accent-foreground"}`}>{openCount}</span>
           ) : null}
