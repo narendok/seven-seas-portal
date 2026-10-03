@@ -171,6 +171,9 @@ type ControlledDocument = {
   history?: string[] | undefined;
   cloudDocumentId?: string | undefined;
   localFiles?: LocalControlledFile[] | undefined;
+  draftHtml?: string | undefined;
+  releaseNotes?: string | undefined;
+  designer?: string | undefined;
 };
 type LocalControlledFile = {
   id: string;
@@ -304,6 +307,7 @@ type PortalState = {
   notifications: string[];
   alerts: DemoAlert[];
   templateSettings?: TemplateSettings | undefined;
+  templateBodies?: Record<string, string> | undefined;
   raciMatrix?: RaciMatrix | undefined;
 };
 type DemoAlert = {
@@ -618,6 +622,7 @@ const emptyPortal = (): PortalState => ({
   notifications: [],
   alerts: [],
   templateSettings: defaultTemplateSettings(),
+  templateBodies: defaultTemplateBodies(),
 });
 
 function defaultTemplateSettings(): TemplateSettings {
@@ -631,6 +636,28 @@ function defaultTemplateSettings(): TemplateSettings {
     confidentialityNotice: "CONFIDENTIAL & PROPRIETARY — HEXENSE LABS PVT LTD. All rights reserved. Reproduction or distribution without written permission is strictly prohibited.",
     complianceFooter: "IATF 16949:2016 & ISO 9001:2015 Certified Automotive Tier-1 Electronic Systems Facility | Doc Ref: Standard Format 4.2",
   };
+}
+
+function defaultTemplateBodies() {
+  return Object.fromEntries(autoDraftTemplates.map(([title]) => [title, templateBlueprint(title)]));
+}
+
+function templateBlueprint(title: string) {
+  const templates: Record<string, string> = {
+    "Customer SOR": "OEM requirements, fleet connectivity, CAN telemetry scope, rollout schedule, commercial SLA, warranty and delivery terms.",
+    "Mutual NDA": "Confidential information definitions, non-disclosure obligations, intellectual property protections and governing law.",
+    "Commercial Quotation": "Tiered volume pricing, NRE engineering costs, tooling charges, payment milestones and delivery lead-time.",
+    "Contract Review Record": "Cross-department feasibility matrix for SAL, EHW, ESW, MECH, PUR, QA, EMF and FIN with risk score and human gate approval.",
+    "Product Requirement Spec": "STM32/ESP32, 4G LTE Cat-1, GNSS, 9–36V ISO 7637-2 power topology, CAN J1939, IP67 enclosure and pinout definitions.",
+    "Production BOM Cost Tracker": "Item number, MPN, manufacturer, description, package, sourcing lead time, unit cost and AEC-Q grade.",
+    "Hardware DFMEA": "Severity, occurrence, detection, RPN scoring, potential failure causes, design controls and corrective actions.",
+    "Manufacturing Process Flow & Control Plan": "SMT process flow, stencil thickness, 10-zone reflow profile, 3D AOI inspection, ICT fixtures and packaging controls.",
+    "DVP&R Verification Plan": "Thermal shock, ISO 7637-2 pulses, ISO 16750-3 vibration, IP67 submersion and CISPR 25 EMC/EMI test cases.",
+    "Pre-Dispatch Inspection Certificate": "Serialized IMEI/MAC list, cellular RF test, GPS TTFF, flashing checksum and QA sign-off stamp.",
+    "Commercial Tax Invoice": "GST/HSN table, invoice and e-Way bill details, buyer/consignee addresses, tax calculations and bank remittance instructions.",
+    "Annual Skill Matrix": "Operator competency scores, IPC-A-610 certifications, ESD safety training and audit validity dates.",
+  };
+  return templates[title] ?? "Controlled project-specific requirement baseline requiring human review before release.";
 }
 
 const templateProjects = ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03", "VCU", "BMS"];
