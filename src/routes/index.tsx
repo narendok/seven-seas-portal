@@ -250,6 +250,7 @@ type Persona = {
   kind: "admin" | "lead" | "client";
 };
 type Ai4tSimulation = { stage: number; history: string[] };
+type ProjectScope = "all" | "HLPL-AI4T-01" | "HLPL-SLCT-01" | "HLPL-XLINK-03";
 type PortalState = {
   demoLoaded: boolean;
   demoSnapshot?: PortalState | undefined;
@@ -1507,6 +1508,7 @@ function Portal() {
   const [draftHubOpen, setDraftHubOpen] = useState(false);
   const [ai4tOpen, setAi4tOpen] = useState(false);
   const [ai4tSimulation, setAi4tSimulation] = useState<Ai4tSimulation>({ stage: 0, history: [] });
+  const [projectScopes, setProjectScopes] = useState<Partial<Record<AreaId, ProjectScope>>>({});
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   const [darkMode, setDarkMode] = useState(true);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -1839,6 +1841,9 @@ function Portal() {
                       .toLowerCase()
                       .includes(queueStage.toLowerCase())),
               )}
+              allRecords={activeRecords}
+              projectScope={projectScopes[activeArea] ?? "all"}
+              onProjectScopeChange={(scope) => setProjectScopes((current) => ({ ...current, [activeArea]: scope }))}
               department={
                 portal.departments.find((item) => item.id === departmentContext) ??
                 findAreaDepartment(portal.departments, activeArea)
@@ -2106,8 +2111,8 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
-            <Action onClick={onOpenAi4t} label="AI4T Lifecycle Hub" primary />
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
+            <Action onClick={onOpenAi4t} label="End-to-End Project Lifecycle Hub (HLPL-AI4T-01)" primary />
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={onCreate} label="Create Task" primary />
@@ -2308,6 +2313,7 @@ function Ai4tLifecycleHub({
   onReset: () => void;
 }) {
   const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
+  const [tab, setTab] = useState<"stages" | "binder">("stages");
   const current = ai4tStages[simulation.stage] ?? ai4tStages[0];
   const progress = Math.round(((simulation.stage + 1) / ai4tStages.length) * 100);
   const accessibleDossier = persona.kind === "client"
@@ -2333,7 +2339,11 @@ function Ai4tLifecycleHub({
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{current[2]}</p>
         </div>
       </section>
-      <section className="mt-5 grid gap-2 sm:grid-cols-3">
+      <div className="mt-5 flex gap-2 border-b border-border pb-2">
+        <button onClick={() => setTab("stages")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "stages" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Lifecycle stages</button>
+        <button onClick={() => setTab("binder")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "binder" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Master dossier binder</button>
+      </div>
+      {tab === "stages" && <><section className="mt-5 grid gap-2 sm:grid-cols-3">
         {ai4tStages.map(([stage, title], index) => (
           <button key={stage} onClick={() => onJump(index)} className={`rounded-lg border p-3 text-left transition-colors ${index === simulation.stage ? "border-steel bg-accent" : index < simulation.stage ? "border-moss/40 bg-panel hover:bg-secondary" : "border-border bg-card hover:bg-secondary"}`}>
             <span className="font-mono text-[10px] text-steel">{stage}</span><strong className="mt-1 block text-xs">{title}</strong><span className="mt-1 block text-[10px] text-muted-foreground">{index < simulation.stage ? "Complete" : index === simulation.stage ? "In progress" : "Upcoming"}</span>
@@ -2345,7 +2355,11 @@ function Ai4tLifecycleHub({
         <div className="divide-y divide-border">
           {accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}
         </div>
-      </section>
+      </section></>}
+      {tab === "binder" && <section className="ops-section mt-5 overflow-hidden">
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Unified role-filtered binder. Each preview is an unissued DEMO document.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
+        <div className="divide-y divide-border">{accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}</div>
+      </section>}
       {dossier && <section className="mt-5 rounded-lg border border-steel/35 bg-panel p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Formatted DEMO document preview</p><h4 className="mt-1 text-sm font-semibold">{dossier[0]}</h4></div><Status status="Draft" /></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><DocumentField label="Document ID" value={dossier[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · DEMO" /><DocumentField label="Stage" value={dossier[3]} /><DocumentField label="Owner" value={`${dossier[2]} · department-owned`} /><DocumentField label="Revision" value="00 · DEMO draft" /><DocumentField label="Approval" value="Human approval required" /></div></section>}
       <section className="mt-5 rounded-lg border border-border bg-panel p-4"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Simulation history</p>{simulation.history.length ? <ol className="mt-2 space-y-1 text-xs text-muted-foreground">{simulation.history.slice(0, 8).map((entry, index) => <li key={`${entry}-${index}`}>{entry}</li>)}</ol> : <p className="mt-2 text-xs text-muted-foreground">No simulated stage changes yet.</p>}</section>
       <div className="mt-5 flex flex-wrap justify-between gap-2"><div className="flex flex-wrap gap-2"><Action label="Reset Simulation" onClick={onReset} /><Action label="Auto-Run Full Cycle Test" onClick={onRun} /></div><Action label={simulation.stage === ai4tStages.length - 1 ? "Lifecycle Complete" : "Advance to Next Stage"} primary onClick={onAdvance} /></div>
@@ -2960,6 +2974,9 @@ function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
 function DepartmentWorkspace({
   area,
   records,
+  allRecords,
+  projectScope,
+  onProjectScopeChange,
   department,
   approvals,
   contextName,
@@ -2973,6 +2990,9 @@ function DepartmentWorkspace({
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
+  allRecords: RecordItem[];
+  projectScope: ProjectScope;
+  onProjectScopeChange: (scope: ProjectScope) => void;
   department: Department | undefined;
   approvals: PortalState["approvals"];
   contextName: string;
@@ -2984,18 +3004,20 @@ function DepartmentWorkspace({
   onOpenStage: (stage: string) => void;
   onOpenDraftHub: () => void;
 }) {
+  const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
+  const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
   const today = new Date().toISOString().slice(0, 10);
-  const open = records.filter((record) => record.status === "Draft" || record.status === "Open");
-  const blocked = records.filter((record) => record.fields["blocker"]);
+  const open = scopedRecords.filter((record) => record.status === "Draft" || record.status === "Open");
+  const blocked = scopedRecords.filter((record) => record.fields["blocker"]);
   const pendingApprovals = approvals.filter(
     (approval) =>
-      approval.outcome === "Pending" && records.some((record) => record.id === approval.recordId),
+      approval.outcome === "Pending" && scopedRecords.some((record) => record.id === approval.recordId),
   );
-  const upcoming = records
+  const upcoming = scopedRecords
     .filter((record) => (record.fields["targetDate"] ?? "") >= today)
     .sort((a, b) => (a.fields["targetDate"] ?? "").localeCompare(b.fields["targetDate"] ?? ""))
     .slice(0, 3);
-  const flow = departmentFlow(area.id, records);
+  const flow = departmentFlow(area.id, scopedRecords);
   return (
     <>
       {records.some((record) => record.fields["demoMarker"]) && <DemoMarker />}
@@ -3013,11 +3035,17 @@ function DepartmentWorkspace({
           </>
         }
       />
+      <section className="ops-section flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Project scope</p><p className="mt-1 text-xs text-muted-foreground">{projectScope === "all" ? `Department rollup · ${records.length} records · ${departmentMembers} team member${departmentMembers === 1 ? "" : "s"}` : "Selected-project tasks, stage evidence, team and deliverables only"}</p></div>
+        <select aria-label="Project scope" value={projectScope} onChange={(event) => onProjectScopeChange(event.target.value as ProjectScope)} className="h-9 min-w-64 rounded-lg border border-border bg-card px-3 text-sm font-medium">
+          <option value="all">All Projects (Department Rollup)</option><option value="HLPL-AI4T-01">HLPL-AI4T-01 · Tata Ace EV</option><option value="HLPL-SLCT-01">HLPL-SLCT-01 · AIS-140 Gateway</option><option value="HLPL-XLINK-03">HLPL-XLINK-03 · CV Gateway</option>
+        </select>
+      </section>
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Metric
           label="Today"
           value={String(
-            records.filter(
+            scopedRecords.filter(
               (record) =>
                 record.fields["dueDate"] === today || record.fields["targetDate"] === today,
             ).length,
@@ -3028,7 +3056,7 @@ function DepartmentWorkspace({
         <Metric
           label="Priority"
           value={String(
-            records.filter((record) => record.priority === "High" || record.priority === "Critical")
+            scopedRecords.filter((record) => record.priority === "High" || record.priority === "Critical")
               .length,
           )}
           detail="Needs attention"
@@ -3043,23 +3071,23 @@ function DepartmentWorkspace({
         />
         <Metric
           label="Progress"
-          value={`${records.length ? Math.round((records.filter((record) => ["Approved", "Released"].includes(record.status)).length / records.length) * 100) : 0}%`}
+          value={`${scopedRecords.length ? Math.round((scopedRecords.filter((record) => ["Approved", "Released"].includes(record.status)).length / scopedRecords.length) * 100) : 0}%`}
           detail="Completed"
           tone="steel"
         />
       </section>
       <DepartmentFlow flow={flow} onOpenStage={onOpenStage} />
-      <SmartNextStep records={records} onOpenDraftHub={onOpenDraftHub} />
+      <SmartNextStep records={scopedRecords} onOpenDraftHub={onOpenDraftHub} />
       {area.id === "hrops" && (
         <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
       )}
       <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="ops-section overflow-hidden">
           {view === "summary" ? (
-            <AreaSummary records={records} />
-          ) : records.length ? (
+            <AreaSummary records={scopedRecords} />
+          ) : scopedRecords.length ? (
             <div>
-              {records.map((record) => (
+              {scopedRecords.map((record) => (
                 <button
                   key={record.id}
                   onClick={() => onSelect(record.id)}
