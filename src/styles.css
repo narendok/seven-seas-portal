@@ -165,6 +165,14 @@
   .task-disclosure { animation: none; }
 }
 
+@media print {
+  body { background: white; color: black; }
+  body > *:not(#root) { display: none; }
+  #root > main > *:not(.print-document) { display: none !important; }
+  .print-document { box-shadow: none; max-width: none; padding: 0; }
+  .print\:hidden { display: none !important; }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
