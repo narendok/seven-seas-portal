@@ -2137,6 +2137,7 @@ function Portal() {
             setAi4tSimulation({ stage: 0, history: [] });
             log("AI4T lifecycle simulation reset", "Simulation reset to Stage 1");
           }}
+          onOpenPrintable={setPrintTemplate}
         />
       )}
       {rfqOpen && (
