@@ -22,4 +22,4 @@
 - [x] Add automatic automotive document numbering, live template settings, location/data auto-fill, and printable full-page document views.
 - [x] Add project-aware document templates, print/PDF formatting, stage handoff alerts, and editable RACI routing.
 - [x] Make all document sheets stage-aware with project-specific engineering content and A4 print styling.
-- [ ] Replace summary-only document previews with complete multi-section sheets, portable print output, Markdown export, and text copy actions.
+- [x] Replace summary-only document previews with complete multi-section sheets, portable print output, Markdown export, and text copy actions.
