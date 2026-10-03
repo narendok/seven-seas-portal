@@ -1385,6 +1385,8 @@ function Portal() {
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
@@ -1476,6 +1478,9 @@ function Portal() {
   const activeRecords = portal.records.filter((record) => !record.archived);
   const selected = activeRecords.find((record) => record.id === selectedId);
   const selectedDocument = portal.documents.find((document) => document.id === selectedDocumentId);
+  const selectedProjectProfile = activeRecords.find(
+    (record) => record.reference === selectedProjectId && record.type === "Project",
+  );
   const active = areaById(activeArea);
   const openRecord = (record: RecordItem) => {
     setActiveArea(record.area);
@@ -1546,13 +1551,22 @@ function Portal() {
               icon={Settings2}
               onClick={() => setModal("admin")}
             />
-            <HeaderAction label="History" icon={Bell} onClick={() => setModal("history")} />
+            <HeaderAction
+              label={`Notifications (${portal.alerts.filter((alert) => !alert.resolved).length})`}
+              icon={Bell}
+              badge={portal.alerts.filter((alert) => !alert.resolved).length}
+              onClick={() => setAlertsOpen(true)}
+            />
           </div>
         </header>
         <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-10">
           {view === "pmss" ? (
             <PMSSWorkspace
               portal={portal}
+              project={selectedProjectProfile}
+              projects={activeRecords.filter((record) => record.type === "Project")}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={setSelectedProjectId}
               onBack={() => navigate(activeArea)}
               onUpdate={(patch) =>
                 update((state) => ({
@@ -1600,8 +1614,14 @@ function Portal() {
               onSetup={() => setModal("wizard")}
               onUpdateTask={updateTask}
               onOpenProject={(id) => {
-                setSelectedId(id);
-                setView("project");
+                const projectRecord = activeRecords.find(
+                  (record) => record.id === id || record.reference === id,
+                );
+                if (projectRecord) {
+                  setSelectedId(projectRecord.id);
+                  setSelectedProjectId(projectRecord.reference);
+                  setView("project");
+                }
               }}
               onOpenAssignee={(assignee) => {
                 setSelectedAssignee(assignee);
@@ -1780,6 +1800,29 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
+      {alertsOpen && (
+        <NotificationCenter
+          alerts={portal.alerts}
+          departments={portal.departments}
+          onClose={() => setAlertsOpen(false)}
+          onResolve={(id) => {
+            update((state) => ({
+              ...state,
+              alerts: state.alerts.map((alert) =>
+                alert.id === id ? { ...alert, resolved: true } : alert,
+              ),
+            }));
+            log("DEMO alert resolved", id);
+          }}
+          onDismiss={(id) => {
+            update((state) => ({
+              ...state,
+              alerts: state.alerts.filter((alert) => alert.id !== id),
+            }));
+            log("DEMO alert dismissed", id);
+          }}
+        />
+      )}
       {rfqOpen && (
         <RfqCycleTest
           step={rfqStep}
