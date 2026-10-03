@@ -1916,6 +1916,58 @@ function CommandCenter({
     </>
   );
 }
+
+function RfqCycleTest({
+  step,
+  onClose,
+  onAdvance,
+  onReset,
+}: {
+  step: number;
+  onClose: () => void;
+  onAdvance: () => void;
+  onReset: () => void;
+}) {
+  const [label, title, detail] = rfqStages[step] ?? rfqStages[0];
+  const complete = step === rfqStages.length - 1;
+  return (
+    <Modal title="RFQ-to-production feature test" onClose={onClose} wide>
+      <DemoMarker />
+      <p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">
+        RFQ-2026-TATA-EV-042 · Interactive walkthrough · feature test only
+      </p>
+      <h3 className="mt-2 text-xl font-semibold">DEMO · Tata Ace EV 4G Telematics Gateway</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        Fictional 50,000-units/year scenario. Every commercial, manufacturing and approval event is
+        simulated and has no external or operational effect.
+      </p>
+      <ol className="mt-6 grid gap-2 sm:grid-cols-3">
+        {rfqStages.map(([stage, stageTitle], index) => (
+          <li
+            key={stage}
+            className={`border p-3 text-sm ${index === step ? "border-steel bg-accent" : index < step ? "border-moss/40 bg-panel" : "border-border bg-card"}`}
+          >
+            <span className="font-mono text-[10px] text-steel">{stage}</span>
+            <span className="mt-1 block font-medium">{stageTitle}</span>
+          </li>
+        ))}
+      </ol>
+      <section className="mt-6 border border-border bg-panel p-5">
+        <p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Current checkpoint</p>
+        <h4 className="mt-2 text-lg font-semibold">{label} · {title}</h4>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
+        <div className="mt-5 h-2 overflow-hidden rounded-full bg-secondary">
+          <div className="h-full bg-primary transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${((step + 1) / rfqStages.length) * 100}%` }} />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{step + 1} of {rfqStages.length} gates shown</p>
+      </section>
+      <div className="mt-6 flex flex-wrap justify-between gap-2">
+        <Action label="Restart test" onClick={onReset} />
+        <Action label={complete ? "Stage 9 complete" : "Advance simulated gate"} onClick={onAdvance} primary />
+      </div>
+    </Modal>
+  );
+}
 function nextWorkingDay(value: string) {
   const date = new Date(`${value}T12:00:00`);
   date.setDate(date.getDate() + 1);
