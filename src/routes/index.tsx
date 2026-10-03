@@ -1622,6 +1622,7 @@ function Portal() {
   const [modal, setModal] = useState<
     "create" | "wizard" | "approvals" | "documents" | "document" | "history" | "admin" | null
   >(null);
+  const [createType, setCreateType] = useState<string | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
@@ -1899,7 +1900,7 @@ function Portal() {
             <CommandCenter
               portal={portal}
               departmentContext={departmentContext}
-              onCreate={() => setModal("create")}
+              onCreate={(type) => { setCreateType(type ?? null); setModal("create"); }}
               onNavigate={navigate}
               onAdmin={() => setModal("admin")}
               onUpdateTask={updateTask}
@@ -1982,7 +1983,7 @@ function Portal() {
               contextName={departmentContext ? "Administrator" : "Workspace"}
               view={view === "summary" ? "summary" : "queue"}
               onView={setView}
-              onCreate={() => setModal("create")}
+              onCreate={(type) => { setCreateType(type ?? null); setModal("create"); }}
               onSelect={(id) => {
                 setSelectedId(id);
                 setView("detail");
@@ -2022,7 +2023,8 @@ function Portal() {
         <RecordForm
           area={activeArea}
           portal={portal}
-          onClose={() => setModal(null)}
+          initialType={createType}
+          onClose={() => { setCreateType(null); setModal(null); }}
           onSave={addRecord}
         />
       )}{" "}
