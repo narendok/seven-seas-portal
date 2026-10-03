@@ -5690,15 +5690,15 @@ function DocumentDetail({
       reader.onload = () => resolve({
         id: createId(), name: file.name, type: file.type || "application/octet-stream", size: file.size,
         uploadedAt: new Date().toISOString(), uploader: `${owner?.lead ?? "Current user"} · ${owner?.name ?? "Controlled documents"}`,
-        revision: document.revision ?? "00", content: String(reader.result ?? ""), encoding: textLike ? "text" : "data-url",
+       revision: document.revision ?? "00", content: String(reader.result ?? ""), encoding: textLike ? "text" : "data-url",
       });
       if (textLike) reader.readAsText(file); else reader.readAsDataURL(file);
     });
   const uploadLocal = async (file: File, incrementRevision = false) => {
     try {
       setFileState("uploading"); setUploadProgress(4); setFileMessage("Securing & Verifying SHA-256 Hash…");
-      await sha256(file); setUploadProgress(40);
-      const attached = await readLocalFile(file); setUploadProgress(76);
+       const checksum = await sha256(file); setUploadProgress(40);
+       const attached = { ...(await readLocalFile(file)), checksum }; setUploadProgress(76);
       const revision = incrementRevision ? String((Number.parseInt(document.revision ?? "0", 10) || 0) + 1).padStart(2, "0") : document.revision ?? "00";
       const updatedFile = { ...attached, revision };
       window.setTimeout(() => { setUploadProgress(100); setFileState("idle"); }, 220);
