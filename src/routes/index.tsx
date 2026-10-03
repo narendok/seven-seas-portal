@@ -3906,17 +3906,20 @@ const formSpecs: Partial<
 function RecordForm({
   area,
   portal,
+  initialType,
   onClose,
   onSave,
 }: {
   area: AreaId;
   portal: PortalState;
+  initialType: string | null;
   onClose: () => void;
   onSave: (record: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => void;
 }) {
   const spec = formSpecs[area] ?? formSpecs.ehw;
   if (!spec) return null;
-  const [type, setType] = useState(spec.types[0] ?? "Record");
+  const availableTypes = Array.from(new Set([...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
+  const [type, setType] = useState(initialType ?? spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -3978,10 +3981,9 @@ function RecordForm({
     <Modal title={`Create ${type}`} onClose={onClose} wide>
       <form onSubmit={submit} className="space-y-5">
         <p className="rounded-lg border border-border bg-panel px-3 py-2 text-xs text-muted-foreground">
-          The portal generates an HLPL document number on save when you leave the controlled number
-          blank.
+          This {areaById(area).name} record is linked to a managed project, people, suppliers, customers, and locations where applicable. The portal generates an HLPL document number when you leave the controlled number blank.
         </p>
-        <SelectField label="Record type" value={type} options={spec.types} onChange={setType} />
+        <SelectField label="Record type" value={type} options={availableTypes} onChange={setType} />
         <section className="rounded-lg border border-steel/35 bg-panel p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
