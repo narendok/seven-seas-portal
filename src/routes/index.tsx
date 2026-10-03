@@ -5352,22 +5352,80 @@ function Empty({ onCreate, label }: { onCreate: () => void; label: string }) {
     </div>
   );
 }
+function NotificationCenter({
+  alerts,
+  departments,
+  onClose,
+  onResolve,
+  onDismiss,
+}: {
+  alerts: DemoAlert[];
+  departments: Department[];
+  onClose: () => void;
+  onResolve: (id: string) => void;
+  onDismiss: (id: string) => void;
+}) {
+  const active = alerts.filter((alert) => !alert.resolved);
+  return (
+    <Modal title="Notification center" onClose={onClose}>
+      <p className="mb-5 text-sm text-muted-foreground">
+        Active DEMO alerts are fictional test signals and do not represent live operational events.
+      </p>
+      <div className="space-y-3">
+        {active.length ? (
+          active.map((alert) => (
+            <article key={alert.id} className="rounded-lg border border-border bg-panel p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
+                    {alert.id} · {alert.severity}
+                  </p>
+                  <h3 className="mt-1 text-sm font-semibold">{alert.title}</h3>
+                </div>
+                <Status status={alert.severity === "Critical" ? "In review" : "Open"} />
+              </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{alert.detail}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {departments.find((department) => department.id === alert.departmentId)?.name ?? "Department"}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Action label="Resolve" onClick={() => onResolve(alert.id)} primary />
+                <Action label="Dismiss" onClick={() => onDismiss(alert.id)} />
+              </div>
+            </article>
+          ))
+        ) : (
+          <p className="rounded-lg border border-border bg-panel p-5 text-sm text-muted-foreground">
+            No active DEMO alerts.
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
 function HeaderAction({
   label,
   icon: Icon,
   onClick,
+  badge,
 }: {
   label: string;
   icon: typeof Bell;
   onClick: () => void;
+  badge?: number;
 }) {
   return (
     <button
       aria-label={label}
       onClick={onClick}
-      className="grid size-10 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-ring/50 hover:bg-secondary hover:text-foreground"
+      className="relative grid size-10 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-ring/50 hover:bg-secondary hover:text-foreground"
     >
       <Icon className="size-4" />
+      {badge ? (
+        <span className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-danger px-1 text-[9px] font-semibold leading-4 text-destructive-foreground">
+          {badge}
+        </span>
+      ) : null}
     </button>
   );
 }
