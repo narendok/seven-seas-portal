@@ -5461,7 +5461,7 @@ function DocumentsPanel({
           Private Cloud storage
         </span>
       </section>
-      {tab === "drive" && <UnifiedStorageView documents={documents} onSelectDocument={onSelectDocument} />}
+      {tab === "drive" && <HardwareDeliverablesDrive documents={documents} departments={departments} departmentContext={departmentContext} onSelectDocument={onSelectDocument} />}
       {tab === "repository" && <><section className="ops-section mb-6 overflow-hidden bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
@@ -5580,9 +5580,34 @@ function DocumentsPanel({
   );
 }
 
-function UnifiedStorageView({ documents, onSelectDocument }: { documents: ControlledDocument[]; onSelectDocument: (document: ControlledDocument) => void }) {
-  const folders = ["01_Governance_and_QMS", "02_Product_Platforms", "03_Supplier_Quality_and_PPAP", "04_Equipment_and_Calibration"];
-  return <section className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Unified Drive & Cloud storage</p><p className="mt-1 text-xs text-muted-foreground">Logical department folders; private Cloud files are available only when an authorized organization link exists. Drive remains optional.</p></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">{folders.map((folder) => <div key={folder} className="p-4"><p className="font-mono text-xs text-steel">/{folder}</p><p className="mt-2 text-xs text-muted-foreground">Generated HTML drafts, controlled records and authorized hardware release packages.</p></div>)}</div></section><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Project artifact register</p><p className="mt-1 text-xs text-muted-foreground">Includes editable document records and attached PDF / ZIP / STEP deliverables.</p></div><div className="divide-y divide-border">{documents.map((document) => { const files = document.localFiles ?? []; return <button key={document.id} onClick={() => onSelectDocument(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3 text-left hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.group ?? "Unfiled"} · Rev {document.revision ?? "—"} · {files.length} attached file{files.length === 1 ? "" : "s"}</small></span><span className="text-xs text-steel">Open</span></button>; })}</div></section></section>;
+const driveFolders = [
+  ["00_Root_Audit_Repository", "Controlled project evidence and release history"],
+  ["01_Governance_and_QMS", "SORs, NDAs, quotations and invoices"],
+  ["02_Product_Platforms", "Device specifications and PMSS baselines"],
+  ["03_Hardware_Deliverables_ECAD", "Schematic PDFs, PCB sources, Gerber ZIPs and BOMs"],
+  ["04_Mechanical_Deliverables_MCAD", "3D STEP models, CAD bundles and 2D drawings"],
+  ["05_Firmware_and_Software", "Firmware binaries, release notes and flashing packages"],
+  ["06_Quality_and_Compliance", "DVP&R, AIS-140 and laboratory evidence"],
+  ["07_Production_and_Testing", "Control plans, PDI logs and EOL calibration"],
+] as const;
+
+function driveFolderFor(document: ControlledDocument) {
+  if (/schematic|gerber|pcb|bom|dfmea/i.test(`${document.title} ${document.type}`)) return "03_Hardware_Deliverables_ECAD";
+  if (/step|cad|enclosure|mechanical/i.test(`${document.title} ${document.type}`)) return "04_Mechanical_Deliverables_MCAD";
+  if (/firmware|binary|hsi|software/i.test(`${document.title} ${document.type}`)) return "05_Firmware_and_Software";
+  if (/dvp|quality|ppap|audit|certificate/i.test(`${document.title} ${document.type}`)) return "06_Quality_and_Compliance";
+  if (/control plan|pdi|eol|production|manufactur/i.test(`${document.title} ${document.type}`)) return "07_Production_and_Testing";
+  if (/sor|nda|quotation|invoice|contract/i.test(`${document.title} ${document.type}`)) return "01_Governance_and_QMS";
+  return "02_Product_Platforms";
+}
+
+function HardwareDeliverablesDrive({ documents, departments, departmentContext, onSelectDocument }: { documents: ControlledDocument[]; departments: Department[]; departmentContext: string | null; onSelectDocument: (document: ControlledDocument) => void }) {
+  const [folder, setFolder] = useState("00_Root_Audit_Repository");
+  const [query, setQuery] = useState("");
+  const canSee = (document: ControlledDocument) => !departmentContext || document.departmentId === departmentContext;
+  const visible = documents.filter((document) => canSee(document) && `${document.title} ${document.type} ${document.part ?? ""}`.toLowerCase().includes(query.toLowerCase()) && (folder === "00_Root_Audit_Repository" || driveFolderFor(document) === folder));
+  const fileCount = (document: ControlledDocument) => document.localFiles?.length ?? 0;
+  return <section className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Hardware Deliverables Drive</p><p className="mt-1 text-xs text-muted-foreground">Private Cloud storage is active. Google Drive remains optional; folders are logical project paths.</p></div><span className="rounded-md border border-moss/25 bg-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase text-accent-foreground">Cloud active</span></div><div className="grid divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">{driveFolders.map(([name, detail]) => <button key={name} onClick={() => setFolder(name)} className={`p-3 text-left transition-colors ${folder === name ? "bg-accent" : "hover:bg-secondary"}`}><span className="flex items-center gap-2 font-mono text-xs text-steel"><FolderOpen className="size-4" />/{name}</span><span className="mt-1 block text-xs text-muted-foreground">{detail}</span></button>)}</div></section><section className="ops-section overflow-hidden"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.1em] text-steel">/{folder}</p><p className="mt-1 text-sm font-semibold">Project artifact register</p></div><input aria-label="Search deliverables" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search files or document ID" className="h-9 rounded-lg border border-input bg-background px-3 text-sm" /></div><div className="divide-y divide-border">{visible.length ? visible.map((document) => <button key={document.id} onClick={() => onSelectDocument(document)} className="grid w-full gap-3 px-4 py-3 text-left hover:bg-secondary sm:grid-cols-[minmax(0,1fr)_auto]"><span className="min-w-0"><strong className="block text-sm">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.part ?? document.type} · Rev {document.revision ?? "—"} · {document.deliverableKind ?? "Controlled document"}</small><small className="mt-1 block text-xs text-muted-foreground">{fileCount(document)} file revision{fileCount(document) === 1 ? "" : "s"} · {departments.find((department) => department.id === document.departmentId)?.name ?? "Unassigned"}</small></span><span className="self-center text-xs font-semibold text-steel">Open</span></button>) : <p className="p-8 text-center text-sm text-muted-foreground">No authorized deliverables in this folder.</p>}</div></section></section>;
 }
 function DocumentDetail({
   document,
