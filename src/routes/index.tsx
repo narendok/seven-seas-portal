@@ -15,6 +15,7 @@ import {
   Factory,
   FileText,
   History,
+  Copy,
   LayoutDashboard,
   Menu,
   PackageSearch,
@@ -128,6 +129,16 @@ type SetupState = {
   timezone: string;
   numbering: string;
   configuration: Record<string, string>;
+};
+type TemplateSettings = {
+  companyName: string;
+  techCenter: string;
+  plantLocation: string;
+  accreditationMarks: string;
+  prefix: string;
+  logoBadge: string;
+  confidentialityNotice: string;
+  complianceFooter: string;
 };
 type ControlledDocument = {
   id: string;
@@ -271,6 +282,7 @@ type PortalState = {
   audit: AuditEvent[];
   notifications: string[];
   alerts: DemoAlert[];
+  templateSettings?: TemplateSettings | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -583,7 +595,51 @@ const emptyPortal = (): PortalState => ({
   audit: [],
   notifications: [],
   alerts: [],
+  templateSettings: defaultTemplateSettings(),
 });
+
+function defaultTemplateSettings(): TemplateSettings {
+  return {
+    companyName: "Hexense Labs Private Limited / Six Sense Mobility",
+    techCenter: "B-12, Sector 63, Noida Tech Center, UP - 201301",
+    plantLocation: "Plot 45, Ecotech III, Greater Noida SMT Plant 2, UP - 201306",
+    accreditationMarks: "IATF 16949:2016 · ISO 9001:2015 · AIS-140 · CE / RoHS",
+    prefix: "HLPL",
+    logoBadge: "SS",
+    confidentialityNotice: "CONFIDENTIAL & PROPRIETARY — HEXENSE LABS PVT LTD. All rights reserved. Reproduction or distribution without written permission is strictly prohibited.",
+    complianceFooter: "IATF 16949:2016 & ISO 9001:2015 Certified Automotive Tier-1 Electronic Systems Facility | Doc Ref: Standard Format 4.2",
+  };
+}
+
+const templateProjects = ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03", "VCU", "BMS"];
+const templateDepartments = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "PROD", "FIN", "SIT", "HR"];
+const templateDocumentTypes = ["PRS", "SOR", "DVP", "DFMEA", "PFMEA", "CP", "BOM", "PPAP", "WI", "SOP", "QUO", "INV"];
+const formDocumentTypes = ["Contract Review", "Skill Matrix", "Form"];
+const projectSeed = {
+  customer: "Tata Motors Limited (EV Fleet Division, Pune)",
+  contact: "Mr. Rajesh Sharma (Lead D&D EV)",
+  quantity: "50,000 units / annum",
+  techSpec: "AIS-140 / 4G Cat-1 / IP67 / CAN J1939 / Dual SIM / GNSS",
+  commercialValue: "₹20.33 Cr",
+};
+const departmentSignatories: Record<string, { author: string; reviewer: string; approver: string }> = {
+  SAL: { author: "Priya Sharma", reviewer: "Priya Sharma", approver: "Executive Admin / MD" },
+  EHW: { author: "Avery Vale", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  ESW: { author: "Devon Lane", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  MECH: { author: "Samira Holt", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  PUR: { author: "Morgan Reed", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  QA: { author: "Jordan Blake", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  EMF: { author: "Casey Rowan", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  PROD: { author: "Mina Cross", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  FIN: { author: "Priya Voss", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
+  SIT: { author: "Kai Morgan", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
+  HR: { author: "Taylor Quinn", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
+};
+
+function documentNumber(project: string, department: string, type: string, revision = "01", prefix = "HLPL") {
+  const shortProject = project.replace(/^HLPL-/, "").replace(/-\d+$/, "").replace(/[^A-Z0-9]/gi, "").toUpperCase() || "GEN";
+  return formDocumentTypes.includes(type) ? `${prefix}/F/${department}/${revision}` : `${prefix}-${shortProject}-${department}-${type}-${revision}`;
+}
 
 const demoPortal = (): PortalState => {
   const base = emptyPortal();
