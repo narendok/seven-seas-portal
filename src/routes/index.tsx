@@ -251,6 +251,15 @@ const ai4tStages = [
   ["Stage 8", "Type Approval & Production Authorization", "Illustrative TAC evidence and the 50,000-unit authorization are human-reviewed."],
   ["Stage 9", "PDI & Commercial Invoice", "TST-PDI-01 and FIN-INV-01 complete the simulated delivery record."],
 ] as const;
+const raciDepartments = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "TST", "FIN", "SIT", "HR"] as const;
+const projectDocumentProfiles: Record<string, ProjectDocumentProfile> = {
+  "HLPL-AI4T-01": { name: "Tata Ace EV 4G Telematics Gateway", customer: "Tata Motors Limited · EV Fleet Division, Pune", contact: "Mr. Rajesh Sharma · Lead D&D EV", quantity: "50,000 units / year", techSpec: "4G Cat-1 · IP67 · CAN J1939 · Dual SIM · GNSS", commercialValue: "₹20,33,50,000 · $2.45M", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · RoHS / REACH" },
+  "HLPL-SLCT-01": { name: "AIS-140 GPS Gateway", customer: "Select Motors · fictional DEMO", contact: "Demo client contact · review required", quantity: "10,000 units / year", techSpec: "AIS-140 GNSS gateway · 4G · OBD-II · IP67", commercialValue: "₹4,12,00,000 · illustrative", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS" },
+  "HLPL-XLINK-03": { name: "Commercial Fleet Gateway", customer: "Commercial Fleet Programme · fictional DEMO", contact: "Demo fleet programme SPOC", quantity: "25,000 units / year", techSpec: "Dual CAN · OBD-II · GNSS · 4G fleet gateway", commercialValue: "Commercial value pending controlled review", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AEC-Q100 · ISO 7637-2 · RoHS / REACH" },
+};
+function defaultRaciMatrix(): RaciMatrix {
+  return Object.fromEntries(ai4tStages.map(([stage], index) => [stage, Object.fromEntries(raciDepartments.map((department) => [department, department === (index < 3 ? "SAL" : index === 5 ? "QA" : index === 8 ? "TST" : "EHW") ? "R" : department === "SAL" ? "A" : ["EHW", "ESW", "MECH", "PUR", "QA"].includes(department) ? "C" : "I"]))]));
+}
 const ai4tDossier = [
   ["Customer SOR", "HLPL-AI4T-SAL-SOR-01", "SAL", "Stage 1"],
   ["Mutual NDA", "HLPL-AI4T-SAL-mNDA-01", "SAL", "Stage 1"],
