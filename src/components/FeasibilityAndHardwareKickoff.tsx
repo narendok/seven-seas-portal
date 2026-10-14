@@ -1,0 +1,661 @@
+import { useState } from "react";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  Lock,
+  Cpu,
+  FileText,
+  Shield,
+  Layers,
+  Sparkles,
+  ArrowRight,
+  ExternalLink,
+  ChevronRight,
+  Zap,
+  Building2,
+  DollarSign,
+  Boxes,
+  Microchip,
+  RotateCcw,
+} from "lucide-react";
+
+export type FeasibilityVerdict = "FEASIBLE" | "FEASIBLE_WITH_CONDITIONS" | "INFEASIBLE";
+
+export type DepartmentFeasibility = {
+  deptCode: string;
+  deptName: string;
+  leadName: string;
+  verdict: FeasibilityVerdict;
+  scopeSummary: string;
+  internalRemarks: string;
+  clientHighlights: string;
+  keyParameters: { label: string; value: string }[];
+  signedAt: string;
+  signatureHash: string;
+};
+
+export type HardwarePath = "poc" | "pilot";
+
+export interface FeasibilityAndHardwareKickoffProps {
+  currentStageIndex: number;
+  onAdvanceToStage: (stageIndex: number) => void;
+  onOpenDocumentView: (docId: string, title: string, dept: string) => void;
+}
+
+export function FeasibilityAndHardwareKickoff({
+  currentStageIndex,
+  onAdvanceToStage,
+  onOpenDocumentView,
+}: FeasibilityAndHardwareKickoffProps) {
+  // Feasibility Review State
+  const [feasibilitySigned, setFeasibilitySigned] = useState(currentStageIndex >= 2);
+  const [requirementLocked, setRequirementLocked] = useState(currentStageIndex >= 3);
+  const [hardwarePath, setHardwarePath] = useState<HardwarePath>("poc");
+  const [hardwareKickoffLaunched, setHardwareKickoffLaunched] = useState(currentStageIndex >= 4);
+
+  // Department reviews per Master Plan §4 & §5
+  const reviews: DepartmentFeasibility[] = [
+    {
+      deptCode: "EHW",
+      deptName: "Embedded Hardware Engineering",
+      leadName: "Avery Vale",
+      verdict: "FEASIBLE",
+      scopeSummary: "STM32F405VG automotive MCU, 9V-36V input with ISO 7637-2 TVS suppression, 4G Cat-1 + GNSS RF frontend, 4-layer stackup.",
+      internalRemarks: "SM5S24A TVS diode selected for 24V load dump. Microstrip 50-ohm RF trace clearance verified on Layer 1.",
+      clientHighlights: "Automotive AEC-Q100 hardware architecture with dual CAN bus and rugged IP67 transient protection.",
+      keyParameters: [
+        { label: "Nominal Voltage", value: "12V / 24V (9-36V Operating)" },
+        { label: "Transient Immunity", value: "ISO 7637-2 Pulse 1, 2a/2b, 3a/3b, 5b" },
+        { label: "PCB Layer Count", value: "4-Layer FR4 (1.6mm thickness)" },
+      ],
+      signedAt: "14 Oct 2026, 16:30 IST",
+      signatureHash: "SHA256:7e8a9f...c31b",
+    },
+    {
+      deptCode: "ESW",
+      deptName: "Firmware & Software Engineering",
+      leadName: "Devon Lane",
+      verdict: "FEASIBLE",
+      scopeSummary: "FreeRTOS kernel, CAN J1939 telemetry stack, AIS-140 MQTT packet engine, dual-bank bootloader for fail-safe OTA.",
+      internalRemarks: "Flash allocation: 512KB fits application (340KB) + bootloader (64KB). Dual-bank partition ensures rollback on OTA power drop.",
+      clientHighlights: "Full AIS-140 compliance firmware with encrypted telemetry transmission and live over-the-air updates.",
+      keyParameters: [
+        { label: "RTOS Kernel", value: "FreeRTOS v10.4 (AEC-Q compliant)" },
+        { label: "CAN Protocol", value: "J1939 @ 250kbps / 500kbps" },
+        { label: "OTA Rollback", value: "Dual-Bank Flash + CRC32" },
+      ],
+      signedAt: "14 Oct 2026, 17:15 IST",
+      signatureHash: "SHA256:4d2c8b...e901",
+    },
+    {
+      deptCode: "MECH",
+      deptName: "Mechanical Engineering",
+      leadName: "Samira Holt",
+      verdict: "FEASIBLE",
+      scopeSummary: "Custom IP67 UV-stabilized polycarbonate enclosure, molded silicone gasket seal, Molex MX150 automotive-grade waterproof connector.",
+      internalRemarks: "Thermal simulation: maximum internal junction temperature 68°C at 85°C ambient under full 4G transmission burst.",
+      clientHighlights: "Rugged automotive IP67 waterproof enclosure tested for commercial electric vehicle chassis mounting.",
+      keyParameters: [
+        { label: "Enclosure Ingress", value: "IP67 (1m water immersion / 30 min)" },
+        { label: "Material", value: "Polycarbonate UV-Stabilized (UL94-V0)" },
+        { label: "Vibration Standard", value: "AIS-140 Annexure 8 Random Vibration" },
+      ],
+      signedAt: "14 Oct 2026, 18:00 IST",
+      signatureHash: "SHA256:9a11ef...55bc",
+    },
+    {
+      deptCode: "PUR",
+      deptName: "Purchasing & Supply Chain",
+      leadName: "Morgan Reed",
+      verdict: "FEASIBLE_WITH_CONDITIONS",
+      scopeSummary: "Tier-1 ASL component pipeline, 50,000 unit volume pricing, supplier PPAP Level 3 readiness, target BOM cost $35.42.",
+      internalRemarks: "Quectel 4G modem has 14-week lead time. Recommend releasing advance long-lead PO for first 10,000 units by Week 16.",
+      clientHighlights: "Strategic semiconductor allocation secured for 50,000 units/year with dual-sourcing on critical passives.",
+      keyParameters: [
+        { label: "BOM Cost Target", value: "$35.42 / unit (Achievable at 50k qty)" },
+        { label: "Critical Lead Time", value: "14 Weeks (Quectel EC200U modem)" },
+        { label: "ASL Sourcing Risk", value: "Low (Dual-source on power ICs)" },
+      ],
+      signedAt: "14 Oct 2026, 18:45 IST",
+      signatureHash: "SHA256:1f78ea...a412",
+    },
+    {
+      deptCode: "QA",
+      deptName: "Quality Assurance & APQP",
+      leadName: "Jordan Blake",
+      verdict: "FEASIBLE",
+      scopeSummary: "18-test DVP&R matrix planned, ARAI/ICAT type approval schedule, IATF 16949 §8.2.3 contract review sign-off.",
+      internalRemarks: "Pre-compliance EMC/ESD tests to be executed in-house before sending golden units to ARAI Pune.",
+      clientHighlights: "Comprehensive automotive qualification framework ensuring zero-defect release and TAC certification.",
+      keyParameters: [
+        { label: "DVP&R Suite", value: "18 Tests (Electrical & Environmental)" },
+        { label: "Governing Standard", value: "IATF 16949:2016 & AIS-140" },
+        { label: "APQP Milestone", value: "Gate 2 (Feasibility Sign-off)" },
+      ],
+      signedAt: "14 Oct 2026, 19:10 IST",
+      signatureHash: "SHA256:b6329c...887f",
+    },
+    {
+      deptCode: "FIN",
+      deptName: "Accounts & Finance",
+      leadName: "Priya Voss",
+      verdict: "FEASIBLE",
+      scopeSummary: "Commercial contract review: unit price ₹4,067, order value ₹20.33 Cr, 30% advance deposit terms verified.",
+      internalRemarks: "Advance deposit of ₹6.10 Cr covers prototype tooling and component buffer procurement.",
+      clientHighlights: "Approved commercial proposal with milestone-based invoicing and statutory GST compliance.",
+      keyParameters: [
+        { label: "Programme Value", value: "₹20,33,50,000 ($2.45M)" },
+        { label: "Advance Payment", value: "30% (₹6,10,05,000) Upon PO" },
+        { label: "HSN Code", value: "852610 (Radar/Radio Navigation)" },
+      ],
+      signedAt: "14 Oct 2026, 19:30 IST",
+      signatureHash: "SHA256:3c810d...fe55",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* STAGE 2: Multi-Department Feasibility & Contract Review */}
+      {currentStageIndex === 1 && (
+        <div className="rounded-xl border border-steel/30 bg-card p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-steel/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-steel">
+                  Stage 2 Gate
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">HLPL/F/MKT/01</span>
+              </div>
+              <h3 className="mt-1 text-base font-bold text-foreground">
+                Multi-Department Feasibility Review & Contract Review Gate
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Per Master Plan §4: Selected-department feasibility handover. All 6 functional HODs have evaluated technical, supply, quality, and commercial constraints.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="size-3.5" /> 6 of 6 HODs Signed
+              </span>
+            </div>
+          </div>
+
+          {/* Department Feasibility Cards */}
+          <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {reviews.map((rev) => (
+              <div
+                key={rev.deptCode}
+                className="flex flex-col justify-between rounded-lg border border-border/80 bg-panel/60 p-4 transition-all hover:border-steel/40"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold text-foreground">
+                      {rev.deptCode}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        rev.verdict === "FEASIBLE"
+                          ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                          : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      }`}
+                    >
+                      {rev.verdict === "FEASIBLE" ? "✓ Feasible" : "⚠ Feasible w/ Conditions"}
+                    </span>
+                  </div>
+
+                  <h4 className="mt-2 text-xs font-bold text-foreground">{rev.deptName}</h4>
+                  <p className="mt-1 text-[11px] font-medium text-muted-foreground">Lead: {rev.leadName}</p>
+
+                  <p className="mt-2.5 text-xs leading-relaxed text-foreground/90">{rev.scopeSummary}</p>
+
+                  {/* Key Parameters */}
+                  <div className="mt-3 space-y-1.5 rounded-md bg-secondary/50 p-2.5 text-[10px]">
+                    {rev.keyParameters.map((param) => (
+                      <div key={param.label} className="flex justify-between">
+                        <span className="text-muted-foreground">{param.label}:</span>
+                        <span className="font-mono font-medium text-foreground">{param.value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Internal Remarks vs Client Highlights */}
+                  <div className="mt-3 space-y-2 text-[11px]">
+                    <div className="rounded border-l-2 border-amber-500/60 bg-amber-500/5 p-2">
+                      <span className="block font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                        Internal Technical Remark (Confidential):
+                      </span>
+                      <p className="mt-0.5 text-muted-foreground">{rev.internalRemarks}</p>
+                    </div>
+
+                    <div className="rounded border-l-2 border-primary/60 bg-primary/5 p-2">
+                      <span className="block font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
+                        Client-Visible Highlight:
+                      </span>
+                      <p className="mt-0.5 text-foreground/80">{rev.clientHighlights}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-2 text-[10px] text-muted-foreground">
+                  <span>{rev.signedAt}</span>
+                  <span className="font-mono text-emerald-600 dark:text-emerald-400">{rev.signatureHash}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Gate Resolution Action Bar */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-emerald-500/5 p-4 border border-emerald-500/20">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="size-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">
+                  All 6 Departments Approved — Contract Review Record HLPL/F/MKT/01 Ready
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Locking this gate validates the technical baseline and automatically unblocks Stage 3 (Requirement & Commercial Lock).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => onOpenDocumentView("HLPL/F/MKT/01", "Contract Review Record", "SAL")}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                <FileText className="size-3.5" /> View HLPL/F/MKT/01
+              </button>
+              <button
+                onClick={() => {
+                  setFeasibilitySigned(true);
+                  onAdvanceToStage(2);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+              >
+                <Lock className="size-3.5" /> Lock Feasibility & Advance to Stage 3 <ArrowRight className="size-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STAGE 3: Final Requirement Lock & Client Approval Gate */}
+      {currentStageIndex === 2 && (
+        <div className="rounded-xl border border-steel/30 bg-card p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-steel/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-steel">
+                  Stage 3 Gate
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">IATF 16949 §8.2.3 Requirement Lock</span>
+              </div>
+              <h3 className="mt-1 text-base font-bold text-foreground">
+                Client Approval & Final Requirement Baseline Lock
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Per Master Plan §5: Formal client approval of the final requirement specification (PRS-01) and commercial quotation (QUO-01), with immutable baseline locking.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <Lock className="size-3.5" /> Baseline Ready for Lock
+            </span>
+          </div>
+
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            {/* Locked PRS Baseline */}
+            <div className="rounded-lg border border-border bg-panel/70 p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold text-foreground">
+                    EHW Technical Baseline
+                  </span>
+                  <h4 className="mt-2 text-sm font-bold text-foreground">
+                    Product Requirement Spec (PRS)
+                  </h4>
+                  <p className="font-mono text-xs text-muted-foreground">HLPL-AI4T-EHW-PRS-01 · Rev 01</p>
+                </div>
+                <button
+                  onClick={() => onOpenDocumentView("HLPL-AI4T-EHW-PRS-01", "Product Requirement Spec", "EHW")}
+                  className="rounded p-1 text-steel hover:bg-secondary"
+                  title="View complete PRS document"
+                >
+                  <ExternalLink className="size-4" />
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-2 rounded-md bg-secondary/50 p-3 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Controller:</span>
+                  <span className="font-medium text-foreground">STM32F405VG Automotive MCU</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Modem:</span>
+                  <span className="font-medium text-foreground">4G LTE Cat-1 eSIM (2G Fallback)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Vehicle Telematics:</span>
+                  <span className="font-medium text-foreground">AIS-140 Amd 1 & 2 + CAN J1939</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Enclosure:</span>
+                  <span className="font-medium text-foreground">IP67 Polycarbonate UV-Stabilized</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between text-[11px] text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-1 font-semibold">
+                  <CheckCircle2 className="size-3.5" /> Technical Lock Confirmed
+                </span>
+                <span className="font-mono text-[10px]">EHW Lead: Avery Vale</span>
+              </div>
+            </div>
+
+            {/* Locked Quotation Baseline */}
+            <div className="rounded-lg border border-border bg-panel/70 p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold text-foreground">
+                    SAL Commercial Baseline
+                  </span>
+                  <h4 className="mt-2 text-sm font-bold text-foreground">
+                    Commercial Quotation (QUO)
+                  </h4>
+                  <p className="font-mono text-xs text-muted-foreground">HLPL-AI4T-SAL-QUO-01 · Rev 01</p>
+                </div>
+                <button
+                  onClick={() => onOpenDocumentView("HLPL-AI4T-SAL-QUO-01", "Commercial Quotation", "SAL")}
+                  className="rounded p-1 text-steel hover:bg-secondary"
+                  title="View complete Quotation document"
+                >
+                  <ExternalLink className="size-4" />
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-2 rounded-md bg-secondary/50 p-3 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Programme Volume:</span>
+                  <span className="font-medium text-foreground">50,000 Units / Year</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Unit Selling Price:</span>
+                  <span className="font-medium text-foreground">₹4,067 / device</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Contract Value:</span>
+                  <span className="font-bold text-foreground">₹20,33,50,000 ($2.45M)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Payment Milestones:</span>
+                  <span className="font-medium text-foreground">30% Advance Deposit / 70% Dispatch</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between text-[11px] text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-1 font-semibold">
+                  <CheckCircle2 className="size-3.5" /> Commercial Lock Confirmed
+                </span>
+                <span className="font-mono text-[10px]">Sales Lead: Priya Sharma</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recorded Client Approval Card */}
+          <div className="mt-5 rounded-lg border border-steel/40 bg-steel/5 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-steel/15 text-steel">
+                  <Building2 className="size-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">
+                    Tata Motors Limited · EV Fleet Division, Pune
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Client Representative: <strong>Rajesh Sharma (Lead D&D EV)</strong> · Recorded Sign-off:{" "}
+                    <span className="font-mono text-emerald-600 dark:text-emerald-400">mNDA-01 & SOR-01 Approved</span>
+                  </p>
+                </div>
+              </div>
+
+              <span className="rounded-full bg-emerald-500/15 px-3 py-1 font-mono text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                CLIENT SIGN-OFF RECORDED ✓
+              </span>
+            </div>
+
+            {/* Change Control Loop 1 Warning */}
+            <div className="mt-3 rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                <p>
+                  <strong>Change Control Loop 1 Active:</strong> Locking this requirement baseline creates an immutable
+                  reference revision. Any subsequent customer amendment requires formal engineering re-assessment and
+                  marks all existing stage approvals STALE until re-confirmed.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Gate Action */}
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={() => {
+                setRequirementLocked(true);
+                onAdvanceToStage(3);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+            >
+              <Lock className="size-4" /> Confirm Final Requirement Lock & Authorize Hardware Team Kick-Off{" "}
+              <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* STAGE 4 & 5: Hardware Team Path Decision — PoC vs Direct Pilot */}
+      {(currentStageIndex === 3 || currentStageIndex === 4) && (
+        <div className="rounded-xl border border-steel/30 bg-card p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-steel/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-steel">
+                  Stage 4 & 5 Decision
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">Master Plan §5 Hardware Kick-off</span>
+              </div>
+              <h3 className="mt-1 text-base font-bold text-foreground">
+                Hardware Team Technical Path: Research / PoC vs. Direct SMT Pilot Build
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Per Master Plan §5: Hardware proposes the appropriate technical path: use an optional Research / POC
+                phase for unresolved assumptions, or record a justified direct Pilot bypass for proven designs.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-secondary px-2.5 py-1 text-xs font-semibold text-foreground">
+                Selected: {hardwarePath === "poc" ? "Research / PoC Track (Stage 4)" : "Direct SMT Pilot Track (Stage 5)"}
+              </span>
+            </div>
+          </div>
+
+          {/* Interactive Path Selection Grid */}
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            {/* OPTION A: Research / PoC Track */}
+            <div
+              onClick={() => setHardwarePath("poc")}
+              className={`cursor-pointer rounded-xl border p-5 transition-all ${
+                hardwarePath === "poc"
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                  : "border-border bg-panel/60 hover:border-steel/40"
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`flex size-8 items-center justify-center rounded-lg ${
+                      hardwarePath === "poc" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                    }`}
+                  >
+                    <Microchip className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Option A: Research / PoC Phase</h4>
+                    <span className="font-mono text-[11px] text-muted-foreground">Stage 4 · Bench Validation</span>
+                  </div>
+                </div>
+                <input
+                  type="radio"
+                  checked={hardwarePath === "poc"}
+                  onChange={() => setHardwarePath("poc")}
+                  className="size-4 text-primary"
+                />
+              </div>
+
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                Recommended when unproven assumptions or new silicon require bench verification before investing in SMT
+                tooling or custom enclosures.
+              </p>
+
+              <div className="mt-4 space-y-2 rounded-md bg-secondary/50 p-3 text-xs">
+                <p className="font-semibold text-foreground">PoC Investigation Objectives:</p>
+                <ul className="list-disc space-y-1 pl-4 text-[11px] text-muted-foreground">
+                  <li>Validate CAN J1939 bus loading stability under 500kbps telemetry packets.</li>
+                  <li>Verify STM32F405 thermal dissipation under 24V supply and 4G transmission bursts.</li>
+                  <li>Perform RF sensitivity and antenna impedance matching for internal patch antenna.</li>
+                </ul>
+              </div>
+
+              <div className="mt-3 border-t border-border/50 pt-3 text-[11px]">
+                <p className="text-muted-foreground">
+                  <strong>Exit Deliverables:</strong> Schematics <span className="font-mono text-steel">EHW-SCH-01</span>,
+                  Preliminary BOM <span className="font-mono text-steel">EHW-BOM-00</span>, MCU Bring-up Report.
+                </p>
+              </div>
+            </div>
+
+            {/* OPTION B: Justified Direct Pilot Bypass */}
+            <div
+              onClick={() => setHardwarePath("pilot")}
+              className={`cursor-pointer rounded-xl border p-5 transition-all ${
+                hardwarePath === "pilot"
+                  ? "border-emerald-500 bg-emerald-500/5 ring-2 ring-emerald-500/20"
+                  : "border-border bg-panel/60 hover:border-steel/40"
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`flex size-8 items-center justify-center rounded-lg ${
+                      hardwarePath === "pilot"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-secondary text-muted-foreground"
+                    }`}
+                  >
+                    <Zap className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Option B: Justified Direct Pilot Bypass</h4>
+                    <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
+                      Stage 5 · Skip to SMT Pilot Build
+                    </span>
+                  </div>
+                </div>
+                <input
+                  type="radio"
+                  checked={hardwarePath === "pilot"}
+                  onChange={() => setHardwarePath("pilot")}
+                  className="size-4 text-emerald-600"
+                />
+              </div>
+
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                Master Plan §5 rule: For a justified proven/reused design, authorized reviewers record why POC is not
+                needed and proceed directly to SMT pilot without fabricating mock evidence.
+              </p>
+
+              <div className="mt-4 space-y-2 rounded-md bg-secondary/50 p-3 text-xs">
+                <p className="font-semibold text-foreground">Recorded Technical Justification:</p>
+                <p className="text-[11px] italic leading-relaxed text-muted-foreground">
+                  "Core STM32 and 4G Cat-1 cellular architecture is pre-qualified and reused from the certified
+                  HLPL-SLCT automotive platform (AIS-140 / AEC-Q100). Zero unproven silicon or high-risk interfaces exist.
+                  Technical reviewers authorize direct progression to Stage 5 SMT Line 2 Pilot Build and Control Plan
+                  EMF-CP-01."
+                </p>
+                <div className="flex justify-between border-t border-border/40 pt-2 text-[10px] text-muted-foreground">
+                  <span>Authorized by: Avery Vale (EHW Lead)</span>
+                  <span>Jordan Blake (QA Lead)</span>
+                </div>
+              </div>
+
+              <div className="mt-3 border-t border-border/50 pt-3 text-[11px]">
+                <p className="text-muted-foreground">
+                  <strong>Exit Deliverables:</strong> SMT Line 2 Thermal Profile, Process Control Plan{" "}
+                  <span className="font-mono text-steel">EMF-CP-01</span>, PUR Proto Tooling.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Hardware Team Kick-off Dossier */}
+          <div className="mt-6 rounded-lg border border-border bg-panel/70 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-steel">
+                  Hardware Team Operational Dossier
+                </p>
+                <h4 className="mt-1 text-sm font-bold text-foreground">
+                  HLPL-AI4T-01 · Active Engineering Kick-Off Squad
+                </h4>
+              </div>
+              <span className="rounded bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                Squad Ready for Work
+              </span>
+            </div>
+
+            <div className="mt-3 grid gap-3 sm:grid-cols-3 text-xs">
+              <div className="rounded border border-border/60 bg-secondary/40 p-2.5">
+                <span className="font-mono text-[10px] text-muted-foreground">Lead HW Architect</span>
+                <p className="mt-0.5 font-bold text-foreground">Avery Vale</p>
+                <p className="text-[10px] text-muted-foreground">Schematic SCH-01 & BOM-00 Release</p>
+              </div>
+              <div className="rounded border border-border/60 bg-secondary/40 p-2.5">
+                <span className="font-mono text-[10px] text-muted-foreground">Power & Transient Engineer</span>
+                <p className="mt-0.5 font-bold text-foreground">Elena Rostova</p>
+                <p className="text-[10px] text-muted-foreground">9V-36V ISO 7637-2 Power Path</p>
+              </div>
+              <div className="rounded border border-border/60 bg-secondary/40 p-2.5">
+                <span className="font-mono text-[10px] text-muted-foreground">Firmware PoC Specialist</span>
+                <p className="mt-0.5 font-bold text-foreground">Devon Lane</p>
+                <p className="text-[10px] text-muted-foreground">CAN J1939 Telemetry Parser Bring-Up</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Launch Action */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
+            <p className="text-xs text-muted-foreground">
+              {hardwarePath === "poc"
+                ? "Launching Research / PoC will advance the project to Stage 4 and initialize the bench bring-up squad."
+                : "Authorizing Direct Pilot will advance the project directly to Stage 5 SMT Line 2 Setup with recorded justification."}
+            </p>
+
+            <button
+              onClick={() => {
+                setHardwareKickoffLaunched(true);
+                onAdvanceToStage(hardwarePath === "poc" ? 3 : 4);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow hover:bg-emerald-700"
+            >
+              <Zap className="size-4" /> Authorize Hardware Team Kick-Off & Launch{" "}
+              {hardwarePath === "poc" ? "PoC Track (Stage 4)" : "Direct Pilot (Stage 5)"}{" "}
+              <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

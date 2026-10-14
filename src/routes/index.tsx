@@ -45,6 +45,7 @@ import {
   getControlledDocumentDownload,
   listControlledDocumentFiles,
 } from "@/lib/controlled-documents.functions";
+import { FeasibilityAndHardwareKickoff } from "@/components/FeasibilityAndHardwareKickoff";
 
 type AreaId =
   | "home"
@@ -2492,7 +2493,7 @@ function Ai4tLifecycleHub({
   onOpenDocument: (document: ControlledDocument) => void;
 }) {
   const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
-  const [tab, setTab] = useState<"stages" | "binder">("stages");
+  const [tab, setTab] = useState<"stages" | "feasibility" | "binder">("stages");
   const current = ai4tStages[simulation.stage] ?? ai4tStages[0];
   const progress = Math.round(((simulation.stage + 1) / ai4tStages.length) * 100);
   const accessibleDossier = persona.kind === "client"
@@ -2518,8 +2519,9 @@ function Ai4tLifecycleHub({
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{current[2]}</p>
         </div>
       </section>
-      <div className="mt-5 flex gap-2 border-b border-border pb-2">
-        <button onClick={() => setTab("stages")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "stages" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Lifecycle stages</button>
+      <div className="mt-5 flex flex-wrap gap-2 border-b border-border pb-2">
+        <button onClick={() => setTab("stages")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "stages" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Lifecycle stages (1-9)</button>
+        <button onClick={() => setTab("feasibility")} className={`rounded-md px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 ${tab === "feasibility" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}><Lock className="size-3.5" /> Feasibility & Req Lock Gate (Stage 2-5)</button>
         <button onClick={() => setTab("binder")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "binder" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Master dossier binder</button>
       </div>
       {tab === "stages" && <><section className="mt-5 grid gap-2 sm:grid-cols-3">
@@ -2529,6 +2531,25 @@ function Ai4tLifecycleHub({
           </button>
         ))}
       </section>
+      {simulation.stage >= 1 && simulation.stage <= 4 && (
+        <div className="mt-5">
+          <FeasibilityAndHardwareKickoff
+            currentStageIndex={simulation.stage}
+            onAdvanceToStage={(stageIndex) => onJump(stageIndex)}
+            onOpenDocumentView={(docId, title, dept) =>
+              onOpenPrintable({
+                title: title.toUpperCase(),
+                documentId: docId,
+                department: dept,
+                revision: "Rev 01",
+                status: "Approved",
+                project: "HLPL-AI4T-01",
+                stage: `Stage ${simulation.stage + 1}`,
+              })
+            }
+          />
+        </div>
+      )}
       <LifecycleDeliverables documents={documents} stage={current[0]} onOpenDocument={onOpenDocument} />
       <section className="ops-section mt-5 overflow-hidden">
         <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Role-filtered binder view. Preview content is a formatted DEMO draft.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
@@ -2536,7 +2557,27 @@ function Ai4tLifecycleHub({
           {accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}
         </div>
       </section></>}
+      {tab === "feasibility" && (
+        <div className="mt-5">
+          <FeasibilityAndHardwareKickoff
+            currentStageIndex={simulation.stage}
+            onAdvanceToStage={(stageIndex) => onJump(stageIndex)}
+            onOpenDocumentView={(docId, title, dept) =>
+              onOpenPrintable({
+                title: title.toUpperCase(),
+                documentId: docId,
+                department: dept,
+                revision: "Rev 01",
+                status: "Approved",
+                project: "HLPL-AI4T-01",
+                stage: `Stage ${simulation.stage + 1}`,
+              })
+            }
+          />
+        </div>
+      )}
       {tab === "binder" && <section className="ops-section mt-5 overflow-hidden">
+
         <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Unified role-filtered binder. Each preview is an unissued DEMO document.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
         <div className="divide-y divide-border">{accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}</div>
       </section>}
