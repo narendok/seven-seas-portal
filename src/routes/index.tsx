@@ -40,6 +40,9 @@ import {
   FileSpreadsheet,
   UserPlus,
   Send,
+  BookOpen,
+  Shield,
+  Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
@@ -60,6 +63,11 @@ import {
   type CustomerRecord,
   type EnquiryOpportunity,
 } from "@/components/SalesWorkspaceAndCustomerRegister";
+import {
+  CompanyDirectoryModal,
+  OfficialDecisionLogModal,
+  OperationsLegalAndLetterheadModal,
+} from "@/components/CompanyDirectoryAndLegalHub";
 
 type AreaId =
   | "home"
@@ -1664,6 +1672,9 @@ function Portal() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [customerRegisterOpen, setCustomerRegisterOpen] = useState(false);
   const [feasibilityDispatchEnquiry, setFeasibilityDispatchEnquiry] = useState<EnquiryOpportunity | null>(null);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
+  const [decisionLogOpen, setDecisionLogOpen] = useState(false);
+  const [legalHubOpen, setLegalHubOpen] = useState(false);
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("hexense-scms-theme");
@@ -1937,6 +1948,9 @@ function Portal() {
             />
             <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
             <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
+            <HeaderAction label="Directory" icon={Users} onClick={() => setDirectoryOpen(true)} />
+            <HeaderAction label="Decision Log" icon={BookOpen} onClick={() => setDecisionLogOpen(true)} />
+            <HeaderAction label="Legal Hub" icon={Shield} onClick={() => setLegalHubOpen(true)} />
             <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
             <HeaderAction
               label="Administration"
@@ -1961,6 +1975,7 @@ function Portal() {
               selectedProjectId={selectedProjectId}
               onSelectProject={setSelectedProjectId}
               onBack={() => navigate(activeArea)}
+              onOpenDecisionLog={() => setDecisionLogOpen(true)}
               onUpdate={(patch) =>
                 update((state) => ({
                   ...state,
@@ -2044,6 +2059,9 @@ function Portal() {
                 }));
                 setAi4tOpen(true);
               }}
+              onOpenDecisionLog={() => setDecisionLogOpen(true)}
+              onOpenLegalHub={() => setLegalHubOpen(true)}
+              onOpenDirectory={() => setDirectoryOpen(true)}
               persona={persona}
             />
           ) : view === "detail" && selected ? (
@@ -2490,6 +2508,18 @@ function Portal() {
           onReset={() => setRfqStep(0)}
         />
       )}
+      {directoryOpen && (
+        <CompanyDirectoryModal onClose={() => setDirectoryOpen(false)} />
+      )}
+      {decisionLogOpen && (
+        <OfficialDecisionLogModal
+          onClose={() => setDecisionLogOpen(false)}
+          activeProject={selectedProjectId}
+        />
+      )}
+      {legalHubOpen && (
+        <OperationsLegalAndLetterheadModal onClose={() => setLegalHubOpen(false)} />
+      )}
       {notice && (
         <div
           role="status"
@@ -2517,6 +2547,9 @@ function CommandCenter({
   onOpenDraftHub,
   onOpenAi4t,
   onOpenFeasibilityGate,
+  onOpenDecisionLog,
+  onOpenLegalHub,
+  onOpenDirectory,
   persona,
 }: {
   portal: PortalState;
@@ -2533,6 +2566,9 @@ function CommandCenter({
   onOpenDraftHub: () => void;
   onOpenAi4t: () => void;
   onOpenFeasibilityGate?: ((projectCode: string) => void) | undefined;
+  onOpenDecisionLog?: (() => void) | undefined;
+  onOpenLegalHub?: (() => void) | undefined;
+  onOpenDirectory?: (() => void) | undefined;
   persona: Persona;
 }) {
   const records = portal.records.filter((record) => !record.archived);
@@ -2567,6 +2603,15 @@ function CommandCenter({
             <Action onClick={onOpenAi4t} label="End-to-End Project Lifecycle Hub (HLPL-AI4T-01)" primary />
             {onOpenFeasibilityGate && (
               <Action onClick={() => onOpenFeasibilityGate("HLPL-AI4T-01")} label="Feasibility & Hardware Gate" />
+            )}
+            {onOpenDecisionLog && (
+              <Action onClick={onOpenDecisionLog} label="Official Decision Log" />
+            )}
+            {onOpenLegalHub && (
+              <Action onClick={onOpenLegalHub} label="Legal & Letterhead Hub" />
+            )}
+            {onOpenDirectory && (
+              <Action onClick={onOpenDirectory} label="Company Directory" />
             )}
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
@@ -5631,6 +5676,7 @@ function PMSSWorkspace({
   selectedProjectId,
   onSelectProject,
   onBack,
+  onOpenDecisionLog,
   onUpdate,
   onLog,
 }: {
@@ -5640,6 +5686,7 @@ function PMSSWorkspace({
   selectedProjectId: string;
   onSelectProject: (projectId: string) => void;
   onBack: () => void;
+  onOpenDecisionLog?: (() => void) | undefined;
   onUpdate: (patch: Record<string, string>) => void;
   onLog: (action: string, detail: string) => void;
 }) {
@@ -5675,7 +5722,14 @@ function PMSSWorkspace({
         eyebrow="Project master spec sheet · SSOT"
         title="PMSS control"
         description="The shared project baseline for engineering, compliance and lifecycle gate decisions."
-        actions={<Action onClick={trigger} label="Trigger scope change" primary />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenDecisionLog && (
+              <Action onClick={onOpenDecisionLog} label="Official Decision Log" />
+            )}
+            <Action onClick={trigger} label="Trigger scope change" primary />
+          </div>
+        }
       />
       <label className="mb-5 block max-w-xl text-sm font-medium">
         Active project
