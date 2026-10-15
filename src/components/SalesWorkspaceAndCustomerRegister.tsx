@@ -23,6 +23,7 @@ import {
   Layers,
   Sparkles,
   Lock,
+  CheckSquare,
 } from "lucide-react";
 
 export type CustomerRecord = {
@@ -842,6 +843,7 @@ export function SalesEnquiriesAndOpportunities({
   onOpenCustomerRegister,
   onOpenFeasibilityGate,
   onSendForFeasibility,
+  onOpenNewTask,
 }: {
   customers: CustomerRecord[];
   enquiries: EnquiryOpportunity[];
@@ -849,6 +851,7 @@ export function SalesEnquiriesAndOpportunities({
   onOpenCustomerRegister: () => void;
   onOpenFeasibilityGate: (projectCode: string) => void;
   onSendForFeasibility: (enquiry: EnquiryOpportunity) => void;
+  onOpenNewTask?: () => void;
 }) {
   const [filterTab, setFilterTab] = useState<
     "all" | "opportunities" | "enquiries" | "feasibility" | "locked"
@@ -963,7 +966,18 @@ export function SalesEnquiriesAndOpportunities({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {onOpenNewTask && (
+              <button
+                type="button"
+                onClick={onOpenNewTask}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary shadow-xs transition hover:bg-primary/20"
+              >
+                <CheckSquare className="size-3.5 text-primary" />
+                Create Task
+              </button>
+            )}
             <button
+              type="button"
               onClick={onOpenCustomerRegister}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition hover:bg-secondary"
             >
@@ -971,6 +985,7 @@ export function SalesEnquiriesAndOpportunities({
               Customer Register.xlsx
             </button>
             <button
+              type="button"
               onClick={onOpenNewEnquiry}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs transition hover:opacity-90"
             >

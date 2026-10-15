@@ -1712,6 +1712,11 @@ function Portal() {
     setQueueStage(null);
     setMobileMenu(false);
   };
+  const handleOpenCreate = (typeOrEvent?: unknown) => {
+    const type = typeof typeOrEvent === "string" ? typeOrEvent : null;
+    setCreateType(type);
+    setModal("create");
+  };
   const switchPersona = (next: Persona) => {
     setPersona(next);
     const nextDepartment = next.kind === "lead" ? findAreaDepartment(portal.departments, next.departmentId ?? "home")?.id ?? null : null;
@@ -1832,8 +1837,10 @@ function Portal() {
     };
     update((state) => ({ ...state, records: [record, ...state.records] }));
     log("Record created", `${record.reference} created`);
-    setSelectedId(record.id);
-    setView("detail");
+    if (input.type !== "Task") {
+      setSelectedId(record.id);
+      setView("detail");
+    }
     setModal(null);
     announce(`${record.reference} created.`);
   };
@@ -1994,7 +2001,7 @@ function Portal() {
             <CommandCenter
               portal={portal}
               departmentContext={departmentContext}
-              onCreate={(type) => { setCreateType(type ?? null); setModal("create"); }}
+              onCreate={handleOpenCreate}
               onNavigate={navigate}
               onAdmin={() => setModal("admin")}
               onUpdateTask={updateTask}
@@ -2089,7 +2096,7 @@ function Portal() {
               contextName={departmentContext ? "Administrator" : "Workspace"}
               view={view === "summary" ? "summary" : "queue"}
               onView={setView}
-              onCreate={(type) => { setCreateType(type ?? null); setModal("create"); }}
+              onCreate={handleOpenCreate}
               onSelect={(id) => {
                 setSelectedId(id);
                 setView("detail");
@@ -2563,7 +2570,7 @@ function CommandCenter({
             )}
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
-            <Action onClick={onCreate} label="Create Task" primary />
+            <Action onClick={() => onCreate("Task")} label="Create Task" primary />
           </>
         }
       />
@@ -3572,7 +3579,8 @@ function DepartmentWorkspace({
               />
             )}
             <Action onClick={onOpenDrive} label="Department Cloud Drive" />
-            <Action onClick={onCreate} label={`Create ${area.recordType}`} primary />
+            <Action onClick={() => onCreate("Task")} label="Create Task" />
+            <Action onClick={() => onCreate(area.recordType)} label={`Create ${area.recordType}`} primary />
           </>
         }
       />
@@ -3632,6 +3640,7 @@ function DepartmentWorkspace({
             onOpenCustomerRegister={() => onOpenCustomerRegister?.()}
             onOpenFeasibilityGate={(projectCode) => onOpenFeasibilityGate?.(projectCode)}
             onSendForFeasibility={(enquiry) => onSendForFeasibility?.(enquiry)}
+            onOpenNewTask={() => onCreate("Task")}
           />
         </section>
       ) : (
@@ -4273,7 +4282,7 @@ function RecordForm({
 }) {
   const spec = formSpecs[area] ?? formSpecs.ehw;
   if (!spec) return null;
-  const availableTypes = Array.from(new Set([...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
+  const availableTypes = Array.from(new Set(["Task", ...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
   const [type, setType] = useState(initialType ?? spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
@@ -4286,16 +4295,56 @@ function RecordForm({
   const nextRevision = String(
     portal.records.filter((record) => record.reference.includes(`-${departmentCode}-${selectedDocumentType}-`)).length + 1,
   ).padStart(2, "0");
-  const generatedId = documentNumber(selectedProject, departmentCode, selectedDocumentType, nextRevision, portal.templateSettings?.prefix ?? "HLPL");
+  const generatedId = type === "Task"
+    ? `TASK-${departmentCode}-${String(portal.records.filter((r) => r.type === "Task").length + 1).padStart(3, "0")}`
+    : documentNumber(selectedProject, departmentCode, selectedDocumentType, nextRevision, portal.templateSettings?.prefix ?? "HLPL");
   const approvedReview = portal.records.find(
     (record) =>
       record.type === "Contract review" &&
       record.status === "Approved" &&
       record.reference === "HLPL/F/MKT/01",
   );
-  const visibleFields = type === "PRS" ? spec.fields.filter((item) => item.key !== "hwStage") : spec.fields;
+  const taskFields = [
+    { key: "title", label: "Task Title / Action", required: true },
+    {
+      key: "priority",
+      label: "Priority",
+      kind: "select" as const,
+      options: ["Normal", "High", "Critical", "Low"],
+    },
+    { key: "assignee", label: "Assignee", master: "people" as const },
+    { key: "projectId", label: "Project", master: "products" as const },
+    { key: "dueDate", label: "Due Date", kind: "date" as const },
+    { key: "controlledNumber", label: "Task ID / Reference (optional)" },
+  ];
+  const visibleFields =
+    type === "Task"
+      ? taskFields
+      : type === "PRS"
+        ? spec.fields.filter((item) => item.key !== "hwStage")
+        : spec.fields;
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (type === "Task") {
+      const taskTitle = field("title").trim();
+      if (!taskTitle) return setError("Task title is required.");
+      onSave({
+        area,
+        type: "Task",
+        title: taskTitle,
+        status: "Open",
+        priority: (field("priority") as Priority) || "Normal",
+        notes: field("scope"),
+        fields: {
+          ...values,
+          dueDate: field("dueDate") || new Date().toISOString().slice(0, 10),
+          assignee: field("assignee") || (area === "sales" ? "Priya Sharma" : "Avery Vale"),
+          projectId: field("projectId") || selectedProject,
+          controlledNumber: field("controlledNumber") || generatedId,
+        },
+      });
+      return;
+    }
     if (type === "PRS" && !approvedReview) {
       return setError("PRS is generated only after an approved Contract Review HLPL/F/MKT/01.");
     }
@@ -4314,7 +4363,7 @@ function RecordForm({
       (item) => item.required && item.key !== "controlledNumber" && !field(item.key).trim(),
     );
     if (missing) return setError(`${missing.label} is required.`);
-    const invalid = spec.fields.find(
+    const invalid = visibleFields.find(
       (item) =>
         item.master &&
         field(item.key) &&
@@ -4334,10 +4383,12 @@ function RecordForm({
     });
   };
   return (
-    <Modal title={`Create ${type}`} onClose={onClose} wide>
+    <Modal title={type === "Task" ? `Create Task · ${areaById(area).name}` : `Create ${type}`} onClose={onClose} wide>
       <form onSubmit={submit} className="space-y-5">
         <p className="rounded-lg border border-border bg-panel px-3 py-2 text-xs text-muted-foreground">
-          This {areaById(area).name} record is linked to a managed project, people, suppliers, customers, and locations where applicable. The portal generates an HLPL document number when you leave the controlled number blank.
+          {type === "Task"
+            ? `Create a tracked operational task assigned within ${areaById(area).name}. Tasks are automatically integrated into Today Checklist, Priority metrics, and department queues.`
+            : `This ${areaById(area).name} record is linked to a managed project, people, suppliers, customers, and locations where applicable. The portal generates an HLPL document number when you leave the controlled number blank.`}
         </p>
         <SelectField label="Record type" value={type} options={availableTypes} onChange={setType} />
         <section className="rounded-lg border border-steel/35 bg-panel p-3">
@@ -4408,7 +4459,7 @@ function RecordForm({
         )}
         <div className="flex justify-end gap-2">
           <Action onClick={onClose} label="Cancel" />
-          <Action label={`Save ${type}`} primary submit />
+          <Action label={type === "Task" ? "Save Task" : `Save ${type}`} primary submit />
         </div>
       </form>
       {showAddCustomerModal && (
@@ -6678,7 +6729,7 @@ function PageHeader({
   actions: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 border-b border-border/40 pb-4 md:flex-row md:items-center md:justify-between">
+    <header className="mb-6 flex flex-col gap-4 border-b border-border/40 pb-4 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0">
         <p className="font-mono text-xs font-semibold uppercase tracking-[.16em] text-muted-foreground">
           {eyebrow}
@@ -6689,7 +6740,7 @@ function PageHeader({
         <p className="mt-0.5 truncate text-sm leading-5 text-muted-foreground">{description}</p>
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2 md:justify-end">{actions}</div>}
-    </div>
+    </header>
   );
 }
 function Modal({
@@ -6860,7 +6911,7 @@ function Empty({ onCreate, label }: { onCreate: () => void; label: string }) {
         No sample activity has been created. Add the first confirmed record when ready.
       </p>
       <div className="mt-4">
-        <Action onClick={onCreate} label={label} primary />
+        <Action onClick={() => onCreate()} label={label} primary />
       </div>
     </div>
   );
