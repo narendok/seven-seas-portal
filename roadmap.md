@@ -1,28 +1,52 @@
-- [x] Make the Seven-area Six Sense Mobility portal fully functional with browser-local records, master data, setup values, global utilities, and verifiable create-to-detail workflows.
-- [x] Audit all seven Create actions without saving data; add the missing Home task form and verify modal titles, default types, controlled selectors, and master-data management paths.
-- [x] Replace generic record creation with validated, domain-specific forms, linked record selectors, and complete Administration master-data CRUD.
-- [x] Convert all master-data fields into searchable selectors with direct create/manage actions and return-to-form selection.
+# Hexense Labs SCMS - Engineering Roadmap
+
+> [!NOTE]
+> This roadmap tracks milestones for the **Hexense Labs SCMS Web Portal**. The complete, detailed specification is documented in the authoritative [SSM_ONE_WEB_PORTAL_MASTER_PLAN.md](SSM_ONE_WEB_PORTAL_MASTER_PLAN.md).
+
+---
+
+## 1. Core Framework & Multi-Department Architecture
+- [x] Make the Six Sense Mobility portal fully functional with browser-local records, master data, and verifiable create-to-detail workflows.
+- [x] Replace generic record creation with domain-specific forms, linked record selectors, and Administration master-data CRUD.
 - [x] Add department-scoped role management, granular permissions, admin context switching, all-department table controls, and delegated-action audit history.
-- [x] Add idempotent, clearly labeled fictional demo data with reset controls and protected approval examples for end-to-end role/context testing.
-- [x] Add the department-wise Today/Pending checklist with DEMO task moves and linked project and assignee views.
+- [x] Expand the portal to the **11 SCMS automotive departments** (`SAL`, `EHW`, `ESW`, `MECH`, `PUR`, `QA`, `EMF`, `TST`, `FIN`, `SIT`, `HR/OPS`).
+- [x] Add compact operational Command Center layout with persistent Dark/Light theme toggle.
+- [x] Add the **Admin Personas & Role Switcher** with 1-click switching between Executive Admin, 11 Department Leads, and Client Portal persona.
 
-- [x] Complete the 11-step company setup, administration configuration, and separate DEMO setup lifecycle.
-- [x] Align demo setup completion and checklist dashboard summaries.
-- [x] Add private Lovable Cloud controlled-document storage with department-aware records, short-lived signed upload/download links, and duplicate-safe revision handling.
+---
 
-- [x] Expand the portal from six areas to the eleven SCMS functional departments, with lifecycle control, PMSS, and numbering.
-- [x] Populate a clearly labeled fictional SCMS sample lifecycle across all 11 hubs for HLPL-SLCT-01, without representing real customer, certification, commercial, or production activity.
-- [x] Add the clearly labeled RFQ-2026-TATA-EV-042 feature-test walkthrough, controlled document previews, and 11-department demo competency roster.
-- [x] Populate the replaceable DEMO workspace with a full 11-hub task checklist, five switchable project PMSS profiles, four actionable alerts, and a 15+ controlled-document repository.
+## 2. Automotive Quality & Document Engine
+- [x] Automatic automotive document numbering adhering to formula: `HLPL-[PROJ_ID]-[DEPT]-[DOC_TYPE]-[REV]`.
+- [x] Smart location, customer, and project metadata auto-fill.
+- [x] Organization & Document Template Settings for customizable company headers, logos, and IATF 16949 / ISO 9001 footers.
+- [x] Dynamic, project-specific multi-section engineering templates (SOR, Contract Review, PRS, BOM, Control Plan, DVP&R, DFMEA, TAC, PDI, Invoice).
+- [x] Isolated A4 iframe print/PDF engine eliminating dark mode inversion, blank pages, and dialog clipping.
+- [x] Interactive RACI Responsibility Matrix with automated inter-department stage notifications.
+- [x] Operations Legal Documents & Corporate Letterhead Hub (§9) with bilateral mNDAs.
+- [x] Signed-In Company Directory (§9) with department filtering and direct communication channels.
+- [x] Official Project Decision Log (§10) with immutable locking and PMSS tie-in.
 
-- [x] Add Smart Next-Step recommendations, auto-draft document template previews, and dense expandable Today/Pending task tables in the compact automotive command-center UI.
-- [x] Enable drag-and-drop and browser-local controlled-document attachments with preview, download, and revision metadata for DEMO and local modes.
-- [x] Add a persistent dark/light interface toggle and compact operational layout hierarchy across portal workspaces.
-- [x] Add the AI4T end-to-end lifecycle hub entry point, stage/binder navigation, and per-department dual project scopes.
-- [x] Add automatic automotive document numbering, live template settings, location/data auto-fill, and printable full-page document views.
-- [x] Add project-aware document templates, print/PDF formatting, stage handoff alerts, and editable RACI routing.
-- [x] Make all document sheets stage-aware with project-specific engineering content and A4 print styling.
-- [x] Replace summary-only document previews with complete multi-section sheets, portable print output, Markdown export, and text copy actions.
-- [x] Replace blank print output with a fully isolated A4 iframe print sheet and standardize full document viewer actions.
-- [ ] Build the interactive Hardware Deliverables Cloud Drive and File Manager with revision lifecycle linking.
-- [ ] Add department-wise process menus, shortcuts, and direct Cloud Drive links for every workspace.
+---
+
+## 3. Commercial Intake & Modular Product Architecture (Master Plan §5)
+- [x] Unified **Enquiries & Opportunities** flow with inline customer creation and Customer Register.xlsx.
+- [x] Multi-Department Feasibility Input & Contract Review Gate (`HLPL/F/MKT/01`).
+- [x] **Decoupled Architecture**: Decouple Project from PCB, Wiring Harness, Firmware, and Enclosure.
+- [x] Modular Platform Asset Catalog for reusable PCBs, harnesses, firmware stacks, and enclosures.
+- [x] Project Architecture & Modular Asset Linker with live development skip calculations.
+- [x] **Automated Development Process Skip Engine**:
+  - Reusing pre-qualified PCB saves 8–12 weeks.
+  - Reusing certified Firmware saves 4–6 weeks.
+  - **Stage 4 PoC Bench Bring-Up WAIVED** when pre-certified hardware & software are detected; direct jump to Stage 5 SMT Pilot Build authorized.
+- [x] Dedicated 9-stage **AI4T Project Lifecycle Hub** (`HLPL-AI4T-01`) with 12-document master dossier binder and interactive simulation controls.
+
+---
+
+## 4. Upcoming Delivery Phases
+- [ ] **Phase 1: Symmetrical Cloud Drive & File Manager**:
+  - Interactive file manager implementing the 4-group structure (`01 Common documents`, `02 Internal projects`, `03 Client projects`, `04 Other department work`) across all 11 departments.
+  - Private S3 / Lovable Cloud Storage signed upload/download token integration.
+- [ ] **Phase 2: Department Process Menus & Action Shortcuts**:
+  - Direct process menu items linking routine tasks to their respective Cloud Drive folders.
+- [ ] **Phase 3: Supabase Shared Persistence Migration**:
+  - Authenticated PostgreSQL tables and Row-Level Security (RLS) policies replacing local storage prototype while preserving offline testability.

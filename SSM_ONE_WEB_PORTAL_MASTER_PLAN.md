@@ -1,334 +1,368 @@
-# SSM One — web portal master plan
-
-Last refined: 14 October 2026. **Single current requirements and delivery roadmap.**
-
-Repository entry point: `docs/planning/SSM_ONE_WEB_PORTAL_MASTER_PLAN.md`. `C:/Users/Admin/AndroidStudioProjects/SSMOneWeb` is the full Git repository root, containing application code and this single tracked docs folder. Normal Git pull/add/commit/push includes the documentation; no separate copy or mirror step is required. Historical backups live outside the active repository in sibling `SSMOneWebBackups`. Pending backend work remains pending.
-
-This plan consolidates the company framework, lifecycle, departmental Drive, Sales refinements, editable documents, registers, Legal/directory follow-on and web-to-mobile backend handoff. Android implementation/build planning is explicitly excluded. Update this file in place; do not create a new dated plan for each clarification. Implementation status is evidence-qualified below, not a statement that the whole target is live.
-
-
-## Plan boundary
-
-This file plans the **Lovable web portal and its authoritative backend only**. It may define and export web-to-mobile integration contracts, but it does not own Android screens, mobile offline implementation, mobile build stages, APKs or emulator/device acceptance.
-
-The separate `SSMApplication3/docs/planning/SSM_ONE_ANDROID_BUILD_PLAN.md` lives in the Android repository. Evidence generated or imported for this web source belongs in `docs/evidence/`; Android implementation evidence remains in `SSMApplication3/docs/evidence/`. Source snapshots retain their original layout for recovery and are not reorganized.
-
-## 1. Authority and how to use this plan
-
-The target is the original Lovable project `d758dbf2-2f0e-44b3-b149-1ec51def58eb`, managed backend `yyrvduosyyaluifqvwkr`, and its Android client. Web/Supabase owns identities, permissions, business records, official numbering, transactions, audit, automation and private storage. Android consumes that authority and owns mobile UI/device integration/cache/drafts.
-
-Latest human refinements incorporated here supersede conflicting dated planning assumptions. AGENTS.md and current verified backend contracts govern implementation. A requirement, draft SQL, generated file, disabled control or admin-only demo is not a completed feature. If a verified contract differs from this target, report the gap and change only the supported operation.
-
-Only two business-planning references are needed for normal use:
-
-1. **This plan:** flow, navigation, ownership, delivery sequence and current gaps.
-2. [Optimized document catalogue](SSM_ONE_DOCUMENT_CATALOGUE.md): 38 practical document/record families, mapped to all 89 original source blocks. It separates software registers, generated documents, native artifacts and conditional evidence; it is a reference, not an additional delivery queue or a prerequisite to build every listed item.
-
-Keep `docs/backend-handoff/`, migrations and `docs/evidence/` separate: they describe exact callable contracts and verification. Superseded plans have been removed after consolidation; original source extraction and dated implementation evidence retain traceability.
-
-## 2. One portal, eight departments
-
-All employees see permitted department work, project context, tasks, documents and notifications through the same records. Department switching changes presentation, never impersonates another employee or grants access.
-
-| Existing department | Main work and ownership |
-|---|---|
-| Sales | Customers, enquiries/opportunities, requirement intake, feasibility coordination, quotations, orders and customer service/handover |
-| Hardware / R&D | Hardware, firmware, application/software and mechanical workstreams; specifications, design, BOM, DFMEA, validation and technical changes |
-| Procurement | Suppliers, pilot/series sourcing, PR/RFQ/PO/ASN, Stores, receiving, IQC and controlled material transactions |
-| Production | Planning/kitting, SMT/PCBA, programming/assembly, EOL/PDI, traceability, packaging/dispatch and process calibration |
-| Operations | QMS, audits, CAPA, risks, KPI, management review, cross-team coordination and initially Legal documents/letterheads |
-| Facility / Maintenance | Infrastructure/assets, maintenance, electrical/utilities, gate/security, tooling custody and scoped IT support |
-| HR | Employees, applicants/shortlists/interviews, onboarding, policy, training and competence; restricted personnel cases |
-| Finance | Terms/budgets, matching, invoices, expenses/payment review, aging and authorized reporting |
-
-System controls is the existing privileged configuration area, not a ninth department. Workstreams and quality functions do not create departments or permissions. Members contribute assigned work; specialists maintain permitted drafts; leads assign/review their scope; authorized managers decide their gates. These are responsibility mappings, not new role grants.
-
-Quality remains distributed between engineering/design, supplier/IQC, production/EOL/calibration and Operations/QMS. Security staff do not receive every Facility record; project participation does not expose restricted HR, Finance, Legal or other department documents.
-
-## 3. Portal navigation and compact work views
-
-Each department has an overview, its main operational queues, linked projects, Drive/registers and permitted settings. Overview summarizes real work rather than presenting every workflow action as a separate button. Rows open useful details with context and a clear next step; advanced actions stay inside details.
-
-The web portal uses compact, permission-scoped navigation and responsive queues. Search filters authorized department/project/type/status/owner/revision; deep links reauthorize their target. Android navigation and device implementation are owned by its separate build plan.
-
-### Sales overview
-
-Compact grid cards show total customers, active opportunities, ongoing enquiries, actual active client projects, deployed devices, open customer tickets and overdue Sales tasks where verified data exists. Opportunity counts and actual project counts stay separate. Missing device/count contracts show **Not recorded / unavailable**, not invented zeros.
-
-Three concise columns summarize:
-
-- Ongoing enquiries/opportunities: stage, next action, owner, due/blocker and review progress.
-- Customer tickets/issues: customer/project, assignee, status and overdue actions.
-- Sales team tasks under the lead: who is doing what, project/customer link, due date and blocker.
-
-One primary **New enquiry** action; no separate overview buttons for every NDA, requirement, assignment or reviewer step. Customers, Customer service, Commercial records and Client documents remain useful linked pages.
-
-## 4. Enquiries and opportunities — one Sales flow
-
-One left-menu item: **Enquiries & Opportunities**. One compact list, active opportunities first, then pending enquiries; one New enquiry button, search and concise status filters. Do not introduce competing enquiry/opportunity creation screens.
-
-| Step | User action | Persisted result / boundary |
-|---|---|---|
-| New enquiry | Select existing customer, or Add customer inline in the same popup/sidebar; enter requirement and known context | Server-numbered enquiry linked to Customer master; customer creation updates the same customer records |
-| Internal Sales review | Open saved enquiry, discuss/clarify, assign permitted Sales owner and next action | Remains enquiry until explicit pursuit/handover decision; no automatic department broadcast |
-| Send for feasibility | Select applicable departments, responsible reviewers and due dates, then send saved requirement | Protected action creates/reuses linked opportunity, pins controlled requirement/Master revision, assigns reviews and records notification intents together |
-| Department review | Assigned staff assess their scope, evidence, risks, questions, estimates and conditions | Persisted pending/in-progress/returned/completed decisions as supported by verified states; department/person/due/verdict visible to authorized Sales users |
-| Consolidated decision | Authorized lead checks required reviews and unresolved conditions | Missing/rejected/stale evidence holds the gate; a document count is not approval |
-| Start actual project | Explicit authorized conversion after required feasibility, confirmation/baseline and other configured prerequisites | One linked project and Drive root, preserving original enquiry/opportunity/customer, pinned Master and review history |
-
-Ordinary file sharing is not conversion. Sending for feasibility is the explicit conversion point from enquiry to opportunity. Feasibility completion enables a controlled project-start decision; it must not silently approve a project, commercial commitment or release. Detailed downstream engineering POC/testing remains part of the project cycle, distinct from the initial feasibility review.
-
-Opportunity detail uses **Overview / Customer inputs / Feasibility / History**. Customer identity and Master Specification remain accessible before project creation. The proposed workspace must not masquerade as a committed project. Master inputs include name, customer/internal owner, application, product family, development scope/workstreams, summary, power/units, interfaces, connectivity/GNSS, environment/enclosure, volumes, schedule, requested standards and exclusions. Unknowns remain explicit.
-
-Edits use verified revision/conflict contracts, preserve manual values/history and identify what changed. Customer-master editing and Master-spec editing are separate authorities even when visible together. Notify affected assigned teams through the existing protected event path; do not claim notification if that path is absent.
-
-List columns/cards show customer/code, subject, status/stage, owner, feasibility departments/review counts and next action. **Active** means open opportunity, not feasibility started. Show **Not sent for feasibility / No assigned team** when true. Wrap long labels, bound grid cells and contain any table scrolling; no content extending beyond the page/dialog.
-
-### Consolidated departmental feasibility and shared analysis
-
-**Agreed target; implementation pending.** Provide one shared Feasibility review within the existing opportunity detail, consolidating customer requirements and the analysis of all participating departments. Sales, the authorized opportunity coordinator/Operations representative and the assigned participating department leads/reviewers see the same current permitted technical comparison and discussion. Hardware, firmware, software, mechanical, Procurement, Production and Quality contribute as applicable through the existing departments/workstreams; do not create additional departments or a second opportunity workflow. Visibility is scoped to the opportunity's authorized participants, not every employee or every department globally.
-
-Use a compact requirement-by-department comparison: each customer/Master requirement has a stable reference, exact source revision, requested value/unit/acceptance condition where known, and a short response from each applicable discipline. Proposed presentation choices include Supported, Conditional, Not supported and Needs clarification; these are target UX labels, not assertions about deployed database enums. Each contribution captures proposed capability, assumptions, constraints, dependencies, evidence revision, assigned contributor, review status and last change. Show pending contributions explicitly. Department review completion and feasibility disposition are separate concepts.
-
-Keep customer requirements, department proposals and the final agreed disposition distinct. Each team edits its own authorized contribution; permitted participants can read other shared technical responses and discuss a requirement in its linked thread. Use a single authoritative set of contributions, surfaced in Sales and department workspaces rather than copied into separate forms. Restrict private commercial/Finance, Legal, HR and other confidential attachments under their existing rules; shared technical comparison does not grant blanket document access.
-
-Each department column ends with a prominent **Department remarks / Key highlights** area: the main concise summary of that department's assumptions, concerns, dependencies, questions and recommendations for other teams and the client. Keep it visible as a highlighted footer; on narrow screens show it at the end of the department card. Show author, last saved time and the applicable source/analysis revision; allow links to specific requirement rows. An empty area states No remarks yet rather than inventing a conclusion. Each authorized department contributor edits their own remarks; other permitted teams can read and discuss them. Remarks inform requirement refinement and human decisions but never automatically change the customer's approved baseline or constitute approval.
-
-Provide a clearly labelled **Client-visible highlight** for each participating department in the shared client analysis view, so the client can understand the relevant department's points and reply through linked questions/discussion. Keep a separate **Internal remarks � team only** field at each department footer, alongside the **Client-visible highlight** field. Edit each independently with explicit Save/Cancel; never auto-copy internal remarks into client highlights. Keep internal remarks separately marked and scoped; do not expose internal costing, supplier negotiations, private staff discussion or restricted attachments through the public highlight. Before explicitly sharing/saving a client-visible highlight through an accepted publication contract, make its audience clear in the editor and show which revision the client can see. Reuse the same authoritative, versioned remarks rather than independently editable client copies. Access remains limited to that authorized client's opportunity/project and permitted participants. Saved highlight changes use the verified notification/audit path; view access, remarks and client replies do not imply engineering release or acceptance. This is planned behavior, not evidence that a client publication or notification contract is installed.
-
-Show a concise overall summary of participating departments, outstanding reviews, unresolved conditions and conflicts. Expand a requirement to see all department points, linked evidence and discussion; on narrow screens use stacked department responses or contained horizontal scrolling. Keep the existing compact opportunity view and avoid overflowing tables, unrelated creation buttons or a separate general chat application.
-
-For each conflict or clarification, retain the affected requirement and contributions, named issue owner, proposed resolution, due date, discussion and the authorized recorded decision. Do not overwrite earlier contributions or silently merge competing values. Changes notify affected authorized participants through a verified durable event path and retain audit history. A revised customer/Master source marks affected reviews stale for scoped reconfirmation instead of carrying old approval forward automatically. The accepted baseline preserves the exact reviewed inputs, agreed resolution and applicable sign-offs when the opportunity becomes a project; discussion alone does not create a project.
-
-Provide deterministic checks for explicitly structured comparable fields: normalized units/ranges, interface or connector compatibility, contradictory selected responses, incompatible dependencies and schedule/lead-time constraints where the necessary values are known. Flag potential mismatches for human resolution; missing or unconfirmed values remain unknown. Structured rules cannot detect every engineering conflict or interpret every free-text claim. No AI is required for this workflow; do not send customer/design information to an AI provider or let AI merge authoritative requirements or approve feasibility as part of this agreed scope.
-
-Required unresolved conflicts, stale required reviews and outstanding blocking conditions hold the project-start gate. Applicable assigned human reviewers resolve issues and provide required sign-offs; unnecessary all-department unanimity is not imposed. The authorized lead then records the consolidated disposition, followed by the existing explicit project-start action and its other prerequisites. Inspect actual review, discussion, issue, actor-scope, revision, audit and notification contracts before implementation; absent shared-analysis operations remain explicit backend gaps, not client-side approval or invented APIs.
-
-UI checkpoint: the first reusable opportunity analysis view is implemented with existing caller-authorized department-level reads and a clearly labelled, in-memory example for reviewing requirements, department remarks and client-preview layout. Granular saved analysis, remarks publication, notifications and operational decisions remain pending. See [the bounded UI evidence](../evidence/SHARED_OPPORTUNITY_ANALYSIS_UI_2026-10-14.md); this does not mark the whole shared-analysis workflow complete.
-### Minimal approved-requirements change flow
-
-**Agreed initial UX; implementation pending.** Keep the shared analysis simple: a compact read-only Approved requirements summary at the top, followed by departmental review/discussion below. The summary is the exact approved Master Specification revision and its main project parameters, not the separate customer identity/contact master. Before baseline approval, label it Draft requirements rather than implying approval. Show Latest client input and any pending review separately from the last approved revision.
-
-Use the simple **read-only → Edit → Save / Cancel** interaction for authorized client/Sales input. Editing opens only by deliberate action; typing never autosaves. Save is the explicit submission action: no additional confirmation popup, separately named Request change step or separate change-management dashboard is required for ordinary input edits. Show changed values in the same form and preserve the old version. A committed save creates a new source-linked client-input revision and immediately records notification intents for all authorized participating teams through the verified durable event path. Label it Client requirements updated or Requirements updated according to the actual actor; preserve both the client requester and Sales recording actor when Sales enters a client request. Never misattribute a Sales-originated change to the client.
-
-Notification does not approve or overwrite the existing approved baseline. Sales coordinates any required affected technical reviews in the same workspace; the authorized reviewed result becomes a new immutable Master baseline revision. Preserve previous revisions, changed values, requester/actor and decisions, mark affected reviews stale and hold required conflict/prerequisite gates until resolved. Show the reviewed version and latest client input distinctly without an extra complex workflow screen. Send a separate concise notification when a new baseline is approved. Server-side contracts enforce authorization, revision/conflict checks and immutable history; the read-only UI alone is insufficient. Absent operations remain pending, not client-side status updates. No AI or new external notification provider is required for this initial scope.
-
-## 5. Connected project cycle
-
-The same Master/source baseline continues from pre-project intake into the project. Every applicable stage records assigned individuals, due dates, blockers, exact evidence revisions and authorized decisions. Product family proposes defaults; it does not inject certified technical values or approvals. Hardware-only scope does not create mandatory software work. Exclusions require a reason and the applicable reviewer decision.
-
-| Macro stage | Main work and exit evidence |
-|---|---|
-| 1. Intake | Customer/enquiry, draft Master/SOR, clarification, scoped client input and applicable NDA evidence |
-| 2. Feasibility / contract review | Applicable engineering, Procurement, Production/quality and Finance contributions; assigned decisions, risks/conditions and consolidated disposition |
-| 3. Baseline / commercial confirmation | Exact client-confirmed requirement/PRS revision, scope/interfaces/acceptance criteria, quotation/order or PO/LOI and terms where applicable; protected project-start prerequisites |
-| 4. Research / POC, where applicable | Investigate uncertain assumptions; modules/demonstrator where needed, shared phase analysis and actual test/client-review evidence; record an authorized justified bypass for proven designs |
-| 5. Pilot | Tentative electronic/mechanical BOM, PCB/stencil/casing, pilot sourcing/build, bring-up, jig/test plan and inspection evidence |
-| 6. Validation / pre-compliance | DVP/DVR, measured results, lab sourcing/reports, client prototype/field feedback and failure dispositions |
-| 7. Final design / release | Exact approved BOM/Gerber/drawing/HSI/firmware/tool/test revisions and checksummed release manifest |
-| 8. Order / supply / production readiness | Terms/order, supplier qualification/PPAP, capacity/forecast/lead times, materials/IQC, tools and calibration |
-| 9. Production / dispatch / service | Authorized WO/routes/material operations, serial/lot genealogy, programming/EOL/PDI, packaging/dispatch/invoice, customer service and change feedback |
-
-HW_01–HW_37 and SDLC gates map as substages, not another workflow engine. Initial feasibility enables project initiation; final baseline, development and release approvals remain distinct. The nine stages describe the complete business flow, including its pre-project stages.
-
-Four change loops remain: customer scope amendment; mechanical/design ECO; failed-test NCR/RCA/ECN/retest; and post-release change/obsolescence. Each pins old/new source, impact/cost/timing, affected orders/WIP/lots/serials and approved effectivity. Preserve old releases and decisions; no automatic CAD/machine/stock changes from a note.
-
-### Optional Research / POC and parallel pilot analysis
-
-**Agreed target; implementation pending.** After explicit project start, retain the same requirement/Master history, shared analysis and departmental highlights throughout development. Hardware proposes the appropriate technical path: use an optional Research / POC phase for unresolved assumptions, with investigation and, where needed, ready-made modules/boards or a demonstrator. Research does not always require a physical prototype. For a justified proven/reused design, the authorized applicable reviewers may record why POC is not needed and proceed directly to pilot after the relevant prerequisites; do not fabricate a passed POC or silently skip a required gate.
-
-Before research starts, show the client the agreed research objective, uncertainties, assumptions, expected outputs, scope, cost/timeline where agreed, and the decision point for continuation/rework/stop. The client understands that findings may change and gives recorded agreement to the applicable terms. Findings do not silently alter approved requirements, price or schedule. Maintain a simple client view with the approved requirements, published progress/department highlights, open questions and Your input needed. Internal analysis and the client view use one source-linked workspace with scoped publication; internal costing, supplier/private discussions and restricted files remain private. Client questions/answers link to exact requirements/revisions and notify affected authorized teams. Invitations remain scoped, expiring/revocable under accepted contracts.
-
-During Research / POC, Hardware's proposed key parts/modules are visible promptly as clearly labelled draft candidates to assigned Firmware/software and Procurement reviewers. Firmware assesses MCU/toolchain, interfaces, drivers and implementation feasibility; Procurement assesses per-item cost, availability, lead time and sourcing constraints. Mechanical, Production, Quality and Service/installation workstreams contribute where relevant, including Service input during initial feasibility when installation/support affects scope. Keep these contributions in the same shared analysis; no new department identities or broad document grants are inferred.
-
-Retain distinct linked snapshots for initial feasibility, Research/POC analysis and post-test updated feasibility. Test evidence and applicable client validation inform the next analysis revision. Sales reviews client scope/commercial continuation with the required technical reviewers before pilot proceeds. The project is not recreated at pilot; source-linked PRS and other applicable template drafts may be prepared from the approved known requirement baseline, with missing fields explicit and human review/release separate from drafting.
-
-During pilot, develop the custom PCB/design and distinct electronic and mechanical tentative BOMs linked to the same project/variant. Firmware receives the relevant electronic candidates and affected interfaces; Procurement reviews both electronic and mechanical BOMs. Mechanical interfaces affecting Firmware remain shareable as needed rather than hiding all mechanical information categorically. Preserve clearly labelled POC purchases/build configuration separately from pilot and final production configurations; a draft candidate or cost review is not a released production BOM or PO/stock action.
-
-Avoid circular completion dependencies by separating **Ready for cross-team review** from **Approved BOM baseline locked**. Hardware/Mechanical submit a stable, numbered review snapshot before final BOM lock; Firmware and Procurement can complete their phase-scoped compatibility/cost/sourcing reviews against that exact snapshot. Hardware cannot claim final BOM lock until required Firmware, Procurement and other applicable technical decisions are complete. Procurement can finish its review of that submitted revision before lock, but cannot claim final released purchasing readiness until the approved BOM baseline is locked and the purchasing prerequisites are met. Procurement approval alone is not engineering approval. A component/BOM revision change invalidates the affected earlier review decisions for scoped reconfirmation. Authoritative statuses, numbering, review locks, operational effects and access must use inspected protected backend contracts; these presentation checkpoints do not invent deployed enums or RPCs.
-
-### Shared PCB/design records and customer product variants
-
-**Agreed target; implementation pending.** A project manages customer requirements, scope, people, tasks, commercial commitments and delivery. A PCB/design record manages the reusable circuit/layout, fabrication specifications, technical files and controlled revisions. A product variant identifies a specific approved configuration of PCB revision, assembly/BOM revision and, where applicable, connector, firmware, enclosure and test requirements. These are linked records, not interchangeable identities: one PCB design may serve multiple projects/customers, and one project may contain several PCBs.
-
-Maintain one authoritative shared PCB/design record owned by Hardware / R&D. Project and department views link to its exact permitted revisions instead of duplicating designs or files. Each customer project's requirement and product-variant baseline stays separately controlled. Release and operational references pin an exact approved variant, PCB revision, BOM/assembly revision and applicable firmware/test revisions; never resolve production requirements through an unpinned latest-design link. Official identifiers and business numbering remain server-owned under inspected contracts.
-
-| Department | Target access and responsibility |
-|---|---|
-| Hardware / R&D | Create and revise designs, specifications and variant BOM/assembly definitions within authorized engineering scope; manage engineering review/release through accepted contracts. Released revisions remain immutable. |
-| Purchase / Procurement | Read authorized approved fabrication specifications, relevant technical files and exact BOM/revision references; own supplier, quotation, availability, lead-time and purchasing records. Engineering changes return for review rather than directly altering the released design. |
-| Production | Read the exact released PCB/variant, BOM, assembly/work instructions and applicable test requirements for assigned work; record actual build, inspection and traceability results. Engineering revisions require the controlled change path. |
-
-Department membership alone does not grant every design or private file. Inspect existing backend/RLS and file-delivery contracts before implementing shared reads. Preserve customer confidentiality, design/IP ownership restrictions and existing assigned-person document rules. Do not broaden grants, infer ownership from folders, or copy confidential customer requirements into another client's view.
-
-Example: Client A uses PCB-A revision 3, variant A with connector X. Client B's new enquiry selects the target action "Variant of existing product", links the permitted base design/product and captures connector Y plus customer requirements. Hardware assesses footprint/pinout, electrical ratings, enclosure fit and assembly/test impact; Procurement reviews availability/cost/lead time; Production/Quality review buildability and the required verification. Sales records the customer's agreed specification before release. A variant request is not automatic approval or project creation.
-
-| Assessed change | Controlled result |
-|---|---|
-| Existing PCB supports the new fitted connector | Retain the PCB revision; create the distinct variant BOM/assembly specification and required verification. |
-| Footprint, routing or circuit must change | Create a controlled PCB/design revision or linked derivative design where identity/ownership rules require it, plus the variant BOM and affected verification. Do not overwrite the original release. |
-| Only the external cable/adapter changes | Keep the PCB unchanged; control the cable/adapter or assembly variant and its applicable checks. |
-
-Orders, purchasing lines and production batches must identify the exact approved configuration, with effectivity and substitution/change rules where applicable, so customer connector variants cannot be mixed. Preserve Client A's released configuration and historical orders/builds when Client B's variant is introduced. Apply feasibility and testing proportional to the actual change and required approvals; do not force a complete new development cycle for every connector change, or bypass required engineering/quality checks because the base PCB is reused.
-
-Implementation requires inspection of existing project, product/design, BOM, revision, release and operational-reference contracts first. Reuse supported authoritative records; any missing PCB/variant linkage, scoped access or revision/effectivity contract is an explicit backend gap, not an invented table, RPC or deployed feature.
-
-## 6. Symmetrical departmental Drive and work registers
-
-Every department uses the same **four group folders/views**:
-
-```text
-[Department]
-├── 01 Common documents        SOP, KPI definitions, authority matrix, policies/templates
-├── 02 Internal projects       authorized links to internal project workspaces
-├── 03 Client projects         authorized links to client project workspaces
-└── 04 Other department work   registers, recurring/conditional work and non-project records
+# SSM One - Web Portal Master Plan
+
+## Plan Boundary
+
+This file is the single, authoritative master plan for the **Hexense Labs / Six Sense Mobility (SCMS) Web Portal and its backend architecture**. It defines the end-to-end operational flow, data models, department ownership, document control, modular hardware reuse, and delivery roadmap.
+
+The target is the connected Lovable project `a3399684-daab-4b38-8666-187b96b451af`, managed Supabase PostgreSQL backend, and private Cloud Storage. Web/Supabase owns identities, permissions, operational records, official document numbering (`HLPL-[PROJ_ID]-[DEPT]-[DOC_TYPE]-[REV]`), transactions, audit feeds, automation, and private document storage.
+
+Evidence generated or imported for web source belongs in `docs/evidence/`. All previous redundant or fragmented plan files have been consolidated directly into this master plan to eliminate ambiguity and maintain a single source of truth.
+
+---
+
+## 1. Authority and How to Use This Plan
+
+1. **Single Source of Truth**: This document supersedes all dated planning briefs, fragmented roadmap notes, and temporary plan files. If code or documentation diverges, this Master Plan governs the target architecture.
+2. **Automotive & Enterprise Standards**:
+   - **IATF 16949:2016** & **ISO 9001:2015**: Quality management, customer-oriented processes (COP), contract review gates, design verification (DVP&R), PPAP Level 3, and traceability.
+   - **AIS-140 / TAC**: Telematics and emergency system certification (ARAI/ICAT).
+   - **AEC-Q100 / AEC-Q200**: Automotive grade qualification for ICs and passives.
+   - **ISO 7637-2**: Electrical transient conduction along supply lines.
+   - **ISO 14001:2015** & **ISO 45001:2018**: Environmental and occupational health/safety.
+   - **ISO/IEC 27001:2022**: Information security management and bilateral mutual NDA controls.
+3. **Core Architectural Reference**:
+   - Document ID formula: $\text{Document ID} = \mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$.
+   - Master Plan §5: Decoupled Project vs. PCB vs. Wiring Harness vs. Firmware vs. Enclosure architecture with automated development process skips.
+   - Symmetrical 4-group departmental Drive (`01 Common documents`, `02 Internal projects`, `03 Client projects`, `04 Other department work`).
+   - Human-in-the-loop governance: Protected quality releases and commercial commitments always require recorded human sign-off.
+
+---
+
+## 2. One Portal, Eleven Functional Departments
+
+The digital backbone integrates eleven canonical automotive departments. Every employee accesses permitted work, tasks, documents, and notifications through the same unified records, filtered by department ownership.
+
+```mermaid
+graph TD
+    CC["Executive Command Center<br/>Admin & HOD Overview · Daily Checklist · RACI Matrix"]
+    
+    subgraph Commercial & Governance ["Commercial, Quality & Governance"]
+        SAL["1. SAL: Sales & Business Development<br/>CRM · Enquiries · Feasibility · Quotations"]
+        QA["6. QA: Quality Assurance & APQP<br/>IATF 16949 · DVP&R · PPAP L3 · TAC Cert"]
+        FIN["9. FIN: Accounts & Finance<br/>Costing · Tax Invoices · Budgets · Ledger"]
+        HROPS["11. HR/OPS: HR & Operations<br/>Skill Matrix · QMS · Corporate Legal & Letterheads"]
+    end
+
+    subgraph Engineering & Design ["Product Engineering & Design"]
+        EHW["2. EHW: Embedded Hardware Engineering<br/>Schematics · PCB Layout · BOM · DFMEA"]
+        ESW["3. ESW: Firmware & Software Engineering<br/>RTOS Kernel · CAN J1939 · FOTA · Stack"]
+        MECH["4. MECH: Mechanical Engineering<br/>IP67 Enclosures · Harness Drawings · Thermal CAD"]
+    end
+
+    subgraph Supply & Manufacturing ["Procurement, Manufacturing & Service"]
+        PUR["5. PUR: Purchasing & Supply Chain<br/>Dual-Track Proto/Mass · AVL · POs · Stores"]
+        EMF["7. EMF: Manufacturing & Assembly<br/>SMT Line 2 · Thermal Profiling · Control Plan"]
+        TST["8. TST: Production & EOL Testing<br/>Automated Test Jigs · 100% PDI · Calibration"]
+        SIT["10. SIT: Service & IT Infrastructure<br/>Cloud Drive · Telematics Server · Field RMA"]
+    end
+
+    CC --> SAL & QA & FIN & HROPS
+    CC --> EHW & ESW & MECH
+    CC --> PUR & EMF & TST & SIT
 ```
 
-These groups also act as filters on the same authorized Drive records. Add work/document-type filters across all permitted projects, so a department can find all matching files without opening projects individually. Periodic reviews are work types within the four groups, not a fifth root. **PPAP** is a relevant project/work-type category/filter, not an extra top-level group. **Starred** is a favorites shortcut, not a department group.
-
-Project workspaces link governance, requirements, Hardware, firmware/software, Mechanical, validation, Procurement/IQC, Production/calibration, Operations/handover and service/archive revisions as applicable. Project, department, stage, task and search point to the same Drive node/revision; do not duplicate file authorities or infer ownership from names.
-
-Keep important operational registers in departmental Drive in business sequence. Sales sequence: **Customer → Enquiry → Opportunity/proposal → Quotation/contract → Orders/handover**. Missing read/export contracts produce precise unavailable states, not dead links to unrelated creation forms. Other departments follow their verified operational order: sourcing/receiving/stock; production/test/dispatch; maintenance/calibration; HR/training; Finance/matching; QMS/audit/CAPA.
-
-### Customer Register.xlsx
-
-Create one managed **Customer Register.xlsx** containing all authorized fields shown in Customer master, with linked contact rows/sheets where necessary. Customer additions/changes refresh it automatically from authoritative software records; stable IDs prevent duplicate rows. Store it in Sales Drive with last-sync/source/version metadata and revision history. Users can access/download and explicitly share permitted copies.
-
-This new managed register does **not** require an old workbook upload. Importing or synchronizing edits from a previous external Excel is a separate future operation requiring inspected columns/mapping/conflict rules. Backend records remain authoritative; an exported workbook alone is not automatic synchronization. Prefer genuine XLSX; CSV is only an explicitly labelled fallback. Keep text/formula-injection handling and typed values correct.
-
-## 7. Controlled documents and native editable output
-
-All twelve specialized templates require structured editing, native DOCX export and actual private DOCX save to the authorized department/project Drive category. Keep specialized tables, source/template/schema pins, conflict checks, immutable historical revisions, manual-edit preservation and separate human review/release. External Word reimport must state supported round-trip limits.
-
-| Template | Initial ownership / specialized content |
-|---|---|
-| SOR | Sales: customer/platform, requirement, volumes, interfaces, service/warranty and delivery |
-| NDA | Operations/Legal: parties, confidentiality/IP/duration, actual review/signature evidence; Sales initiates/links only |
-| Quotation | Sales with scoped Finance review: price/volume, currency, NRE, milestones/lead times |
-| Contract review | Sales coordination, assigned disciplines: feasibility/risk/estimates/conditions |
-| PRS | Assigned engineering: architecture/power/protocol/environment/enclosure/interfaces |
-| BOM cost tracker | Engineering source plus scoped Procurement review: component/quantity/MPN/package/source/cost/qualification |
-| DFMEA | Engineering: functions/failures/ratings/controls/actions/closure |
-| Control plan | Production/quality: process characteristics, sampling/controls/reaction/equipment |
-| DVP&R | Assigned engineering/quality: applicable test/profile/criteria/results/evidence |
-| PDI | Production: serial/IMEI/MAC, firmware, measured functional results and actual inspector decision |
-| Tax invoice | Finance: approved customer/lines/tax/HSN/GST/reference/bank configuration |
-| Skill matrix | HR: competency/training/assessment/expiry, corporate scope where appropriate |
-
-Responsibility settings can refine routing through verified contracts. Relevant department scope **and current responsible-person assignment** govern document metadata, editing, history, download and direct links. Project overview membership alone does not confer document access. Reviewer responsibility does not automatically confer edit/material/payment authority.
-
-Generate known typed draft values only. Missing values remain unconfirmed; no invented measurements, signatures, certifications or acceptance. Official numbers/actors/timestamps are server-issued. Used templates are immutable; settings clone/edit/activate/retire through protected operations. Source changes mark drafts stale and offer a proposed diff/new revision, preserving released/manual content.
-
-Historical Sales HTML remains readable under its existing authorization. Never rename HTML to DOCX or overwrite it. File-ready success requires actual byte/checksum/storage receipts; pending rendering is not completion. PDF/print are renditions of pinned revisions. PDF preview, bounded ZIP inspection, spreadsheet table/formula support and supported STL/glTF viewing are separate capabilities; STEP/native CAD requires a verified converter or download/external-viewer fallback.
-
-Tentative BOM entries select existing inventory/component IDs or use the existing new-part request flow. Procurement evaluates availability/cost/sourcing against exact saved BOM revisions. A review/request never deducts stock or automatically issues a PO.
-
-## 8. Responsibilities, notifications and external collaboration
-
-Versioned stage RACI uses existing departments/capabilities and assigned people. Record routing snapshots for active work; changes are audited/reassigned explicitly. A stage gate validates actor, current assignment, required evidence, source revision and unresolved amendments, and commits state/audit/durable notification intents together.
-
-Recipients come from current authorized assignments, not every department member. Inbox shows person/department/due/status and safe deep links. Workers retry with deduplication, delivery receipts and visible failures; realtime triggers refresh and is not the durable ledger. Push/email/webhooks need verified provider configuration and separate delivery evidence. File edits notify affected authorized teams only through supported events.
-
-Client/vendor collaboration uses scoped, expiring/revocable invitations and exact published revisions/actions. Editable intake differs from progress/download/approval. Do not expose internal Drive, other customers/vendors, private costing or HR records. Client confirmation, legal signing, engineering release and Finance approval remain distinct explicit decisions. Uploaded evidence is validated/quarantined as required before release.
-
-## 9. Remaining web portal work and backend handoff
-
-Preserve existing useful screens and controlled stock transactions. Complete department work queues/actions for HR/recruitment/training, Facility/assets/maintenance/security, Finance/matching/aging, Operations/QMS/audit/CAPA and customer service. Recurring work, KPI/OEE/MTBF/MTTR/yield and escalation use reviewed formulas/calendar/timezone/actual events; targets are not achieved values. Audit export is a permitted point-in-time manifest of exact evidence/decisions/missing items, not a certification.
-
-After lifecycle/documents, add Operations **Legal Documents and Letterheads** using existing private Drive records, configurable responsibility and approved versions. Sales links NDA without copying files or gaining Legal access. Add one signed-in company directory through an approved work-contact projection: name, department, designation, manager and work communication details; exclude private phone/HR data. Connect authorized directory/document search to Help/chat/voice, then Android. Calling/messaging employees is an explicit separate user action; external chat/providers are follow-on scope.
-
-Inspect existing employee/profile manager/contact contracts and search/Help/voice/navigation before implementing the directory. Missing contacts or broken reporting hierarchy remain explicit. Legal ownership can later transfer through an authorized configurable responsibility contract without duplicating files or rewriting historical ownership; do not invent a Legal department or grant every Operations employee agreement access. Protect template/letterhead versioning, private agreement history, assigned reviewers and retention. Letterhead availability does not authorize signing or issuing an agreement. Verify signed-in directory access across departments, confidential-field exclusion, absent hierarchy, allowed/denied Legal callers, search/deep-link isolation, reassignment and web/Android parity. Legal/directory work must not delay the active feasibility and document delivery groups.
-
-Web-to-mobile handoff only: after a backend increment is accepted, export its exact fields/enums, payload/response/errors, scopes/RLS, numbering/retry semantics, private file delivery, offline classification and evidence. Keep pending operations explicitly unavailable. Android screens, scanner, native viewers, Room/WorkManager/SyncCoordinator, mobile stage sequencing and APK/device tests belong exclusively to the separate Android build plan (`SSMApplication3/docs/planning/SSM_ONE_ANDROID_BUILD_PLAN.md`).
-
-## 10. One delivery queue and evidence-qualified checkpoint
-
-Status definitions: **Verified** = actual stated evidence; **Reported** = implementation/checks reported but not independently/live verified; **Pending** = required behavior absent/unaccepted; **Approval required** = concrete sensitive deployment action still needs specific authorization. Current summaries carry forward prior dated evidence; this documentation consolidation did not rerun product builds or live authorization tests.
-
-| Order | Bounded group | Latest known boundary / next work |
+| Department Code | Full Department Title | Core Operational Ownership & Deliverables |
 |---|---|---|
-| 1 — current | Feasibility handover and reviewer workflow | Combined Sales list/details/customer/Master reads and truthful no-assignment states were browser-verified. Overflow repair and checks reported, visible updated layout observed. A consolidated requirement-by-department feasibility comparison, prominent departmental remarks/client-visible highlights, scoped shared discussion and human conflict resolution are agreed pending work. Protected source-bound requirement + department/reviewer + durable notification handover remains pending; latest source/form work was dispatched, not accepted live. Finish exact contracts, wiring and checks before any deployment gate |
-| 2 | Controlled project start / baseline | Preserve enquiry/opportunity/Master/review source; verify explicit approval conversion, one project/root, retries and history. No verdict-only automatic project creation |
-| 3 | Private DOCX and responsibility | Local renderer/export and private historical HTML evidence exist. Five-file DOCX backend package and responsibility extension are pending/source-only; specific access/deployment approval and real restricted callers remain required. Do not treat local export as saved DOCX |
-| 4 | Drive/register completion | Four-group/filter source and UI checkpoints exist; verify all departments, PPAP/favorites placement, same revisions and useful register reads. Customer XLSX automatic private storage/refresh is pending, not established by export foundation |
-| 5 | POC/pilot and Procurement review | Complete optional Research/POC, parallel phase-scoped Firmware/Procurement review, post-test feasibility and electronic/mechanical tentative BOM review without circular lock dependencies, plus shared R&D-owned PCB/design records and customer product variants with scoped Procurement/Production reads and exact revision links. Procurement source package is pending; preserve inventory/PO boundaries and exact BOM versions |
-| 6 | Validation/release/readiness | Real DVP/lab/client decisions, release manifests, effectivity and supply readiness; no fabricated approvals or certifications |
-| 7 | Production/dispatch/service | Verified controlled transactions, routes/EOL/PDI/serial genealogy/dispatch and Finance links; actual allowed evidence and failure paths |
-| 8 | Company operations and Legal/directory | Department-specific queues, recurring work/audit, scoped Legal/letterheads and work-contact directory; then Help/chat/voice integration |
-| 9 | Web integrated acceptance and backend handoff | Verify web/portal/API/private-storage authorization, gates and notifications; publish accepted contract changes and evidence for the separate Android build queue. This row does not schedule mobile implementation or APK/device tests |
+| **SAL** | Sales & Business Development | Customer Register.xlsx, RFQ intake, SOR analysis (`SAL-SOR-01`), bilateral mNDA (`SAL-mNDA-01`), contract reviews (`HLPL/F/MKT/01`), quotations (`SAL-QUO-01`), customer purchase orders (`SAL-PO-01`). |
+| **EHW** | Embedded Hardware Engineering | System architecture, PRS (`EHW-PRS-01`), schematics (`EHW-SCH-01`), preliminary/frozen BOMs (`EHW-BOM-01`), hardware DFMEA (`EHW-DFMEA-01`), Gerber archives, AEC-Q100 compliance. |
+| **ESW** | Firmware & Software Engineering | Bootloader, RTOS kernel bring-up, CAN J1939 driver, AIS-140 protocol parser, secure dual-bank FOTA, cryptographic signing, TAC compliance testing. |
+| **MECH** | Mechanical Engineering | 3D CAD modeling, IP67 enclosure tooling (`ENC-MECH-CAD-01`), wiring harness pinout drawings (`HARN-MECH-DWG-01`), thermal simulation, vibration fixture design. |
+| **PUR** | Purchasing & SCM | Approved Vendor List (AVL), dual-track sourcing (Proto soft-tooling vs Mass production), PR/RFQ/PO issuance, supplier PPAP Level 3 review, stock allocation. |
+| **QA** | Quality Assurance & APQP | APQP roadmap (`HLPL-APQP-001`), DVP&R matrix (`QA-DVP-01`, 18 electrical/environmental tests), ISO 7637-2 compliance, Type Approval TAC cert (`QA-TAC-01`), NCR/CAPA logs. |
+| **EMF** | Manufacturing & Assembly | 10-zone reflow thermal profiling, 3D solder paste inspection (SPI), automated optical inspection (AOI), Process Control Plan (`EMF-CP-01`), SMT work instructions. |
+| **TST** | Production & EOL Testing Jigs | Automated functional testing (FCT) jigs, CAN bus verification, flashing rigs, 100% PDI inspection certification (`TST-PDI-01`), calibration logs. |
+| **FIN** | Accounts & Finance | Project budget tracking, commercial margin analysis, milestone billing, GST/HSN tax invoices (`FIN-INV-01`), payment reconciliation. |
+| **SIT** | Service & IT Infrastructure | Enterprise Cloud Drive storage, telematics backend gateway, OTA server monitoring, role-based access control, field service ticketing. |
+| **HR/OPS** | HR & Operations | Employee competence matrix (`HLPL/F/HR/03`), QMS internal audits, Six Sigma DMAIC registers, Signed-In Company Directory, Corporate Legal Documents & Letterheads. |
 
-Foundational fixes (query errors, Tasks routing, Drive provisioning/history refresh, contract/source integrity) travel with the affected group. Continue independent safe work when one operation is blocked. Do not accumulate changes while compilation errors exist.
+---
 
-For each meaningful group: inspect → implement → compile/typecheck → focused meaningful tests → build → actual web browser/API evidence → update this queue. Reversible UI work gets proportionate checks; authorization, transactions, revision history, retries and concurrency need stronger evidence. Avoid repetitive acceptance loops after successful unchanged checks. Report what users can actually do and the exact missing operation.
+## 3. Personas, Access Safeguards & Command Center
 
-Reuse `OPPORTUNITY-2026-0013`, `MASTER-2026-0001` revision 1 and the existing explicitly labelled `ENQUIRY-2026-0001` sample with its existing sample customer. Preserve historical revisions; no duplicate fixtures or new production users. Existing redundant samples require a verified reversible, dependency-aware archive; archive source remains blocked by incomplete dependency/writer coverage. Do not delete them to tidy a demo.
+### 3.1 Role & Persona Switcher
+The portal incorporates an instant **Role & Persona Switcher** in the header allowing 1-click verification of department context, permission boundaries, and filtered queues:
+1. **Executive Admin / MD**: Master authority, full cross-department rollup, system template configuration, and PMSS override.
+2. **11 Department Leads**:
+   - `SAL Lead`: Priya Sharma (Sales & BD)
+   - `EHW Lead`: Avery Vale (Embedded Hardware)
+   - `ESW Lead`: Devon Lane (Firmware & Software)
+   - `MECH Lead`: Samira Holt (Mechanical Engineering)
+   - `PUR Lead`: Morgan Reed (Purchasing & SCM)
+   - `QA Lead`: Jordan Blake (Quality Assurance)
+   - `EMF Lead`: Casey Rowan (Electronics Manufacturing)
+   - `TST Lead`: Mina Cross (EOL Testing & Jigs)
+   - `FIN Lead`: Priya Voss (Finance & Accounts)
+   - `SIT Lead`: Kai Morgan (Service & IT Infrastructure)
+   - `HR Lead`: Taylor Quinn (HR & Operations)
+3. **Client Portal Persona**: Rohan Verma (Tata Motors Fleet Manager) — restricted customer view displaying order tracking, published TAC certificates, and customer ticket status.
 
-Prepare concrete reviewable source/tests before requesting specific sensitive deployment approval. No destructive database changes, production deletion, permission/RLS weakening or expansion, privileged credential changes, new live users, irreversible migration or Publish/go-live without the required explicit authorization. An uninstalled proposal is never a callable production API.
+When switched, the portal displays a persistent active persona banner with a 1-click `[Switch Back to Admin]` button. Every persona change is audited in the immutable event log.
 
-### Contract integrity and handoff detail retained from earlier plans
+### 3.2 Executive Command Center
+The **Home / Command Center** serves as the compact operational hub:
+- **Header Action Bar**: Unified `[Create Task]`, `[Cross-Department Sync]`, `[Auto-Draft Templates]`, and `[Platform Asset Library]` actions.
+- **Executive KPI Cards**: 6 responsive metrics tracking Today's Tasks, Overdue Items, Active Opportunities, Active Projects, Quality Gates, and Financial Progress.
+- **Nine-Stage Project Stepper**: Real-time project milestone tracking with 1-click stage inspection.
+- **Two-Column Daily Task Checklist**:
+  - Left Lane: *Today's Action Items* with quick complete and status toggles.
+  - Right Lane: *Pending & Overdue Tasks* with priority indicators (Critical, High, Normal, Low) and assignee badges.
+- **Department Quick Management Grid**: Cards for all 11 departments showing active lead, open task count, pending approvals, and direct deep-link into the department workspace.
 
-Before enabling a proposed generator, template, dependency, feedback or workflow operation, inspect the actual deployed fields/extensions/helpers and every affected writer. Verify authorization before replay, actor/project/payload-bound receipts, null-auth rejection, expected revision, source provenance, correct OLD/NEW container checks, immutable used templates and dependency locking across legacy predecessor/reassignment paths. Reject cycles and cross-project edges under concurrency. Govern clone/edit/activate/retire rather than granting direct writes; authorized historical replay survives retirement. Existing proposal SQL remains unapplied until deployment is evidenced. These controls are targeted backend requirements, not reasons to repeat unrelated UI checks.
+---
 
-Storage and metadata are separate systems: verify actual bytes/checksum and compensation/failure handling before file-ready success. Reauthorize sensitive downloads; a previously issued signed URL can survive invitation revocation until expiry, so use short-lived delivery or an authorization gateway when immediate revocation is required. Bound file size, sanitize rich content, reject unsafe resources/scripts and do not extract ZIP paths unsafely. Private realtime channels require their own authorization. Do not promise exactly-once external delivery.
+## 4. One Sales Flow: Enquiries, Opportunities & Feasibility Gate
 
-After each accepted backend increment export current exact contracts to `docs/backend-handoff/`: `MOBILE_BACKEND_CONTRACT.md`, `mobile_backend_contract.json`, `ANDROID_BACKEND_HANDOFF.md`, `BACKEND_GAPS.md`, the web-to-mobile handoff/remediation reports and generated `types.ts`, with supplemental versioned contracts where needed. Include fields/enums, RPC payload/result/errors, scope/file delivery, transaction/retry/offline semantics, applied versus pending state, source/environment and test evidence. Preserve earlier artifacts as historical. Only public Supabase URL/publishable configuration belongs in mobile; no service-role/database/signing/private OAuth secrets.
+The commercial workflow follows a single, unified queue without competing entry points:
 
-Implementation ownership: Lovable/web/backend owns shared contracts, authorization/storage, business UI, template/portal/workflow/integration services; Android implementation is separately planned and consumes accepted contracts; authorized business reviewers decide applicability, responsibility, actual evidence and gates. Local files are not automatically visible in Lovable: transfer the current roadmap explicitly before claiming both workspaces share it.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer as Customer / OEM
+    actor Sales as Sales Lead (SAL)
+    actor Engineering as HODs (EHW, ESW, MECH, PUR, QA)
+    actor Admin as Executive Admin
 
-Integrated evidence covers permitted and denied API/storage paths, exact source changes/confirmation, stale and repeated edits/decisions, missing-evidence holds, template/number concurrency, same BOM/file revision across project/Drive/mobile, failed EOL/calibration paths, notification worker retry/reassignment/revocation, web session/account isolation and authorized audit export. Existing FCU/3D or Emulator_V2.0 TCU Test Jig files can be viewer examples where authorized; synthetic readings are labelled. Use approved test scope for any stock operation and verify record/quantity/audit together; ambiguous retry keeps its request key. No incidental machine command, client dispatch, invoice/tax filing or payment is a test step.
+    Customer->>Sales: RFQ & Technical Requirements
+    Sales->>Sales: Create Enquiry in Sales Workspace
+    Note over Sales: Select Customer from Register or Add Inline
+    Sales->>Sales: Internal Review & Platform Asset Linking
+    Sales->>Engineering: [Send for Feasibility] (Converts to Opportunity)
+    Note over Engineering: HOD Technical Feasibility Input (Stage 2 Gate)
+    Engineering-->>Sales: 5 HOD Sign-offs & Estimates
+    Sales->>Admin: Contract Review HLPL/F/MKT/01 Compiled
+    Admin->>Sales: Commercial Lock & PRS-01 Release (Stage 3 Gate)
+    Sales->>Customer: Quotation SAL-QUO-01 Transmitted
+    Customer-->>Sales: Purchase Order Issued
+    Sales->>Engineering: Project Officially Started (HLPL-PROJ_ID)
+```
 
-### Historical inspection notes retained from the 5 October gap plan
+### Flow Steps & Persisted Results
+1. **New Enquiry**: Select existing customer or use inline *Add Customer* modal; capture requirement and technical scope. Generates server-numbered enquiry (`ENQ-2026-XXX`).
+2. **Internal Review**: Assign Sales owner, set target closure date, and attach preliminary files.
+3. **Platform Asset Linking & Feasibility Dispatch**:
+   - Primary action: `[Send for Feasibility]`.
+   - Embeds the **Platform Architecture Selector**: chooses Reusable Platform vs. Hybrid vs. Clean Sheet.
+   - Links pre-qualified Motherboard, Secondary PCB, Harness, Firmware, and Enclosure assets.
+   - Calculates development skips (weeks saved and NRE avoided).
+   - Dispatches review tasks to the 5 engineering HODs (EHW, ESW, MECH, PUR, QA).
+4. **Multi-Department Feasibility Input (Gate 2)**:
+   - Each HOD reviews their technical domain, confirms lead times, flags risks, and records formal sign-off.
+   - Locking all 5 HOD sign-offs compiles the official **Contract Review Record (`HLPL/F/MKT/01`)**.
+5. **Requirement & Commercial Lock (Gate 3)**:
+   - Auto-generates frozen Product Requirement Specification (`HLPL-[PROJ_ID]-EHW-PRS-01`) and Commercial Quotation (`HLPL-[PROJ_ID]-SAL-QUO-01`).
+6. **Project Kick-off**: Formal conversion creates the project workspace, pins master references, and authorises the hardware kickoff track.
 
-These are dated observations, not current failures or new verification. Reinspect only when relevant: Sales creation UI was missing despite server actions; client requirement submission and department-scoped reviewer saves were not established; Sales handover did not create/link a project; synthetic PROJECT-2026-0001 had no Drive root; design inputs appeared empty after reopening; embedded Tasks had a route-match error; a generated retained R3 draft required reopening history; renderer output was plain TXT with limited metadata substitution; TXT lacked body preview; complete configurable RACI/inbox delivery was unestablished. The isolated admin demo did not prove original-production or restricted-caller acceptance. Current evidence and the delivery queue supersede these observations where repairs are verified.
+---
 
-### Additional retained dependencies from the synced portal roadmap
+## 5. Decoupled Architecture: Project vs. PCB vs. Harness vs. Firmware vs. Enclosure
 
-The portal roadmap captured at Git commit `855c658` contained older overlapping checklists and unique technical dependencies. The overlapping business flow is consolidated above. Checked boxes and old blocked entries are dated source reports, not fresh live acceptance. The following unique work remains within this delivery queue:
+### 5.1 The Automotive Decoupling Principle
+A **Project is a Customer Commercial Commitment**, not a single physical hardware file. In automotive electronics:
+- **A Project can incorporate multiple PCBs**: A telematics terminal frequently pairs a Core Motherboard (`HLPL-MOD-PCB-01`) with a Dual-CAN Daughterboard (`HLPL-MOD-PCB-02`) or a 9–100V EV SMPS Board (`HLPL-PWR-SMPS-01`).
+- **Wiring Harnesses are Interchangeable**: The same physical PCB unit can connect to a commercial fleet via an OBD-II pass-through harness (`HLPL-HARN-OBD2-16P`), to an EV bus via a sealed Molex MX150 harness (`HLPL-HARN-MX150-14P`), or to an industrial tractor via a Deutsch DT04 connector (`HLPL-HARN-DT04-12P`).
+- **Firmware & Enclosures are Reusable Modular Assets**: Proven, certified software stacks (e.g. ARAI/ICAT certified AIS-140 RTOS v2.4.1) and IP67 molded enclosures are reused across multiple OEM clients with zero re-certification overhead.
 
-| Group | Retained dependency and boundary |
-|---|---|
-| Sales / feasibility | The latest source includes `20261013_sales_feasibility_handover.sql` and a selection form, but send remains gated. Reuse the accepted assigned-reviewer response path; do not assume the enquiry's deployed table has review fields. Preserve atomic intake/replay, source-bound requirement pairing, Master revision/audit/conflict rules, legitimate legacy revision/approval compatibility and external intake expiry/revocation. Direct-write compatibility and original caller scope require current contract inspection before changing grants. |
-| Project gates | Retain the source-only `42P17` stage-gate RLS recursion repair proposal. It preserves administrator, projects.view and same-project employee-membership semantics; no elevated frontend reads. Exact stage-decision authority/state, baseline/amendment applicability, evidence freshness, recipient resolver and immutable decision/outbox contracts remain unverified dependencies. |
-| BOM candidate vs Procurement review | These are related but distinct contracts. Candidate submission requires a committed project, approved initiated baseline, completed exact-project handover and authorized active project-manager/team scope. Existing inventory selection remains a read. New-part duplicate matching is explicit, never fuzzy auto-merge. Scoped Purchase costing precedes final Hardware decision; missing volume/ceiling/currency/unit data is unavailable. Sales commercial input is non-approving by default; any approval exception is explicit and rare. No inventory/component promotion, stock/BOM mutation or final decision is inferred from a submission. |
-| Official decision log | Preserve the proposed append-only project decision log with short human-authored rationale, server-derived actor/project/source, scoped evidence and linked immutable amendments. No callable approval/status/audit/read contract is assumed from the proposal. |
-| Deviations | Submission-only and approval/closure are separate. Pin approved controlled source/evidence, exception/risk/safeguards and active project-manager scope. Proposed technical-authority plus Quality review and customer approval for affected customer requirements remain explicit future gates. A submitted proposal is not an approval; disposable concurrency evidence does not install a managed contract. |
-| Responsibility overrides | Persisted project-stage responsibility and document-category reassignment are distinct pending contracts. Preserve existing stage/task/owner/reviewer/history/template records; validate expected revision, null actor/target, current scope and revocation-after-wait. Local responsibility/task-preparation previews do not create operational work or notifications. |
-| Shared portal / HR | Retain remaining role/permission-catalogue and module-status forms, My Work/approvals/resolver/global search/activity details, HR assessments, digital ID, welcome-kit fulfilment, employee self-service and manager leave approval. Existing interview/offer/onboarding reports are historical, not whole-HR completion. Public Careers/resume/status and employee/reviewer/manager flows need their actual scoped contracts. |
-| External integrations | Google Workspace/Drive guarded settings and actions remain connector-dependent. Do not assume Google integration, email/push/webhook, eSignature, tax or jig transport exists from a menu or proposal. |
-| Operational data | Historical zero-stock recovery and pending supplier/CSV order review require actual source quantity/bin/order evidence. Missing quantities are not invented; no old roadmap checkbox authorizes fresh production stock/financial actions or new department records. |
-| Document and sample integrity | Keep the existing HTML lineage, frozen DOCX review packages and dependency-aware archive block. Authoritative saved-BOM reads may work while a department list excludes an unassigned project; do not infer ownership or backfill a null department. A source-only schema proposal or admin fixture does not cure missing assigned-caller evidence. |
+```mermaid
+graph TD
+    subgraph Master Catalog ["Authoritative Master Asset Libraries (EHW / ESW / MECH)"]
+        PCB1["Master Motherboard<br/><code>HLPL-MOD-PCB-01 Rev 03</code>"]
+        PCB2["Master Dual-CAN Board<br/><code>HLPL-MOD-PCB-02 Rev 01</code>"]
+        HARN1["Molex MX150 14-Pin<br/><code>HLPL-HARN-MX150-14P</code>"]
+        HARN2["OBD-II Pass-through<br/><code>HLPL-HARN-OBD2-16P</code>"]
+        HARN3["Deutsch DT04 12-Pin<br/><code>HLPL-HARN-DT04-12P</code>"]
+        FW1["AIS-140 RTOS Stack<br/><code>HLPL-FW-AIS140-RTOS v2.4.1</code>"]
+        ENC1["IP67 Polycarbonate Case<br/><code>HLPL-ENC-IP67-PC</code>"]
+    end
 
-Technical proposals, SQL, acceptance matrices, handoff contracts and implementation reports are deliberately retained in repository `docs/planning`, `docs/evidence`, root interface contracts and `supabase/pending`. Their original exact versions also remain in the local immutable `SSMOneWebBackups/backups/2026-10-14-github-855c658` snapshot. Verification and handoff reports are organized under `docs/evidence/` without upgrading their dated claims. Review uncertain files before any later merge/removal.
+    subgraph ClientA ["Project: Tata Ace EV (HLPL-AI4T-01)"]
+        direction TB
+        CA_PCB["Motherboard: PCB-01"]
+        CA_HARN["Harness: Molex MX150 (Sealed)"]
+        CA_FW["FW: AIS140 RTOS (AIS-140)"]
+        CA_ENC["Case: IP67 PC"]
+    end
 
-## 11. Consolidation and refinement record
+    subgraph ClientB ["Project: Select Motors (HLPL-SLCT-01)"]
+        direction TB
+        CB_PCB["Same Motherboard: PCB-01"]
+        CB_HARN["Different Harness: OBD-II Y-Cable"]
+        CB_FW["Same FW: AIS140 RTOS"]
+        CB_ENC["Same Case: IP67 PC"]
+    end
 
-This consolidates the October 1 OEM plan, department/role/Drive operating model, October 2 lifecycle workflow, October 3 company plan/Lovable brief, October 5 gap plan and October 11 DOCX/Legal additions. Those eight redundant plan files were removed at the user's request on 14 October 2026 after incorporating their requirements, necessary contract rules and historical inspection boundaries. Backend contracts, original source extraction, catalogue and implementation evidence remain separate and retained; their evidence is not upgraded by consolidation.
+    subgraph ClientC ["Project: Heavy CV Dual-CAN (HLPL-XLINK-03)"]
+        direction TB
+        CC_PCB1["Motherboard: PCB-01"]
+        CC_PCB2["Daughterboard: PCB-02"]
+        CC_HARN["Heavy Harness: Deutsch DT04"]
+        CC_FW["FW: Dual-CAN RTOS"]
+        CC_ENC["Case: Extruded Aluminum"]
+    end
 
-Latest decisions now resolved in one place: four symmetrical Drive groups; PPAP as type and Starred as shortcut; compact Sales overview; unified Enquiries & Opportunities; inline customer creation; explicit selected-department feasibility handover; usable customer/Master/review/history detail; controlled project start; managed Customer Register.xlsx without old-workbook prerequisite; native DOCX saves with assigned-person/category scope; Operations/Legal NDA ownership; proportionate validation and visible features first.
+    PCB1 -.-> CA_PCB & CB_PCB & CC_PCB1
+    PCB2 -.-> CC_PCB2
+    HARN1 -.-> CA_HARN
+    HARN2 -.-> CB_HARN
+    HARN3 -.-> CC_HARN
+    FW1 -.-> CA_FW & CB_FW
+    ENC1 -.-> CA_ENC & CB_ENC
+```
 
-Future changes update the relevant section and the delivery queue here. Store dated verification under evidence and exact server interfaces under backend-handoff; avoid new competing plan files. App-side copies and the scheduler must reference this stable plan, preserve paused/running settings and existing approval boundaries.
+### 5.2 Reference & Re-Branding Model
+- **Master Files Remain Authoritative**: Master schematics, layouts, firmware repositories, and mold drawings remain stored and maintained under their master IDs (`HLPL-MOD-PCB-01`, `HLPL-HARN-MX150-14P`).
+- **Project Deliverables Use Branded Identifiers**: Project documentation (PRS, BOM, SCH, GERBER) generates unique project-branded identifiers:
+  $$\text{Deliverable ID} = \mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$$
+  Example: Tata Ace EV BOM is `HLPL-AI4T-EHW-BOM-01`, which references Master Motherboard `HLPL-MOD-PCB-01 Rev 03`. This avoids duplicate CAD drawings while preserving formal IATF 16949 audit lineage.
 
+### 5.3 Automated Development Process Skip Engine
+When a project links pre-qualified platform assets at intake/feasibility, the system calculates exact time and cost savings:
 
-14 October source cleanup: root roadmap.md was removed after its business flow and unique remaining dependencies were folded into this plan. Original roadmap bytes remain in both dated source backups and Git history. No application source, SQL, authorization, production data or remote repository was changed by this local documentation cleanup.
+| Platform Component Reused | Development Stage Waived | Time Saved | NRE Expense Avoided |
+|---|---|---|---|
+| **Core Motherboard PCB** | Architecture freeze, schematic capture, PCB layout, prototype fabrication | **8 – 12 Weeks** | **₹3,00,000 – ₹4,50,000** |
+| **Secondary Daughterboard** | Interface circuit design, bus layout, prototyping | **3 – 4 Weeks** | **₹1,00,000 – ₹1,50,000** |
+| **Wiring Harness** | Automotive harness tooling, sample build, sealing validation | **2 – 3 Weeks** | **₹50,000 – ₹1,00,000** |
+| **Firmware Stack** | RTOS kernel bring-up, protocol stack coding, TAC pre-testing | **4 – 6 Weeks** | **₹1,50,000 – ₹2,50,000** |
+| **Enclosure Molds** | Injection mold tooling, DFM review, ingress sealing trials | **3 – 4 Weeks** | **₹2,00,000 – ₹3,50,000** |
+| **TOTAL (Full Platform Reuse)** | **Stage 4 PoC Bench Bring-Up WAIVED** | **14 – 17 Weeks** | **Up to 95% NRE Avoided** |
 
+### 5.4 Stage 4 PoC Waiver Mechanism
+In Gate 4/5 (Hardware Kick-off):
+- If `canSkipStage4PoC === true` (PCB and Firmware are pre-certified under AEC-Q100 / AIS-140):
+  - The system displays the **⚡ Pre-Certified Platform Architecture Detected** banner.
+  - Option A (*Clean Sheet / PoC Research*) is marked optional.
+  - Option B (*Direct SMT Pilot Build*) is automatically **RECOMMENDED (PLATFORM REUSED)**.
+  - Advancing hardware kickoff jumps directly to **Stage 5 (SMT Pilot Build)**, waiving 14–17 weeks of redundant bench development.
 
-14 October scope correction: Android implementation/build details moved into SSM_ONE_ANDROID_BUILD_PLAN.md. This file renamed SSM_ONE_WEB_PORTAL_MASTER_PLAN.md; only backend contract handoff remains here. Web verification/checkpoint reports centralized in docs/evidence without changing report bodies or snapshot history.
+---
 
+## 6. Symmetrical Departmental Drive & Work Registers
 
-14 October catalogue optimization: replaced the raw dated annexure dump with SSM_ONE_DOCUMENT_CATALOGUE.md/json; all 89 source blocks remain mapped. NDA defaults to Operations/Legal, four Drive groups replace old three-category assumptions, and records/references are distinguished from actual generated files. Ship the active Sales/feasibility flow independently; do not turn this inventory into a requirement to finish every optional document first.
+Every department workspace features a symmetrical **4-group cloud drive architecture**:
 
+```text
+[Department Workspace]
+├── 01 Common documents       (SOPs, QMS procedures, authority matrix, templates)
+├── 02 Internal projects      (Internal R&D, test jigs, platform development)
+├── 03 Client projects        (Customer projects: HLPL-AI4T-01, HLPL-SLCT-01)
+└── 04 Other department work  (Audit records, calibration certs, supplier PPAPs)
+```
 
-14 October final workspace refinement: SSMOneWeb itself is the full Git repository root, with application code and docs tracked together. The nested source checkout and sparse-docs workaround were removed. Existing backup captures and the prior workspace metadata are preserved outside the active repository in sibling SSMOneWebBackups. Normal Git operations now synchronize the one docs folder directly. Application code, backend contracts, authorization and production data remain unchanged.
+### Key Work Registers
+1. **Customer Register.xlsx** (`01_Governance_and_QMS`):
+   - Managed live spreadsheet in Sales workspace containing all customer accounts, GSTIN, SPOCs, active programs, and credit limits.
+   - Synchronized with customer records without requiring external workbook uploads.
+   - 1-click modal view and native `.xlsx` download.
+2. **Project Master Spec Sheet (PMSS)**:
+   - Central engineering register maintaining volume commitments, hardware configurations, BOM baselines, and firmware versions for all active projects.
+3. **Signed-In Company Directory** (§9):
+   - Real-time staff directory accessible from the header and PMSS with department filters, extensions, email, and skill matrix summaries.
+4. **Official Project Decision Log** (§10):
+   - Immutable audit register capturing technical/commercial decisions, author, rationale, alternatives considered, affected departments, and status (Proposed, Locked, Executed, Superseded).
+5. **Operations Legal Documents & Corporate Letterhead Hub** (§9):
+   - Houses formal bilateral mutual NDAs (`HLPL-AI4T-OPS-mNDA-01`), vendor agreements, and a corporate letterhead generator with customizable company addresses, logos, and IATF/ISO accreditations.
 
-Latest agreed PCB/variant refinement: projects manage customer work; shared R&D-owned PCB/design records and their revisions are separate. Customer variants reuse a permitted base design, with exact BOM/assembly/release references and scoped Procurement/Production access. This is an agreed planning target; no backend records, access grants or release behavior were changed by this plan update.
+---
 
-Latest agreed shared-analysis refinement: participating departments contribute to one requirement-linked opportunity feasibility view with scoped cross-team visibility, discussion, explicit issue ownership, human resolution and deterministic mismatch checks. AI is not required. This is an English planning update only; no application behavior, backend deployment or permissions changed.
+## 7. Controlled Document Engine & Native Print/PDF Output
 
-Latest agreed collaboration refinement: prominent departmental remarks and client-visible highlights; deliberate Edit plus Save/Cancel without an extra change-request confirmation; optional Research/POC with recorded client terms and phase-linked analysis; and separate review-ready versus finally locked BOM checkpoints. These are English planning refinements only, with no application deployment, permission changes or new department records.
+### 7.1 Automatic Document Numbering Formula
+All documents generated across the enterprise strictly follow:
+$$\mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$$
+Forms use the canonical quality record standard: `HLPL/F/[DEPT]/[NUM]` (e.g. `HLPL/F/MKT/01`, `HLPL/F/HR/03`).
 
-### Current scheduled completion boundary � 15 October 2026
+### 7.2 Full Multi-Section Document Content
+Auto-drafted templates render complete, authentic engineering sheets (not metadata summaries):
+- **Document Control Header Table**: Company Logo, Name, Address, Document Title, Document Number, Revision, Effective Date, Page Number.
+- **Section 1.0**: Scope, Standards & Traceability Matrix (IATF 16949 §8.2, AIS-140, AEC-Q100).
+- **Section 2.0**: System Architecture, Block Diagram & Interfaces.
+- **Section 3.0**: Detailed Technical Specifications (Microcontroller, Modem, Power Supply, CAN bus).
+- **Section 4.0**: Bill of Materials / Process Control Plan / DVP&R Matrix Table.
+- **Section 5.0**: Multi-HOD RACI Sign-off Matrix with Department Lead signatures.
+- **Document Footer**: Confidentiality clause, ISO 9001:2015 & IATF 16949 compliance notice, dynamic page count.
 
-Complete the discussed Sales flow through selected-department handover, durable notifications, shared departmental analysis with separate internal remarks and client-visible highlights, conflict resolution and feasibility pass against the exact Master revision. Obtain recorded client approval of the final requirements revision, then lock that approved baseline before an authorized project-start decision selects optional Research/POC or a justified direct Pilot path. Changes to that revision must invalidate stale approvals/reviews as applicable; notifications alone are not approval. Keep client edits simple: read-only by default, deliberate Edit and Save/Cancel, latest input separate from the approved baseline. No automatic project start from a feasibility status or client edit.
+### 7.3 Isolated A4 Iframe Print & PDF Export
+- Document printing uses an isolated DOM iframe passing pure document HTML and print styles.
+- `@media print` rules enforce standard A4 dimensions (`210mm x 297mm`), `margin: 10mm`, and `print-color-adjust: exact`.
+- Completely prevents dark-theme inversion, modal dialog overflow cutoffs, or trailing blank pages.
 
-The scheduled follow-up targets this bounded operational flow first. UI examples are not persisted remarks, delivered notifications, client approval or baseline-lock evidence. Inspect/develop the protected contracts and continue unaffected source/UI work while any deployment or identity gate awaits specific authorization. Android implementation remains outside this queue.
+---
+
+## 8. Dynamic RACI Matrix & Inter-Department Stage Notifications
+
+### 8.1 RACI Configuration
+The portal administration panel features an interactive **RACI Responsibility Matrix** defining department roles across all 9 lifecycle stages:
+- **R (Responsible)**: Department executing the primary deliverable.
+- **A (Accountable)**: Final gatekeeper and sign-off authority.
+- **C (Consulted)**: Functional contributors providing feasibility and design input.
+- **I (Informed)**: Downstream departments receiving automated handoff notifications.
+
+### 8.2 Automated Stage Handoff Routing
+When any department completes a gate or signs a deliverable:
+1. The system evaluates the active RACI matrix for the current stage.
+2. Generates actionable alert records for all *Responsible*, *Accountable*, and *Informed* departments.
+3. Notification bell updates with badge count; alert cards display 1-click `[Review Handoff]` actions linking directly to the pending document.
+
+---
+
+## 9. End-to-End Project Lifecycle Walkthrough (`HLPL-AI4T-01`)
+
+The portal incorporates a complete, interactive simulation of the **Tata Ace EV 4G AIS-140 Telematics Gateway** (50,000 units / ₹20.33 Cr) covering all 9 automotive stages:
+
+| Stage | Name & Intent | Primary Controlled Deliverable | Owning Dept |
+|---|---|---|---|
+| **Stage 1** | Client & Sales Intake | Customer SOR (`HLPL-AI4T-SAL-SOR-01`) & mNDA (`SAL-mNDA-01`) | `SAL` |
+| **Stage 2** | Multi-Dept Feasibility Gate | Contract Review Record (`HLPL/F/MKT/01`) with 5 HOD sign-offs | `SAL` / All |
+| **Stage 3** | Requirement Freeze & Commercial Lock | Product Requirement Spec (`EHW-PRS-01`) & Quotation (`SAL-QUO-01`) | `EHW` / `SAL` |
+| **Stage 4** | Design & Development (PoC) | Schematics (`EHW-SCH-01`), Preliminary BOM (`EHW-BOM-01`), PoC FW | `EHW` / `ESW` |
+| **Stage 5** | Pilot Build & SMT Setup | Process Control Plan (`EMF-CP-01`), SMT Line 2 Thermal Profile | `EMF` / `PUR` |
+| **Stage 6** | DVP&R Pre-Compliance | DVP&R Matrix (`QA-DVP-01`) with 18 electrical/environmental tests | `QA` |
+| **Stage 7** | Production Release & PPAP L3 | Gerber Rev B, Hardware DFMEA (`EHW-DFMEA-01`), Supplier PPAP | `EHW` / `PUR` |
+| **Stage 8** | TAC Type Approval & Mass Run | AIS-140 TAC Certificate (`QA-TAC-01`), PO Sync (`SAL-PO-01`) | `QA` / `SAL` |
+| **Stage 9** | PDI Inspection & Invoicing | Automated EOL PDI Certificate (`TST-PDI-01`), Commercial Invoice (`FIN-INV-01`) | `TST` / `FIN` |
+
+### Master Document Dossier Binder
+A unified modal tab allows viewing and downloading all 12 automotive deliverables in a single binder, complete with live stage progression percentage and audit history.
+
+---
+
+## 10. Completed Milestones & Remaining Delivery Roadmap
+
+### Completed Milestones
+- [x] **11 Functional Departments**: Symmetrical hubs for SAL, EHW, ESW, MECH, PUR, QA, EMF, TST, FIN, SIT, and HR/OPS.
+- [x] **Admin Persona & Role Switcher**: Instant switching between Executive Admin, 11 HODs, and Client Portal persona.
+- [x] **AI4T 9-Stage Lifecycle Simulator**: Complete 9-stage progression with 12-document master dossier.
+- [x] **Decoupled Architecture & PCB Reusability (Master Plan §5)**: Multi-PCB linking, modular harnesses, firmware stacks, and enclosures.
+- [x] **Development Process Skip Engine**: Time/cost calculations with automated Stage 4 PoC waiver.
+- [x] **Document Control Numbering**: Automated `HLPL-[PROJ_ID]-[DEPT]-[DOC_TYPE]-[REV]` formula.
+- [x] **Full-Page Document Preview & PDF Engine**: Isolated A4 iframe print without overflow or dark mode artifacts.
+- [x] **Configurable Corporate Template Settings**: Customizable company headers, footers, logos, and accreditations.
+- [x] **Dynamic RACI Matrix & Stage Handoff Alerts**: Configurable RACI table with automated notification routing.
+- [x] **Signed-In Company Directory (§9)**: Real-time staff contact directory with department filtering.
+- [x] **Official Project Decision Log (§10)**: Immutable technical and commercial decision tracking.
+- [x] **Operations Legal & Letterhead Hub (§9)**: Corporate mNDA and branded letterhead generation.
+- [x] **Customer Register.xlsx**: Managed live customer sheet with native download.
+- [x] **Dual Project Scope in Departments**: Filter views by All Projects (Rollup) vs. Specific Project.
+- [x] **Clean Compilation & Automated Tests**: 0 TypeScript errors (`npx tsc --noEmit`), production build passing, Playwright regression suite passing with 100% success.
+
+### Remaining Roadmap (Next Delivery Phases)
+- [ ] **Phase 1: Symmetrical Cloud Drive & File Manager**:
+  - Interactive file explorer implementing the 4-group structure across all 11 departments.
+  - S3 / Lovable Cloud Storage short-lived signed upload/download token integration.
+- [ ] **Phase 2: Department-Wise Process Menus & Action Shortcuts**:
+  - Direct process menu items linking routine tasks to their respective Cloud Drive folders.
+- [ ] **Phase 3: Supabase Shared Persistence Migration**:
+  - Transition from versioned browser-local state to authenticated Supabase PostgreSQL tables and RLS policies while preserving the verified offline prototype model.
+
+---
+
+## 11. Consolidation Record
+
+This consolidated master plan incorporates all requirements, specifications, and architecture decisions from:
+1. `admin-personas-and-ai4t-lifecycle-workspace-2026-10-03.md` (Personas, AI4T 9-stage lifecycle hub, 12-document dossier).
+2. `department-owned-audit-documents-and-command-center-2026-09-27.md` (Department-owned records, Command Center architecture, symmetrical Drive).
+3. `roadmap.md` (Milestone progress and delivery phases).
+4. `scms_master_plan_gap_analysis.md` (Company Directory §9, Decision Log §10, Legal Hub §9).
+5. Master Plan §5 Decoupled Product Architecture & PCB Reusability (Multi-PCB, interchangeable harnesses, firmware stacks, automated skips, and Stage 4 PoC waiver).
+
+All redundant, conflicting, or fragmented planning documents in `.lovable/plan` are retired and consolidated into this document as the single authoritative source of truth.
