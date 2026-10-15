@@ -20,7 +20,19 @@ import {
   Users,
   FolderOpen,
   Calendar,
+  Cable,
+  Code2,
+  Box,
 } from "lucide-react";
+import {
+  defaultPcbCatalog,
+  defaultHarnessCatalog,
+  defaultFirmwareCatalog,
+  defaultEnclosureCatalog,
+  defaultProjectModularConfigs,
+  calculateDevelopmentSkip,
+  type ProjectModularConfiguration,
+} from "./ModularProductArchitectureAndPcbCatalog";
 
 export type FeasibilityVerdict = "FEASIBLE" | "FEASIBLE_WITH_CONDITIONS" | "INFEASIBLE";
 
@@ -44,6 +56,7 @@ export interface FeasibilityAndHardwareKickoffProps {
   onAdvanceToStage: (stageIndex: number) => void;
   onOpenDocumentView: (docId: string, title: string, dept: string) => void;
   projectId?: string | undefined;
+  modularConfig?: ProjectModularConfiguration | undefined;
   onKickoffComplete?: ((path: "poc" | "pilot", deliverables: string[]) => void) | undefined;
 }
 
@@ -52,6 +65,7 @@ export function FeasibilityAndHardwareKickoff({
   onAdvanceToStage,
   onOpenDocumentView,
   projectId = "HLPL-AI4T-01",
+  modularConfig,
   onKickoffComplete,
 }: FeasibilityAndHardwareKickoffProps) {
   // Gate selection: 1 (Intake), 2 (Feasibility), 3 (Req Lock), 4 (Hardware PoC/Pilot)
@@ -62,8 +76,28 @@ export function FeasibilityAndHardwareKickoff({
     return 4;
   };
 
+  const fallbackConfig: ProjectModularConfiguration = defaultProjectModularConfigs["HLPL-AI4T-01"] ?? {
+    projectId: "HLPL-AI4T-01",
+    projectTitle: "Tata Ace EV 4G AIS-140 Telematics Gateway",
+    architectureMode: "reusable_platform",
+    selectedPcbIds: ["PCB-LIB-001"],
+    selectedHarnessId: "HARN-LIB-001",
+    selectedFirmwareId: "FW-LIB-001",
+    selectedEnclosureId: "ENC-LIB-001",
+    lastUpdated: "2026-10-15 14:30 IST",
+    configuredBy: "Avery Vale (EHW Lead)",
+  };
+
+  const activeConfig: ProjectModularConfiguration =
+    modularConfig ||
+    (projectId ? defaultProjectModularConfigs[projectId] : undefined) ||
+    fallbackConfig;
+  const skipMetrics = calculateDevelopmentSkip(activeConfig);
+
   const [selectedGate, setSelectedGate] = useState<1 | 2 | 3 | 4>(initialGate);
-  const [hardwarePath, setHardwarePath] = useState<HardwarePath>("poc");
+  const [hardwarePath, setHardwarePath] = useState<HardwarePath>(
+    skipMetrics.canSkipStage4PoC ? "pilot" : "poc",
+  );
   const [hardwareKickoffLaunched, setHardwareKickoffLaunched] = useState(currentStageIndex >= 4);
 
   // Sync selected gate if currentStageIndex changes externally
@@ -438,6 +472,58 @@ export function FeasibilityAndHardwareKickoff({
             </div>
           </div>
 
+          {/* Linked Modular Platform Assets & Development Skip Banner (Master Plan §5) */}
+          <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Layers className="size-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-foreground">
+                      Linked Pre-Qualified Platform Architecture ({activeConfig.architectureMode.replace(/_/g, " ").toUpperCase()})
+                    </h4>
+                    <span className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      Master Plan §5 Reused Assets
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Project {projectId} references pre-qualified hardware and software. Development process for matching departments is waived.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 font-semibold text-xs text-emerald-700 dark:text-emerald-300">
+                <span>⚡ <strong>{skipMetrics.weeksSaved} Weeks</strong> Dev Saved</span>
+                <span>💰 <strong>{skipMetrics.nreSavedPct}% NRE</strong> Avoided</span>
+                <span className="rounded bg-emerald-600 text-white px-2 py-0.5 font-mono text-[10px]">
+                  Ready in ~{skipMetrics.effectiveWeeksToSample} Wks
+                </span>
+              </div>
+            </div>
+
+            {/* Chips row */}
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-primary/10 pt-2.5 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded bg-secondary px-2.5 py-1 font-mono text-muted-foreground">
+                <Cpu className="size-3 text-primary" />
+                Motherboard: {activeConfig.selectedPcbIds.map((id) => defaultPcbCatalog.find((p) => p.id === id)?.code || id).join(" + ") || "Custom PCB"}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded bg-secondary px-2.5 py-1 font-mono text-muted-foreground">
+                <Cable className="size-3 text-primary" />
+                Harness: {defaultHarnessCatalog.find((h) => h.id === activeConfig.selectedHarnessId)?.code || "Custom Harness"}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded bg-secondary px-2.5 py-1 font-mono text-muted-foreground">
+                <Code2 className="size-3 text-primary" />
+                Firmware: {defaultFirmwareCatalog.find((f) => f.id === activeConfig.selectedFirmwareId)?.code || "Custom FW"}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded bg-secondary px-2.5 py-1 font-mono text-muted-foreground">
+                <Box className="size-3 text-primary" />
+                Enclosure: {defaultEnclosureCatalog.find((e) => e.id === activeConfig.selectedEnclosureId)?.code || "Custom Tooling"}
+              </span>
+            </div>
+          </div>
+
           {/* Department Feasibility Cards */}
           <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {reviews.map((rev) => (
@@ -744,6 +830,39 @@ export function FeasibilityAndHardwareKickoff({
             </div>
           </div>
 
+          {/* Pre-Certified Platform Fast-Track Waiver Banner (Master Plan §5) */}
+          {skipMetrics.canSkipStage4PoC && (
+            <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                    <Sparkles className="size-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-bold text-emerald-950 dark:text-emerald-100">
+                        Pre-Certified Platform Architecture Detected · Stage 4 PoC Waived
+                      </h4>
+                      <span className="rounded bg-emerald-600 px-2 py-0.5 font-mono text-[10px] font-bold text-white">
+                        ⚡ 14-17 WEEKS SAVED
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-emerald-800 dark:text-emerald-200">
+                      Motherboard ({activeConfig.selectedPcbIds.join(", ")}) & Firmware ({activeConfig.selectedFirmwareId}) are automotive pre-qualified under AIS-140 / AEC-Q100. Bench PoC bring-up is waived; project is authorized to jump directly to Stage 5 SMT Pilot Build!
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHardwarePath("pilot")}
+                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700"
+                >
+                  Select Direct Pilot Track
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Interactive Path Selection Grid */}
           <div className="mt-5 grid gap-5 md:grid-cols-2">
             {/* OPTION A: Research / PoC Track */}
@@ -820,7 +939,14 @@ export function FeasibilityAndHardwareKickoff({
                     <Zap className="size-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-foreground">Option B: Justified Direct Pilot Bypass</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-foreground">Option B: Justified Direct Pilot Bypass</h4>
+                      {skipMetrics.canSkipStage4PoC && (
+                        <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                          RECOMMENDED (PLATFORM REUSED)
+                        </span>
+                      )}
+                    </div>
                     <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
                       Stage 5 · Skip to SMT Pilot Build
                     </span>

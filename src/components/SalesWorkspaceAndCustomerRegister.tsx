@@ -24,7 +24,20 @@ import {
   Sparkles,
   Lock,
   CheckSquare,
+  Cpu,
+  Cable,
+  Code2,
+  Box,
+  Zap,
 } from "lucide-react";
+import {
+  defaultPcbCatalog,
+  defaultHarnessCatalog,
+  defaultFirmwareCatalog,
+  defaultEnclosureCatalog,
+  calculateDevelopmentSkip,
+  type ProjectModularConfiguration,
+} from "./ModularProductArchitectureAndPcbCatalog";
 
 export type CustomerRecord = {
   id: string;
@@ -66,6 +79,7 @@ export type EnquiryOpportunity = {
   totalFeasibilityDepts: number;
   rfqReference?: string;
   linkedProjectCode?: string;
+  modularConfig?: ProjectModularConfiguration | undefined;
   createdAt: string;
   updatedAt: string;
 };
@@ -461,7 +475,12 @@ export function SendForFeasibilityModal({
 }: {
   enquiry: EnquiryOpportunity;
   onClose: () => void;
-  onDispatch: (enquiryId: string, departments: string[], targetDate: string) => void;
+  onDispatch: (
+    enquiryId: string,
+    departments: string[],
+    targetDate: string,
+    modularConfig?: ProjectModularConfiguration,
+  ) => void;
 }) {
   const [selectedDepts, setSelectedDepts] = useState<string[]>([
     "EHW",
@@ -473,8 +492,18 @@ export function SendForFeasibilityModal({
   ]);
   const [dueDate, setDueDate] = useState("2026-11-05");
   const [notes, setNotes] = useState(
-    "Please conduct comprehensive technical & commercial feasibility per IATF 16949 §8.2.3 and Master Plan §4.",
+    "Please conduct comprehensive technical & commercial feasibility per IATF 16949 §8.2.3 and Master Plan §4 & §5.",
   );
+
+  // Platform Modular Asset Selection (Master Plan §5 Component & Platform Reuse)
+  const [archMode, setArchMode] = useState<"reusable_platform" | "hybrid_variant" | "clean_sheet">(
+    "reusable_platform",
+  );
+  const [selectedPcbId, setSelectedPcbId] = useState<string>("PCB-LIB-001");
+  const [secondaryPcbId, setSecondaryPcbId] = useState<string>("none");
+  const [selectedHarnessId, setSelectedHarnessId] = useState<string>("HARN-LIB-001");
+  const [selectedFirmwareId, setSelectedFirmwareId] = useState<string>("FW-LIB-001");
+  const [selectedEnclosureId, setSelectedEnclosureId] = useState<string>("ENC-LIB-001");
 
   const availableDepts = [
     { code: "EHW", name: "Embedded Hardware (Avery Vale)", desc: "MCU, schematic, RF, TVS & 4-layer PCB" },
@@ -485,6 +514,27 @@ export function SendForFeasibilityModal({
     { code: "FIN", name: "Accounts & Finance (Priya Voss)", desc: "Gross margin, NRE tooling recovery & tax close" },
   ];
 
+  const selectedPcbIds =
+    selectedPcbId === "none"
+      ? []
+      : secondaryPcbId !== "none"
+        ? [selectedPcbId, secondaryPcbId]
+        : [selectedPcbId];
+
+  const currentConfig: ProjectModularConfiguration = {
+    projectId: enquiry.linkedProjectCode || "HLPL-AI4T-01",
+    projectTitle: enquiry.title,
+    architectureMode: archMode,
+    selectedPcbIds,
+    selectedHarnessId: selectedHarnessId === "none" ? "" : selectedHarnessId,
+    selectedFirmwareId: selectedFirmwareId === "none" ? "" : selectedFirmwareId,
+    selectedEnclosureId: selectedEnclosureId === "none" ? "" : selectedEnclosureId,
+    lastUpdated: new Date().toISOString().slice(0, 16).replace("T", " ") + " IST",
+    configuredBy: "Sales Intake & Feasibility Review",
+  };
+
+  const skipMetrics = calculateDevelopmentSkip(currentConfig);
+
   const toggleDept = (code: string) => {
     if (selectedDepts.includes(code)) {
       setSelectedDepts(selectedDepts.filter((c) => c !== code));
@@ -494,45 +544,239 @@ export function SendForFeasibilityModal({
   };
 
   const handleConfirm = () => {
-    onDispatch(enquiry.id, selectedDepts, dueDate);
+    onDispatch(enquiry.id, selectedDepts, dueDate, currentConfig);
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-xl rounded-xl border border-border bg-card p-6 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border pb-3">
+      <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl border border-border bg-card p-6 shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
               <Send className="size-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground">Send for Multi-Department Feasibility</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-foreground">Send for Multi-Department Feasibility</h3>
+                <span className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                  Master Plan §4 & §5 Intake
+                </span>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Converts Enquiry to Active Opportunity · Generates HLPL/F/MKT/01 Contract Review
+                Links Enquiry to Existing Qualified Hardware/Software · Fast-Tracks Feasibility Gate & Generates HLPL/F/MKT/01
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           >
             ✕
           </button>
         </div>
 
-        <div className="mt-4 space-y-4 text-xs">
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+        {/* Scrollable Body */}
+        <div className="mt-4 flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
+          {/* Enquiry Summary Card */}
+          <div className="rounded-xl border border-border/70 bg-muted/30 p-3.5">
             <div className="flex items-center justify-between">
-              <span className="font-mono font-semibold text-primary">{enquiry.reference}</span>
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
-                {enquiry.targetVolume}
+              <span className="font-mono font-bold text-primary">{enquiry.reference}</span>
+              <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                Target Volume: {enquiry.targetVolume}
               </span>
             </div>
-            <p className="mt-1 font-semibold text-foreground">{enquiry.title}</p>
-            <p className="text-[11px] text-muted-foreground">{enquiry.customerName} · {enquiry.spocName}</p>
+            <p className="mt-1 text-sm font-bold text-foreground">{enquiry.title}</p>
+            <p className="text-[11px] text-muted-foreground">{enquiry.customerName} · SPOC: {enquiry.spocName}</p>
           </div>
 
+          {/* Section: Platform Asset Selection & Development Process Skip */}
+          <div className="rounded-xl border border-primary/20 bg-primary/[0.02] p-4 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="size-4 text-primary" />
+                <h4 className="text-xs font-bold text-foreground">
+                  Link Existing Pre-Qualified Platform Assets (Master Plan §5 Reuse)
+                </h4>
+              </div>
+              <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-primary">
+                Decoupled PCB, Harness & Firmware
+              </span>
+            </div>
+
+            {/* Development Skip Live Metrics Banner */}
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                    {skipMetrics.fastTrackStatus}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs font-semibold">
+                  <span className="text-emerald-700 dark:text-emerald-300">
+                    ⚡ <strong>{skipMetrics.weeksSaved} Weeks</strong> Dev Time Saved
+                  </span>
+                  <span className="text-emerald-700 dark:text-emerald-300">
+                    💰 <strong>{skipMetrics.nreSavedPct}% NRE</strong> Avoided
+                  </span>
+                  <span className="rounded bg-emerald-600 px-2 py-0.5 font-mono text-[10px] text-white">
+                    Ready in ~{skipMetrics.effectiveWeeksToSample} Weeks
+                  </span>
+                </div>
+              </div>
+              {skipMetrics.canSkipStage4PoC && (
+                <p className="mt-1.5 text-[11px] text-emerald-800 dark:text-emerald-200">
+                  ✓ <strong>Stage 4 PoC Waived:</strong> Proven PCB & Firmware pre-certified! Bypasses breadboard PoC development; project fast-tracks straight to Stage 5 SMT Pilot Build. Project documentation will automatically reference master assets under the new project code.
+                </p>
+              )}
+            </div>
+
+            {/* Strategy Radio Options */}
+            <div className="grid gap-2 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setArchMode("reusable_platform")}
+                className={`flex flex-col text-left rounded-lg border p-2.5 transition ${
+                  archMode === "reusable_platform"
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-secondary/60"
+                }`}
+              >
+                <span className="font-bold text-[11px]">Proven Platform Reuse</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">Maximum reuse, fastest launch</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setArchMode("hybrid_variant")}
+                className={`flex flex-col text-left rounded-lg border p-2.5 transition ${
+                  archMode === "hybrid_variant"
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-secondary/60"
+                }`}
+              >
+                <span className="font-bold text-[11px]">Hybrid Variant</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">Proven PCB + custom harness/case</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setArchMode("clean_sheet")}
+                className={`flex flex-col text-left rounded-lg border p-2.5 transition ${
+                  archMode === "clean_sheet"
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-secondary/60"
+                }`}
+              >
+                <span className="font-bold text-[11px]">Clean-Sheet R&D</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">Full schematic & firmware design</span>
+              </button>
+            </div>
+
+            {/* Asset Selectors Grid */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {/* Primary PCB */}
+              <div>
+                <label className="mb-1 flex items-center gap-1 font-semibold text-foreground">
+                  <Cpu className="size-3 text-primary" /> Core Motherboard PCB
+                </label>
+                <select
+                  value={selectedPcbId}
+                  onChange={(e) => setSelectedPcbId(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                >
+                  <option value="none">None (Clean-Sheet Schematic & Layout)</option>
+                  {defaultPcbCatalog.map((pcb) => (
+                    <option key={pcb.id} value={pcb.id}>
+                      {pcb.code} ({pcb.revision}) · {pcb.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Secondary / Expansion PCB */}
+              <div>
+                <label className="mb-1 flex items-center gap-1 font-semibold text-foreground">
+                  <Layers className="size-3 text-primary" /> Secondary / Expansion Board (Optional)
+                </label>
+                <select
+                  value={secondaryPcbId}
+                  onChange={(e) => setSecondaryPcbId(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                >
+                  <option value="none">None (Single Board Architecture)</option>
+                  {defaultPcbCatalog
+                    .filter((p) => p.id !== selectedPcbId)
+                    .map((pcb) => (
+                      <option key={pcb.id} value={pcb.id}>
+                        {pcb.code} · {pcb.title}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Wiring Harness */}
+              <div>
+                <label className="mb-1 flex items-center gap-1 font-semibold text-foreground">
+                  <Cable className="size-3 text-primary" /> Wiring Harness
+                </label>
+                <select
+                  value={selectedHarnessId}
+                  onChange={(e) => setSelectedHarnessId(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                >
+                  <option value="none">Custom New Wiring Harness</option>
+                  {defaultHarnessCatalog.map((harn) => (
+                    <option key={harn.id} value={harn.id}>
+                      {harn.code} · {harn.title} ({harn.connectorType})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Firmware Stack */}
+              <div>
+                <label className="mb-1 flex items-center gap-1 font-semibold text-foreground">
+                  <Code2 className="size-3 text-primary" /> Firmware Stack
+                </label>
+                <select
+                  value={selectedFirmwareId}
+                  onChange={(e) => setSelectedFirmwareId(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                >
+                  <option value="none">Custom New Firmware Stack</option>
+                  {defaultFirmwareCatalog.map((fw) => (
+                    <option key={fw.id} value={fw.id}>
+                      {fw.code} ({fw.version}) · {fw.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Enclosure */}
+              <div className="sm:col-span-2">
+                <label className="mb-1 flex items-center gap-1 font-semibold text-foreground">
+                  <Box className="size-3 text-primary" /> Enclosure / Mechanical Ingress
+                </label>
+                <select
+                  value={selectedEnclosureId}
+                  onChange={(e) => setSelectedEnclosureId(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                >
+                  <option value="none">Custom Tooling / 3D Printed Prototype</option>
+                  {defaultEnclosureCatalog.map((enc) => (
+                    <option key={enc.id} value={enc.id}>
+                      {enc.code} · {enc.title} ({enc.ingressRating})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Feasibility Departments Checkboxes */}
           <div>
             <label className="mb-1.5 block font-medium text-foreground">
               Participating Feasibility Departments (Select applicable)
@@ -568,6 +812,7 @@ export function SendForFeasibilityModal({
             </div>
           </div>
 
+          {/* Dates & Target Project Code */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block font-medium text-foreground">Review Due Date</label>
@@ -582,7 +827,7 @@ export function SendForFeasibilityModal({
               <label className="mb-1 block font-medium text-foreground">Target Project Code (Auto-Reserved)</label>
               <input
                 readOnly
-                value="HLPL-AI4T-01"
+                value={enquiry.linkedProjectCode || "HLPL-AI4T-01"}
                 className="h-9 w-full rounded-md border border-input bg-muted/40 px-3 font-mono text-xs text-muted-foreground"
               />
             </div>
@@ -597,25 +842,26 @@ export function SendForFeasibilityModal({
               className="w-full rounded-md border border-input bg-background p-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
             />
           </div>
+        </div>
 
-          <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={selectedDepts.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs transition hover:opacity-90 disabled:opacity-50"
-            >
-              <Send className="size-3.5" />
-              Dispatch & Create Opportunity
-            </button>
-          </div>
+        {/* Footer Actions */}
+        <div className="mt-4 flex items-center justify-end gap-2.5 border-t border-border pt-4 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={selectedDepts.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs transition hover:opacity-90 disabled:opacity-50"
+          >
+            <Send className="size-3.5" />
+            Dispatch Feasibility with Platform Linking
+          </button>
         </div>
       </div>
     </div>
@@ -844,6 +1090,8 @@ export function SalesEnquiriesAndOpportunities({
   onOpenFeasibilityGate,
   onSendForFeasibility,
   onOpenNewTask,
+  onOpenAssetCatalog,
+  onConfigureModularAssets,
 }: {
   customers: CustomerRecord[];
   enquiries: EnquiryOpportunity[];
@@ -852,6 +1100,8 @@ export function SalesEnquiriesAndOpportunities({
   onOpenFeasibilityGate: (projectCode: string) => void;
   onSendForFeasibility: (enquiry: EnquiryOpportunity) => void;
   onOpenNewTask?: () => void;
+  onOpenAssetCatalog?: () => void;
+  onConfigureModularAssets?: (projectCode: string) => void;
 }) {
   const [filterTab, setFilterTab] = useState<
     "all" | "opportunities" | "enquiries" | "feasibility" | "locked"
@@ -957,11 +1207,11 @@ export function SalesEnquiriesAndOpportunities({
               <Users className="size-4 text-primary" />
               <h2 className="text-base font-bold text-foreground">Enquiries & Opportunities</h2>
               <span className="rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase text-primary">
-                One Sales Flow (Master Plan §4)
+                One Sales Flow (Master Plan §4 & §5)
               </span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              One unified queue: Active opportunities first, then pending enquiries. Direct customer creation and feasibility dispatch.
+              One unified queue: Active opportunities first, then pending enquiries. Direct customer creation and platform asset reuse.
             </p>
           </div>
 
@@ -974,6 +1224,16 @@ export function SalesEnquiriesAndOpportunities({
               >
                 <CheckSquare className="size-3.5 text-primary" />
                 Create Task
+              </button>
+            )}
+            {onOpenAssetCatalog && (
+              <button
+                type="button"
+                onClick={onOpenAssetCatalog}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition hover:bg-secondary"
+              >
+                <Cpu className="size-3.5 text-primary" />
+                Platform Asset Library
               </button>
             )}
             <button
@@ -1139,6 +1399,35 @@ export function SalesEnquiriesAndOpportunities({
                           <Briefcase className="size-3" />
                           Owner: {item.salesOwner}
                         </span>
+                      </div>
+
+                      {/* Modular Architecture & Component Lineage Chips */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <span className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                          <Cpu className="size-2.5 text-primary" />
+                          PCB: {item.modularConfig?.selectedPcbIds?.length ? item.modularConfig.selectedPcbIds.map((id) => defaultPcbCatalog.find((p) => p.id === id)?.code || id).join(" + ") : "HLPL-MOD-PCB-01"}
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                          <Cable className="size-2.5 text-primary" />
+                          Harness: {item.modularConfig?.selectedHarnessId ? defaultHarnessCatalog.find((h) => h.id === item.modularConfig?.selectedHarnessId)?.code || "MX150-14P" : "HLPL-HARN-MX150"}
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                          <Code2 className="size-2.5 text-primary" />
+                          FW: {item.modularConfig?.selectedFirmwareId ? defaultFirmwareCatalog.find((f) => f.id === item.modularConfig?.selectedFirmwareId)?.code || "AIS140-RTOS" : "HLPL-FW-AIS140"}
+                        </span>
+                        <span className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                          ⚡ 14-17 Wks Saved · Stage 4 Waived
+                        </span>
+                        {onConfigureModularAssets && (
+                          <button
+                            type="button"
+                            onClick={() => onConfigureModularAssets(item.linkedProjectCode || "HLPL-AI4T-01")}
+                            className="inline-flex items-center gap-1 rounded border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold text-primary transition hover:bg-primary/10"
+                          >
+                            <Layers className="size-2.5" />
+                            Configure Reuse
+                          </button>
+                        )}
                       </div>
                     </div>
 

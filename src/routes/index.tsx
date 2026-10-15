@@ -43,6 +43,8 @@ import {
   BookOpen,
   Shield,
   Users,
+  Cpu,
+  Layers,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
@@ -68,6 +70,12 @@ import {
   OfficialDecisionLogModal,
   OperationsLegalAndLetterheadModal,
 } from "@/components/CompanyDirectoryAndLegalHub";
+import {
+  ModularAssetCatalogModal,
+  ProjectAssetLinkerModal,
+  defaultProjectModularConfigs,
+  type ProjectModularConfiguration,
+} from "@/components/ModularProductArchitectureAndPcbCatalog";
 
 type AreaId =
   | "home"
@@ -343,6 +351,7 @@ type PortalState = {
   raciMatrix?: RaciMatrix | undefined;
   customersRegistry?: CustomerRecord[] | undefined;
   enquiriesOpportunities?: EnquiryOpportunity[] | undefined;
+  modularConfigs?: Record<string, ProjectModularConfiguration> | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -659,6 +668,7 @@ const emptyPortal = (): PortalState => ({
   templateBodies: defaultTemplateBodies(),
   customersRegistry: defaultCustomers,
   enquiriesOpportunities: defaultEnquiriesOpportunities,
+  modularConfigs: defaultProjectModularConfigs,
 });
 
 function defaultTemplateSettings(): TemplateSettings {
@@ -1484,6 +1494,7 @@ const demoPortal = (): PortalState => {
     ],
     customersRegistry: defaultCustomers,
     enquiriesOpportunities: defaultEnquiriesOpportunities,
+    modularConfigs: defaultProjectModularConfigs,
   };
 };
 const createId = () => crypto.randomUUID();
@@ -1675,6 +1686,8 @@ function Portal() {
   const [directoryOpen, setDirectoryOpen] = useState(false);
   const [decisionLogOpen, setDecisionLogOpen] = useState(false);
   const [legalHubOpen, setLegalHubOpen] = useState(false);
+  const [assetCatalogOpen, setAssetCatalogOpen] = useState(false);
+  const [assetLinkerProjectId, setAssetLinkerProjectId] = useState<string | null>(null);
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("hexense-scms-theme");
@@ -1778,7 +1791,12 @@ function Portal() {
     });
     announce(`Customer ${customer.name} saved to Customer Master.`);
   };
-  const handleDispatchFeasibility = (enquiryId: string, departments: string[], targetDate: string) => {
+  const handleDispatchFeasibility = (
+    enquiryId: string,
+    departments: string[],
+    targetDate: string,
+    modularConfig?: ProjectModularConfiguration,
+  ) => {
     update((state) => {
       const existingEnqs = state.enquiriesOpportunities ?? defaultEnquiriesOpportunities;
       const target = existingEnqs.find((e) => e.id === enquiryId);
@@ -1793,30 +1811,39 @@ function Portal() {
         totalFeasibilityDepts: departments.length,
         feasibilitySignedDepts: [],
         targetClosureDate: targetDate,
+        modularConfig: modularConfig,
         updatedAt: new Date().toISOString().slice(0, 10),
       };
 
       const nextEnqs = existingEnqs.map((e) => (e.id === enquiryId ? updatedTarget : e));
+      const nextConfigs =
+        modularConfig && updatedTarget.linkedProjectCode
+          ? {
+              ...(state.modularConfigs ?? defaultProjectModularConfigs),
+              [updatedTarget.linkedProjectCode]: modularConfig,
+            }
+          : (state.modularConfigs ?? defaultProjectModularConfigs);
 
       return {
         ...state,
         enquiriesOpportunities: nextEnqs,
+        modularConfigs: nextConfigs,
         audit: [
           {
             id: createId(),
             at: now(),
-            action: "Enquiry dispatched for feasibility",
-            detail: `${target.reference} converted to Opportunity ${updatedTarget.reference} · Assigned departments: ${departments.join(", ")} · Due: ${targetDate}`,
+            action: "Enquiry dispatched for feasibility with platform linking",
+            detail: `${target.reference} converted to Opportunity ${updatedTarget.reference} · Assigned departments: ${departments.join(", ")} · Platform Strategy: ${modularConfig?.architectureMode ?? "reusable_platform"}`,
           },
           ...state.audit,
         ],
         notifications: [
-          `Opportunity ${updatedTarget.reference} dispatched for feasibility review (${departments.join(", ")}). Contract Review record HLPL/F/MKT/01 generated.`,
+          `Opportunity ${updatedTarget.reference} dispatched for feasibility review (${departments.join(", ")}). Reusable platform assets linked. Contract Review record HLPL/F/MKT/01 generated.`,
           ...state.notifications,
         ],
       };
     });
-    announce(`Enquiry converted to Opportunity and dispatched for multi-department feasibility.`);
+    announce(`Enquiry converted to Opportunity and dispatched for multi-department feasibility with platform linking.`);
     setAi4tOpen(true);
   };
   const addRecord = (input: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => {
@@ -1951,6 +1978,7 @@ function Portal() {
             <HeaderAction label="Directory" icon={Users} onClick={() => setDirectoryOpen(true)} />
             <HeaderAction label="Decision Log" icon={BookOpen} onClick={() => setDecisionLogOpen(true)} />
             <HeaderAction label="Legal Hub" icon={Shield} onClick={() => setLegalHubOpen(true)} />
+            <HeaderAction label="Platform Asset Library" icon={Cpu} onClick={() => setAssetCatalogOpen(true)} />
             <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
             <HeaderAction
               label="Administration"
@@ -2062,6 +2090,7 @@ function Portal() {
               onOpenDecisionLog={() => setDecisionLogOpen(true)}
               onOpenLegalHub={() => setLegalHubOpen(true)}
               onOpenDirectory={() => setDirectoryOpen(true)}
+              onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
               persona={persona}
             />
           ) : view === "detail" && selected ? (
@@ -2138,6 +2167,8 @@ function Portal() {
                 setAi4tOpen(true);
               }}
               onSendForFeasibility={(enquiry) => setFeasibilityDispatchEnquiry(enquiry)}
+              onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
+              onConfigureModularAssets={(projectCode) => setAssetLinkerProjectId(projectCode)}
             />
           )}
         </div>
@@ -2332,6 +2363,7 @@ function Portal() {
           simulation={ai4tSimulation}
           initialTab={ai4tInitialTab}
           projectId={selectedProjectId}
+          modularConfig={(portal?.modularConfigs ?? defaultProjectModularConfigs)[selectedProjectId || "HLPL-AI4T-01"]}
           onKickoffComplete={(path, deliverables) => {
             const today = new Date().toISOString().slice(0, 10);
             const kickoffTasks: RecordItem[] = path === "poc" ? [
@@ -2520,6 +2552,42 @@ function Portal() {
       {legalHubOpen && (
         <OperationsLegalAndLetterheadModal onClose={() => setLegalHubOpen(false)} />
       )}
+      {assetCatalogOpen && (
+        <ModularAssetCatalogModal onClose={() => setAssetCatalogOpen(false)} />
+      )}
+      {assetLinkerProjectId && (
+        <ProjectAssetLinkerModal
+          projectId={assetLinkerProjectId}
+          projectTitle={
+            (portal?.enquiriesOpportunities ?? defaultEnquiriesOpportunities).find(
+              (e) => e.linkedProjectCode === assetLinkerProjectId,
+            )?.title || "Automotive Engineering Project"
+          }
+          initialConfig={
+            (portal?.modularConfigs ?? defaultProjectModularConfigs)[assetLinkerProjectId]
+          }
+          onClose={() => setAssetLinkerProjectId(null)}
+          onSaveConfig={(savedConfig) => {
+            update((state) => ({
+              ...state,
+              modularConfigs: {
+                ...(state.modularConfigs ?? defaultProjectModularConfigs),
+                [savedConfig.projectId]: savedConfig,
+              },
+              audit: [
+                {
+                  id: createId(),
+                  at: now(),
+                  action: "Modular Architecture & Platform Reuse Configured",
+                  detail: `Project ${savedConfig.projectId}: ${savedConfig.architectureMode} · ${savedConfig.selectedPcbIds.length} PCB(s) · Harness: ${savedConfig.selectedHarnessId}`,
+                },
+                ...state.audit,
+              ],
+            }));
+            announce(`Modular platform configuration saved for ${savedConfig.projectId}.`);
+          }}
+        />
+      )}
       {notice && (
         <div
           role="status"
@@ -2550,6 +2618,7 @@ function CommandCenter({
   onOpenDecisionLog,
   onOpenLegalHub,
   onOpenDirectory,
+  onOpenAssetCatalog,
   persona,
 }: {
   portal: PortalState;
@@ -2569,6 +2638,7 @@ function CommandCenter({
   onOpenDecisionLog?: (() => void) | undefined;
   onOpenLegalHub?: (() => void) | undefined;
   onOpenDirectory?: (() => void) | undefined;
+  onOpenAssetCatalog?: (() => void) | undefined;
   persona: Persona;
 }) {
   const records = portal.records.filter((record) => !record.archived);
@@ -2612,6 +2682,9 @@ function CommandCenter({
             )}
             {onOpenDirectory && (
               <Action onClick={onOpenDirectory} label="Company Directory" />
+            )}
+            {onOpenAssetCatalog && (
+              <Action onClick={onOpenAssetCatalog} label="Platform Asset Library" />
             )}
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
@@ -2809,6 +2882,7 @@ function Ai4tLifecycleHub({
   initialTab,
   projectId = "HLPL-AI4T-01",
   onKickoffComplete,
+  modularConfig,
 }: {
   persona: Persona;
   simulation: Ai4tSimulation;
@@ -2823,6 +2897,7 @@ function Ai4tLifecycleHub({
   initialTab?: ("stages" | "feasibility" | "binder") | undefined;
   projectId?: string | undefined;
   onKickoffComplete?: ((path: "poc" | "pilot", deliverables: string[]) => void) | undefined;
+  modularConfig?: ProjectModularConfiguration | undefined;
 }) {
   const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
   const [tab, setTab] = useState<"stages" | "feasibility" | "binder">(initialTab ?? "stages");
@@ -2868,6 +2943,7 @@ function Ai4tLifecycleHub({
           currentStageIndex={simulation.stage}
           onAdvanceToStage={(stageIndex) => onJump(stageIndex)}
           projectId={projectId}
+          modularConfig={modularConfig}
           onKickoffComplete={onKickoffComplete}
           onOpenDocumentView={(docId, title, dept) =>
             onOpenPrintable({
@@ -2895,6 +2971,7 @@ function Ai4tLifecycleHub({
             currentStageIndex={simulation.stage}
             onAdvanceToStage={(stageIndex) => onJump(stageIndex)}
             projectId={projectId}
+            modularConfig={modularConfig}
             onKickoffComplete={onKickoffComplete}
             onOpenDocumentView={(docId, title, dept) =>
               onOpenPrintable({
@@ -3565,6 +3642,8 @@ function DepartmentWorkspace({
   onOpenCustomerRegister,
   onOpenFeasibilityGate,
   onSendForFeasibility,
+  onOpenAssetCatalog,
+  onConfigureModularAssets,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -3586,6 +3665,8 @@ function DepartmentWorkspace({
   onOpenCustomerRegister?: (() => void) | undefined;
   onOpenFeasibilityGate?: ((projectCode: string) => void) | undefined;
   onSendForFeasibility?: ((enquiry: EnquiryOpportunity) => void) | undefined;
+  onOpenAssetCatalog?: (() => void) | undefined;
+  onConfigureModularAssets?: ((projectCode: string) => void) | undefined;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -3622,6 +3703,9 @@ function DepartmentWorkspace({
                 onClick={() => onOpenFeasibilityGate(projectScope === "all" ? "HLPL-AI4T-01" : projectScope)}
                 label="Feasibility & Hardware Gate"
               />
+            )}
+            {onOpenAssetCatalog && (
+              <Action onClick={onOpenAssetCatalog} label="Platform Asset Library" />
             )}
             <Action onClick={onOpenDrive} label="Department Cloud Drive" />
             <Action onClick={() => onCreate("Task")} label="Create Task" />
@@ -3686,6 +3770,8 @@ function DepartmentWorkspace({
             onOpenFeasibilityGate={(projectCode) => onOpenFeasibilityGate?.(projectCode)}
             onSendForFeasibility={(enquiry) => onSendForFeasibility?.(enquiry)}
             onOpenNewTask={() => onCreate("Task")}
+            onOpenAssetCatalog={() => onOpenAssetCatalog?.()}
+            onConfigureModularAssets={(projectCode) => onConfigureModularAssets?.(projectCode)}
           />
         </section>
       ) : (
