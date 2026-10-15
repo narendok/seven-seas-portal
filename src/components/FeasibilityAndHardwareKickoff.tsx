@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -17,6 +17,9 @@ import {
   Boxes,
   Microchip,
   RotateCcw,
+  Users,
+  FolderOpen,
+  Calendar,
 } from "lucide-react";
 
 export type FeasibilityVerdict = "FEASIBLE" | "FEASIBLE_WITH_CONDITIONS" | "INFEASIBLE";
@@ -40,18 +43,36 @@ export interface FeasibilityAndHardwareKickoffProps {
   currentStageIndex: number;
   onAdvanceToStage: (stageIndex: number) => void;
   onOpenDocumentView: (docId: string, title: string, dept: string) => void;
+  projectId?: string | undefined;
+  onKickoffComplete?: ((path: "poc" | "pilot", deliverables: string[]) => void) | undefined;
 }
 
 export function FeasibilityAndHardwareKickoff({
   currentStageIndex,
   onAdvanceToStage,
   onOpenDocumentView,
+  projectId = "HLPL-AI4T-01",
+  onKickoffComplete,
 }: FeasibilityAndHardwareKickoffProps) {
-  // Feasibility Review State
-  const [feasibilitySigned, setFeasibilitySigned] = useState(currentStageIndex >= 2);
-  const [requirementLocked, setRequirementLocked] = useState(currentStageIndex >= 3);
+  // Gate selection: 1 (Intake), 2 (Feasibility), 3 (Req Lock), 4 (Hardware PoC/Pilot)
+  const initialGate = (): 1 | 2 | 3 | 4 => {
+    if (currentStageIndex === 0) return 1;
+    if (currentStageIndex === 1) return 2;
+    if (currentStageIndex === 2) return 3;
+    return 4;
+  };
+
+  const [selectedGate, setSelectedGate] = useState<1 | 2 | 3 | 4>(initialGate);
   const [hardwarePath, setHardwarePath] = useState<HardwarePath>("poc");
   const [hardwareKickoffLaunched, setHardwareKickoffLaunched] = useState(currentStageIndex >= 4);
+
+  // Sync selected gate if currentStageIndex changes externally
+  useEffect(() => {
+    if (currentStageIndex === 0) setSelectedGate(1);
+    else if (currentStageIndex === 1) setSelectedGate(2);
+    else if (currentStageIndex === 2) setSelectedGate(3);
+    else setSelectedGate(4);
+  }, [currentStageIndex]);
 
   // Department reviews per Master Plan §4 & §5
   const reviews: DepartmentFeasibility[] = [
@@ -155,8 +176,245 @@ export function FeasibilityAndHardwareKickoff({
 
   return (
     <div className="space-y-6">
-      {/* STAGE 2: Multi-Department Feasibility & Contract Review */}
-      {currentStageIndex === 1 && (
+      {/* Top Gate Navigation Stepper */}
+      <div className="rounded-xl border border-steel/30 bg-panel/60 p-3 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
+          <div>
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-steel">
+              Project Lifecycle Feasibility & Engineering Gate Engine
+            </span>
+            <p className="text-xs font-semibold text-foreground">
+              {projectId} · Tata Ace EV 4G Telematics Gateway
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 font-mono text-[11px]">
+            <span className="text-muted-foreground">Current Project Stage:</span>
+            <span className="rounded bg-primary/10 px-2 py-0.5 font-bold text-primary">
+              Stage {currentStageIndex + 1}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <button
+            onClick={() => setSelectedGate(1)}
+            className={`flex items-center gap-2 rounded-lg border p-2 text-left transition-colors ${
+              selectedGate === 1
+                ? "border-primary bg-primary/10 font-bold text-primary"
+                : currentStageIndex >= 1
+                  ? "border-emerald-500/30 bg-card text-foreground hover:bg-secondary"
+                  : "border-border bg-card text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[11px]">
+              {currentStageIndex >= 1 ? <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> : "1"}
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-xs">Stage 1: Intake</span>
+              <span className="block truncate font-mono text-[10px] text-muted-foreground">SOR & mNDA</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setSelectedGate(2)}
+            className={`flex items-center gap-2 rounded-lg border p-2 text-left transition-colors ${
+              selectedGate === 2
+                ? "border-primary bg-primary/10 font-bold text-primary"
+                : currentStageIndex >= 2
+                  ? "border-emerald-500/30 bg-card text-foreground hover:bg-secondary"
+                  : "border-border bg-card text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[11px]">
+              {currentStageIndex >= 2 ? <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> : "2"}
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-xs">Stage 2: Feasibility</span>
+              <span className="block truncate font-mono text-[10px] text-muted-foreground">HLPL/F/MKT/01</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setSelectedGate(3)}
+            className={`flex items-center gap-2 rounded-lg border p-2 text-left transition-colors ${
+              selectedGate === 3
+                ? "border-primary bg-primary/10 font-bold text-primary"
+                : currentStageIndex >= 3
+                  ? "border-emerald-500/30 bg-card text-foreground hover:bg-secondary"
+                  : "border-border bg-card text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[11px]">
+              {currentStageIndex >= 3 ? <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> : "3"}
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-xs">Stage 3: Req Lock</span>
+              <span className="block truncate font-mono text-[10px] text-muted-foreground">PRS-01 & QUO-01</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setSelectedGate(4)}
+            className={`flex items-center gap-2 rounded-lg border p-2 text-left transition-colors ${
+              selectedGate === 4
+                ? "border-primary bg-primary/10 font-bold text-primary"
+                : currentStageIndex >= 4
+                  ? "border-emerald-500/30 bg-card text-foreground hover:bg-secondary"
+                  : "border-border bg-card text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[11px]">
+              {currentStageIndex >= 4 ? <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" /> : "4"}
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-xs">Stage 4/5: Kick-Off</span>
+              <span className="block truncate font-mono text-[10px] text-muted-foreground">PoC vs SMT Pilot</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* GATE 1: Sales Intake & Customer SOR Gate */}
+      {selectedGate === 1 && (
+        <div className="rounded-xl border border-steel/30 bg-card p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-steel/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-steel">
+                  Stage 1 Gate
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">Sales Intake & Customer Baseline</span>
+              </div>
+              <h3 className="mt-1 text-base font-bold text-foreground">
+                Customer SOR & Bilateral NDA Verification
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Per Master Plan §4: Intake captures the customer Statement of Requirements (SOR) and confirms the Mutual NDA before dispatching for technical feasibility.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="size-3.5" /> Intake Evidence Verified
+            </span>
+          </div>
+
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            {/* Customer SOR */}
+            <div className="rounded-lg border border-border bg-panel/70 p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold text-foreground">
+                    Sales Deliverable
+                  </span>
+                  <h4 className="mt-2 text-sm font-bold text-foreground">Customer Statement of Requirements (SOR)</h4>
+                  <p className="font-mono text-xs text-muted-foreground">HLPL-AI4T-SAL-SOR-01 · Rev 01</p>
+                </div>
+                <button
+                  onClick={() => onOpenDocumentView("HLPL-AI4T-SAL-SOR-01", "Customer SOR", "SAL")}
+                  className="rounded p-1 text-steel hover:bg-secondary"
+                  title="View complete SOR document"
+                >
+                  <ExternalLink className="size-4" />
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-1.5 rounded-md bg-secondary/50 p-3 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Client:</span>
+                  <span className="font-medium text-foreground">Tata Motors Limited (EV Fleet Division)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Application:</span>
+                  <span className="font-medium text-foreground">Tata Ace EV 4G AIS-140 Telematics</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Target Volume:</span>
+                  <span className="font-medium text-foreground">50,000 Units / Year</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Key Standards:</span>
+                  <span className="font-medium text-foreground">AIS-140, ISO 7637-2, IP67</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between text-[11px] text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-1 font-semibold">
+                  <CheckCircle2 className="size-3.5" /> Client RFQ Baseline Locked
+                </span>
+                <span className="font-mono text-[10px]">Sales Lead: Priya Sharma</span>
+              </div>
+            </div>
+
+            {/* Bilateral Mutual NDA */}
+            <div className="rounded-lg border border-border bg-panel/70 p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] font-bold text-foreground">
+                    Legal & Compliance
+                  </span>
+                  <h4 className="mt-2 text-sm font-bold text-foreground">Bilateral Mutual Non-Disclosure Agreement</h4>
+                  <p className="font-mono text-xs text-muted-foreground">HLPL-AI4T-SAL-mNDA-01 · Rev 01</p>
+                </div>
+                <button
+                  onClick={() => onOpenDocumentView("HLPL-AI4T-SAL-mNDA-01", "Mutual NDA", "SAL")}
+                  className="rounded p-1 text-steel hover:bg-secondary"
+                  title="View complete mNDA document"
+                >
+                  <ExternalLink className="size-4" />
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-1.5 rounded-md bg-secondary/50 p-3 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Counterparty:</span>
+                  <span className="font-medium text-foreground">Tata Motors Limited, Pune</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Term:</span>
+                  <span className="font-medium text-foreground">3 Years (Confidentiality & IP Protection)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Signatures:</span>
+                  <span className="font-medium text-foreground">Dual Authorized Corporate Signatories</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">IP Ownership:</span>
+                  <span className="font-medium text-foreground">Hexense Labs Retains Firmware & Circuit IP</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between text-[11px] text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-1 font-semibold">
+                  <CheckCircle2 className="size-3.5" /> Executed & Countersigned
+                </span>
+                <span className="font-mono text-[10px]">Legal/Ops: Taylor Quinn</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-primary/5 p-4 border border-primary/20">
+            <div>
+              <p className="text-xs font-bold text-foreground">
+                Intake Complete — Ready for Multi-Department Technical Feasibility Handover
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Advancing will dispatch this requirement to Hardware (EHW), Firmware (ESW), Mechanical (MECH), Purchase (PUR), Quality (QA), and Finance (FIN).
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                onAdvanceToStage(1);
+                setSelectedGate(2);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+            >
+              Dispatch for Feasibility Review <ArrowRight className="size-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* GATE 2: Multi-Department Feasibility & Contract Review Gate */}
+      {selectedGate === 2 && (
         <div className="rounded-xl border border-steel/30 bg-card p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
             <div>
@@ -199,7 +457,12 @@ export function FeasibilityAndHardwareKickoff({
                           : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
                       }`}
                     >
-                      {rev.verdict === "FEASIBLE" ? "✓ Feasible" : "⚠ Feasible w/ Conditions"}
+                      {rev.verdict === "FEASIBLE" ? (
+                        <CheckCircle2 className="size-3" />
+                      ) : (
+                        <AlertTriangle className="size-3" />
+                      )}
+                      {rev.verdict.replace(/_/g, " ")}
                     </span>
                   </div>
 
@@ -269,8 +532,8 @@ export function FeasibilityAndHardwareKickoff({
               </button>
               <button
                 onClick={() => {
-                  setFeasibilitySigned(true);
                   onAdvanceToStage(2);
+                  setSelectedGate(3);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
               >
@@ -281,8 +544,8 @@ export function FeasibilityAndHardwareKickoff({
         </div>
       )}
 
-      {/* STAGE 3: Final Requirement Lock & Client Approval Gate */}
-      {currentStageIndex === 2 && (
+      {/* GATE 3: Final Requirement Lock & Client Approval Gate */}
+      {selectedGate === 3 && (
         <div className="rounded-xl border border-steel/30 bg-card p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
             <div>
@@ -442,8 +705,8 @@ export function FeasibilityAndHardwareKickoff({
           <div className="mt-6 flex justify-end gap-3">
             <button
               onClick={() => {
-                setRequirementLocked(true);
                 onAdvanceToStage(3);
+                setSelectedGate(4);
               }}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
             >
@@ -454,8 +717,8 @@ export function FeasibilityAndHardwareKickoff({
         </div>
       )}
 
-      {/* STAGE 4 & 5: Hardware Team Path Decision — PoC vs Direct Pilot */}
-      {(currentStageIndex === 3 || currentStageIndex === 4) && (
+      {/* GATE 4/5: Hardware Team Path Decision — PoC vs Direct Pilot */}
+      {selectedGate === 4 && (
         <div className="rounded-xl border border-steel/30 bg-card p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
             <div>
@@ -502,7 +765,7 @@ export function FeasibilityAndHardwareKickoff({
                     <Microchip className="size-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-foreground">Option A: Research / PoC Phase</h4>
+                    <h4 className="text-sm font-bold text-foreground">Option A: Research / PoC Track</h4>
                     <span className="font-mono text-[11px] text-muted-foreground">Stage 4 · Bench Validation</span>
                   </div>
                 </div>
@@ -607,7 +870,7 @@ export function FeasibilityAndHardwareKickoff({
                   Hardware Team Operational Dossier
                 </p>
                 <h4 className="mt-1 text-sm font-bold text-foreground">
-                  HLPL-AI4T-01 · Active Engineering Kick-Off Squad
+                  {projectId} · Active Engineering Kick-Off Squad
                 </h4>
               </div>
               <span className="rounded bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -634,6 +897,28 @@ export function FeasibilityAndHardwareKickoff({
             </div>
           </div>
 
+          {/* Execution Status Feedback if Launched */}
+          {hardwareKickoffLaunched && (
+            <div className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                  <CheckCircle2 className="size-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-foreground">
+                    Hardware Kick-Off Active:{" "}
+                    {hardwarePath === "poc" ? "Stage 4 (Research / PoC Track)" : "Stage 5 (Direct SMT Pilot Track)"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    Engineering tasks dispatched to Avery Vale, Devon Lane, and Casey Rowan. Drive folders{" "}
+                    <span className="font-mono text-steel">03_Hardware_Deliverables_ECAD</span> and{" "}
+                    <span className="font-mono text-steel">05_Firmware_and_Software</span> are active.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Launch Action */}
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
             <p className="text-xs text-muted-foreground">
@@ -645,7 +930,12 @@ export function FeasibilityAndHardwareKickoff({
             <button
               onClick={() => {
                 setHardwareKickoffLaunched(true);
-                onAdvanceToStage(hardwarePath === "poc" ? 3 : 4);
+                const nextStageIndex = hardwarePath === "poc" ? 3 : 4;
+                onAdvanceToStage(nextStageIndex);
+                const deliverables = hardwarePath === "poc"
+                  ? ["HLPL-AI4T-EHW-SCH-01", "HLPL-AI4T-EHW-BOM-00", "CAN-J1939-PoC"]
+                  : ["HLPL-AI4T-EMF-CP-01", "SMT-LINE2-PROFILE", "PUR-TOOLING-PO"];
+                onKickoffComplete?.(hardwarePath, deliverables);
               }}
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow hover:bg-emerald-700"
             >

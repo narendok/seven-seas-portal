@@ -1656,6 +1656,7 @@ function Portal() {
   const [templateSettingsOpen, setTemplateSettingsOpen] = useState(false);
   const [printTemplate, setPrintTemplate] = useState<PrintableDocument | null>(null);
   const [ai4tOpen, setAi4tOpen] = useState(false);
+  const [ai4tInitialTab, setAi4tInitialTab] = useState<"stages" | "feasibility" | "binder">("stages");
   const [ai4tSimulation, setAi4tSimulation] = useState<Ai4tSimulation>({ stage: 0, history: [] });
   const [projectScopes, setProjectScopes] = useState<Partial<Record<AreaId, ProjectScope>>>({});
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
@@ -2023,7 +2024,19 @@ function Portal() {
               }}
               onOpenSyncHub={() => setSyncHubOpen(true)}
                onOpenDraftHub={() => setDraftHubOpen(true)}
-              onOpenAi4t={() => setAi4tOpen(true)}
+              onOpenAi4t={() => {
+                setAi4tInitialTab("stages");
+                setAi4tOpen(true);
+              }}
+              onOpenFeasibilityGate={(projectCode) => {
+                setSelectedProjectId(projectCode);
+                setAi4tInitialTab("feasibility");
+                setAi4tSimulation((prev) => ({
+                  ...prev,
+                  stage: Math.max(prev.stage, 1),
+                }));
+                setAi4tOpen(true);
+              }}
               persona={persona}
             />
           ) : view === "detail" && selected ? (
@@ -2092,6 +2105,11 @@ function Portal() {
               onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
               onOpenFeasibilityGate={(projectCode) => {
                 setSelectedProjectId(projectCode);
+                setAi4tInitialTab("feasibility");
+                setAi4tSimulation((prev) => ({
+                  ...prev,
+                  stage: Math.max(prev.stage, 1),
+                }));
                 setAi4tOpen(true);
               }}
               onSendForFeasibility={(enquiry) => setFeasibilityDispatchEnquiry(enquiry)}
@@ -2287,6 +2305,138 @@ function Portal() {
         <Ai4tLifecycleHub
           persona={persona}
           simulation={ai4tSimulation}
+          initialTab={ai4tInitialTab}
+          projectId={selectedProjectId}
+          onKickoffComplete={(path, deliverables) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const kickoffTasks: RecordItem[] = path === "poc" ? [
+              {
+                id: createId(),
+                reference: "TASK-EHW-SCH01",
+                area: "ehw",
+                type: "Task",
+                title: "Schematics SCH-01 draft & MCU bring-up",
+                priority: "Critical",
+                status: "Open",
+                createdAt: now(),
+                updatedAt: now(),
+                notes: "Stage 4 Hardware PoC task",
+                fields: {
+                  dueDate: today,
+                  assignee: "Avery Vale",
+                  project: selectedProjectId,
+                  stage: "Stage 4 · PoC Bring-up",
+                  scope: "STM32F405VG MCU circuit, ISO 7637-2 power path, 4G modem integration",
+                },
+              },
+              {
+                id: createId(),
+                reference: "TASK-ESW-CAN01",
+                area: "esw",
+                type: "Task",
+                title: "CAN J1939 telemetry firmware parser & FreeRTOS bring-up",
+                priority: "High",
+                status: "Open",
+                createdAt: now(),
+                updatedAt: now(),
+                notes: "Stage 4 Firmware PoC task",
+                fields: {
+                  dueDate: today,
+                  assignee: "Devon Lane",
+                  project: selectedProjectId,
+                  stage: "Stage 4 · PoC Bring-up",
+                  scope: "FreeRTOS v10.4 kernel, J1939 250/500kbps packet telemetry",
+                },
+              },
+              {
+                id: createId(),
+                reference: "TASK-PUR-SAMPLES",
+                area: "pur",
+                type: "Task",
+                title: "Procure Quectel EC200U modem & STM32F405 engineering samples",
+                priority: "High",
+                status: "Open",
+                createdAt: now(),
+                updatedAt: now(),
+                notes: "Stage 4 Purchasing task",
+                fields: {
+                  dueDate: today,
+                  assignee: "Morgan Reed",
+                  project: selectedProjectId,
+                  stage: "Stage 4 · PoC Bring-up",
+                  scope: "Tier-1 ASL engineering samples for bench prototype",
+                },
+              },
+            ] : [
+              {
+                id: createId(),
+                reference: "TASK-EMF-LINE2",
+                area: "emf",
+                type: "Task",
+                title: "Verify reflow oven 10-zone thermal profile for SMT Line 2 lot BATCH-04",
+                priority: "Critical",
+                status: "Open",
+                createdAt: now(),
+                updatedAt: now(),
+                notes: "Stage 5 SMT Pilot task",
+                fields: {
+                  dueDate: today,
+                  assignee: "Casey Rowan",
+                  project: selectedProjectId,
+                  stage: "Stage 5 · SMT Pilot",
+                  scope: "10-zone reflow profile and 3D SPI calibration for Line 2",
+                },
+              },
+              {
+                id: createId(),
+                reference: "TASK-PUR-TOOLING",
+                area: "pur",
+                type: "Task",
+                title: "Release advance soft-tooling PO for IP67 enclosure & Molex connector",
+                priority: "High",
+                status: "Open",
+                createdAt: now(),
+                updatedAt: now(),
+                notes: "Stage 5 Tooling procurement task",
+                fields: {
+                  dueDate: today,
+                  assignee: "Morgan Reed",
+                  project: selectedProjectId,
+                  stage: "Stage 5 · SMT Pilot",
+                  scope: "Polycarbonate UV-stabilized enclosure soft tooling",
+                },
+              },
+              {
+                id: createId(),
+                reference: "TASK-QA-DVP01",
+                area: "qa",
+                type: "Task",
+                title: "Establish 18-test DVP&R pre-compliance verification matrix",
+                priority: "High",
+                status: "Open",
+                createdAt: now(),
+                updatedAt: now(),
+                notes: "Stage 5 Quality DVP&R task",
+                fields: {
+                  dueDate: today,
+                  assignee: "Jordan Blake",
+                  project: selectedProjectId,
+                  stage: "Stage 5 · SMT Pilot",
+                  scope: "AIS-140 Annexure 8, ISO 7637-2 electrical transients DVP&R",
+                },
+              },
+            ];
+            update((currentPortal) => ({
+              ...currentPortal,
+              records: [...kickoffTasks, ...currentPortal.records],
+              notifications: [
+                `Hardware Team Kick-Off active for ${selectedProjectId} (${path === "poc" ? "Stage 4: Research / PoC" : "Stage 5: Direct SMT Pilot"}). Core squad deployed with ${deliverables.join(", ")}.`,
+                ...currentPortal.notifications,
+              ],
+            }));
+            announce(`Hardware kick-off active: ${path === "poc" ? "PoC bench bring-up squad deployed" : "Direct SMT Line 2 Pilot setup initiated"}.`);
+            log("Hardware Kick-off launched", `${selectedProjectId} · ${path.toUpperCase()} Track · ${deliverables.join(", ")}`);
+          }}
           onClose={() => setAi4tOpen(false)}
           onAdvance={() => {
             setAi4tSimulation((state) => {
@@ -2359,6 +2509,7 @@ function CommandCenter({
   onOpenSyncHub,
   onOpenDraftHub,
   onOpenAi4t,
+  onOpenFeasibilityGate,
   persona,
 }: {
   portal: PortalState;
@@ -2374,6 +2525,7 @@ function CommandCenter({
   onOpenSyncHub: () => void;
   onOpenDraftHub: () => void;
   onOpenAi4t: () => void;
+  onOpenFeasibilityGate?: ((projectCode: string) => void) | undefined;
   persona: Persona;
 }) {
   const records = portal.records.filter((record) => !record.archived);
@@ -2406,6 +2558,9 @@ function CommandCenter({
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
             <Action onClick={onOpenAi4t} label="End-to-End Project Lifecycle Hub (HLPL-AI4T-01)" primary />
+            {onOpenFeasibilityGate && (
+              <Action onClick={() => onOpenFeasibilityGate("HLPL-AI4T-01")} label="Feasibility & Hardware Gate" />
+            )}
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={onCreate} label="Create Task" primary />
@@ -2599,6 +2754,9 @@ function Ai4tLifecycleHub({
   onOpenPrintable,
   documents,
   onOpenDocument,
+  initialTab,
+  projectId = "HLPL-AI4T-01",
+  onKickoffComplete,
 }: {
   persona: Persona;
   simulation: Ai4tSimulation;
@@ -2610,9 +2768,12 @@ function Ai4tLifecycleHub({
   onOpenPrintable: (document: PrintableDocument) => void;
   documents: ControlledDocument[];
   onOpenDocument: (document: ControlledDocument) => void;
+  initialTab?: ("stages" | "feasibility" | "binder") | undefined;
+  projectId?: string | undefined;
+  onKickoffComplete?: ((path: "poc" | "pilot", deliverables: string[]) => void) | undefined;
 }) {
   const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
-  const [tab, setTab] = useState<"stages" | "feasibility" | "binder">("stages");
+  const [tab, setTab] = useState<"stages" | "feasibility" | "binder">(initialTab ?? "stages");
   const current = ai4tStages[simulation.stage] ?? ai4tStages[0];
   const progress = Math.round(((simulation.stage + 1) / ai4tStages.length) * 100);
   const accessibleDossier = persona.kind === "client"
@@ -2621,7 +2782,7 @@ function Ai4tLifecycleHub({
       ? ai4tDossier.filter(([, , owner]) => owner === areaById(persona.departmentId ?? "home").short)
       : ai4tDossier;
   return (
-    <Modal title="HLPL-AI4T-01 · End-to-End Lifecycle" onClose={onClose} wide>
+    <Modal title={`${projectId} · End-to-End Lifecycle & Engineering Gate`} onClose={onClose} wide>
       <DemoMarker />
       <section className="ops-section overflow-hidden">
         <div className="ops-section-header flex flex-wrap items-start justify-between gap-3">
@@ -2650,25 +2811,25 @@ function Ai4tLifecycleHub({
           </button>
         ))}
       </section>
-      {simulation.stage >= 1 && simulation.stage <= 4 && (
-        <div className="mt-5">
-          <FeasibilityAndHardwareKickoff
-            currentStageIndex={simulation.stage}
-            onAdvanceToStage={(stageIndex) => onJump(stageIndex)}
-            onOpenDocumentView={(docId, title, dept) =>
-              onOpenPrintable({
-                title: title.toUpperCase(),
-                documentId: docId,
-                department: dept,
-                revision: "Rev 01",
-                status: "Approved",
-                project: "HLPL-AI4T-01",
-                stage: `Stage ${simulation.stage + 1}`,
-              })
-            }
-          />
-        </div>
-      )}
+      <div className="mt-5">
+        <FeasibilityAndHardwareKickoff
+          currentStageIndex={simulation.stage}
+          onAdvanceToStage={(stageIndex) => onJump(stageIndex)}
+          projectId={projectId}
+          onKickoffComplete={onKickoffComplete}
+          onOpenDocumentView={(docId, title, dept) =>
+            onOpenPrintable({
+              title: title.toUpperCase(),
+              documentId: docId,
+              department: dept,
+              revision: "Rev 01",
+              status: "Approved",
+              project: projectId,
+              stage: `Stage ${simulation.stage + 1}`,
+            })
+          }
+        />
+      </div>
       <LifecycleDeliverables documents={documents} stage={current[0]} onOpenDocument={onOpenDocument} />
       <section className="ops-section mt-5 overflow-hidden">
         <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Role-filtered binder view. Preview content is a formatted DEMO draft.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
@@ -2681,6 +2842,8 @@ function Ai4tLifecycleHub({
           <FeasibilityAndHardwareKickoff
             currentStageIndex={simulation.stage}
             onAdvanceToStage={(stageIndex) => onJump(stageIndex)}
+            projectId={projectId}
+            onKickoffComplete={onKickoffComplete}
             onOpenDocumentView={(docId, title, dept) =>
               onOpenPrintable({
                 title: title.toUpperCase(),
@@ -2688,7 +2851,7 @@ function Ai4tLifecycleHub({
                 department: dept,
                 revision: "Rev 01",
                 status: "Approved",
-                project: "HLPL-AI4T-01",
+                project: projectId,
                 stage: `Stage ${simulation.stage + 1}`,
               })
             }
@@ -3401,6 +3564,12 @@ function DepartmentWorkspace({
             />
             {area.id === "sales" && onOpenCustomerRegister && (
               <Action onClick={onOpenCustomerRegister} label="Customer Register.xlsx" />
+            )}
+            {(area.id === "ehw" || area.id === "qa" || area.id === "sales") && onOpenFeasibilityGate && (
+              <Action
+                onClick={() => onOpenFeasibilityGate(projectScope === "all" ? "HLPL-AI4T-01" : projectScope)}
+                label="Feasibility & Hardware Gate"
+              />
             )}
             <Action onClick={onOpenDrive} label="Department Cloud Drive" />
             <Action onClick={onCreate} label={`Create ${area.recordType}`} primary />
