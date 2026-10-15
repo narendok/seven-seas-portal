@@ -2,9 +2,9 @@
 
 ## Plan Boundary
 
-This file is the single, authoritative master plan for the **Hexense Labs / Six Sense Mobility (SCMS) Web Portal and its backend architecture**. It defines the end-to-end operational flow, data models, department ownership, document control, modular hardware reuse, and delivery roadmap.
+This document is the single, authoritative master plan for the **Hexense Labs / Six Sense Mobility Smart Company Management System (SCMS) Web Portal and its backend architecture**. It specifies the unified enterprise architecture, operational flows, data schemas, department ownership models, document controls, modular hardware reusability, and delivery roadmap.
 
-The target is the connected Lovable project `a3399684-daab-4b38-8666-187b96b451af`, managed Supabase PostgreSQL backend, and private Cloud Storage. Web/Supabase owns identities, permissions, operational records, official document numbering (`HLPL-[PROJ_ID]-[DEPT]-[DOC_TYPE]-[REV]`), transactions, audit feeds, automation, and private document storage.
+The target is the connected Lovable project `a3399684-daab-4b38-8666-187b96b451af`, managed Supabase PostgreSQL backend, and private Cloud Storage. Web/Supabase owns identities, role permissions, operational records, official document numbering (`HLPL-[PROJ_ID]-[DEPT]-[DOC_TYPE]-[REV]`), transactions, immutable audit logs, automation triggers, and private document storage.
 
 Evidence generated or imported for web source belongs in `docs/evidence/`. All previous redundant or fragmented plan files have been consolidated directly into this master plan to eliminate ambiguity and maintain a single source of truth.
 
@@ -14,14 +14,14 @@ Evidence generated or imported for web source belongs in `docs/evidence/`. All p
 
 1. **Single Source of Truth**: This document supersedes all dated planning briefs, fragmented roadmap notes, and temporary plan files. If code or documentation diverges, this Master Plan governs the target architecture.
 2. **Automotive & Enterprise Standards**:
-   - **IATF 16949:2016** & **ISO 9001:2015**: Quality management, customer-oriented processes (COP), contract review gates, design verification (DVP&R), PPAP Level 3, and traceability.
+   - **IATF 16949:2016** & **ISO 9001:2015**: Quality management, customer-oriented processes (COP), contract review gates, design verification (DVP&R), PPAP Level 3, and full part traceability.
    - **AIS-140 / TAC**: Telematics and emergency system certification (ARAI/ICAT).
-   - **AEC-Q100 / AEC-Q200**: Automotive grade qualification for ICs and passives.
+   - **AEC-Q100 / AEC-Q200**: Automotive grade qualification for ICs and passive components.
    - **ISO 7637-2**: Electrical transient conduction along supply lines.
    - **ISO 14001:2015** & **ISO 45001:2018**: Environmental and occupational health/safety.
    - **ISO/IEC 27001:2022**: Information security management and bilateral mutual NDA controls.
-3. **Core Architectural Reference**:
-   - Document ID formula: $\text{Document ID} = \mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$.
+3. **Core Architectural Invariants**:
+   - Canonical Document ID Formula: $\text{Document ID} = \mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$.
    - Master Plan §5: Decoupled Project vs. PCB vs. Wiring Harness vs. Firmware vs. Enclosure architecture with automated development process skips.
    - Symmetrical 4-group departmental Drive (`01 Common documents`, `02 Internal projects`, `03 Client projects`, `04 Other department work`).
    - Human-in-the-loop governance: Protected quality releases and commercial commitments always require recorded human sign-off.
@@ -61,23 +61,23 @@ graph TD
     CC --> PUR & EMF & TST & SIT
 ```
 
-| Department Code | Full Department Title | Core Operational Ownership & Deliverables |
-|---|---|---|
-| **SAL** | Sales & Business Development | Customer Register.xlsx, RFQ intake, SOR analysis (`SAL-SOR-01`), bilateral mNDA (`SAL-mNDA-01`), contract reviews (`HLPL/F/MKT/01`), quotations (`SAL-QUO-01`), customer purchase orders (`SAL-PO-01`). |
-| **EHW** | Embedded Hardware Engineering | System architecture, PRS (`EHW-PRS-01`), schematics (`EHW-SCH-01`), preliminary/frozen BOMs (`EHW-BOM-01`), hardware DFMEA (`EHW-DFMEA-01`), Gerber archives, AEC-Q100 compliance. |
-| **ESW** | Firmware & Software Engineering | Bootloader, RTOS kernel bring-up, CAN J1939 driver, AIS-140 protocol parser, secure dual-bank FOTA, cryptographic signing, TAC compliance testing. |
-| **MECH** | Mechanical Engineering | 3D CAD modeling, IP67 enclosure tooling (`ENC-MECH-CAD-01`), wiring harness pinout drawings (`HARN-MECH-DWG-01`), thermal simulation, vibration fixture design. |
-| **PUR** | Purchasing & SCM | Approved Vendor List (AVL), dual-track sourcing (Proto soft-tooling vs Mass production), PR/RFQ/PO issuance, supplier PPAP Level 3 review, stock allocation. |
-| **QA** | Quality Assurance & APQP | APQP roadmap (`HLPL-APQP-001`), DVP&R matrix (`QA-DVP-01`, 18 electrical/environmental tests), ISO 7637-2 compliance, Type Approval TAC cert (`QA-TAC-01`), NCR/CAPA logs. |
-| **EMF** | Manufacturing & Assembly | 10-zone reflow thermal profiling, 3D solder paste inspection (SPI), automated optical inspection (AOI), Process Control Plan (`EMF-CP-01`), SMT work instructions. |
-| **TST** | Production & EOL Testing Jigs | Automated functional testing (FCT) jigs, CAN bus verification, flashing rigs, 100% PDI inspection certification (`TST-PDI-01`), calibration logs. |
-| **FIN** | Accounts & Finance | Project budget tracking, commercial margin analysis, milestone billing, GST/HSN tax invoices (`FIN-INV-01`), payment reconciliation. |
-| **SIT** | Service & IT Infrastructure | Enterprise Cloud Drive storage, telematics backend gateway, OTA server monitoring, role-based access control, field service ticketing. |
-| **HR/OPS** | HR & Operations | Employee competence matrix (`HLPL/F/HR/03`), QMS internal audits, Six Sigma DMAIC registers, Signed-In Company Directory, Corporate Legal Documents & Letterheads. |
+| Department Code | Full Department Title | Primary Record Type | Core Operational Ownership & Deliverables |
+|---|---|---|---|
+| **SAL** | Sales & Business Development | `Enquiry` | Customer Register.xlsx, RFQ intake, SOR analysis (`SAL-SOR-01`), bilateral mNDA (`SAL-mNDA-01`), contract reviews (`HLPL/F/MKT/01`), quotations (`SAL-QUO-01`), customer purchase orders (`SAL-PO-01`). |
+| **EHW** | Embedded Hardware Engineering | `PRS` | System architecture, PRS (`EHW-PRS-01`), schematics (`EHW-SCH-01`), preliminary/frozen BOMs (`EHW-BOM-01`), hardware DFMEA (`EHW-DFMEA-01`), Gerber archives, AEC-Q100 compliance. |
+| **ESW** | Firmware & Software Engineering | `Firmware release` | Bootloader, RTOS kernel bring-up, CAN J1939 driver, AIS-140 protocol parser, secure dual-bank FOTA, cryptographic signing, TAC compliance testing. |
+| **MECH** | Mechanical Engineering | `Mechanical CAD` | 3D CAD modeling, IP67 enclosure tooling (`ENC-MECH-CAD-01`), wiring harness pinout drawings (`HARN-MECH-DWG-01`), thermal simulation, vibration fixture design. |
+| **PUR** | Purchasing & SCM | `Purchase order` | Approved Vendor List (AVL), dual-track sourcing (Proto soft-tooling vs Mass production), PR/RFQ/PO issuance, supplier PPAP Level 3 review, stock allocation. |
+| **QA** | Quality Assurance & APQP | `Quality inspection` | APQP roadmap (`HLPL-APQP-001`), DVP&R matrix (`QA-DVP-01`, 18 electrical/environmental tests), ISO 7637-2 compliance, Type Approval TAC cert (`QA-TAC-01`), NCR/CAPA logs. |
+| **EMF** | Manufacturing & Assembly | `Work instruction` | 10-zone reflow thermal profiling, 3D solder paste inspection (SPI), automated optical inspection (AOI), Process Control Plan (`EMF-CP-01`), SMT work instructions. |
+| **TST** | Production & EOL Testing Jigs | `Calibration log` | Automated functional testing (FCT) jigs, CAN bus verification, flashing rigs, 100% PDI inspection certification (`TST-PDI-01`), calibration logs. |
+| **FIN** | Accounts & Finance | `Commercial quotation` | Project budget tracking, commercial margin analysis, milestone billing, GST/HSN tax invoices (`FIN-INV-01`), payment reconciliation. |
+| **SIT** | Service & IT Infrastructure | `Service ticket` | Enterprise Cloud Drive storage, telematics backend gateway, OTA server monitoring, role-based access control, field service ticketing. |
+| **HR/OPS** | HR & Operations | `Audit report` | Employee competence matrix (`HLPL/F/HR/03`), QMS internal audits, Six Sigma DMAIC registers, Signed-In Company Directory, Corporate Legal Documents & Letterheads. |
 
 ---
 
-## 3. Personas, Access Safeguards & Command Center
+## 3. Command Center, Personas & Role-Switching Governance
 
 ### 3.1 Role & Persona Switcher
 The portal incorporates an instant **Role & Persona Switcher** in the header allowing 1-click verification of department context, permission boundaries, and filtered queues:
@@ -98,10 +98,10 @@ The portal incorporates an instant **Role & Persona Switcher** in the header all
 
 When switched, the portal displays a persistent active persona banner with a 1-click `[Switch Back to Admin]` button. Every persona change is audited in the immutable event log.
 
-### 3.2 Executive Command Center
+### 3.2 Executive Command Center Overview
 The **Home / Command Center** serves as the compact operational hub:
 - **Header Action Bar**: Unified `[Create Task]`, `[Cross-Department Sync]`, `[Auto-Draft Templates]`, and `[Platform Asset Library]` actions.
-- **Executive KPI Cards**: 6 responsive metrics tracking Today's Tasks, Overdue Items, Active Opportunities, Active Projects, Quality Gates, and Financial Progress.
+- **Executive KPI Cards**: 6 responsive compact metrics tracking Active Project, Order Volume, Revenue, Stage, Audit Score, and System Sync.
 - **Nine-Stage Project Stepper**: Real-time project milestone tracking with 1-click stage inspection.
 - **Two-Column Daily Task Checklist**:
   - Left Lane: *Today's Action Items* with quick complete and status toggles.
@@ -110,7 +110,83 @@ The **Home / Command Center** serves as the compact operational hub:
 
 ---
 
-## 4. One Sales Flow: Enquiries, Opportunities & Feasibility Gate
+## 4. Universal Departmental Overview & Dynamic Record Creation
+
+The overview section is the operational heart of each workspace. It unites real-time department metrics, project scoping, lifecycle flow visualization, and direct dual-action record creation.
+
+```mermaid
+graph TD
+    subgraph OverviewSection ["Department Overview & Control Surface"]
+        Header["Workspace Header & Quick Actions<br/><code>[Create Task]</code> + <code>[Create RecordType]</code> + Tool Shortcuts"]
+        Scope["Project Scope Selector<br/><code>All Projects (Rollup)</code> vs <code>Specific Project (HLPL-AI4T-01)</code>"]
+        Metrics["Compact 5-Metric Operational Cards<br/><code>Today</code> · <code>Priority</code> · <code>Pending</code> · <code>Approvals</code> · <code>Progress</code>"]
+        Flow["Department Lifecycle Stepper<br/>Visual Stage Progression & Checkpoints"]
+        Processes["Department Process Menu<br/>5 Numbered Direct-Creation Shortcuts (e.g. 01 SOR, 02 mNDA, 03 PRS)"]
+        SmartStep["Smart Next-Step Engine<br/>Contextual Guidance & Auto-Draft Template Integration"]
+    end
+```
+
+### 4.1 Compact Metric Cards Design System
+Every department overview features five standardized, high-density KPI cards engineered for immediate situational awareness:
+1. **Today**: Tasks due today or reviews scheduled for today (`fields["dueDate"] === today`).
+2. **Priority**: High-risk items requiring urgent action (`priority === "High" || priority === "Critical"`).
+3. **Pending**: Unreleased records (`status === "Draft" || status === "Open"`).
+4. **Approvals**: Formal sign-offs awaiting human review (IATF 16949 / ISO 9001 governance).
+5. **Progress**: Overall completion rate (% of department deliverables marked `Approved` or `Released`).
+
+#### Card Density & Visual Rules
+- **Padding**: Dense vertical padding (`p-2.5 sm:p-3`) to maximize vertical space on standard laptop screens (`1366x768` to `1920x1080`).
+- **Typography Scale**: Compact numeric display (`text-xl font-bold sm:text-2xl`), single-line uppercase category eyebrow (`text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground`), and concise status subtitle (`text-[11px] text-muted-foreground truncate mt-0.5`).
+- **Status Indicator**: Minimal color-coded status dot (`size-2 rounded-full`) indicating operational health (`danger`, `steel`, `moss`, `warning`).
+- **Grid Layout**: Responsive 5-column grid (`grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5`) ensuring balanced horizontal layout without vertical stacking.
+
+### 4.2 Dual-Action Record Creation Pattern
+The workspace header provides two complementary, instant creation mechanisms:
+1. **Universal Tracked Task (`[Create Task]`)**:
+   - Present across all 11 departments.
+   - Auto-generates department-scoped task identifier: `TASK-[DEPT]-[NUM]` (e.g. `TASK-SAL-004`, `TASK-EHW-012`).
+   - Automatically synchronizes with the Daily Checklist, Today lane, and Priority queues.
+2. **Primary Domain Record (`[Create <RecordType>]`)**:
+   - Primary accent button dynamically configured to the department's core deliverable:
+     - Sales: `[Create Enquiry]`
+     - Hardware: `[Create PRS]`
+     - Firmware: `[Create Firmware release]`
+     - Mechanical: `[Create Mechanical CAD]`
+     - Purchasing: `[Create Purchase order]`
+     - Quality: `[Create Quality inspection]`
+     - Manufacturing: `[Create Work instruction]`
+     - EOL Testing: `[Create Calibration log]`
+     - Finance: `[Create Commercial quotation]`
+     - Service & IT: `[Create Service ticket]`
+     - HR & Ops: `[Create Audit report]`
+   - Generates official document numbering: `HLPL-[PROJ_ID]-[DEPT]-[DOC_TYPE]-[REV]`.
+
+### 4.3 Department Process Menus (Numbered Shortcuts)
+Directly beneath the lifecycle stepper, each department workspace embeds a **Department Process Menu** featuring 5 numbered, direct-creation shortcuts that immediately initialize pre-configured engineering forms and assign the appropriate Cloud Drive folder:
+
+| Dept | Process 01 | Process 02 | Process 03 | Process 04 | Process 05 | Cloud Drive Folder |
+|---|---|---|---|---|---|---|
+| **SAL** | Customer enquiry & lead intake | Customer SOR intake & analysis | Mutual NDA generator | Commercial quotation builder | Contract review record | `/01_Governance_and_QMS` |
+| **EHW** | System architecture & PRS builder | Schematic capture & design freeze | Preliminary & production BOM | Hardware DFMEA risk assessment | Gerber & fabrication release | `/02_Hardware_Engineering` |
+| **ESW** | MCU board support package (BSP) | CAN J1939 telemetry stack | AIS-140 emergency protocol parser | Secure dual-bank FOTA setup | Production binary signing | `/03_Firmware_and_Software` |
+| **MECH** | IP67 enclosure 3D CAD modeling | Wiring harness drawing & pinout | Thermal dissipation simulation | Injection mold DFM review | Ingress & vibration fixture | `/04_Mechanical_Engineering` |
+| **PUR** | Sourcing PR & RFQ issuance | Proto vs Mass vendor evaluation | Commercial purchase order (PO) | Incoming quality check (IQC) | Approved Vendor List (AVL) update | `/05_Purchasing_and_SCM` |
+| **QA** | APQP gate milestone review | DVP&R test plan configuration | ISO 7637-2 electrical transient | Type Approval TAC coordination | Non-conformance & CAPA report | `/06_Quality_Assurance` |
+| **EMF** | SMT Line 2 thermal profiling | 3D SPI & AOI inspection setup | Process Control Plan (CP) | PCB assembly traveler creation | Final potting & box-build WI | `/07_Electronics_Manufacturing` |
+| **TST** | Automated EOL test jig setup | CAN bus functional test suite | Automated MCU firmware flashing | 100% PDI inspection cert | Test jig sensor calibration | `/08_EOL_Testing_Jigs` |
+| **FIN** | Project NRE & BOM cost model | Customer advance deposit match | GST commercial tax invoice | Supplier PO payment release | Financial margin & audit review | `/09_Finance_and_Accounts` |
+| **SIT** | Symmetrical Cloud Drive sync | Telematics server endpoint config | Private S3 signed storage token | User RBAC permission audit | Field RMA & service ticket | `/10_Service_and_IT` |
+| **HR/OPS**| Employee skill matrix review | IATF 16949 internal audit | Corporate legal agreement / mNDA | Official letterhead generator | Six Sigma DMAIC improvement | `/11_HR_and_Operations` |
+
+### 4.4 Project Scope Filtering
+Every department workspace includes an interactive **Project Scope Selector**:
+- **All Projects (Department Rollup)**: Displays department-wide aggregated metrics, all open tasks across projects, team capacity, and overall workload.
+- **Specific Project Scope** (e.g. `HLPL-AI4T-01 · Tata Ace EV` or `HLPL-SLCT-01 · AIS-140 Gateway`):
+  - Filters the entire workspace to show only records, checklist tasks, deliverables, team members, and stage evidence linked to that selected project.
+
+---
+
+## 5. One Sales Flow: Enquiries, Opportunities & Feasibility Gate
 
 The commercial workflow follows a single, unified queue without competing entry points:
 
@@ -154,9 +230,9 @@ sequenceDiagram
 
 ---
 
-## 5. Decoupled Architecture: Project vs. PCB vs. Harness vs. Firmware vs. Enclosure
+## 6. Decoupled Architecture: Project vs. PCB vs. Harness vs. Firmware vs. Enclosure
 
-### 5.1 The Automotive Decoupling Principle
+### 6.1 The Automotive Decoupling Principle
 A **Project is a Customer Commercial Commitment**, not a single physical hardware file. In automotive electronics:
 - **A Project can incorporate multiple PCBs**: A telematics terminal frequently pairs a Core Motherboard (`HLPL-MOD-PCB-01`) with a Dual-CAN Daughterboard (`HLPL-MOD-PCB-02`) or a 9–100V EV SMPS Board (`HLPL-PWR-SMPS-01`).
 - **Wiring Harnesses are Interchangeable**: The same physical PCB unit can connect to a commercial fleet via an OBD-II pass-through harness (`HLPL-HARN-OBD2-16P`), to an EV bus via a sealed Molex MX150 harness (`HLPL-HARN-MX150-14P`), or to an industrial tractor via a Deutsch DT04 connector (`HLPL-HARN-DT04-12P`).
@@ -208,13 +284,13 @@ graph TD
     ENC1 -.-> CA_ENC & CB_ENC
 ```
 
-### 5.2 Reference & Re-Branding Model
+### 6.2 Reference & Re-Branding Model
 - **Master Files Remain Authoritative**: Master schematics, layouts, firmware repositories, and mold drawings remain stored and maintained under their master IDs (`HLPL-MOD-PCB-01`, `HLPL-HARN-MX150-14P`).
 - **Project Deliverables Use Branded Identifiers**: Project documentation (PRS, BOM, SCH, GERBER) generates unique project-branded identifiers:
   $$\text{Deliverable ID} = \mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$$
   Example: Tata Ace EV BOM is `HLPL-AI4T-EHW-BOM-01`, which references Master Motherboard `HLPL-MOD-PCB-01 Rev 03`. This avoids duplicate CAD drawings while preserving formal IATF 16949 audit lineage.
 
-### 5.3 Automated Development Process Skip Engine
+### 6.3 Automated Development Process Skip Engine
 When a project links pre-qualified platform assets at intake/feasibility, the system calculates exact time and cost savings:
 
 | Platform Component Reused | Development Stage Waived | Time Saved | NRE Expense Avoided |
@@ -226,7 +302,7 @@ When a project links pre-qualified platform assets at intake/feasibility, the sy
 | **Enclosure Molds** | Injection mold tooling, DFM review, ingress sealing trials | **3 – 4 Weeks** | **₹2,00,000 – ₹3,50,000** |
 | **TOTAL (Full Platform Reuse)** | **Stage 4 PoC Bench Bring-Up WAIVED** | **14 – 17 Weeks** | **Up to 95% NRE Avoided** |
 
-### 5.4 Stage 4 PoC Waiver Mechanism
+### 6.4 Stage 4 PoC Waiver Mechanism
 In Gate 4/5 (Hardware Kick-off):
 - If `canSkipStage4PoC === true` (PCB and Firmware are pre-certified under AEC-Q100 / AIS-140):
   - The system displays the **⚡ Pre-Certified Platform Architecture Detected** banner.
@@ -236,7 +312,7 @@ In Gate 4/5 (Hardware Kick-off):
 
 ---
 
-## 6. Symmetrical Departmental Drive & Work Registers
+## 7. Symmetrical Departmental Drive & Work Registers
 
 Every department workspace features a symmetrical **4-group cloud drive architecture**:
 
@@ -255,23 +331,23 @@ Every department workspace features a symmetrical **4-group cloud drive architec
    - 1-click modal view and native `.xlsx` download.
 2. **Project Master Spec Sheet (PMSS)**:
    - Central engineering register maintaining volume commitments, hardware configurations, BOM baselines, and firmware versions for all active projects.
-3. **Signed-In Company Directory** (§9):
+3. **Signed-In Company Directory** (§11):
    - Real-time staff directory accessible from the header and PMSS with department filters, extensions, email, and skill matrix summaries.
-4. **Official Project Decision Log** (§10):
+4. **Official Project Decision Log** (§11):
    - Immutable audit register capturing technical/commercial decisions, author, rationale, alternatives considered, affected departments, and status (Proposed, Locked, Executed, Superseded).
-5. **Operations Legal Documents & Corporate Letterhead Hub** (§9):
+5. **Operations Legal Documents & Corporate Letterhead Hub** (§11):
    - Houses formal bilateral mutual NDAs (`HLPL-AI4T-OPS-mNDA-01`), vendor agreements, and a corporate letterhead generator with customizable company addresses, logos, and IATF/ISO accreditations.
 
 ---
 
-## 7. Controlled Document Engine & Native Print/PDF Output
+## 8. Controlled Document Engine & Native Print/PDF Output
 
-### 7.1 Automatic Document Numbering Formula
+### 8.1 Automatic Document Numbering Formula
 All documents generated across the enterprise strictly follow:
 $$\mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$$
 Forms use the canonical quality record standard: `HLPL/F/[DEPT]/[NUM]` (e.g. `HLPL/F/MKT/01`, `HLPL/F/HR/03`).
 
-### 7.2 Full Multi-Section Document Content
+### 8.2 Full Multi-Section Document Content
 Auto-drafted templates render complete, authentic engineering sheets (not metadata summaries):
 - **Document Control Header Table**: Company Logo, Name, Address, Document Title, Document Number, Revision, Effective Date, Page Number.
 - **Section 1.0**: Scope, Standards & Traceability Matrix (IATF 16949 §8.2, AIS-140, AEC-Q100).
@@ -281,23 +357,23 @@ Auto-drafted templates render complete, authentic engineering sheets (not metada
 - **Section 5.0**: Multi-HOD RACI Sign-off Matrix with Department Lead signatures.
 - **Document Footer**: Confidentiality clause, ISO 9001:2015 & IATF 16949 compliance notice, dynamic page count.
 
-### 7.3 Isolated A4 Iframe Print & PDF Export
+### 8.3 Isolated A4 Iframe Print & PDF Export
 - Document printing uses an isolated DOM iframe passing pure document HTML and print styles.
 - `@media print` rules enforce standard A4 dimensions (`210mm x 297mm`), `margin: 10mm`, and `print-color-adjust: exact`.
 - Completely prevents dark-theme inversion, modal dialog overflow cutoffs, or trailing blank pages.
 
 ---
 
-## 8. Dynamic RACI Matrix & Inter-Department Stage Notifications
+## 9. Dynamic RACI Matrix & Inter-Department Stage Notifications
 
-### 8.1 RACI Configuration
+### 9.1 RACI Configuration
 The portal administration panel features an interactive **RACI Responsibility Matrix** defining department roles across all 9 lifecycle stages:
 - **R (Responsible)**: Department executing the primary deliverable.
 - **A (Accountable)**: Final gatekeeper and sign-off authority.
 - **C (Consulted)**: Functional contributors providing feasibility and design input.
 - **I (Informed)**: Downstream departments receiving automated handoff notifications.
 
-### 8.2 Automated Stage Handoff Routing
+### 9.2 Automated Stage Handoff Routing
 When any department completes a gate or signs a deliverable:
 1. The system evaluates the active RACI matrix for the current stage.
 2. Generates actionable alert records for all *Responsible*, *Accountable*, and *Informed* departments.
@@ -305,7 +381,7 @@ When any department completes a gate or signs a deliverable:
 
 ---
 
-## 9. End-to-End Project Lifecycle Walkthrough (`HLPL-AI4T-01`)
+## 10. End-to-End Project Lifecycle Walkthrough (`HLPL-AI4T-01`)
 
 The portal incorporates a complete, interactive simulation of the **Tata Ace EV 4G AIS-140 Telematics Gateway** (50,000 units / ₹20.33 Cr) covering all 9 automotive stages:
 
@@ -326,10 +402,32 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
 
 ---
 
-## 10. Completed Milestones & Remaining Delivery Roadmap
+## 11. Signed-In Company Directory, Decision Log & Corporate Legal Hub
+
+### 11.1 Signed-In Company Directory (§11.1)
+- Real-time directory modal accessible from the portal navigation.
+- Department filter chips (`ALL`, `SAL`, `EHW`, `ESW`, `MECH`, `PUR`, `QA`, `EMF`, `TST`, `FIN`, `SIT`, `HR/OPS`).
+- Search by employee name, role title, or key technical competency.
+- Individual staff cards show photo, official designation, direct phone extension, email, and competency skill tags derived from Skill Matrix `HLPL/F/HR/03`.
+
+### 11.2 Official Project Decision Log (§11.2)
+- Formal engineering and commercial governance register.
+- Captures decision title, date/timestamp, authorizing stakeholder, detailed engineering rationale, alternatives evaluated, and list of affected departments.
+- Status states: `Proposed`, `Locked`, `Executed`, `Superseded`.
+- Directly linked to the Project Master Spec Sheet (PMSS).
+
+### 11.3 Operations Legal Documents & Corporate Letterhead Hub (§11.3)
+- Multi-tab legal portal managing:
+  - Bilateral mutual NDAs (`HLPL-AI4T-OPS-mNDA-01`) with confidentiality terms and authorized signatures.
+  - Corporate Letterhead Generator rendering official corporate communications with configurable company logos, registration numbers, ISO/IATF accreditation badges, and legal footers.
+
+---
+
+## 12. Completed Milestones & Remaining Delivery Roadmap
 
 ### Completed Milestones
 - [x] **11 Functional Departments**: Symmetrical hubs for SAL, EHW, ESW, MECH, PUR, QA, EMF, TST, FIN, SIT, and HR/OPS.
+- [x] **Universal Department Overview**: Compact 5-metric cards (`Today`, `Priority`, `Pending`, `Approvals`, `Progress`), dual creation action bar (`[Create Task]` + `[Create <RecordType>]`), project scope filter, and 5 numbered process menu shortcuts.
 - [x] **Admin Persona & Role Switcher**: Instant switching between Executive Admin, 11 HODs, and Client Portal persona.
 - [x] **AI4T 9-Stage Lifecycle Simulator**: Complete 9-stage progression with 12-document master dossier.
 - [x] **Decoupled Architecture & PCB Reusability (Master Plan §5)**: Multi-PCB linking, modular harnesses, firmware stacks, and enclosures.
@@ -338,9 +436,9 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
 - [x] **Full-Page Document Preview & PDF Engine**: Isolated A4 iframe print without overflow or dark mode artifacts.
 - [x] **Configurable Corporate Template Settings**: Customizable company headers, footers, logos, and accreditations.
 - [x] **Dynamic RACI Matrix & Stage Handoff Alerts**: Configurable RACI table with automated notification routing.
-- [x] **Signed-In Company Directory (§9)**: Real-time staff contact directory with department filtering.
-- [x] **Official Project Decision Log (§10)**: Immutable technical and commercial decision tracking.
-- [x] **Operations Legal & Letterhead Hub (§9)**: Corporate mNDA and branded letterhead generation.
+- [x] **Signed-In Company Directory (§11)**: Real-time staff contact directory with department filtering.
+- [x] **Official Project Decision Log (§11)**: Immutable technical and commercial decision tracking.
+- [x] **Operations Legal & Letterhead Hub (§11)**: Corporate mNDA and branded letterhead generation.
 - [x] **Customer Register.xlsx**: Managed live customer sheet with native download.
 - [x] **Dual Project Scope in Departments**: Filter views by All Projects (Rollup) vs. Specific Project.
 - [x] **Clean Compilation & Automated Tests**: 0 TypeScript errors (`npx tsc --noEmit`), production build passing, Playwright regression suite passing with 100% success.
@@ -356,13 +454,14 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
 
 ---
 
-## 11. Consolidation Record
+## 13. Consolidation Record
 
 This consolidated master plan incorporates all requirements, specifications, and architecture decisions from:
 1. `admin-personas-and-ai4t-lifecycle-workspace-2026-10-03.md` (Personas, AI4T 9-stage lifecycle hub, 12-document dossier).
 2. `department-owned-audit-documents-and-command-center-2026-09-27.md` (Department-owned records, Command Center architecture, symmetrical Drive).
 3. `roadmap.md` (Milestone progress and delivery phases).
-4. `scms_master_plan_gap_analysis.md` (Company Directory §9, Decision Log §10, Legal Hub §9).
+4. `scms_master_plan_gap_analysis.md` (Company Directory §11, Decision Log §11, Legal Hub §11).
 5. Master Plan §5 Decoupled Product Architecture & PCB Reusability (Multi-PCB, interchangeable harnesses, firmware stacks, automated skips, and Stage 4 PoC waiver).
+6. Portal Overview Excellence: Compact 5-metric cards, dual-action record creation (`[Create Task]` + `[Create <RecordType>]`), 11 departmental process menus, and project scoping.
 
 All redundant, conflicting, or fragmented planning documents in `.lovable/plan` are retired and consolidated into this document as the single authoritative source of truth.

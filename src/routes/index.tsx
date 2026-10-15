@@ -2704,7 +2704,7 @@ function CommandCenter({
       )}
       {portal.demoLoaded && <ExecutiveKpis />}
       <SmartNextStep records={visible} onOpenDraftHub={onOpenDraftHub} />
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <Metric
           label="Today"
           value={String(
@@ -3570,7 +3570,7 @@ function LifecycleProgress({ records, projectId }: { records: RecordItem[]; proj
 
 function ExecutiveKpis() {
   return (
-    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <section className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <Metric label="Active project" value="SLCT-01" detail="AIS-140 tracker · DEMO" tone="steel" />
       <Metric label="Order volume" value="50,000" detail="Illustrative units" tone="moss" />
       <Metric label="Revenue" value="₹20.33 Cr" detail="Illustrative order value" tone="steel" />
@@ -3719,7 +3719,7 @@ function DepartmentWorkspace({
           <option value="all">All Projects (Department Rollup)</option><option value="HLPL-AI4T-01">HLPL-AI4T-01 · Tata Ace EV</option><option value="HLPL-SLCT-01">HLPL-SLCT-01 · AIS-140 Gateway</option><option value="HLPL-XLINK-03">HLPL-XLINK-03 · CV Gateway</option>
         </select>
       </section>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
         <Metric
           label="Today"
           value={String(
@@ -7013,15 +7013,15 @@ function Metric({
           ? "bg-moss"
           : "bg-warning";
   return (
-    <div className="surface-card ops-section p-3">
-      <div className="flex justify-between">
-        <p className="font-mono text-[10px] font-medium uppercase tracking-[.12em] text-muted-foreground">
+    <div className="surface-card ops-section p-2.5 sm:p-3 transition-all hover:border-border">
+      <div className="flex items-center justify-between">
+        <p className="truncate font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">
           {label}
         </p>
-        <span className={`mt-1 size-2 rounded-full ${color}`} />
+        <span className={`size-2 shrink-0 rounded-full ${color}`} />
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-normal">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+      <p className="mt-1 text-xl font-bold tracking-tight text-foreground sm:text-2xl">{value}</p>
+      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{detail}</p>
     </div>
   );
 }

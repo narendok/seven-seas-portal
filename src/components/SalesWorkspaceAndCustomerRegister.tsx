@@ -1141,39 +1141,39 @@ export function SalesEnquiriesAndOpportunities({
   return (
     <div className="space-y-6">
       {/* Sales Action Bar & Metrics */}
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <section className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-border/70 bg-card p-3 shadow-2xs hover:border-border transition-all">
+          <p className="truncate font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Active Opportunities
           </p>
           <div className="mt-1 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-foreground">{opportunitiesCount}</span>
+            <span className="text-xl font-bold text-foreground sm:text-2xl">{opportunitiesCount}</span>
             <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
               High Priority
             </span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Prioritized in intake queue</p>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Prioritized in intake queue</p>
         </div>
 
-        <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-xl border border-border/70 bg-card p-3 shadow-2xs hover:border-border transition-all">
+          <p className="truncate font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Pending Enquiries
           </p>
           <div className="mt-1 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-foreground">{enquiriesCount}</span>
+            <span className="text-xl font-bold text-foreground sm:text-2xl">{enquiriesCount}</span>
             <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
               Awaiting Feasibility
             </span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Awaiting review dispatch</p>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Awaiting review dispatch</p>
         </div>
 
-        <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-xl border border-border/70 bg-card p-3 shadow-2xs hover:border-border transition-all">
+          <p className="truncate font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Customer Directory
           </p>
           <div className="mt-1 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-foreground">{customers.length}</span>
+            <span className="text-xl font-bold text-foreground sm:text-2xl">{customers.length}</span>
             <button
               onClick={onOpenCustomerRegister}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
@@ -1182,11 +1182,11 @@ export function SalesEnquiriesAndOpportunities({
               Open .xlsx
             </button>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Managed accounts register</p>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Managed accounts register</p>
         </div>
 
-        <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-xl border border-border/70 bg-card p-3 shadow-2xs hover:border-border transition-all">
+          <p className="truncate font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Conversion Protocol
           </p>
           <div className="mt-1 flex items-baseline justify-between">
@@ -1195,7 +1195,7 @@ export function SalesEnquiriesAndOpportunities({
               1-Click Gate
             </span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Contract Review HLPL/F/MKT/01</p>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Contract Review HLPL/F/MKT/01</p>
         </div>
       </section>
 
