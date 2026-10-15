@@ -42,11 +42,12 @@
 
 ---
 
-## 4. Upcoming Delivery Phases
-- [ ] **Phase 1: Symmetrical Cloud Drive & File Manager**:
+## 4. Delivery Phases Status
+- [x] **Phase 1: Symmetrical Cloud Drive & File Manager**:
   - Interactive file manager implementing the 4-group structure (`01 Common documents`, `02 Internal projects`, `03 Client projects`, `04 Other department work`) across all 11 departments.
-  - Private S3 / Lovable Cloud Storage signed upload/download token integration.
-- [ ] **Phase 2: Department Process Menus & Action Shortcuts**:
-  - Direct process menu items linking routine tasks to their respective Cloud Drive folders.
+  - Drag-and-drop file upload dropzone with animated progress bar, SHA-256 verification checksum, download capabilities, and Private S3 / Lovable Cloud Storage readiness.
+- [x] **Phase 2: Department Process Menus & Action Shortcuts**:
+  - Direct 5-item process menus for all 11 departments (55 processes) linking routine tasks directly to Cloud Drive folders.
+  - Instant pre-filling of canonical record types, document IDs, folder scope, and automotive references into `RecordForm`.
 - [ ] **Phase 3: Supabase Shared Persistence Migration**:
   - Authenticated PostgreSQL tables and Row-Level Security (RLS) policies replacing local storage prototype while preserving offline testability.

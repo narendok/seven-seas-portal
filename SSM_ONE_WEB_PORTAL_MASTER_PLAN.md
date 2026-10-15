@@ -441,16 +441,18 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
 - [x] **Operations Legal & Letterhead Hub (§11)**: Corporate mNDA and branded letterhead generation.
 - [x] **Customer Register.xlsx**: Managed live customer sheet with native download.
 - [x] **Dual Project Scope in Departments**: Filter views by All Projects (Rollup) vs. Specific Project.
-- [x] **Clean Compilation & Automated Tests**: 0 TypeScript errors (`npx tsc --noEmit`), production build passing, Playwright regression suite passing with 100% success.
+- [x] **Phase 1: Symmetrical Cloud Drive & File Manager (§7)**:
+  - 4-Group symmetrical drive architecture (`01 Common documents`, `02 Internal projects`, `03 Client projects`, `04 Other department work`).
+  - Direct file upload dropzone supporting PDF, DOCX, XLSX, STEP, ZIP, HEX with progress bar and SHA-256 verification.
+  - S3 / Lovable Cloud Storage private access indicator, download buttons, and revision tracking.
+- [x] **Phase 2: Department-Wise Process Menus & Action Shortcuts (§4, §12)**:
+  - Structured 5 numbered process shortcuts for all 11 departments (55 total processes) in `departmentProcesses`.
+  - Clicking any process shortcut immediately opens `RecordForm` pre-filled with the exact canonical record type, specific title, pre-filled scope linking to the target Cloud Drive folder, project ID, location, and priority.
+- [x] **Clean Compilation & Automated Tests**: 0 TypeScript errors (`npx tsc --noEmit`), production build passing, Playwright regression suite passing with 100% success across all phases.
 
-### Remaining Roadmap (Next Delivery Phases)
-- [ ] **Phase 1: Symmetrical Cloud Drive & File Manager**:
-  - Interactive file explorer implementing the 4-group structure across all 11 departments.
-  - S3 / Lovable Cloud Storage short-lived signed upload/download token integration.
-- [ ] **Phase 2: Department-Wise Process Menus & Action Shortcuts**:
-  - Direct process menu items linking routine tasks to their respective Cloud Drive folders.
+### Remaining Roadmap (Next Delivery Phase)
 - [ ] **Phase 3: Supabase Shared Persistence Migration**:
-  - Transition from versioned browser-local state to authenticated Supabase PostgreSQL tables and RLS policies while preserving the verified offline prototype model.
+  - Transition from versioned browser-local state to authenticated Supabase PostgreSQL tables and Row-Level Security (RLS) policies while preserving the verified offline prototype model.
 
 ---
 

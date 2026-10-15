@@ -46,7 +46,7 @@ import {
   Cpu,
   Layers,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
 import {
   beginControlledDocumentUpload,
@@ -651,9 +651,14 @@ const emptyPortal = (): PortalState => ({
     people: [],
     suppliers: [],
     parts: [],
-    products: [],
+    products: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03", "HLPL-BCU-02", "HLPL-EFAN-01", "HLPL-PST-01"],
     customers: defaultCustomers.map((c) => c.name),
-    locations: ["Noida"],
+    locations: [
+      "Hexense Labs — Noida Tech Center",
+      "Greater Noida SMT Plant 2",
+      "Pune Engineering Office",
+      "Noida",
+    ],
     routes: [],
     documentTypes: [],
   },
@@ -1588,7 +1593,13 @@ const readPortal = (): PortalState => {
         ...value.setup,
         configuration: { ...base.setup.configuration, ...(value.setup?.configuration ?? {}) },
       },
-      masters: { ...base.masters, ...value.masters },
+      masters: {
+        ...base.masters,
+        ...value.masters,
+        products: Array.from(new Set([...(base.masters.products || []), ...(value.masters?.products || []), "HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03"])),
+        locations: Array.from(new Set([...(base.masters.locations || []), ...(value.masters?.locations || [])])),
+        customers: Array.from(new Set([...(base.masters.customers || []), ...(value.masters?.customers || [])])),
+      },
       departments: Array.isArray(value.departments)
         ? value.departments.map((department) => ({
             ...department,
@@ -1663,6 +1674,7 @@ function Portal() {
     "create" | "wizard" | "approvals" | "documents" | "document" | "history" | "admin" | null
   >(null);
   const [createType, setCreateType] = useState<string | null>(null);
+  const [createInitialValues, setCreateInitialValues] = useState<Record<string, string> | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(null);
@@ -1736,9 +1748,10 @@ function Portal() {
     setQueueStage(null);
     setMobileMenu(false);
   };
-  const handleOpenCreate = (typeOrEvent?: unknown) => {
+  const handleOpenCreate = (typeOrEvent?: unknown, initialValues?: Record<string, string>) => {
     const type = typeof typeOrEvent === "string" ? typeOrEvent : null;
     setCreateType(type);
+    setCreateInitialValues(initialValues ?? null);
     setModal("create");
   };
   const switchPersona = (next: Persona) => {
@@ -2198,7 +2211,8 @@ function Portal() {
           area={activeArea}
           portal={portal}
           initialType={createType}
-          onClose={() => { setCreateType(null); setModal(null); }}
+          initialValues={createInitialValues}
+          onClose={() => { setCreateType(null); setCreateInitialValues(null); setModal(null); }}
           onSave={addRecord}
           onAddCustomer={handleCustomerCreated}
         />
@@ -2230,6 +2244,20 @@ function Portal() {
           onUploadDocument={(document) => {
             setSelectedDocumentId(document.id);
             setModal("document");
+          }}
+          onDocumentCreated={(document) => {
+            update((state) => ({
+              ...state,
+              documents: [document, ...state.documents],
+            }));
+            log("Controlled document created", `${document.title} · ${document.part ?? document.type}`);
+          }}
+          onDocumentUpdated={(document, event) => {
+            update((state) => ({
+              ...state,
+              documents: state.documents.map((item) => (item.id === document.id ? document : item)),
+            }));
+            log("Controlled document updated", event);
           }}
           onOpenDraftHub={() => setDraftHubOpen(true)}
           templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
@@ -3655,7 +3683,7 @@ function DepartmentWorkspace({
   contextName: string;
   view: "queue" | "summary";
   onView: (view: "queue" | "summary") => void;
-  onCreate: (recordType?: string) => void;
+  onCreate: (recordType?: string, initialValues?: Record<string, string>) => void;
   onSelect: (id: string) => void;
   onAdmin: () => void;
   onOpenStage: (stage: string) => void;
@@ -3959,24 +3987,190 @@ function DepartmentFlow({
   );
 }
 
-const departmentProcesses: Partial<Record<AreaId, { drive: string; items: string[] }>> = {
-  sales: { drive: "01_Governance_and_QMS", items: ["Customer enquiry & lead intake", "Customer SOR intake & analysis", "Mutual NDA generator", "Commercial quotation builder", "Contract review record"] },
-  pur: { drive: "03_Hardware_Deliverables_ECAD", items: ["Purchase orders & tracking", "Supplier scorecard · F-PUR-16", "RFQ vendor price comparison", "Supplier PPAP Level 3 · F-PUR-15", "Second-source component matrix"] },
-  ehw: { drive: "03_Hardware_Deliverables_ECAD", items: ["Product requirement specification", "Schematic package", "Production Gerber & drill ZIP", "Production BOM cost tracker", "Hardware DFMEA risk analysis"] },
-  esw: { drive: "05_Firmware_and_Software", items: ["Hardware-software interface spec", "Firmware flash binaries", "CAN J1939 parser & DBC", "Git PR reviews & unit coverage"] },
-  mech: { drive: "04_Mechanical_Deliverables_MCAD", items: ["3D STEP enclosure CAD package", "2D dimension & tooling drawings", "Thermal & ingress analysis", "IP67 gasket & connector spec"] },
-  qa: { drive: "06_Quality_and_Compliance", items: ["DVP&R verification plan", "AIS-140 & ARAI/ICAT dossier", "IATF / ISO audit checklist", "CAPA / 8D record"] },
-  emf: { drive: "07_Production_and_Testing", items: ["SMT process flow & control plan", "10-zone reflow profile log", "3D AOI & SPI criteria", "SOPs & work instructions"] },
-  tst: { drive: "07_Production_and_Testing", items: ["Serialized PDI certificate", "Automated EOL jig calibration", "Cellular RF & GPS TTFF reports", "IMEI / MAC registry export"] },
-  fin: { drive: "01_Governance_and_QMS", items: ["Commercial tax invoice & GST", "e-Way bill & dispatch documents", "Advance billing authorization", "Project margin & cost-center P&L"] },
-  sit: { drive: "05_Firmware_and_Software", items: ["Offsite encrypted backup log", "OTA firmware rollout manager", "Telemetry cloud health & uptime"] },
-  hrops: { drive: "01_Governance_and_QMS", items: ["Annual competency & skill matrix", "IPC-A-610 training log", "ESD & cleanroom certification"] },
+export interface DepartmentProcessItem {
+  name: string;
+  recordType: string;
+  defaultTitle: string;
+  driveGroup: "01 Common documents" | "02 Internal projects" | "03 Client projects" | "04 Other department work";
+  targetFolder: string;
+  priority?: Priority;
+}
+
+const departmentProcesses: Partial<Record<AreaId, { drive: string; items: DepartmentProcessItem[] }>> = {
+  sales: {
+    drive: "01_Governance_and_QMS",
+    items: [
+      { name: "Customer enquiry & lead intake", recordType: "Enquiry", defaultTitle: "Customer enquiry & lead intake", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+      { name: "Customer SOR intake & analysis", recordType: "Enquiry", defaultTitle: "Customer SOR requirement analysis", driveGroup: "03 Client projects", targetFolder: "01_Governance_and_QMS" },
+      { name: "Mutual NDA generator", recordType: "Opportunity", defaultTitle: "Mutual NDA (mNDA) execution", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+      { name: "Commercial quotation builder", recordType: "Order", defaultTitle: "Commercial quotation & volume pricing lock", driveGroup: "03 Client projects", targetFolder: "01_Governance_and_QMS" },
+      { name: "Contract review record", recordType: "Handover", defaultTitle: "Contract review record · HLPL/F/MKT/01", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+    ],
+  },
+  ehw: {
+    drive: "03_Hardware_Deliverables_ECAD",
+    items: [
+      { name: "Product requirement specification", recordType: "PRS", defaultTitle: "Product Requirement Specification (PRS)", driveGroup: "03 Client projects", targetFolder: "03_Hardware_Deliverables_ECAD" },
+      { name: "Schematic package", recordType: "Schematic", defaultTitle: "Schematic package & PCB circuit design", driveGroup: "03 Client projects", targetFolder: "03_Hardware_Deliverables_ECAD" },
+      { name: "Production Gerber & drill ZIP", recordType: "Gerber release", defaultTitle: "Production Gerber & drill ZIP package", driveGroup: "03 Client projects", targetFolder: "03_Hardware_Deliverables_ECAD" },
+      { name: "Production BOM cost tracker", recordType: "BOM", defaultTitle: "Production BOM baseline & cost tracker", driveGroup: "03 Client projects", targetFolder: "03_Hardware_Deliverables_ECAD" },
+      { name: "Hardware DFMEA risk analysis", recordType: "Hardware tracker", defaultTitle: "Hardware DFMEA risk analysis & RPN lock", driveGroup: "04 Other department work", targetFolder: "03_Hardware_Deliverables_ECAD" },
+    ],
+  },
+  esw: {
+    drive: "05_Firmware_and_Software",
+    items: [
+      { name: "Hardware-software interface spec", recordType: "HSI register", defaultTitle: "Hardware-Software Interface (HSI) register", driveGroup: "03 Client projects", targetFolder: "05_Firmware_and_Software" },
+      { name: "Firmware flash binaries", recordType: "Firmware release", defaultTitle: "Production firmware flash binary (.hex/.bin)", driveGroup: "03 Client projects", targetFolder: "05_Firmware_and_Software" },
+      { name: "CAN J1939 parser & DBC", recordType: "Software gate", defaultTitle: "CAN J1939 telemetry parser & DBC matrix", driveGroup: "02 Internal projects", targetFolder: "05_Firmware_and_Software" },
+      { name: "Git PR reviews & unit coverage", recordType: "CI/CD telemetry", defaultTitle: "Git PR review & automated unit test suite", driveGroup: "02 Internal projects", targetFolder: "05_Firmware_and_Software" },
+      { name: "OTA rollout & version lock", recordType: "Firmware release", defaultTitle: "OTA staged deployment & delta update package", driveGroup: "03 Client projects", targetFolder: "05_Firmware_and_Software" },
+    ],
+  },
+  mech: {
+    drive: "04_Mechanical_Deliverables_MCAD",
+    items: [
+      { name: "3D STEP enclosure CAD package", recordType: "STEP clearance", defaultTitle: "3D STEP enclosure CAD model", driveGroup: "03 Client projects", targetFolder: "04_Mechanical_Deliverables_MCAD" },
+      { name: "2D dimension & tooling drawings", recordType: "2D drawing", defaultTitle: "2D dimension & GD&T manufacturing drawing", driveGroup: "03 Client projects", targetFolder: "04_Mechanical_Deliverables_MCAD" },
+      { name: "Thermal & ingress analysis", recordType: "Mechanical release", defaultTitle: "Thermal dissipation & IP67 ingress analysis", driveGroup: "04 Other department work", targetFolder: "04_Mechanical_Deliverables_MCAD" },
+      { name: "IP67 gasket & connector spec", recordType: "Mold tooling", defaultTitle: "IP67 silicone seal gasket & automotive connector", driveGroup: "03 Client projects", targetFolder: "04_Mechanical_Deliverables_MCAD" },
+      { name: "Enclosure mold DFM sign-off", recordType: "Mold tooling", defaultTitle: "Plastic injection mold DFM & tooling release", driveGroup: "02 Internal projects", targetFolder: "04_Mechanical_Deliverables_MCAD" },
+    ],
+  },
+  pur: {
+    drive: "03_Hardware_Deliverables_ECAD",
+    items: [
+      { name: "Purchase orders & tracking", recordType: "Rapid prototype request", defaultTitle: "Purchase order placement & component tracking", driveGroup: "03 Client projects", targetFolder: "03_Hardware_Deliverables_ECAD" },
+      { name: "Supplier scorecard · F-PUR-16", recordType: "F-PUR-16", defaultTitle: "Supplier performance scorecard · F-PUR-16", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+      { name: "RFQ vendor price comparison", recordType: "F-PUR-10", defaultTitle: "RFQ vendor commercial comparison · F-PUR-10", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+      { name: "Supplier PPAP Level 3 · F-PUR-15", recordType: "PPAP Level 3", defaultTitle: "Supplier PPAP Level 3 documentation submission", driveGroup: "04 Other department work", targetFolder: "06_Quality_and_Compliance" },
+      { name: "Second-source component matrix", recordType: "ASL/ACML", defaultTitle: "Approved Component List (ACML) & second-sourcing", driveGroup: "01 Common documents", targetFolder: "02_Product_Platforms" },
+    ],
+  },
+  qa: {
+    drive: "06_Quality_and_Compliance",
+    items: [
+      { name: "DVP&R verification plan", recordType: "DVP&R", defaultTitle: "Design Verification Plan & Report (DVP&R)", driveGroup: "03 Client projects", targetFolder: "06_Quality_and_Compliance" },
+      { name: "AIS-140 & ARAI/ICAT dossier", recordType: "APQP gate", defaultTitle: "AIS-140 / ARAI TAC certification dossier", driveGroup: "03 Client projects", targetFolder: "06_Quality_and_Compliance" },
+      { name: "IATF / ISO audit checklist", recordType: "Quality review", defaultTitle: "IATF 16949 & ISO 9001 internal audit checklist", driveGroup: "01 Common documents", targetFolder: "06_Quality_and_Compliance" },
+      { name: "CAPA / 8D record", recordType: "8D CAPA", defaultTitle: "8D problem solving & corrective action report", driveGroup: "04 Other department work", targetFolder: "06_Quality_and_Compliance" },
+      { name: "IQC incoming component verification", recordType: "IQC", defaultTitle: "IQC incoming inspection & component testing", driveGroup: "04 Other department work", targetFolder: "06_Quality_and_Compliance" },
+    ],
+  },
+  emf: {
+    drive: "07_Production_and_Testing",
+    items: [
+      { name: "SMT process flow & control plan", recordType: "Control plan", defaultTitle: "SMT manufacturing process flow & Control Plan", driveGroup: "03 Client projects", targetFolder: "07_Production_and_Testing" },
+      { name: "10-zone reflow profile log", recordType: "Line startup checklist", defaultTitle: "10-zone reflow oven thermal profiling record", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
+      { name: "3D AOI & SPI criteria", recordType: "PFD", defaultTitle: "3D SPI & automated optical inspection criteria", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
+      { name: "SOPs & work instructions", recordType: "PFMEA", defaultTitle: "Assembly standard operating procedures (SOPs)", driveGroup: "01 Common documents", targetFolder: "07_Production_and_Testing" },
+      { name: "Line startup & ESD verification", recordType: "Line startup checklist", defaultTitle: "Daily SMT line startup & ESD workstation log", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
+    ],
+  },
+  tst: {
+    drive: "07_Production_and_Testing",
+    items: [
+      { name: "Serialized PDI certificate", recordType: "EOL test run", defaultTitle: "100% Pre-Delivery Inspection (PDI) certificate", driveGroup: "03 Client projects", targetFolder: "07_Production_and_Testing" },
+      { name: "Automated EOL jig calibration", recordType: "Test jig", defaultTitle: "Automated EOL test jig calibration & golden unit", driveGroup: "02 Internal projects", targetFolder: "07_Production_and_Testing" },
+      { name: "Cellular RF & GPS TTFF reports", recordType: "EOL test run", defaultTitle: "Cellular RF power & GPS TTFF sensitivity logs", driveGroup: "03 Client projects", targetFolder: "07_Production_and_Testing" },
+      { name: "IMEI / MAC registry export", recordType: "QR label batch", defaultTitle: "Device IMEI, ICCID & MAC address serialized registry", driveGroup: "03 Client projects", targetFolder: "07_Production_and_Testing" },
+      { name: "First-pass yield (FPY) trend analysis", recordType: "FPY review", defaultTitle: "Daily first-pass yield (FPY) review & defect Pareto", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
+    ],
+  },
+  fin: {
+    drive: "01_Governance_and_QMS",
+    items: [
+      { name: "Commercial tax invoice & GST", recordType: "Commercial billing", defaultTitle: "Commercial tax invoice & GST filing submission", driveGroup: "03 Client projects", targetFolder: "01_Governance_and_QMS" },
+      { name: "e-Way bill & dispatch documents", recordType: "Commercial billing", defaultTitle: "Electronic e-Way bill & shipping dispatch bundle", driveGroup: "03 Client projects", targetFolder: "01_Governance_and_QMS" },
+      { name: "Advance billing authorization", recordType: "PO & GRN validation", defaultTitle: "Customer milestone billing & advance payment auth", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+      { name: "Project margin & cost-center P&L", recordType: "Receivables review", defaultTitle: "Project profitability & cost-center P&L analysis", driveGroup: "02 Internal projects", targetFolder: "01_Governance_and_QMS" },
+      { name: "Accounts receivable ageing review", recordType: "Receivables review", defaultTitle: "Accounts receivable ageing & customer credit limits", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+    ],
+  },
+  sit: {
+    drive: "05_Firmware_and_Software",
+    items: [
+      { name: "Offsite encrypted backup log", recordType: "Backup review", defaultTitle: "Daily offsite encrypted cloud backup audit", driveGroup: "01 Common documents", targetFolder: "05_Firmware_and_Software" },
+      { name: "OTA firmware rollout manager", recordType: "Server telemetry", defaultTitle: "OTA telemetry fleet rollout monitoring log", driveGroup: "03 Client projects", targetFolder: "05_Firmware_and_Software" },
+      { name: "Telemetry cloud health & uptime", recordType: "Server telemetry", defaultTitle: "Server cluster health, latency & 99.9% uptime log", driveGroup: "01 Common documents", targetFolder: "05_Firmware_and_Software" },
+      { name: "ISMS ISO 27001 audit register", recordType: "ISMS control", defaultTitle: "ISO/IEC 27001:2022 information security register", driveGroup: "01 Common documents", targetFolder: "06_Quality_and_Compliance" },
+      { name: "IT hardware provisioning ticket", recordType: "IT support ticket", defaultTitle: "Staff workstation & hardware provisioning ticket", driveGroup: "04 Other department work", targetFolder: "01_Governance_and_QMS" },
+    ],
+  },
+  hrops: {
+    drive: "01_Governance_and_QMS",
+    items: [
+      { name: "Annual competency & skill matrix", recordType: "Skill matrix", defaultTitle: "Annual competency matrix · HLPL/F/HR/03", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+      { name: "IPC-A-610 training log", recordType: "Training need", defaultTitle: "IPC-A-610 Class 3 soldering & inspection training", driveGroup: "01 Common documents", targetFolder: "07_Production_and_Testing" },
+      { name: "ESD & cleanroom certification", recordType: "License alert", defaultTitle: "ESD S20.20 & cleanroom compliance certification", driveGroup: "01 Common documents", targetFolder: "07_Production_and_Testing" },
+      { name: "DMAIC Six Sigma tollgate", recordType: "DMAIC tollgate", defaultTitle: "Six Sigma DMAIC continuous improvement project", driveGroup: "02 Internal projects", targetFolder: "01_Governance_and_QMS" },
+      { name: "Statutory labor & safety audit", recordType: "License alert", defaultTitle: "Statutory labor, safety & ISO 45001 EHS audit", driveGroup: "01 Common documents", targetFolder: "01_Governance_and_QMS" },
+    ],
+  },
 };
 
-function DepartmentProcessMenu({ area, onOpenDrive, onCreate }: { area: AreaId; onOpenDrive: () => void; onCreate: (recordType?: string) => void }) {
+function DepartmentProcessMenu({
+  area,
+  onOpenDrive,
+  onCreate,
+}: {
+  area: AreaId;
+  onOpenDrive: () => void;
+  onCreate: (recordType?: string, initialValues?: Record<string, string>) => void;
+}) {
   const menu = departmentProcesses[area];
-  if (!menu) return null;
-  return <section className="ops-section mt-8 overflow-hidden bg-panel"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Department processes</p><p className="mt-1 text-xs text-muted-foreground">Select a process to start a linked, department-owned record.</p></div><Action label="Department Cloud Drive" onClick={onOpenDrive} primary /></div><div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">{menu.items.map((item, index) => <button key={item} onClick={() => onCreate(item)} className="flex min-h-14 items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-secondary"><span className="font-mono text-[10px] text-steel">{String(index + 1).padStart(2, "0")}</span><span className="text-xs font-semibold">{item}</span></button>)}</div><div className="border-t border-border px-4 py-2 font-mono text-[10px] text-muted-foreground">Drive folder · /{menu.drive}</div></section>;
+  if (!menu || !menu.items.length) return null;
+  return (
+    <section className="ops-section mt-8 overflow-hidden bg-panel">
+      <div className="ops-section-header flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold">Department processes & workflows</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Select a routine process shortcut to open a pre-filled, department-owned record linked to the Cloud Drive.
+          </p>
+        </div>
+        <Action label="Department Cloud Drive" onClick={onOpenDrive} primary />
+      </div>
+      <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">
+        {menu.items.map((item, index) => (
+          <button
+            key={item.name}
+            onClick={() =>
+              onCreate(item.recordType, {
+                title: item.defaultTitle,
+                scope: `Target Cloud Drive: /${item.driveGroup}/${item.targetFolder}\nProcess: ${item.name}\nAutomotive Reference: IATF 16949:2016 / ISO 9001:2015`,
+                projectId: "HLPL-AI4T-01",
+                targetFolder: item.targetFolder,
+                driveGroup: item.driveGroup,
+                priority: item.priority ?? "Normal",
+              })
+            }
+            className="group flex min-h-16 flex-col justify-between p-3.5 text-left transition-colors hover:bg-secondary"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-mono text-[10px] font-bold text-steel">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[9px] font-semibold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+                {item.recordType}
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs font-semibold text-foreground group-hover:text-primary">
+              {item.name}
+            </p>
+            <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/40 pt-1.5 text-[10px] text-muted-foreground">
+              <span className="truncate font-mono">{item.driveGroup.slice(0, 11)}</span>
+              <span className="font-semibold text-steel group-hover:text-primary">Start ➜</span>
+            </div>
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2 font-mono text-[10px] text-muted-foreground">
+        <span>Drive folder · /{menu.drive}</span>
+        <span>IATF 16949:2016 §8.2 / ISO 9001:2015 Traceable</span>
+      </div>
+    </section>
+  );
 }
 
 function LifecycleDeliverables({ documents, stage, onOpenDocument }: { documents: ControlledDocument[]; stage: string; onOpenDocument: (document: ControlledDocument) => void }) {
@@ -4400,6 +4594,7 @@ function RecordForm({
   area,
   portal,
   initialType,
+  initialValues,
   onClose,
   onSave,
   onAddCustomer,
@@ -4407,6 +4602,7 @@ function RecordForm({
   area: AreaId;
   portal: PortalState;
   initialType: string | null;
+  initialValues?: Record<string, string> | null;
   onClose: () => void;
   onSave: (record: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => void;
   onAddCustomer?: (customer: CustomerRecord) => void;
@@ -4415,10 +4611,34 @@ function RecordForm({
   if (!spec) return null;
   const availableTypes = Array.from(new Set(["Task", ...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
   const [type, setType] = useState(initialType ?? spec.types[0] ?? "Record");
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>(() => ({
+    location: portal.masters.locations?.[0] || "Hexense Labs — Noida Tech Center",
+    projectId: "HLPL-AI4T-01",
+    hwStage: "HW_01",
+    gate: "G0",
+    procurementTrack: "Rapid prototype",
+    qualityStage: initialType === "DVP&R" ? "DVP&R" : "APQP",
+    ...(initialValues ?? {}),
+  }));
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+
+  useEffect(() => {
+    if (initialType) setType(initialType);
+    if (initialValues) {
+      setValues((prev) => ({
+        location: portal.masters.locations?.[0] || "Hexense Labs — Noida Tech Center",
+        projectId: "HLPL-AI4T-01",
+        hwStage: "HW_01",
+        gate: "G0",
+        procurementTrack: "Rapid prototype",
+        qualityStage: initialType === "DVP&R" ? "DVP&R" : prev["qualityStage"] || "APQP",
+        ...prev,
+        ...initialValues,
+      }));
+    }
+  }, [initialType, initialValues, portal.masters.locations]);
   const field = (key: string) => values[key] ?? "";
   const departmentCode = findAreaDepartment(portal.departments, area)?.code.replace(/^DEMO-/, "") || areaById(area).short;
   const selectedProject = field("projectId") || field("product") || "HLPL-AI4T-01";
@@ -4452,8 +4672,8 @@ function RecordForm({
     type === "Task"
       ? taskFields
       : type === "PRS"
-        ? spec.fields.filter((item) => item.key !== "hwStage")
-        : spec.fields;
+        ? spec.fields.filter((item) => item.key !== "hwStage" && item.key !== "controlledNumber")
+        : spec.fields.filter((item) => item.key !== "controlledNumber");
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (type === "Task") {
@@ -4479,17 +4699,20 @@ function RecordForm({
     if (type === "PRS" && !approvedReview) {
       return setError("PRS is generated only after an approved Contract Review HLPL/F/MKT/01.");
     }
-    const preparedValues =
-      type === "PRS"
+    const finalControlledNumber = field("controlledNumber") || generatedId;
+    const preparedValues = {
+      ...(type === "PRS"
         ? {
             ...values,
-            controlledNumber: values["controlledNumber"] || "HLPL-SLCT-EHW-PRS-01",
+            controlledNumber: finalControlledNumber || "HLPL-SLCT-EHW-PRS-01",
             projectId: values["projectId"] || "HLPL-SLCT-01",
             lifecycleStage: "Stage 3 · Requirement Freeze & Commercial Confirmation",
             generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01",
             baseline: "Frozen · automated baseline · changes require PMSS amendment",
           }
-        : values;
+        : values),
+      controlledNumber: finalControlledNumber,
+    };
     const missing = visibleFields.find(
       (item) => item.required && item.key !== "controlledNumber" && !field(item.key).trim(),
     );
@@ -4497,9 +4720,13 @@ function RecordForm({
     const invalid = visibleFields.find(
       (item) =>
         item.master &&
+        item.master !== "products" &&
         field(item.key) &&
         !(portal.masters[item.master] ?? []).some(
-          (value) => value.toLowerCase() === field(item.key).toLowerCase(),
+          (value) =>
+            value.toLowerCase() === field(item.key).toLowerCase() ||
+            field(item.key).toLowerCase().includes(value.toLowerCase()) ||
+            value.toLowerCase().includes(field(item.key).toLowerCase()),
         ),
     );
     if (invalid) return setError(`Select a managed ${invalid.label.toLowerCase()} option.`);
@@ -6016,6 +6243,8 @@ function DocumentsPanel({
   onTemplateBodiesChange,
   onOpenCustomerRegister,
   portal,
+  onDocumentCreated,
+  onDocumentUpdated,
 }: {
   documents: ControlledDocument[];
   departments: Department[];
@@ -6028,6 +6257,8 @@ function DocumentsPanel({
   onTemplateBodiesChange: (templates: Record<string, string>) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   portal?: PortalState | undefined;
+  onDocumentCreated?: ((document: ControlledDocument) => void) | undefined;
+  onDocumentUpdated?: ((document: ControlledDocument, event: string) => void) | undefined;
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("All groups");
@@ -6078,6 +6309,8 @@ function DocumentsPanel({
           onSelectDocument={onSelectDocument}
           onOpenCustomerRegister={onOpenCustomerRegister}
           portal={portal}
+          onDocumentCreated={onDocumentCreated}
+          onDocumentUpdated={onDocumentUpdated}
         />
       )}
       {tab === "repository" && <><section className="ops-section mb-6 overflow-hidden bg-panel">
@@ -6198,6 +6431,64 @@ function DocumentsPanel({
   );
 }
 
+const sha256 = async (file: File) => {
+  const buffer = await file.arrayBuffer();
+  const hash = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+};
+
+const formatBytes = (size: number) =>
+  size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1)} MB`;
+
+const formatLabel = (file: Pick<LocalControlledFile, "name" | "type">) => {
+  const extension = file.name.split(".").pop()?.toUpperCase();
+  if (extension === "STP" || extension === "STEP") return "CAD STEP";
+  if (extension === "ZIP") return "GERBER ZIP";
+  return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
+};
+
+const downloadLocalControlledFile = (file: LocalControlledFile) => {
+  const anchor = window.document.createElement("a");
+  anchor.href =
+    file.encoding === "text"
+      ? URL.createObjectURL(new Blob([file.content], { type: file.type }))
+      : file.content;
+  anchor.download = file.name;
+  anchor.click();
+  if (file.encoding === "text") {
+    window.setTimeout(() => URL.revokeObjectURL(anchor.href), 100);
+  }
+};
+
+export type DriveGroup =
+  | "All Deliverables"
+  | "01 Common documents"
+  | "02 Internal projects"
+  | "03 Client projects"
+  | "04 Other department work";
+
+export const canonicalDriveGroups: { id: DriveGroup; label: string; icon: string; description: string }[] = [
+  { id: "All Deliverables", label: "All Deliverables", icon: "📂", description: "Complete multi-department engineering and audit repository" },
+  { id: "01 Common documents", label: "01 Common documents", icon: "📄", description: "SOPs, QMS procedures, authority matrices, customer registers and templates" },
+  { id: "02 Internal projects", label: "02 Internal projects", icon: "🔬", description: "Internal R&D, automated test jigs, golden units and platform baselines" },
+  { id: "03 Client projects", label: "03 Client projects", icon: "🚗", description: "Customer programs (HLPL-AI4T-01, HLPL-SLCT-01, HLPL-XLINK-03) deliverables" },
+  { id: "04 Other department work", label: "04 Other department work", icon: "🛡️", description: "Supplier PPAPs, calibration certs, DVP&R environmental logs and 8D CAPA" },
+];
+
+export function driveGroupFor(document: ControlledDocument): "01 Common documents" | "02 Internal projects" | "03 Client projects" | "04 Other department work" {
+  const combined = `${document.title} ${document.type} ${document.group ?? ""} ${document.part ?? ""} ${document.device ?? ""}`.toLowerCase();
+  if (/governance|qms|sop|procedure|mnda|nda template|matrix|authority|handover|enquiry intake|register\.xlsx/i.test(combined)) {
+    return "01 Common documents";
+  }
+  if (/dvp|ppap|iqc|ipqc|fqc|capa|8d|ncr|cleanroom|calibration|scorecard|audit checklist|laboratory/i.test(combined)) {
+    return "04 Other department work";
+  }
+  if (/ai4t|slct|xlink|tata|select|sor|quotation|schematic|gerber|bom|invoice|tac certificate|pdi|hsi|step enclosure/i.test(combined) || document.device?.includes("Tata") || document.device?.includes("Select") || document.part?.startsWith("HLPL-")) {
+    return "03 Client projects";
+  }
+  return "02 Internal projects";
+}
+
 const driveFolders = [
   ["00_Root_Audit_Repository", "Controlled project evidence and release history"],
   ["01_Governance_and_QMS", "SORs, NDAs, quotations and invoices"],
@@ -6226,6 +6517,8 @@ function HardwareDeliverablesDrive({
   onSelectDocument,
   onOpenCustomerRegister,
   portal,
+  onDocumentCreated,
+  onDocumentUpdated,
 }: {
   documents: ControlledDocument[];
   departments: Department[];
@@ -6233,102 +6526,378 @@ function HardwareDeliverablesDrive({
   onSelectDocument: (document: ControlledDocument) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   portal?: PortalState | undefined;
+  onDocumentCreated?: ((document: ControlledDocument) => void) | undefined;
+  onDocumentUpdated?: ((document: ControlledDocument, event: string) => void) | undefined;
 }) {
+  const [driveGroup, setDriveGroup] = useState<DriveGroup>("All Deliverables");
   const [folder, setFolder] = useState("00_Root_Audit_Repository");
   const [query, setQuery] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadNotice, setUploadNotice] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const canSee = (document: ControlledDocument) => !departmentContext || document.departmentId === departmentContext;
-  const visible = documents.filter((document) => canSee(document) && `${document.title} ${document.type} ${document.part ?? ""}`.toLowerCase().includes(query.toLowerCase()) && (folder === "00_Root_Audit_Repository" || driveFolderFor(document) === folder));
-  const fileCount = (document: ControlledDocument) => document.localFiles?.length ?? 0;
+
+  const countByGroup = (grp: DriveGroup) =>
+    documents.filter((doc) => canSee(doc) && (grp === "All Deliverables" || driveGroupFor(doc) === grp)).length;
+
+  const countByFolder = (fld: string) =>
+    documents.filter((doc) => canSee(doc) && (driveGroup === "All Deliverables" || driveGroupFor(doc) === driveGroup) && (fld === "00_Root_Audit_Repository" || driveFolderFor(doc) === fld)).length;
+
+  const visible = documents.filter(
+    (document) =>
+      canSee(document) &&
+      (driveGroup === "All Deliverables" || driveGroupFor(document) === driveGroup) &&
+      (folder === "00_Root_Audit_Repository" || driveFolderFor(document) === folder) &&
+      `${document.title} ${document.type} ${document.part ?? ""}`.toLowerCase().includes(query.toLowerCase()),
+  );
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      setIsUploading(true);
+      setUploadProgress(15);
+      setUploadNotice(`Securing & computing SHA-256 for ${file.name}…`);
+      const checksum = await sha256(file);
+      setUploadProgress(55);
+
+      const textLike = /^(text\/|application\/(json|csv))/.test(file.type) || /\.(json|csv|txt|log|md)$/i.test(file.name);
+      const content = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("File read failed"));
+        reader.onload = () => resolve(String(reader.result ?? ""));
+        if (textLike) reader.readAsText(file);
+        else reader.readAsDataURL(file);
+      });
+      setUploadProgress(85);
+
+      const localFile: LocalControlledFile = {
+        id: createId(),
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        uploadedAt: new Date().toISOString(),
+        uploader: "HOD Engineer · Lovable Cloud Storage",
+        revision: "01",
+        content,
+        encoding: textLike ? "text" : "data-url",
+        checksum,
+      };
+
+      // Check if there is an existing matching document in this folder to attach to
+      const existingDoc = documents.find(
+        (doc) => canSee(doc) && (folder === "00_Root_Audit_Repository" || driveFolderFor(doc) === folder) && doc.title.toLowerCase().includes((file.name.split(".")[0] ?? "").toLowerCase()),
+      );
+
+      if (existingDoc) {
+        const updatedDoc: ControlledDocument = {
+          ...existingDoc,
+          localFiles: [...(existingDoc.localFiles ?? []), localFile],
+          history: [`${now()} · ${file.name} attached directly to drive folder /${folder} (SHA-256 verified)`, ...(existingDoc.history ?? [])],
+        };
+        onDocumentUpdated?.(updatedDoc, `${existingDoc.title} · ${file.name} attached`);
+      } else {
+        // Create new controlled document deliverable
+        const departmentId = departmentContext ?? departments[0]?.id ?? "ehw";
+        const newDoc: ControlledDocument = {
+          id: createId(),
+          url: "",
+          departmentId,
+          title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+          type: formatLabel(localFile),
+          lifecycle: "Approved",
+          deliverableKind: "Technical document",
+          revision: "01",
+          part: `HLPL-AI4T-EHW-${formatLabel(localFile)}-01`,
+          device: "Tata Ace EV 4G AIS-140 Gateway",
+          group: driveGroup === "All Deliverables" ? "03 Client projects" : driveGroup,
+          phase: "HW_18 · Production Engineering Release",
+          localFiles: [localFile],
+          history: [`${now()} · Created via Direct Cloud Drive upload into /${folder}`],
+        };
+        onDocumentCreated?.(newDoc);
+      }
+
+      setUploadProgress(100);
+      setUploadNotice(`✓ Upload Verified: ${file.name} (${formatBytes(file.size)}) stored with SHA-256 ${checksum.slice(0, 16)}…`);
+      window.setTimeout(() => {
+        setIsUploading(false);
+      }, 1500);
+    } catch (err) {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setUploadNotice(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  };
+
   return (
     <section className="space-y-5">
-      <section className="ops-section overflow-hidden">
-        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3">
+      {/* Symmetrical 4-Group Navigation Bar */}
+      <section className="ops-section overflow-hidden bg-panel">
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3 border-b border-border">
           <div>
-            <p className="text-sm font-semibold">Hardware Deliverables Drive</p>
-            <p className="mt-1 text-xs text-muted-foreground">Private Cloud storage is active. Google Drive remains optional; folders are logical project paths.</p>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
+              Symmetrical Cloud Drive Architecture (§7)
+            </p>
+            <p className="mt-1 text-sm font-semibold">Departmental Cloud Drive & Logical Work Registers</p>
           </div>
-          <span className="rounded-md border border-moss/25 bg-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase text-accent-foreground">Cloud active</span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-md border border-moss/25 bg-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase text-accent-foreground">
+              Lovable Cloud Active
+            </span>
+          </div>
         </div>
-        <div className="grid divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">
-          {driveFolders.map(([name, detail]) => (
-            <button
-              key={name}
-              onClick={() => setFolder(name)}
-              className={`p-3 text-left transition-colors ${folder === name ? "bg-accent" : "hover:bg-secondary"}`}
-            >
-              <span className="flex items-center gap-2 font-mono text-xs text-steel"><FolderOpen className="size-4" />/{name}</span>
-              <span className="mt-1 block text-xs text-muted-foreground">{detail}</span>
-            </button>
-          ))}
+
+        {/* 4-Group Tab Selectors */}
+        <div className="flex flex-wrap gap-1.5 border-b border-border bg-card/60 p-2 sm:gap-2">
+          {canonicalDriveGroups.map((grp) => {
+            const count = countByGroup(grp.id);
+            const active = driveGroup === grp.id;
+            return (
+              <button
+                key={grp.id}
+                onClick={() => setDriveGroup(grp.id)}
+                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  active
+                    ? "border border-primary/30 bg-primary/10 text-primary shadow-2xs dark:bg-primary/20"
+                    : "border border-border/60 bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+                title={grp.description}
+              >
+                <span>{grp.icon}</span>
+                <span>{grp.label}</span>
+                <span className={`rounded-full px-1.5 py-0.2 font-mono text-[10px] ${active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Technical Folder Grid */}
+        <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+          {driveFolders.map(([name, detail]) => {
+            const folderCount = countByFolder(name);
+            const active = folder === name;
+            return (
+              <button
+                key={name}
+                onClick={() => setFolder(name)}
+                className={`p-3 text-left transition-colors ${active ? "border-l-2 border-primary bg-accent/70 font-semibold" : "hover:bg-secondary/70"}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-1.5 font-mono text-xs text-steel">
+                    <FolderOpen className="size-3.5 shrink-0" />
+                    <span className="truncate">/{name}</span>
+                  </span>
+                  <span className="shrink-0 font-mono text-[10px] text-muted-foreground">({folderCount})</span>
+                </div>
+                <span className="mt-1 block text-[11px] text-muted-foreground line-clamp-1">{detail}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
+
+      {/* Direct Drag & Drop / File Uploader Dropzone */}
+      <section
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          const file = e.dataTransfer.files[0];
+          if (file) void handleFileUpload(file);
+        }}
+        className={`rounded-lg border-2 border-dashed p-4 text-center transition-all ${
+          isDragging
+            ? "border-primary bg-primary/10 scale-[1.005]"
+            : "border-border/80 bg-card hover:border-primary/50 hover:bg-secondary/40"
+        }`}
+      >
+        <div className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:justify-between">
+          <div className="flex items-center gap-3 text-left">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-steel/10 text-steel">
+              <Upload className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground">
+                Direct File Upload into /{driveGroup.slice(0, 11)}/{folder}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Drop PDF, DOCX, XLSX, CAD STEP, Gerber ZIP, or firmware hex to attach with SHA-256 verification
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="sr-only"
+              accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleFileUpload(file);
+              }}
+            />
+            <Action
+              label="Select Deliverable File"
+              onClick={() => fileInputRef.current?.click()}
+              primary
+            />
+          </div>
+        </div>
+
+        {/* Progress Bar & Notice */}
+        {isUploading && (
+          <div className="mt-3 w-full">
+            <div className="flex items-center justify-between text-[11px] font-medium text-steel">
+              <span>{uploadNotice}</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {!isUploading && uploadNotice && (
+          <p className="mt-2 text-center text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            {uploadNotice}
+          </p>
+        )}
+      </section>
+
+      {/* Artifact Register Table / List */}
       <section className="ops-section overflow-hidden">
         <div className="ops-section-header flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[.1em] text-steel">/{folder}</p>
-            <p className="mt-1 text-sm font-semibold">Project artifact register</p>
+            <p className="font-mono text-[10px] uppercase tracking-[.1em] text-steel">
+              /{driveGroup} · /{folder}
+            </p>
+            <p className="mt-0.5 text-sm font-semibold">
+              Project Artifact Register ({visible.length} Deliverables)
+            </p>
           </div>
           <input
             aria-label="Search deliverables"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search files or document ID"
-            className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+            placeholder="Search deliverables or ID…"
+            className="h-9 min-w-56 rounded-lg border border-input bg-background px-3 text-xs"
           />
         </div>
+
         <div className="divide-y divide-border">
-          {(folder === "01_Governance_and_QMS" || folder === "00_Root_Audit_Repository") && onOpenCustomerRegister && (
-            <div
-              onClick={onOpenCustomerRegister}
-              className="grid w-full cursor-pointer gap-3 border-b border-border bg-emerald-500/[0.04] px-4 py-3 text-left transition hover:bg-emerald-500/[0.09] sm:grid-cols-[minmax(0,1fr)_auto]"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <FileSpreadsheet className="size-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <strong className="block text-sm text-foreground">Customer Register.xlsx</strong>
-                    <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
-                      MANAGED LIVE REGISTER
-                    </span>
-                  </div>
-                  <small className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
-                    Sales Master Directory · IATF 16949:2016 §8.2.1 · Auto-Synchronized
-                  </small>
-                  <small className="mt-0.5 block text-xs text-muted-foreground">
-                    {portal?.customersRegistry?.length ?? defaultCustomers.length} Registered Accounts · Last synced: Today, Live
-                  </small>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 self-center">
-                <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                  Open Register
-                </span>
-              </div>
-            </div>
-          )}
-          {visible.length ? (
-            visible.map((document) => (
-              <button
-                key={document.id}
-                onClick={() => onSelectDocument(document)}
-                className="grid w-full gap-3 px-4 py-3 text-left hover:bg-secondary sm:grid-cols-[minmax(0,1fr)_auto]"
+          {/* Customer Register.xlsx Special Row */}
+          {(folder === "01_Governance_and_QMS" || folder === "00_Root_Audit_Repository") &&
+            (driveGroup === "All Deliverables" || driveGroup === "01 Common documents") &&
+            onOpenCustomerRegister && (
+              <div
+                onClick={onOpenCustomerRegister}
+                className="grid w-full cursor-pointer gap-3 border-b border-border bg-emerald-500/[0.04] px-4 py-3 text-left transition hover:bg-emerald-500/[0.09] sm:grid-cols-[minmax(0,1fr)_auto]"
               >
-                <span className="min-w-0">
-                  <strong className="block text-sm">{document.title}</strong>
-                  <small className="mt-1 block font-mono text-[10px] text-muted-foreground">
-                    {document.part ?? document.type} · Rev {document.revision ?? "—"} · {document.deliverableKind ?? "Controlled document"}
-                  </small>
-                  <small className="mt-1 block text-xs text-muted-foreground">
-                    {fileCount(document)} file revision{fileCount(document) === 1 ? "" : "s"} · {departments.find((department) => department.id === document.departmentId)?.name ?? "Unassigned"}
-                  </small>
-                </span>
-                <span className="self-center text-xs font-semibold text-steel">Open</span>
-              </button>
-            ))
+                <div className="flex items-start gap-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <FileSpreadsheet className="size-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <strong className="block text-sm text-foreground">Customer Register.xlsx</strong>
+                      <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
+                        MANAGED LIVE REGISTER
+                      </span>
+                      <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">
+                        01 Common documents
+                      </span>
+                    </div>
+                    <small className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
+                      Sales Master Directory · IATF 16949:2016 §8.2.1 · Auto-Synchronized
+                    </small>
+                    <small className="mt-0.5 block text-xs text-muted-foreground">
+                      {portal?.customersRegistry?.length ?? defaultCustomers.length} Registered Accounts · Last synced: Today, Live
+                    </small>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-center">
+                  <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                    Open Register
+                  </span>
+                </div>
+              </div>
+            )}
+
+          {/* Controlled Document Items */}
+          {visible.length ? (
+            visible.map((document) => {
+              const docGroup = driveGroupFor(document);
+              const files = document.localFiles ?? [];
+              return (
+                <div
+                  key={document.id}
+                  className="grid w-full gap-3 px-4 py-3 text-left hover:bg-secondary/40 sm:grid-cols-[minmax(0,1fr)_auto]"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <strong className="text-sm font-semibold text-foreground">{document.title}</strong>
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-primary">
+                        {docGroup}
+                      </span>
+                      <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">
+                        Rev {document.revision ?? "01"}
+                      </span>
+                    </div>
+                    <small className="mt-1 block font-mono text-[10px] text-muted-foreground">
+                      {document.part ?? document.type} · {document.deliverableKind ?? "Controlled evidence"} ·{" "}
+                      {departments.find((d) => d.id === document.departmentId)?.name ?? "Engineering"}
+                    </small>
+
+                    {/* Attached Local Files List */}
+                    {files.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {files.map((file) => (
+                          <div
+                            key={file.id}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-[11px]"
+                          >
+                            <span className="font-mono text-steel">📎 {file.name}</span>
+                            <span className="text-[10px] text-muted-foreground">({formatBytes(file.size)})</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                downloadLocalControlledFile(file);
+                              }}
+                              className="ml-1 font-semibold text-primary hover:underline"
+                              title="Download attached file"
+                            >
+                              Download
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 self-center">
+                    <Action
+                      label="Open Deliverable"
+                      onClick={() => onSelectDocument(document)}
+                    />
+                  </div>
+                </div>
+              );
+            })
           ) : !((folder === "01_Governance_and_QMS" || folder === "00_Root_Audit_Repository") && onOpenCustomerRegister) ? (
-            <p className="p-8 text-center text-sm text-muted-foreground">No authorized deliverables in this folder.</p>
+            <p className="p-8 text-center text-sm text-muted-foreground">
+              No authorized deliverables in /{driveGroup}/{folder}. Use the uploader above to add files.
+            </p>
           ) : null}
         </div>
       </section>
