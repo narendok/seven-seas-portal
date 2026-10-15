@@ -36,6 +36,10 @@ import {
   Download,
   RefreshCw,
   Trash2,
+  Lock,
+  FileSpreadsheet,
+  UserPlus,
+  Send,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
@@ -46,6 +50,16 @@ import {
   listControlledDocumentFiles,
 } from "@/lib/controlled-documents.functions";
 import { FeasibilityAndHardwareKickoff } from "@/components/FeasibilityAndHardwareKickoff";
+import {
+  SalesEnquiriesAndOpportunities,
+  InlineCustomerModal,
+  CustomerRegisterModal,
+  SendForFeasibilityModal,
+  defaultCustomers,
+  defaultEnquiriesOpportunities,
+  type CustomerRecord,
+  type EnquiryOpportunity,
+} from "@/components/SalesWorkspaceAndCustomerRegister";
 
 type AreaId =
   | "home"
@@ -319,6 +333,8 @@ type PortalState = {
   templateSettings?: TemplateSettings | undefined;
   templateBodies?: Record<string, string> | undefined;
   raciMatrix?: RaciMatrix | undefined;
+  customersRegistry?: CustomerRecord[] | undefined;
+  enquiriesOpportunities?: EnquiryOpportunity[] | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -342,11 +358,11 @@ const areas = [
   {
     id: "sales" as const,
     name: "Sales & Business Development",
-    navLabel: "Sales & BD",
+    navLabel: "Enquiries & Opps",
     short: "SAL",
     icon: UsersRound,
-    recordType: "Lead intake",
-    summary: "HLPL-F-SAL-01, mNDA, quotations and contract reviews",
+    recordType: "Enquiry & Opportunity",
+    summary: "One sales flow: Active opportunities, pending enquiries, mNDA, feasibility and quotations",
   },
   {
     id: "ehw" as const,
@@ -619,7 +635,7 @@ const emptyPortal = (): PortalState => ({
     suppliers: [],
     parts: [],
     products: [],
-    customers: [],
+    customers: defaultCustomers.map((c) => c.name),
     locations: ["Noida"],
     routes: [],
     documentTypes: [],
@@ -633,6 +649,8 @@ const emptyPortal = (): PortalState => ({
   alerts: [],
   templateSettings: defaultTemplateSettings(),
   templateBodies: defaultTemplateBodies(),
+  customersRegistry: defaultCustomers,
+  enquiriesOpportunities: defaultEnquiriesOpportunities,
 });
 
 function defaultTemplateSettings(): TemplateSettings {
@@ -1456,6 +1474,8 @@ const demoPortal = (): PortalState => {
       { id: "ALERT_TST_01", severity: "Critical", title: "First-pass yield below 95% threshold on Line 1", detail: "Current DEMO FPY: 92.4%. Review the simulated failure trend before release.", departmentId: "demo-dept-tst", resolved: false },
       { id: "ALERT_FIN_03", severity: "Warning", title: "Customer payment overdue beyond 45 days for Ashok Leyland Batch 02", detail: "Illustrative exposure: ₹8,40,000. No actual receivable is represented.", departmentId: "demo-dept-fin", resolved: false },
     ],
+    customersRegistry: defaultCustomers,
+    enquiriesOpportunities: defaultEnquiriesOpportunities,
   };
 };
 const createId = () => crypto.randomUUID();
@@ -1641,6 +1661,8 @@ function Portal() {
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   const [darkMode, setDarkMode] = useState(true);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [customerRegisterOpen, setCustomerRegisterOpen] = useState(false);
+  const [feasibilityDispatchEnquiry, setFeasibilityDispatchEnquiry] = useState<EnquiryOpportunity | null>(null);
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("hexense-scms-theme");
@@ -1709,6 +1731,76 @@ function Portal() {
     setDepartmentContext(null);
     setModal(null);
     announce("Demo lifecycle removed. Your portal is empty again.");
+  };
+  const handleCustomerCreated = (customer: CustomerRecord) => {
+    update((state) => {
+      const existing = state.customersRegistry ?? defaultCustomers;
+      const nextRegistry = [customer, ...existing.filter((c) => c.code !== customer.code)];
+      const nextMasterCustomers = Array.from(new Set([...state.masters.customers, customer.name]));
+      return {
+        ...state,
+        customersRegistry: nextRegistry,
+        masters: {
+          ...state.masters,
+          customers: nextMasterCustomers,
+        },
+        audit: [
+          {
+            id: createId(),
+            at: now(),
+            action: "Customer account registered",
+            detail: `Added ${customer.name} (${customer.code}) · SPOC: ${customer.spocName} to Customer Master and Customer Register.xlsx`,
+          },
+          ...state.audit,
+        ],
+        notifications: [
+          `Customer ${customer.name} registered and synchronized with Customer Register.xlsx`,
+          ...state.notifications,
+        ],
+      };
+    });
+    announce(`Customer ${customer.name} saved to Customer Master.`);
+  };
+  const handleDispatchFeasibility = (enquiryId: string, departments: string[], targetDate: string) => {
+    update((state) => {
+      const existingEnqs = state.enquiriesOpportunities ?? defaultEnquiriesOpportunities;
+      const target = existingEnqs.find((e) => e.id === enquiryId);
+      if (!target) return state;
+
+      const oppRef = target.reference.replace(/ENQ/g, "OPP").replace(/HLPL-\d+-/, "OPP-");
+      const updatedTarget: EnquiryOpportunity = {
+        ...target,
+        reference: oppRef.startsWith("OPP-") ? oppRef : `OPP-${target.reference}`,
+        kind: "opportunity",
+        status: "Sent for Feasibility",
+        totalFeasibilityDepts: departments.length,
+        feasibilitySignedDepts: [],
+        targetClosureDate: targetDate,
+        updatedAt: new Date().toISOString().slice(0, 10),
+      };
+
+      const nextEnqs = existingEnqs.map((e) => (e.id === enquiryId ? updatedTarget : e));
+
+      return {
+        ...state,
+        enquiriesOpportunities: nextEnqs,
+        audit: [
+          {
+            id: createId(),
+            at: now(),
+            action: "Enquiry dispatched for feasibility",
+            detail: `${target.reference} converted to Opportunity ${updatedTarget.reference} · Assigned departments: ${departments.join(", ")} · Due: ${targetDate}`,
+          },
+          ...state.audit,
+        ],
+        notifications: [
+          `Opportunity ${updatedTarget.reference} dispatched for feasibility review (${departments.join(", ")}). Contract Review record HLPL/F/MKT/01 generated.`,
+          ...state.notifications,
+        ],
+      };
+    });
+    announce(`Enquiry converted to Opportunity and dispatched for multi-department feasibility.`);
+    setAi4tOpen(true);
   };
   const addRecord = (input: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => {
     const count = portal.records.filter((record) => record.area === input.area).length + 1;
@@ -1995,7 +2087,14 @@ function Portal() {
                 setView("queue");
               }}
               onOpenDraftHub={() => setDraftHubOpen(true)}
-            onOpenDrive={() => setModal("documents")}
+              onOpenDrive={() => setModal("documents")}
+              portal={portal}
+              onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
+              onOpenFeasibilityGate={(projectCode) => {
+                setSelectedProjectId(projectCode);
+                setAi4tOpen(true);
+              }}
+              onSendForFeasibility={(enquiry) => setFeasibilityDispatchEnquiry(enquiry)}
             />
           )}
         </div>
@@ -2027,6 +2126,7 @@ function Portal() {
           initialType={createType}
           onClose={() => { setCreateType(null); setModal(null); }}
           onSave={addRecord}
+          onAddCustomer={handleCustomerCreated}
         />
       )}{" "}
       {modal === "wizard" && (
@@ -2060,6 +2160,8 @@ function Portal() {
           onOpenDraftHub={() => setDraftHubOpen(true)}
           templateBodies={portal.templateBodies ?? defaultTemplateBodies()}
           onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
+          onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
+          portal={portal}
         />
       )}{" "}
       {modal === "document" && selectedDocument && (
@@ -2106,6 +2208,23 @@ function Portal() {
           }}
           onLoadDemo={loadDemo}
           onResetDemo={resetDemo}
+        />
+      )}{" "}
+      {customerRegisterOpen && (
+        <CustomerRegisterModal
+          customers={portal.customersRegistry ?? defaultCustomers}
+          onClose={() => setCustomerRegisterOpen(false)}
+          onAddCustomer={() => {
+            setModal("create");
+            setCreateType("Customer");
+          }}
+        />
+      )}{" "}
+      {feasibilityDispatchEnquiry && (
+        <SendForFeasibilityModal
+          enquiry={feasibilityDispatchEnquiry}
+          onClose={() => setFeasibilityDispatchEnquiry(null)}
+          onDispatch={handleDispatchFeasibility}
         />
       )}{" "}
       {alertsOpen && (
@@ -3227,6 +3346,10 @@ function DepartmentWorkspace({
   onOpenStage,
   onOpenDraftHub,
   onOpenDrive,
+  portal,
+  onOpenCustomerRegister,
+  onOpenFeasibilityGate,
+  onSendForFeasibility,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -3244,6 +3367,10 @@ function DepartmentWorkspace({
   onOpenStage: (stage: string) => void;
   onOpenDraftHub: () => void;
   onOpenDrive: () => void;
+  portal?: PortalState | undefined;
+  onOpenCustomerRegister?: (() => void) | undefined;
+  onOpenFeasibilityGate?: ((projectCode: string) => void) | undefined;
+  onSendForFeasibility?: ((enquiry: EnquiryOpportunity) => void) | undefined;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -3272,6 +3399,9 @@ function DepartmentWorkspace({
               onClick={() => onView(view === "queue" ? "summary" : "queue")}
               label={view === "queue" ? "Summary" : "Queue"}
             />
+            {area.id === "sales" && onOpenCustomerRegister && (
+              <Action onClick={onOpenCustomerRegister} label="Customer Register.xlsx" />
+            )}
             <Action onClick={onOpenDrive} label="Department Cloud Drive" />
             <Action onClick={onCreate} label={`Create ${area.recordType}`} primary />
           </>
@@ -3324,65 +3454,78 @@ function DepartmentWorkspace({
       {area.id === "hrops" && (
         <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
       )}
-      <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="ops-section overflow-hidden">
-          {view === "summary" ? (
-            <AreaSummary records={scopedRecords} />
-          ) : scopedRecords.length ? (
-            <div>
-              {scopedRecords.map((record) => (
-                <button
-                  key={record.id}
-                  onClick={() => onSelect(record.id)}
-                  className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
-                >
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {record.reference}
-                  </span>
-                  <span>
-                    <strong className="block">{record.title}</strong>
-                    <small className="mt-1 block text-muted-foreground">
-                      {record.type} · {record.updatedAt}
-                    </small>
-                  </span>
-                  <Status status={record.status} />
-                  <span className="font-mono text-[10px] uppercase text-muted-foreground">
-                    {record.priority}
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
-          )}
-        </div>
-        <aside className="ops-section bg-panel p-4">
-          <p className="text-sm font-semibold">Lead view</p>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div>
-              <dt className="font-mono text-[10px] uppercase text-muted-foreground">
-                Overdue / blockers
-              </dt>
-              <dd className="mt-1">
-                {blocked.length} blocked record{blocked.length === 1 ? "" : "s"}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-mono text-[10px] uppercase text-muted-foreground">
-                Upcoming milestones
-              </dt>
-              <dd className="mt-1">
-                {upcoming.length
-                  ? upcoming.map((record) => <p key={record.id}>{record.title}</p>)
-                  : "No upcoming milestones."}
-              </dd>
-            </div>
-          </dl>
-          <div className="mt-5">
-            <Action onClick={onAdmin} label="Department settings" />
+      {area.id === "sales" ? (
+        <section className="mt-8">
+          <SalesEnquiriesAndOpportunities
+            customers={portal?.customersRegistry ?? defaultCustomers}
+            enquiries={portal?.enquiriesOpportunities ?? defaultEnquiriesOpportunities}
+            onOpenNewEnquiry={() => onCreate("Enquiry")}
+            onOpenCustomerRegister={() => onOpenCustomerRegister?.()}
+            onOpenFeasibilityGate={(projectCode) => onOpenFeasibilityGate?.(projectCode)}
+            onSendForFeasibility={(enquiry) => onSendForFeasibility?.(enquiry)}
+          />
+        </section>
+      ) : (
+        <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="ops-section overflow-hidden">
+            {view === "summary" ? (
+              <AreaSummary records={scopedRecords} />
+            ) : scopedRecords.length ? (
+              <div>
+                {scopedRecords.map((record) => (
+                  <button
+                    key={record.id}
+                    onClick={() => onSelect(record.id)}
+                    className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
+                  >
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {record.reference}
+                    </span>
+                    <span>
+                      <strong className="block">{record.title}</strong>
+                      <small className="mt-1 block text-muted-foreground">
+                        {record.type} · {record.updatedAt}
+                      </small>
+                    </span>
+                    <Status status={record.status} />
+                    <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                      {record.priority}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
+            )}
           </div>
-        </aside>
-      </section>
+          <aside className="ops-section bg-panel p-4">
+            <p className="text-sm font-semibold">Lead view</p>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div>
+                <dt className="font-mono text-[10px] uppercase text-muted-foreground">
+                  Overdue / blockers
+                </dt>
+                <dd className="mt-1">
+                  {blocked.length} blocked record{blocked.length === 1 ? "" : "s"}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-mono text-[10px] uppercase text-muted-foreground">
+                  Upcoming milestones
+                </dt>
+                <dd className="mt-1">
+                  {upcoming.length
+                    ? upcoming.map((record) => <p key={record.id}>{record.title}</p>)
+                    : "No upcoming milestones."}
+                </dd>
+              </div>
+            </dl>
+            <div className="mt-5">
+              <Action onClick={onAdmin} label="Department settings" />
+            </div>
+          </aside>
+        </section>
+      )}
     </>
   );
 }
@@ -3950,12 +4093,14 @@ function RecordForm({
   initialType,
   onClose,
   onSave,
+  onAddCustomer,
 }: {
   area: AreaId;
   portal: PortalState;
   initialType: string | null;
   onClose: () => void;
   onSave: (record: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => void;
+  onAddCustomer?: (customer: CustomerRecord) => void;
 }) {
   const spec = formSpecs[area] ?? formSpecs.ehw;
   if (!spec) return null;
@@ -3964,6 +4109,7 @@ function RecordForm({
   const [values, setValues] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const field = (key: string) => values[key] ?? "";
   const departmentCode = findAreaDepartment(portal.departments, area)?.code.replace(/^DEMO-/, "") || areaById(area).short;
   const selectedProject = field("projectId") || field("product") || "HLPL-AI4T-01";
@@ -4056,6 +4202,7 @@ function RecordForm({
                 value={field(item.key)}
                 options={portal.masters[item.master] ?? []}
                 onChange={(value) => setValues({ ...values, [item.key]: value })}
+                onAddCustomer={item.master === "customers" ? () => setShowAddCustomerModal(true) : undefined}
               />
             ) : item.kind === "select" ? (
               <SelectField
@@ -4095,6 +4242,15 @@ function RecordForm({
           <Action label={`Save ${type}`} primary submit />
         </div>
       </form>
+      {showAddCustomerModal && (
+        <InlineCustomerModal
+          onClose={() => setShowAddCustomerModal(false)}
+          onCustomerCreated={(newCust) => {
+            onAddCustomer?.(newCust);
+            setValues((prev) => ({ ...prev, customer: newCust.name }));
+          }}
+        />
+      )}
     </Modal>
   );
 }
@@ -4103,16 +4259,33 @@ function ManagedField({
   value,
   options,
   onChange,
+  onAddCustomer,
 }: {
   item: { label: string; required?: boolean };
   value: string;
   options: string[];
   onChange: (value: string) => void;
+  onAddCustomer?: (() => void) | undefined;
 }) {
+  const isCustomer = item.label.toLowerCase().includes("customer");
   return (
     <label className="block text-sm font-medium">
-      {item.label}
-      {item.required ? " *" : ""}
+      <div className="flex items-center justify-between">
+        <span>
+          {item.label}
+          {item.required ? " *" : ""}
+        </span>
+        {isCustomer && onAddCustomer && (
+          <button
+            type="button"
+            onClick={onAddCustomer}
+            className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-primary hover:underline"
+          >
+            <UserPlus className="size-3" />
+            + Add Customer
+          </button>
+        )}
+      </div>
       <input
         list={`options-${item.label}`}
         value={value}
@@ -4126,7 +4299,9 @@ function ManagedField({
         ))}
       </datalist>
       <span className="mt-1 block text-xs text-muted-foreground">
-        Manage options in Administration.
+        {isCustomer
+          ? "Select a registered customer or click [+ Add Customer] inline."
+          : "Manage options in Administration."}
       </span>
     </label>
   );
@@ -5479,6 +5654,8 @@ function DocumentsPanel({
   onOpenDraftHub,
   templateBodies,
   onTemplateBodiesChange,
+  onOpenCustomerRegister,
+  portal,
 }: {
   documents: ControlledDocument[];
   departments: Department[];
@@ -5489,6 +5666,8 @@ function DocumentsPanel({
   onOpenDraftHub: () => void;
   templateBodies: Record<string, string>;
   onTemplateBodiesChange: (templates: Record<string, string>) => void;
+  onOpenCustomerRegister?: (() => void) | undefined;
+  portal?: PortalState | undefined;
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("All groups");
@@ -5531,7 +5710,16 @@ function DocumentsPanel({
           Private Cloud storage
         </span>
       </section>
-      {tab === "drive" && <HardwareDeliverablesDrive documents={documents} departments={departments} departmentContext={departmentContext} onSelectDocument={onSelectDocument} />}
+      {tab === "drive" && (
+        <HardwareDeliverablesDrive
+          documents={documents}
+          departments={departments}
+          departmentContext={departmentContext}
+          onSelectDocument={onSelectDocument}
+          onOpenCustomerRegister={onOpenCustomerRegister}
+          portal={portal}
+        />
+      )}
       {tab === "repository" && <><section className="ops-section mb-6 overflow-hidden bg-panel">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
@@ -5671,13 +5859,121 @@ function driveFolderFor(document: ControlledDocument) {
   return "02_Product_Platforms";
 }
 
-function HardwareDeliverablesDrive({ documents, departments, departmentContext, onSelectDocument }: { documents: ControlledDocument[]; departments: Department[]; departmentContext: string | null; onSelectDocument: (document: ControlledDocument) => void }) {
+function HardwareDeliverablesDrive({
+  documents,
+  departments,
+  departmentContext,
+  onSelectDocument,
+  onOpenCustomerRegister,
+  portal,
+}: {
+  documents: ControlledDocument[];
+  departments: Department[];
+  departmentContext: string | null;
+  onSelectDocument: (document: ControlledDocument) => void;
+  onOpenCustomerRegister?: (() => void) | undefined;
+  portal?: PortalState | undefined;
+}) {
   const [folder, setFolder] = useState("00_Root_Audit_Repository");
   const [query, setQuery] = useState("");
   const canSee = (document: ControlledDocument) => !departmentContext || document.departmentId === departmentContext;
   const visible = documents.filter((document) => canSee(document) && `${document.title} ${document.type} ${document.part ?? ""}`.toLowerCase().includes(query.toLowerCase()) && (folder === "00_Root_Audit_Repository" || driveFolderFor(document) === folder));
   const fileCount = (document: ControlledDocument) => document.localFiles?.length ?? 0;
-  return <section className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Hardware Deliverables Drive</p><p className="mt-1 text-xs text-muted-foreground">Private Cloud storage is active. Google Drive remains optional; folders are logical project paths.</p></div><span className="rounded-md border border-moss/25 bg-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase text-accent-foreground">Cloud active</span></div><div className="grid divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">{driveFolders.map(([name, detail]) => <button key={name} onClick={() => setFolder(name)} className={`p-3 text-left transition-colors ${folder === name ? "bg-accent" : "hover:bg-secondary"}`}><span className="flex items-center gap-2 font-mono text-xs text-steel"><FolderOpen className="size-4" />/{name}</span><span className="mt-1 block text-xs text-muted-foreground">{detail}</span></button>)}</div></section><section className="ops-section overflow-hidden"><div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.1em] text-steel">/{folder}</p><p className="mt-1 text-sm font-semibold">Project artifact register</p></div><input aria-label="Search deliverables" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search files or document ID" className="h-9 rounded-lg border border-input bg-background px-3 text-sm" /></div><div className="divide-y divide-border">{visible.length ? visible.map((document) => <button key={document.id} onClick={() => onSelectDocument(document)} className="grid w-full gap-3 px-4 py-3 text-left hover:bg-secondary sm:grid-cols-[minmax(0,1fr)_auto]"><span className="min-w-0"><strong className="block text-sm">{document.title}</strong><small className="mt-1 block font-mono text-[10px] text-muted-foreground">{document.part ?? document.type} · Rev {document.revision ?? "—"} · {document.deliverableKind ?? "Controlled document"}</small><small className="mt-1 block text-xs text-muted-foreground">{fileCount(document)} file revision{fileCount(document) === 1 ? "" : "s"} · {departments.find((department) => department.id === document.departmentId)?.name ?? "Unassigned"}</small></span><span className="self-center text-xs font-semibold text-steel">Open</span></button>) : <p className="p-8 text-center text-sm text-muted-foreground">No authorized deliverables in this folder.</p>}</div></section></section>;
+  return (
+    <section className="space-y-5">
+      <section className="ops-section overflow-hidden">
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold">Hardware Deliverables Drive</p>
+            <p className="mt-1 text-xs text-muted-foreground">Private Cloud storage is active. Google Drive remains optional; folders are logical project paths.</p>
+          </div>
+          <span className="rounded-md border border-moss/25 bg-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase text-accent-foreground">Cloud active</span>
+        </div>
+        <div className="grid divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">
+          {driveFolders.map(([name, detail]) => (
+            <button
+              key={name}
+              onClick={() => setFolder(name)}
+              className={`p-3 text-left transition-colors ${folder === name ? "bg-accent" : "hover:bg-secondary"}`}
+            >
+              <span className="flex items-center gap-2 font-mono text-xs text-steel"><FolderOpen className="size-4" />/{name}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{detail}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="ops-section overflow-hidden">
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[.1em] text-steel">/{folder}</p>
+            <p className="mt-1 text-sm font-semibold">Project artifact register</p>
+          </div>
+          <input
+            aria-label="Search deliverables"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search files or document ID"
+            className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+          />
+        </div>
+        <div className="divide-y divide-border">
+          {(folder === "01_Governance_and_QMS" || folder === "00_Root_Audit_Repository") && onOpenCustomerRegister && (
+            <div
+              onClick={onOpenCustomerRegister}
+              className="grid w-full cursor-pointer gap-3 border-b border-border bg-emerald-500/[0.04] px-4 py-3 text-left transition hover:bg-emerald-500/[0.09] sm:grid-cols-[minmax(0,1fr)_auto]"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <FileSpreadsheet className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <strong className="block text-sm text-foreground">Customer Register.xlsx</strong>
+                    <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
+                      MANAGED LIVE REGISTER
+                    </span>
+                  </div>
+                  <small className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
+                    Sales Master Directory · IATF 16949:2016 §8.2.1 · Auto-Synchronized
+                  </small>
+                  <small className="mt-0.5 block text-xs text-muted-foreground">
+                    {portal?.customersRegistry?.length ?? defaultCustomers.length} Registered Accounts · Last synced: Today, Live
+                  </small>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 self-center">
+                <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  Open Register
+                </span>
+              </div>
+            </div>
+          )}
+          {visible.length ? (
+            visible.map((document) => (
+              <button
+                key={document.id}
+                onClick={() => onSelectDocument(document)}
+                className="grid w-full gap-3 px-4 py-3 text-left hover:bg-secondary sm:grid-cols-[minmax(0,1fr)_auto]"
+              >
+                <span className="min-w-0">
+                  <strong className="block text-sm">{document.title}</strong>
+                  <small className="mt-1 block font-mono text-[10px] text-muted-foreground">
+                    {document.part ?? document.type} · Rev {document.revision ?? "—"} · {document.deliverableKind ?? "Controlled document"}
+                  </small>
+                  <small className="mt-1 block text-xs text-muted-foreground">
+                    {fileCount(document)} file revision{fileCount(document) === 1 ? "" : "s"} · {departments.find((department) => department.id === document.departmentId)?.name ?? "Unassigned"}
+                  </small>
+                </span>
+                <span className="self-center text-xs font-semibold text-steel">Open</span>
+              </button>
+            ))
+          ) : !((folder === "01_Governance_and_QMS" || folder === "00_Root_Audit_Repository") && onOpenCustomerRegister) ? (
+            <p className="p-8 text-center text-sm text-muted-foreground">No authorized deliverables in this folder.</p>
+          ) : null}
+        </div>
+      </section>
+    </section>
+  );
 }
 function DocumentDetail({
   document,
