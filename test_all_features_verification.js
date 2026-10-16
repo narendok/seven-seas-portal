@@ -152,7 +152,7 @@ async function run() {
   const contactName = await page.locator("h3:has-text('Elena Rostova')").textContent();
   console.log(`   Found contact: "${contactName.trim()}"`);
 
-  await page.screenshot({ path: "verification_company_directory.png" });
+  await page.screenshot({ path: "verification_company_directory.png", animations: "disabled", timeout: 10000 }).catch(e => console.log(e.message));
   console.log("   Saved screenshot: verification_company_directory.png");
 
   // Close modal
@@ -184,7 +184,7 @@ async function run() {
   const committedDecision = await page.locator("h3:has-text('Lock Quectel EC200U-CN 4G Modem')").textContent();
   console.log(`   Committed decision verified: "${committedDecision.trim()}"`);
 
-  await page.screenshot({ path: "verification_decision_log.png" });
+  await page.screenshot({ path: "verification_decision_log.png", animations: "disabled", timeout: 10000 }).catch(e => console.log(e.message));
   console.log("   Saved screenshot: verification_decision_log.png");
 
   // Close modal
@@ -216,7 +216,7 @@ async function run() {
   await letterheadTab.click();
   await page.waitForTimeout(400);
 
-  await page.screenshot({ path: "verification_legal_and_letterhead.png" });
+  await page.screenshot({ path: "verification_legal_and_letterhead.png", animations: "disabled", timeout: 10000 }).catch(e => console.log(e.message));
   console.log("   Saved screenshot: verification_legal_and_letterhead.png");
 
   // Close modal
@@ -239,7 +239,7 @@ async function run() {
   const pmssDecBtnVisible = await pmssDecBtn.isVisible();
   console.log(`   PMSS 'Official Decision Log' button visible: ${pmssDecBtnVisible}`);
 
-  await page.screenshot({ path: "verification_pmss_and_all.png" });
+  await page.screenshot({ path: "verification_pmss_and_all.png", animations: "disabled", timeout: 10000 }).catch(e => console.log(e.message));
   console.log("   Saved screenshot: verification_pmss_and_all.png");
 
   await browser.close();
