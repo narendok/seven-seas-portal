@@ -49,6 +49,10 @@ import {
   Database,
   Server,
   HardDrive,
+  Globe,
+  Share2,
+  ExternalLink,
+  Sliders,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
@@ -331,6 +335,186 @@ type Persona = {
 };
 type Ai4tSimulation = { stage: number; history: string[] };
 type ProjectScope = "all" | "HLPL-AI4T-01" | "HLPL-SLCT-01" | "HLPL-XLINK-03";
+
+export type DepartmentAnalysisEntry = {
+  departmentCode: string;
+  departmentName: string;
+  lead: string;
+  progress: number;
+  status: "On Track" | "Needs Attention" | "At Risk" | "Completed";
+  currentDeliverable: string;
+  targetDate: string;
+  internalRemarks: string;
+  clientRemarks: string;
+  keyDocumentId: string;
+  stageGate: string;
+  lastUpdated?: string;
+};
+
+export function defaultProjectAnalysis(projectId: string): Record<string, DepartmentAnalysisEntry> {
+  const isAi4t = projectId === "HLPL-AI4T-01";
+  const isXlink = projectId === "HLPL-XLINK-03";
+  const pfx = isAi4t ? "HLPL-AI4T" : isXlink ? "HLPL-XLINK" : "HLPL-SLCT";
+  const customerName = isAi4t ? "Tata Motors Limited" : isXlink ? "Commercial Fleet Operators" : "Select Motors Ltd";
+
+  return {
+    SAL: {
+      departmentCode: "SAL",
+      departmentName: "Sales & Business Development",
+      lead: "Priya Sharma",
+      progress: 100,
+      status: "Completed",
+      currentDeliverable: "Customer SOR & Commercial Lock",
+      targetDate: "2026-10-01",
+      internalRemarks: "Payment terms locked at 30 days net against delivery. Advance for tooling received. Annual volume commit 50k units.",
+      clientRemarks: `Customer SOR requirements accepted in full. Mutual NDA executed. Volume tier pricing locked for ${customerName}.`,
+      keyDocumentId: `${pfx}-SAL-SOR-01`,
+      stageGate: "Stage 3 · Commercial Lock",
+      lastUpdated: "2026-10-15",
+    },
+    EHW: {
+      departmentCode: "EHW",
+      departmentName: "Embedded Hardware Engineering",
+      lead: "Avery Vale",
+      progress: 90,
+      status: "On Track",
+      currentDeliverable: "Schematic Rev 2.1 & Production Gerber Pack",
+      targetDate: "2026-11-15",
+      internalRemarks: "ISO 7637-2 pulse 2a/5b TVS diode clamping verified at 36V. AEC-Q100 Cat-1 modem EC200U-CN RF matching tuned for 850/1800MHz.",
+      clientRemarks: "Hardware architecture frozen with automotive-grade MCU and Quectel 4G modem. Power section validated for 9V–36V transient protection.",
+      keyDocumentId: `${pfx}-EHW-PRS-01`,
+      stageGate: "Stage 7 · Production Design",
+      lastUpdated: "2026-10-16",
+    },
+    ESW: {
+      departmentCode: "ESW",
+      departmentName: "Firmware & Software Engineering",
+      lead: "Devon Lane",
+      progress: 85,
+      status: "On Track",
+      currentDeliverable: "AIS-140 Protocol Stack & CAN J1939 Telemetry",
+      targetDate: "2026-11-20",
+      internalRemarks: "RAM utilization at 68% of 512KB Flash. Watchdog timer and fail-safe recovery verified under simulated cellular dropouts.",
+      clientRemarks: `Firmware build v2.4 passed 72-hour soak testing. ${customerName} CAN J1939 battery telemetry decoding verified.`,
+      keyDocumentId: `${pfx}-ESW-FOTA-01`,
+      stageGate: "Stage 4 · Firmware PoC",
+      lastUpdated: "2026-10-16",
+    },
+    MECH: {
+      departmentCode: "MECH",
+      departmentName: "Mechanical Engineering",
+      lead: "Samira Holt",
+      progress: 80,
+      status: "On Track",
+      currentDeliverable: "IP67 Enclosure & Connector Tooling",
+      targetDate: "2026-11-25",
+      internalRemarks: "O-ring compression FEA analysis completed. Tooling draft angle adjusted by 1.5° on bottom housing for rapid de-molding.",
+      clientRemarks: "IP67 environmental ingress testing passed. Vibration test fixture approved for vehicle chassis mounting bracket.",
+      keyDocumentId: `${pfx}-MECH-CAD-01`,
+      stageGate: "Stage 5 · Tooling Setup",
+      lastUpdated: "2026-10-14",
+    },
+    PUR: {
+      departmentCode: "PUR",
+      departmentName: "Purchasing & Supply Chain",
+      lead: "Morgan Reed",
+      progress: 75,
+      status: "Needs Attention",
+      currentDeliverable: "AEC-Q100 IC Sourcing & Dual-Track POs",
+      targetDate: "2026-11-30",
+      internalRemarks: "Quectel modem lead-time is 6 weeks. Buffer inventory of 5,000 pcs secured with authorized distributor Arrow Electronics.",
+      clientRemarks: "Component sourcing plan finalized. Critical silicon purchase orders placed to secure production delivery window.",
+      keyDocumentId: `${pfx}-PUR-BOM-01`,
+      stageGate: "Stage 5 · SMT Tooling",
+      lastUpdated: "2026-10-16",
+    },
+    QA: {
+      departmentCode: "QA",
+      departmentName: "Quality Assurance & APQP",
+      lead: "Jordan Blake",
+      progress: 80,
+      status: "On Track",
+      currentDeliverable: "DVP&R 18-Test Matrix & TAC ARAI Dossier",
+      targetDate: "2026-12-05",
+      internalRemarks: "AIS-140 pre-compliance thermal shock test completed (100 cycles at -40°C to +85°C). Final TAC submission scheduled.",
+      clientRemarks: "DVP&R pre-compliance completed with 100% test pass. Automotive Type Approval Certificate (TAC) preparation on schedule.",
+      keyDocumentId: `${pfx}-QA-DVP-01`,
+      stageGate: "Stage 6 · DVP&R Verification",
+      lastUpdated: "2026-10-15",
+    },
+    EMF: {
+      departmentCode: "EMF",
+      departmentName: "Manufacturing & SMT Setup",
+      lead: "Casey Rowan",
+      progress: 70,
+      status: "On Track",
+      currentDeliverable: "SMT Line 2 Setup & Reflow Thermal Profile",
+      targetDate: "2026-12-10",
+      internalRemarks: "3D SPI stencil aperture optimized for fine-pitch BGA. Reflow peak temperature verified at 242°C with SAC305 lead-free paste.",
+      clientRemarks: "SMT Line 2 validated for high-volume automated production. First-off pilot run of 200 units initiated.",
+      keyDocumentId: `${pfx}-EMF-CP-01`,
+      stageGate: "Stage 5 · SMT Pilot Build",
+      lastUpdated: "2026-10-13",
+    },
+    TST: {
+      departmentCode: "TST",
+      departmentName: "Production & Automated EOL Testing",
+      lead: "Mina Cross",
+      progress: 75,
+      status: "On Track",
+      currentDeliverable: "Automated EOL Test Jig & PDI Calibration",
+      targetDate: "2026-12-15",
+      internalRemarks: "Jig cycle time clocked at 48 seconds per unit including GNSS TTFF fix and RF power verification. Barcode laser scanner linked.",
+      clientRemarks: "100% End-of-Line automated testing established. PDI zero-defect inspection release certificate ready.",
+      keyDocumentId: `${pfx}-TST-PDI-01`,
+      stageGate: "Stage 9 · PDI Inspection",
+      lastUpdated: "2026-10-15",
+    },
+    FIN: {
+      departmentCode: "FIN",
+      departmentName: "Accounts & Finance",
+      lead: "Priya Voss",
+      progress: 90,
+      status: "On Track",
+      currentDeliverable: "Commercial Tax Invoice & Stage Billing Milestone",
+      targetDate: "2026-12-20",
+      internalRemarks: "Tooling advance collected. Working capital credit facility active with State Bank of India for mass component buy.",
+      clientRemarks: `GST compliance and milestone billing documentation aligned with ${customerName} vendor portal requirements.`,
+      keyDocumentId: `${pfx}-FIN-INV-01`,
+      stageGate: "Stage 9 · Commercial Release",
+      lastUpdated: "2026-10-12",
+    },
+    SIT: {
+      departmentCode: "SIT",
+      departmentName: "Service & IT Infrastructure",
+      lead: "Kai Morgan",
+      progress: 85,
+      status: "On Track",
+      currentDeliverable: "AWS Telematics Broker & Private APN Ingestion",
+      targetDate: "2026-12-22",
+      internalRemarks: "Dual Airtel/Jio eSIM profiles tested with auto-switching logic. AWS IoT Core connection throughput verified at 10k msgs/sec.",
+      clientRemarks: `Dedicated cloud backend and fleet telemetry APIs connected with ${customerName} Fleet Edge platform.`,
+      keyDocumentId: `${pfx}-SIT-INFRA-01`,
+      stageGate: "Stage 8 · Field TAC Integration",
+      lastUpdated: "2026-10-14",
+    },
+    HR: {
+      departmentCode: "HR",
+      departmentName: "HR & Operations Competency",
+      lead: "Taylor Quinn",
+      progress: 95,
+      status: "Completed",
+      currentDeliverable: "Operator Skill Matrix & Assembly Certification",
+      targetDate: "2026-10-10",
+      internalRemarks: "All 18 Line 2 operators certified Level 4/4 on ESD handling and IPC-A-610 Class 3 standard under HLPL/F/HR/03.",
+      clientRemarks: "Production workforce certified under IATF 16949 competency standards. Shift capacity aligned with 50,000 units/year volume.",
+      keyDocumentId: "HLPL/F/HR/03",
+      stageGate: "Stage 9 · Competency Verification",
+      lastUpdated: "2026-10-10",
+    },
+  };
+}
+
 type PortalState = {
   demoLoaded: boolean;
   demoSnapshot?: PortalState | undefined;
@@ -357,6 +541,7 @@ type PortalState = {
   customersRegistry?: CustomerRecord[] | undefined;
   enquiriesOpportunities?: EnquiryOpportunity[] | undefined;
   modularConfigs?: Record<string, ProjectModularConfiguration> | undefined;
+  projectAnalysis?: Record<string, Record<string, DepartmentAnalysisEntry>> | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -1987,6 +2172,16 @@ function Portal() {
             <PersonaSwitcher persona={persona} onSelect={switchPersona} />
             <HeaderAction label="PMSS" icon={ClipboardCheck} onClick={() => setView("pmss")} />
             <HeaderAction
+              label="Project Analysis (Page 1)"
+              icon={Layers}
+              onClick={() => {
+                setSelectedProjectId((prev) => prev || "HLPL-AI4T-01");
+                const match = activeRecords.find((r) => (r.reference === selectedProjectId || r.reference === "HLPL-AI4T-01") && r.type === "Project");
+                if (match) setSelectedId(match.id);
+                setView("project");
+              }}
+            />
+            <HeaderAction
               label="Search"
               icon={Search}
               onClick={() => {
@@ -2057,13 +2252,26 @@ function Portal() {
               onSelect={openRecord}
               onSelectDocument={openDocument}
             />
-          ) : activeArea === "home" && view === "project" && selected ? (
+          ) : view === "project" ? (
             <ProjectDetail
-              project={selected}
+              project={selectedProjectProfile ?? selected ?? fallbackProjectRecord(selectedProjectId, activeRecords)}
               records={activeRecords}
               documents={portal.documents}
-              onBack={() => navigate("home")}
+              portal={portal}
+              onUpdate={update}
+              onLog={log}
+              activeDepartmentId={departmentContext}
+              persona={persona}
+              onBack={() => navigate(activeArea === "home" ? "home" : activeArea)}
               onSelect={openRecord}
+              onOpenDocument={openDocument}
+              onOpenDraftHub={() => setDraftHubOpen(true)}
+              onSelectProject={(id) => {
+                setSelectedProjectId(id);
+                const match = activeRecords.find((r) => r.reference === id && r.type === "Project");
+                if (match) setSelectedId(match.id);
+              }}
+              selectedProjectId={selectedProjectId}
             />
           ) : activeArea === "home" && view === "assignee" && selectedAssignee ? (
             <AssigneeWorkload
@@ -2081,14 +2289,14 @@ function Portal() {
               onAdmin={() => setModal("admin")}
               onUpdateTask={updateTask}
               onOpenProject={(id) => {
+                setSelectedProjectId(id);
                 const projectRecord = activeRecords.find(
                   (record) => record.id === id || record.reference === id,
                 );
                 if (projectRecord) {
                   setSelectedId(projectRecord.id);
-                  setSelectedProjectId(projectRecord.reference);
-                  setView("project");
                 }
+                setView("project");
               }}
               onOpenAssignee={(assignee) => {
                 setSelectedAssignee(assignee);
@@ -2726,7 +2934,8 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
-            <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" primary />
+            <Action onClick={() => onOpenProject("HLPL-AI4T-01")} label="Project Analysis (Page 1)" primary />
+            <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" />
             <Action onClick={onOpenAi4t} label="End-to-End Project Lifecycle Hub (HLPL-AI4T-01)" primary />
             {onOpenFeasibilityGate && (
               <Action onClick={() => onOpenFeasibilityGate("HLPL-AI4T-01")} label="Feasibility & Hardware Gate" />
@@ -3389,97 +3598,1075 @@ function TaskCard({
 function TaskInspectionModal({ tasks, departments, onClose, onDone }: { tasks: RecordItem[]; departments: Department[]; onClose: () => void; onDone: (task: RecordItem) => void }) {
   return <Modal title="Expanded task inspection" onClose={onClose} wide><div className="space-y-3">{tasks.map((task) => <article key={task.id} className="border border-border bg-panel p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-mono text-[10px] text-steel">{departments.find((item) => item.id === task.departmentId)?.code ?? "—"} · {task.reference}</p><h3 className="mt-1 font-semibold">{task.title}</h3></div><Status status={task.status} /></div><p className="mt-2 text-sm text-muted-foreground">{task.notes || "No further description recorded."}</p><p className="mt-3 text-xs font-medium text-steel">Next action: Completion unblocks the next controlled lifecycle handoff.</p><div className="mt-4"><Action label="Mark done" onClick={() => onDone(task)} /></div></article>)}</div></Modal>;
 }
+function fallbackProjectRecord(projectId: string, records: RecordItem[]): RecordItem {
+  const found = records.find(
+    (r) => r.type === "Project" && (r.reference === projectId || r.id === projectId),
+  ) ?? records.find((r) => r.type === "Project");
+
+  if (found) return found;
+
+  const profile = projectDocumentProfiles[projectId] ?? projectDocumentProfiles["HLPL-AI4T-01"];
+  return {
+    id: `project-${projectId}`,
+    reference: projectId,
+    title: profile?.name ?? `${projectId} Telematics Platform`,
+    type: "Project",
+    area: "home",
+    status: "Approved",
+    priority: "High",
+    departmentId: "demo-dept-sal",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    notes: "Master automotive telematics platform program record.",
+    fields: {
+      projectId,
+      customer: profile?.customer ?? "Tata Motors Limited",
+      quantity: profile?.quantity ?? "50,000 units / year",
+      techSpec: profile?.techSpec ?? "AIS-140 / 4G / IP67 / CAN J1939",
+      currentStage: "Stage 8 · Type Approval TAC",
+    },
+  };
+}
+
 function ProjectDetail({
   project,
   records,
   documents,
+  portal,
+  onUpdate,
+  onLog,
+  activeDepartmentId,
+  persona,
   onBack,
   onSelect,
+  onOpenDocument,
+  onOpenDraftHub,
+  onSelectProject,
+  selectedProjectId,
 }: {
   project: RecordItem;
   records: RecordItem[];
   documents: PortalState["documents"];
+  portal: PortalState;
+  onUpdate: (recipe: (state: PortalState) => PortalState) => void;
+  onLog: (action: string, detail: string) => void;
+  activeDepartmentId?: string | null;
+  persona: Persona;
   onBack: () => void;
   onSelect: (record: RecordItem) => void;
+  onOpenDocument?: (doc: ControlledDocument) => void;
+  onOpenDraftHub?: () => void;
+  onSelectProject?: (projectId: string) => void;
+  selectedProjectId?: string;
 }) {
+  const [tab, setTab] = useState<"shared" | "dept" | "client" | "records">("shared");
+  const activeProjectKey = project.fields?.["projectId"] || project.reference || selectedProjectId || "HLPL-AI4T-01";
+  const profile = projectDocumentProfiles[activeProjectKey] ?? projectDocumentProfiles["HLPL-AI4T-01"]!;
+
+  const analysisMap: Record<string, DepartmentAnalysisEntry> = useMemo(() => {
+    return portal.projectAnalysis?.[activeProjectKey] ?? defaultProjectAnalysis(activeProjectKey);
+  }, [portal.projectAnalysis, activeProjectKey]);
+
+  const defaultDeptCode = useMemo(() => {
+    if (persona.kind === "lead" && persona.departmentId) {
+      const d = portal.departments.find((dep) => dep.id === persona.departmentId);
+      if (d?.code && analysisMap[d.code]) return d.code;
+    }
+    if (activeDepartmentId) {
+      const d = portal.departments.find((dep) => dep.id === activeDepartmentId);
+      if (d?.code && analysisMap[d.code]) return d.code;
+    }
+    return "EHW";
+  }, [persona, activeDepartmentId, portal.departments, analysisMap]);
+
+  const [selectedDeptCode, setSelectedDeptCode] = useState<string>(defaultDeptCode);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [copyNotice, setCopyNotice] = useState(false);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [clientAckDone, setClientAckDone] = useState(false);
+
+  const [deptDraft, setDeptDraft] = useState<DepartmentAnalysisEntry>(() => {
+    return analysisMap[selectedDeptCode] ?? analysisMap["EHW"]!;
+  });
+
+  useEffect(() => {
+    if (analysisMap[selectedDeptCode]) {
+      setDeptDraft(analysisMap[selectedDeptCode]!);
+    }
+  }, [selectedDeptCode, analysisMap]);
+
+  const saveDeptAnalysis = () => {
+    onUpdate((state) => ({
+      ...state,
+      projectAnalysis: {
+        ...(state.projectAnalysis ?? {}),
+        [activeProjectKey]: {
+          ...(state.projectAnalysis?.[activeProjectKey] ?? defaultProjectAnalysis(activeProjectKey)),
+          [selectedDeptCode]: {
+            ...deptDraft,
+            lastUpdated: new Date().toISOString().slice(0, 16).replace("T", " "),
+          },
+        },
+      },
+    }));
+    onLog(
+      "Project department analysis updated",
+      `${selectedDeptCode} updated internal and client remarks for ${activeProjectKey}`,
+    );
+    setSaveNotice(`✓ ${selectedDeptCode} analysis and remarks saved. Synchronized to Page 1 shared view and Client Preview.`);
+    window.setTimeout(() => setSaveNotice(null), 3500);
+  };
+
+  const clientShareToken = `cl_${activeProjectKey.toLowerCase().replace(/[^a-z0-9]/g, "")}_auth8f9a2b`;
+  const shareUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/client-preview/${activeProjectKey}?token=${clientShareToken}&view=client`
+    : `https://portal.hexense.com/shared/project/${activeProjectKey}?token=${clientShareToken}&view=client`;
+
+  const copyShareLink = async () => {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+      }
+      setCopyNotice(true);
+      window.setTimeout(() => setCopyNotice(false), 3000);
+      onLog("Client share link copied", `Shareable link for ${activeProjectKey} copied to clipboard`);
+    } catch {
+      setCopyNotice(true);
+      window.setTimeout(() => setCopyNotice(false), 3000);
+    }
+  };
+
+  const allEntries = useMemo(() => Object.values(analysisMap), [analysisMap]);
+  const avgProgress = useMemo(
+    () => Math.round(allEntries.reduce((acc, curr) => acc + (curr.progress || 0), 0) / (allEntries.length || 1)),
+    [allEntries],
+  );
+  const completedCount = useMemo(() => allEntries.filter((e) => e.status === "Completed").length, [allEntries]);
+  const onTrackCount = useMemo(() => allEntries.filter((e) => e.status === "On Track").length, [allEntries]);
+  const attentionCount = useMemo(
+    () => allEntries.filter((e) => e.status === "Needs Attention" || e.status === "At Risk").length,
+    [allEntries],
+  );
+
+  const filteredEntries = useMemo(() => {
+    return allEntries.filter((entry) => {
+      const q = searchQuery.toLowerCase();
+      const matchesQuery =
+        searchQuery === "" ||
+        entry.departmentName.toLowerCase().includes(q) ||
+        entry.departmentCode.toLowerCase().includes(q) ||
+        entry.currentDeliverable.toLowerCase().includes(q) ||
+        entry.lead.toLowerCase().includes(q) ||
+        entry.internalRemarks.toLowerCase().includes(q) ||
+        entry.clientRemarks.toLowerCase().includes(q);
+      const matchesStatus = statusFilter === "all" || entry.status === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [allEntries, searchQuery, statusFilter]);
+
   const related = records.filter(
     (record) =>
       record.id === project.id ||
       (record.fields["linkedRecords"] ?? "").includes(project.reference) ||
-      record.fields["projectId"] === project.id,
+      record.fields["projectId"] === project.id ||
+      record.fields["projectId"] === activeProjectKey,
   );
   const files = documents.filter(
     (document) =>
       document.departmentId === project.departmentId ||
-      document.linkedRecordRefs?.includes(project.reference),
+      document.linkedRecordRefs?.includes(project.reference) ||
+      document.type?.includes(activeProjectKey.replace("HLPL-", "")),
   );
+
+  const deptCodes = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "TST", "FIN", "SIT", "HR"];
+
   return (
-    <>
-      <button
-        onClick={onBack}
-        className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-steel"
-      >
-        <ArrowLeft className="size-4" />
-        Back to command center
-      </button>
-      <PageHeader
-        eyebrow="Project detail"
-        title={project.title}
-        description="Related files, BOM, tasks and milestones for the selected project."
-        actions={null}
-      />
-      <section className="grid gap-5 lg:grid-cols-2">
-        <div className="border border-border bg-card p-5">
-          <p className="font-semibold">Related records</p>
-          <div className="mt-3 space-y-2">
-            {related.map((record) => (
-              <button
-                key={record.id}
-                onClick={() => onSelect(record)}
-                className="block w-full border-b border-border py-3 text-left last:border-0"
-              >
-                <span className="font-mono text-xs text-muted-foreground">{record.reference}</span>
-                <strong className="mt-1 block">{record.title}</strong>
-                <small className="text-muted-foreground">
-                  {record.type} · {record.fields["lifecycleStage"] ?? record.status}
-                </small>
-              </button>
-            ))}
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-steel hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Back to Command Center
+          </button>
+          <span className="text-muted-foreground/40">/</span>
+          <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Projects</span>
+          <span className="text-muted-foreground/40">/</span>
+          <span className="font-mono text-xs font-bold text-foreground">{activeProjectKey}</span>
+        </div>
+
+        {onSelectProject && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Switch Program:</span>
+            <select
+              value={activeProjectKey}
+              onChange={(e) => onSelectProject(e.target.value)}
+              className="h-8 rounded border border-border bg-background px-2.5 text-xs font-semibold"
+            >
+              <option value="HLPL-AI4T-01">HLPL-AI4T-01 · Tata Ace EV 4G</option>
+              <option value="HLPL-SLCT-01">HLPL-SLCT-01 · AIS-140 GPS</option>
+              <option value="HLPL-XLINK-03">HLPL-XLINK-03 · Commercial CV</option>
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Program Identity Card */}
+      <section className="rounded-lg border border-border bg-card p-5 space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs font-bold bg-primary/10 text-primary px-2.5 py-0.5 rounded">
+                {activeProjectKey}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                {profile.customer}
+              </span>
+              <span className="rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase">
+                {project.fields?.["currentStage"] ?? "Stage 8 · Type Approval TAC"}
+              </span>
+            </div>
+            <h2 className="mt-2 text-lg font-bold tracking-tight text-foreground md:text-xl">
+              {profile.name}
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {profile.techSpec} · {profile.compliance} · {profile.environmental}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded border border-border bg-panel px-3 py-2 text-right">
+              <p className="font-mono text-[10px] uppercase text-muted-foreground">Planned Volume</p>
+              <p className="text-xs font-bold text-foreground">{profile.quantity}</p>
+            </div>
+            <div className="rounded border border-border bg-panel px-3 py-2 text-right">
+              <p className="font-mono text-[10px] uppercase text-muted-foreground">Contract Value</p>
+              <p className="text-xs font-bold text-foreground">{profile.commercialValue}</p>
+            </div>
           </div>
         </div>
-        <div className="border border-border bg-panel p-5">
-          <p className="font-semibold">Files & controlled documents</p>
-          <div className="mt-3 space-y-3">
-            {files.length ? (
-              files.map((document) => (
-                <a
-                  key={document.id}
-                  href={document.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block border-b border-border pb-3 text-sm font-medium text-steel"
-                >
-                  {document.title}
-                  <span className="mt-1 block text-xs text-muted-foreground">{document.type}</span>
-                </a>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No controlled documents are linked yet.
-              </p>
-            )}
-          </div>
-          <p className="mt-6 font-semibold">Milestones</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {project.fields["projectStage"] ??
-              project.fields["lifecycleStage"] ??
-              "No milestones set."}
-          </p>
+
+        {/* 4-Tab Navigation */}
+        <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+          <button
+            onClick={() => setTab("shared")}
+            className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors ${
+              tab === "shared"
+                ? "bg-primary text-primary-foreground shadow"
+                : "border border-border bg-panel text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Layers className="size-4" />
+            All-in-One Shared Analysis (Page 1)
+          </button>
+
+          <button
+            onClick={() => setTab("dept")}
+            className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors ${
+              tab === "dept"
+                ? "bg-primary text-primary-foreground shadow"
+                : "border border-border bg-panel text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Sliders className="size-4" />
+            Department Focus & Documentation
+          </button>
+
+          <button
+            onClick={() => setTab("client")}
+            className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors ${
+              tab === "client"
+                ? "bg-primary text-primary-foreground shadow"
+                : "border border-border bg-panel text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Globe className="size-4" />
+            Client Preview & Share Link
+          </button>
+
+          <button
+            onClick={() => setTab("records")}
+            className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors ${
+              tab === "records"
+                ? "bg-primary text-primary-foreground shadow"
+                : "border border-border bg-panel text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <FolderOpen className="size-4" />
+            Project Records & Files ({related.length + files.length})
+          </button>
         </div>
       </section>
-    </>
+
+      {/* TAB 1: ALL-IN-ONE SHARED ANALYSIS (PAGE 1) */}
+      {tab === "shared" && (
+        <div className="space-y-6">
+          <div className="rounded-lg border border-border bg-panel p-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Layers className="size-4 text-primary" />
+                  All-in-One Shared Analysis & Cross-Department Matrix (Page 1 View)
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Common view shared across all 11 departments. Tracks synchronized engineering progress, deliverables, company-confidential internal remarks, and client-facing status.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-bold text-primary">{avgProgress}% Overall Progress</span>
+              </div>
+            </div>
+
+            {/* KPI Summary Strip */}
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="rounded border border-border bg-card p-3">
+                <p className="text-[11px] text-muted-foreground">Total Completion</p>
+                <p className="mt-1 text-lg font-bold text-foreground">{avgProgress}%</p>
+                <div className="mt-2 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${avgProgress}%` }} />
+                </div>
+              </div>
+
+              <div className="rounded border border-border bg-card p-3">
+                <p className="text-[11px] text-muted-foreground">Completed</p>
+                <p className="mt-1 text-lg font-bold text-blue-500">{completedCount} / 11</p>
+                <p className="text-[10px] text-muted-foreground">Depts signed off</p>
+              </div>
+
+              <div className="rounded border border-border bg-card p-3">
+                <p className="text-[11px] text-muted-foreground">On Track</p>
+                <p className="mt-1 text-lg font-bold text-emerald-500">{onTrackCount} / 11</p>
+                <p className="text-[10px] text-muted-foreground">Meeting schedule</p>
+              </div>
+
+              <div className="rounded border border-border bg-card p-3">
+                <p className="text-[11px] text-muted-foreground">Needs Attention</p>
+                <p className="mt-1 text-lg font-bold text-amber-500">{attentionCount}</p>
+                <p className="text-[10px] text-muted-foreground">Sourcing lead times</p>
+              </div>
+
+              <div className="rounded border border-border bg-card p-3">
+                <p className="text-[11px] text-muted-foreground">Current Gate</p>
+                <p className="mt-1 text-xs font-bold text-foreground truncate" title="Stage 8 TAC & ARAI">
+                  Stage 8 TAC
+                </p>
+                <p className="text-[10px] text-muted-foreground">Pre-series mass run</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                placeholder="Search department, lead, or deliverable..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 w-64 rounded-lg border border-border bg-background px-3 text-xs"
+              />
+              <div className="flex items-center gap-1">
+                {(["all", "On Track", "Needs Attention", "Completed"] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatusFilter(st)}
+                    className={`h-8 px-2.5 rounded text-xs font-medium transition-colors ${
+                      statusFilter === st
+                        ? "bg-secondary font-bold text-foreground border border-border"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {st === "all" ? `All (${allEntries.length})` : st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <span className="text-[11px] text-muted-foreground">
+              Showing {filteredEntries.length} of 11 departments
+            </span>
+          </div>
+
+          {/* 11-Department Matrix Cards */}
+          <div className="space-y-4">
+            {filteredEntries.map((entry) => (
+              <div
+                key={entry.departmentCode}
+                className="rounded-lg border border-border bg-card p-4 space-y-3.5 shadow-sm transition-all hover:border-primary/40"
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-3">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="font-mono text-xs font-bold rounded bg-primary/10 text-primary px-2.5 py-1">
+                      {entry.departmentCode}
+                    </span>
+                    <strong className="text-sm font-bold text-foreground">
+                      {entry.departmentName}
+                    </strong>
+                    <span className="text-xs text-muted-foreground">· Lead: {entry.lead}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        entry.status === "Completed"
+                          ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                          : entry.status === "On Track"
+                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                      }`}
+                    >
+                      {entry.status}
+                    </span>
+                    <span className="font-mono text-xs font-bold text-foreground bg-panel border border-border px-2 py-0.5 rounded">
+                      {entry.progress}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="space-y-1">
+                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        entry.status === "Completed"
+                          ? "bg-blue-500"
+                          : entry.status === "Needs Attention"
+                          ? "bg-amber-500"
+                          : "bg-primary"
+                      }`}
+                      style={{ width: `${entry.progress}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Deliverables Meta Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Current Deliverable:</span>{" "}
+                    <strong className="text-foreground">{entry.currentDeliverable}</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Target Gate:</span>{" "}
+                    <span className="font-mono text-steel">{entry.stageGate}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Controlled Doc:</span>{" "}
+                    <span className="font-mono font-medium text-foreground">{entry.keyDocumentId}</span>
+                  </div>
+                </div>
+
+                {/* DUAL REMARKS CALLOUT GRID */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  {/* Internal Remarks Panel */}
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                        <Lock className="size-3" />
+                        Internal Remarks · Company-Confidential
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">Page 1 Internal Only</span>
+                    </div>
+                    <p className="text-xs text-foreground leading-relaxed pt-1">
+                      {entry.internalRemarks}
+                    </p>
+                  </div>
+
+                  {/* Client's Remarks Panel */}
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                        <Globe className="size-3" />
+                        Client's Remarks · Shared OEM Status
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">Shared via Client Link</span>
+                    </div>
+                    <p className="text-xs text-foreground leading-relaxed pt-1">
+                      {entry.clientRemarks}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/50">
+                  <span className="text-[10px] text-muted-foreground">
+                    Last updated: {entry.lastUpdated || "2026-10-16"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedDeptCode(entry.departmentCode);
+                        setTab("dept");
+                      }}
+                      className="inline-flex h-8 items-center gap-1.5 rounded border border-border bg-panel px-3 text-xs font-semibold text-foreground hover:bg-secondary"
+                    >
+                      <Sliders className="size-3" />
+                      Edit {entry.departmentCode} Documentation & Remarks
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-lg border border-border/60 bg-panel/50 p-3.5 text-xs text-muted-foreground flex items-center gap-2">
+            <Sparkles className="size-4 text-primary shrink-0" />
+            <span>
+              <strong>Symmetrical Project Update Active:</strong> Every department sees this shared Page 1 view. Modifications made in Department Focus immediately update this common overview across the organization.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: DEPARTMENT FOCUS & EDITABLE DOCUMENTATION */}
+      {tab === "dept" && (
+        <div className="space-y-6">
+          <div className="rounded-lg border border-border bg-panel p-4">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Sliders className="size-4 text-primary" />
+              Department Focus & Editable Engineering Workspace
+            </h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Select your department below to update active deliverables, revise company-confidential internal remarks, and set client-facing status summaries.
+            </p>
+
+            {/* Department Selector Pills */}
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {deptCodes.map((code) => {
+                const isSelected = selectedDeptCode === code;
+                return (
+                  <button
+                    key={code}
+                    onClick={() => setSelectedDeptCode(code)}
+                    className={`h-8 px-3 rounded-md text-xs font-bold transition-all ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow"
+                        : "border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {code}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {saveNotice && (
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="size-4 shrink-0" />
+              <span>{saveNotice}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column: Department Context & Baseline */}
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div>
+                    <span className="font-mono text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded">
+                      {deptDraft.departmentCode}
+                    </span>
+                    <h4 className="mt-1 text-sm font-bold text-foreground">
+                      {deptDraft.departmentName}
+                    </h4>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Lead: {deptDraft.lead}</span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase font-mono">
+                      Active Stage Gate
+                    </span>
+                    <strong className="text-foreground">{deptDraft.stageGate}</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase font-mono">
+                      Primary Controlled Doc
+                    </span>
+                    <strong className="font-mono text-steel">{deptDraft.keyDocumentId}</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase font-mono">
+                      Current Target Date
+                    </span>
+                    <strong className="text-foreground">{deptDraft.targetDate}</strong>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-border flex flex-col gap-2">
+                  {onOpenDraftHub && (
+                    <button
+                      onClick={onOpenDraftHub}
+                      className="w-full h-8 rounded border border-border bg-panel text-xs font-semibold text-foreground hover:bg-secondary flex items-center justify-center gap-1.5"
+                    >
+                      <FileText className="size-3.5" />
+                      Open Full Document Viewer / Print
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setTab("shared")}
+                    className="w-full h-8 rounded border border-border bg-card text-xs font-semibold text-foreground hover:bg-secondary flex items-center justify-center gap-1.5"
+                  >
+                    <Layers className="size-3.5 text-primary" />
+                    Back to Page 1 Shared Matrix
+                  </button>
+                </div>
+              </div>
+
+              {/* Baseline Program specs */}
+              <div className="rounded-lg border border-border bg-panel p-4 space-y-2 text-xs">
+                <p className="font-bold text-foreground uppercase tracking-wider text-[10px] font-mono">
+                  Program Baseline Specifications
+                </p>
+                <div className="space-y-1 text-muted-foreground">
+                  <p><strong>Customer:</strong> {profile.customer}</p>
+                  <p><strong>Vehicle Model:</strong> Tata Ace EV / Commercial Gateway</p>
+                  <p><strong>Operating Range:</strong> {profile.environmental}</p>
+                  <p><strong>Compliance Standard:</strong> {profile.compliance}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Editable Analysis & Remarks Form */}
+            <div className="lg:col-span-2 rounded-lg border border-border bg-card p-5 space-y-4">
+              <div className="border-b border-border pb-3">
+                <h4 className="text-sm font-bold text-foreground">
+                  Edit {deptDraft.departmentName} Analysis & Remarks
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Update deliverable progress, target dates, and maintain strict separation between internal risk remarks and client-facing summaries.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Progress Slider */}
+                <div className="space-y-1.5 rounded-lg border border-border bg-panel p-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-foreground">Completion Progress</label>
+                    <span className="font-mono text-xs font-bold text-primary">{deptDraft.progress}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={deptDraft.progress}
+                    onChange={(e) => setDeptDraft({ ...deptDraft, progress: Number(e.target.value) })}
+                    className="w-full accent-primary"
+                  />
+                </div>
+
+                {/* Status Dropdown */}
+                <div className="space-y-1.5 rounded-lg border border-border bg-panel p-3">
+                  <label className="text-xs font-bold text-foreground">Department Status</label>
+                  <select
+                    value={deptDraft.status}
+                    onChange={(e) =>
+                      setDeptDraft({
+                        ...deptDraft,
+                        status: e.target.value as DepartmentAnalysisEntry["status"],
+                      })
+                    }
+                    className="w-full h-8 rounded border border-border bg-background px-2 text-xs font-semibold"
+                  >
+                    <option value="On Track">On Track</option>
+                    <option value="Needs Attention">Needs Attention</option>
+                    <option value="At Risk">At Risk</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground">Current Deliverable</label>
+                  <input
+                    type="text"
+                    value={deptDraft.currentDeliverable}
+                    onChange={(e) => setDeptDraft({ ...deptDraft, currentDeliverable: e.target.value })}
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground">Target Completion Date</label>
+                  <input
+                    type="text"
+                    value={deptDraft.targetDate}
+                    onChange={(e) => setDeptDraft({ ...deptDraft, targetDate: e.target.value })}
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Editable Internal Remarks */}
+              <div className="space-y-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3.5">
+                <div className="flex items-center justify-between">
+                  <label className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    <Lock className="size-3.5" />
+                    Internal Remarks (Company-Confidential)
+                  </label>
+                  <span className="text-[10px] text-muted-foreground">Visible on Page 1 · Hidden from client</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Confidential technical notes, risk assessments, supplier lead-time buffers, and HOD observations.
+                </p>
+                <textarea
+                  rows={3}
+                  value={deptDraft.internalRemarks}
+                  onChange={(e) => setDeptDraft({ ...deptDraft, internalRemarks: e.target.value })}
+                  className="w-full rounded-lg border border-amber-500/30 bg-background p-2.5 text-xs leading-relaxed text-foreground"
+                />
+              </div>
+
+              {/* Editable Client Remarks */}
+              <div className="space-y-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3.5">
+                <div className="flex items-center justify-between">
+                  <label className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <Globe className="size-3.5" />
+                    Client's Remarks (Customer-Facing Report)
+                  </label>
+                  <span className="text-[10px] text-muted-foreground">Shared on public client preview link</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Official progress update presented to the OEM client (Tata Motors) on their shared link portal.
+                </p>
+                <textarea
+                  rows={3}
+                  value={deptDraft.clientRemarks}
+                  onChange={(e) => setDeptDraft({ ...deptDraft, clientRemarks: e.target.value })}
+                  className="w-full rounded-lg border border-emerald-500/30 bg-background p-2.5 text-xs leading-relaxed text-foreground"
+                />
+              </div>
+
+              {/* Save Button */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <span className="text-[11px] text-muted-foreground">
+                  Pressing save synchronizes both remarks across the entire portal.
+                </span>
+                <button
+                  onClick={saveDeptAnalysis}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 shadow"
+                >
+                  <Check className="size-4" />
+                  Save Department Analysis & Remarks
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: CLIENT PREVIEW & SHARE LINK */}
+      {tab === "client" && (
+        <div className="space-y-6">
+          {/* Top Share Bar */}
+          <div className="rounded-lg border border-border bg-panel p-4 space-y-3">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Share2 className="size-4 text-primary" />
+                  Shareable Client Portal Link & Security Token
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Distribute this direct link to OEM fleet managers and external clients. Renders the sanitized, client-safe progress dashboard with internal remarks excluded.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-500">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Client Link Active
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={shareUrl}
+                className="h-10 flex-1 rounded-lg border border-border bg-background px-3 font-mono text-xs text-foreground select-all"
+              />
+              <button
+                onClick={copyShareLink}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 shadow shrink-0"
+              >
+                {copyNotice ? (
+                  <>
+                    <Check className="size-4" />
+                    Copied to Clipboard!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-4" />
+                    Copy Client Link
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-muted-foreground">
+              <span><strong>Access Mode:</strong> Read-Only OEM Customer Portal</span>
+              <span>·</span>
+              <span><strong>Token:</strong> <code className="font-mono bg-background px-1 py-0.5 rounded border border-border">{clientShareToken}</code></span>
+              <span>·</span>
+              <span><strong>Domain Restriction:</strong> @tatamotors.com</span>
+              <span>·</span>
+              <span><strong>Token Expiry:</strong> 30 Days</span>
+            </div>
+          </div>
+
+          {/* Simulated Client Portal View */}
+          <div className="rounded-xl border-2 border-primary/30 bg-card overflow-hidden shadow-lg">
+            {/* Branded Header */}
+            <div className="bg-primary/10 border-b border-border p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-10 place-items-center rounded-lg bg-primary text-primary-foreground font-bold">
+                    SS
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      HEXENSE LABS · OEM CUSTOMER PORTAL
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Program: {activeProjectKey} · {profile.name}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="font-mono text-xs font-bold text-foreground block">
+                    {profile.customer}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">External Client Stakeholder View</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sanitization Shield Banner */}
+            <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-5 py-2.5 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2.5">
+              <ShieldCheck className="size-4 shrink-0 text-emerald-500" />
+              <span>
+                <strong>Client-Safe Filter Active:</strong> Sensitive internal risk evaluations, component cost structures, and confidential internal remarks are completely omitted. Only verified milestones and client-approved reports are displayed.
+              </span>
+            </div>
+
+            {/* Program Milestones Overview */}
+            <div className="p-5 space-y-6">
+              <div className="rounded-lg border border-border bg-panel p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Program Milestones & APQP Progression
+                  </h4>
+                  <span className="text-xs font-bold text-primary">{avgProgress}% Completed</span>
+                </div>
+
+                <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full bg-emerald-500" style={{ width: `${avgProgress}%` }} />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-xs">
+                  <div className="rounded border border-border bg-background p-2">
+                    <span className="text-muted-foreground text-[10px]">Stage 1 · Intake</span>
+                    <p className="font-bold text-emerald-500">✓ Completed</p>
+                  </div>
+                  <div className="rounded border border-border bg-background p-2">
+                    <span className="text-muted-foreground text-[10px]">Stage 3 · Commercial</span>
+                    <p className="font-bold text-emerald-500">✓ Locked</p>
+                  </div>
+                  <div className="rounded border border-border bg-background p-2">
+                    <span className="text-muted-foreground text-[10px]">Stage 6 · DVP&R</span>
+                    <p className="font-bold text-emerald-500">✓ 18/18 Tests Pass</p>
+                  </div>
+                  <div className="rounded border border-border bg-background p-2">
+                    <span className="text-muted-foreground text-[10px]">Stage 8 · TAC ARAI</span>
+                    <p className="font-bold text-primary">In Progress</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Client-Facing Department Status Table */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Department Milestone Reports & Verified Client Deliverables
+                </h4>
+
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-panel font-mono text-[10px] uppercase text-muted-foreground">
+                      <tr>
+                        <th className="p-3">Department</th>
+                        <th className="p-3">Deliverable</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Client Progress Remarks (Verified)</th>
+                        <th className="p-3">Target Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {allEntries.map((entry) => (
+                        <tr key={entry.departmentCode} className="hover:bg-secondary/40">
+                          <td className="p-3 whitespace-nowrap">
+                            <span className="font-mono font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[11px] mr-1.5">
+                              {entry.departmentCode}
+                            </span>
+                            <strong>{entry.departmentName}</strong>
+                          </td>
+                          <td className="p-3 font-medium text-foreground">
+                            {entry.currentDeliverable}
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                entry.status === "Completed"
+                                  ? "bg-blue-500/10 text-blue-500"
+                                  : entry.status === "On Track"
+                                  ? "bg-emerald-500/10 text-emerald-500"
+                                  : "bg-amber-500/10 text-amber-500"
+                              }`}
+                            >
+                              {entry.status}
+                            </span>
+                          </td>
+                          <td className="p-3 max-w-md text-foreground leading-relaxed">
+                            {entry.clientRemarks}
+                          </td>
+                          <td className="p-3 font-mono text-muted-foreground whitespace-nowrap">
+                            {entry.targetDate}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Customer Documents Download Hub */}
+              <div className="rounded-lg border border-border bg-panel p-4 space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Client-Authorized Controlled Deliverables & Certifications
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="rounded border border-border bg-card p-3 space-y-2">
+                    <p className="font-bold text-xs text-foreground">Customer SOR</p>
+                    <p className="font-mono text-[10px] text-muted-foreground">{activeProjectKey}-SAL-SOR-01</p>
+                    <span className="inline-block text-[10px] text-emerald-500 font-semibold">✓ Accepted & Signed</span>
+                  </div>
+
+                  <div className="rounded border border-border bg-card p-3 space-y-2">
+                    <p className="font-bold text-xs text-foreground">Mutual NDA</p>
+                    <p className="font-mono text-[10px] text-muted-foreground">{activeProjectKey}-SAL-mNDA-01</p>
+                    <span className="inline-block text-[10px] text-emerald-500 font-semibold">✓ Executed & Active</span>
+                  </div>
+
+                  <div className="rounded border border-border bg-card p-3 space-y-2">
+                    <p className="font-bold text-xs text-foreground">AIS-140 TAC Certificate</p>
+                    <p className="font-mono text-[10px] text-muted-foreground">{activeProjectKey}-QA-TAC-01</p>
+                    <span className="inline-block text-[10px] text-primary font-semibold">Pre-Compliance Pass</span>
+                  </div>
+
+                  <div className="rounded border border-border bg-card p-3 space-y-2">
+                    <p className="font-bold text-xs text-foreground">100% PDI Certificate</p>
+                    <p className="font-mono text-[10px] text-muted-foreground">{activeProjectKey}-TST-PDI-01</p>
+                    <span className="inline-block text-[10px] text-emerald-500 font-semibold">0-Defect Released</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Acknowledgment Bar */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
+                <div>
+                  <p className="text-xs font-bold text-foreground">Customer Review & Sign-Off</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {clientAckDone
+                      ? "✓ Milestone progress acknowledged and confirmed by client representative."
+                      : "External fleet manager may acknowledge this progress update directly through this shared link."}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setClientAckDone(true);
+                    onLog("Client milestone acknowledged", `Customer representative confirmed Stage 8 progress for ${activeProjectKey} via shared client link`);
+                  }}
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-xs font-semibold transition-colors ${
+                    clientAckDone
+                      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
+                  }`}
+                >
+                  <CheckCircle2 className="size-4" />
+                  {clientAckDone ? "Milestone Acknowledged" : "Acknowledge Milestone & Sign Off"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: PROJECT RECORDS & FILES */}
+      {tab === "records" && (
+        <section className="grid gap-5 lg:grid-cols-2">
+          <div className="border border-border bg-card p-5 rounded-lg">
+            <p className="font-semibold text-sm">Related Operational Records ({related.length})</p>
+            <div className="mt-3 space-y-2">
+              {related.length ? (
+                related.map((record) => (
+                  <button
+                    key={record.id}
+                    onClick={() => onSelect(record)}
+                    className="block w-full border-b border-border py-3 text-left last:border-0 hover:bg-secondary/40 px-2 rounded"
+                  >
+                    <span className="font-mono text-xs text-muted-foreground">{record.reference}</span>
+                    <strong className="mt-1 block text-sm">{record.title}</strong>
+                    <small className="text-muted-foreground">
+                      {record.type} · {record.fields["lifecycleStage"] ?? record.status}
+                    </small>
+                  </button>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground py-4">No records linked to this project yet.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="border border-border bg-panel p-5 rounded-lg">
+            <p className="font-semibold text-sm">Files & Controlled Documents ({files.length})</p>
+            <div className="mt-3 space-y-3">
+              {files.length ? (
+                files.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between border-b border-border pb-3 text-sm"
+                  >
+                    <div>
+                      <p className="font-medium text-foreground">{doc.title}</p>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {doc.type} · Rev {doc.revision} · {doc.lifecycle}
+                      </span>
+                    </div>
+                    {onOpenDocument && (
+                      <button
+                        onClick={() => onOpenDocument(doc)}
+                        className="text-xs font-semibold text-steel hover:text-foreground"
+                      >
+                        Inspect
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground py-4">No controlled documents attached yet.</p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
   );
 }
+
 function AssigneeWorkload({
   assignee,
   records,
