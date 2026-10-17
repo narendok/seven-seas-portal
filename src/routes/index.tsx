@@ -42,9 +42,6 @@ import {
   Send,
   BookOpen,
   Shield,
-  Boxes,
-  Minus,
-  PlusCircle,
   Users,
   Cpu,
   Layers,
@@ -78,6 +75,7 @@ import {
   type EnquiryOpportunity,
 } from "@/components/SalesWorkspaceAndCustomerRegister";
 import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable";
+import { LiveInventoryWorkspace, type InventoryCategory } from "@/components/LiveInventoryWorkspace";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
 import {
   CompanyDirectoryModal,
