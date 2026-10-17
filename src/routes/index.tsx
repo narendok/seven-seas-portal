@@ -262,6 +262,13 @@ type InventoryMovement = {
   actor: string;
   note: string;
 };
+const inventorySeed = (): InventoryItem[] => [
+  { id: "inv-stm32", partNumber: "STM32G0B1VCT6", description: "Main host MCU · 512 KB flash", category: "Electronics", location: "Greater Noida SMT Plant 2", bin: "E-02-14", onHand: 18540, allocated: 2500, reorderPoint: 8000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-eg915", partNumber: "EG915N-EU", description: "LTE Cat-1 bis modem with GNSS", category: "Electronics", location: "Greater Noida SMT Plant 2", bin: "E-05-03", onHand: 7200, allocated: 2500, reorderPoint: 9000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-tcan", partNumber: "TCAN1042VDRQ1", description: "Automotive CAN transceiver", category: "Hardware / PCB", location: "Greater Noida SMT Plant 2", bin: "P-01-22", onHand: 38100, allocated: 5000, reorderPoint: 12000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-obd", partNumber: "MX150-33472-1601", description: "Sealed OBD-II vehicle interface", category: "Hardware / PCB", location: "Noida Tech Center", bin: "H-03-08", onHand: 4300, allocated: 2500, reorderPoint: 3000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-enclosure", partNumber: "HLPL-ENC-PCABS-01", description: "IP67 PC/ABS enclosure shell", category: "Mechanical", location: "Greater Noida SMT Plant 2", bin: "M-01-04", onHand: 6200, allocated: 2500, reorderPoint: 3500, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+];
 type ControlledFile = {
   id: string;
   revision: string;
@@ -1897,6 +1904,8 @@ const readPortal = (): PortalState => {
       audit: Array.isArray(value.audit) ? value.audit : [],
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
       alerts: Array.isArray(value.alerts) ? value.alerts : [],
+      inventory: Array.isArray(value.inventory) ? value.inventory : value.demoLoaded ? inventorySeed() : [],
+      inventoryMovements: Array.isArray(value.inventoryMovements) ? value.inventoryMovements : [],
       raciMatrix: value.raciMatrix ?? defaultRaciMatrix(),
     };
     // A legacy browser snapshot may retain the DEMO marker while losing its arrays.
@@ -2210,6 +2219,17 @@ function Portal() {
     log(action, `${task.reference} · ${task.title}`);
     announce(`${task.title} updated.`);
   };
+  const moveInventory = (itemId: string, change: number, reason: InventoryMovement["reason"]) => {
+    const item = portal.inventory?.find((entry) => entry.id === itemId);
+    if (!item || (change < 0 && item.onHand - item.allocated < Math.abs(change))) return;
+    update((state) => ({
+      ...state,
+      inventory: (state.inventory ?? []).map((entry) => entry.id === itemId ? { ...entry, onHand: entry.onHand + change, updatedAt: now() } : entry),
+      inventoryMovements: [{ id: createId(), inventoryItemId: itemId, change, reason, at: now(), actor: persona.label, note: `${reason} via Live Inventory` }, ...(state.inventoryMovements ?? [])].slice(0, 100),
+      audit: [{ id: createId(), at: now(), action: `Inventory ${reason.toLowerCase()}`, detail: `${item.partNumber} · ${change > 0 ? "+" : ""}${change} ${item.unit}` }, ...state.audit].slice(0, 100),
+    }));
+    announce(`${item.partNumber}: ${change > 0 ? "receipt" : "issue"} recorded.`);
+  };
   const activeRecords = portal.records.filter((record) => !record.archived);
   const selected = activeRecords.find((record) => record.id === selectedId);
   const selectedDocument = portal.documents.find((document) => document.id === selectedDocumentId);
@@ -2300,6 +2320,7 @@ function Portal() {
               }}
             />
             <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
+            <HeaderAction label="Live Inventory" icon={PackageSearch} onClick={() => navigate("pur")} />
             <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
             <HeaderAction label="Directory" icon={Users} onClick={() => setDirectoryOpen(true)} />
             <HeaderAction label="Decision Log" icon={BookOpen} onClick={() => setDecisionLogOpen(true)} />
@@ -2523,6 +2544,10 @@ function Portal() {
               onSendForFeasibility={(enquiry) => setFeasibilityDispatchEnquiry(enquiry)}
               onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
               onConfigureModularAssets={(projectCode) => setAssetLinkerProjectId(projectCode)}
+              inventory={portal.inventory ?? []}
+              inventoryMovements={portal.inventoryMovements ?? []}
+              persona={persona}
+              onMoveInventory={moveInventory}
             />
           )}
         </div>
