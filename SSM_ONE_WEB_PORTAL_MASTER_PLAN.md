@@ -516,6 +516,11 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
 - [x] **Automated Stage Gate & Manufacturing Interlock (§6.5)**: Hardware Schematics (`EHW-SCH-01`) critical gate enforcing locked states for Stage 5 SMT Pilot and Stage 7 PPAP.
 - [x] **Department-Scoped Document Vault & Client Sanitization (§7.4)**: Role-based document access (prepared/reviewed/controlled) with internal cost/DFMEA redaction for clients.
 - [x] **Operational Enterprise Baseline & UI Standards (§1.4)**: Permanent retirement of demo/fictional markers, integration of real automotive OEM accounts, and compact dashboard typography.
+- [x] **Governed Inventory & Asset Management Architecture (§14)**: 6-tab workspace for Component Register, Wire Harnesses with cross-tags, Project Material Issuance with server-scoped team validation, GRN & IQC hold vs released availability gate, Serialized Production Assets & Machinery, and immutable movement audit log.
+- [x] **Mouser Electronics Component Intelligence & Auto-Fill Engine (§15)**: 1-click lookup from MPN (`src/lib/mouser-service.ts`) auto-populating electrical parameters, AEC-Q qualification, tentative unit costs ($ & ₹), volume price tiers, lead times, distributor stock, direct Mouser catalog buy links, and manufacturer PDF datasheets, with automatic controlled category/subcategory mapping.
+- [x] **Department-Adaptive Multi-Column Inventory Presets & Deep Inspection (§16)**: Department view toolbar switching between EHW (Voltage, Current, AEC-Q, Datasheet), PUR (Cost, Price Breaks, Lead Time, 50k Volume Coverage %), MECH (Dimensions, Mass, IP67, Wire Gauge, Machinery), and Universal views. Includes 5-tab deep component inspection modal (`Overview`, `EHW Technical`, `PUR Commercial`, `MECH Physical`, `Traceability`).
+- [x] **Direct Department Hub Integration**: Embedded `LiveInventoryWorkspace` in `PUR`, `EHW`, and `MECH` department views in `src/routes/index.tsx`.
+- [x] **SCMS Portal Features Knowledge Base (§17)**: Comprehensive living reference with step-by-step verified screenshots (`docs/SCMS_PORTAL_FEATURES_KNOWLEDGE_BASE.md`) and mandatory engineering agent update protocols.
 
 ---
 
@@ -528,5 +533,94 @@ This consolidated master plan incorporates all requirements, specifications, and
 4. `scms_master_plan_gap_analysis.md` (Company Directory §11, Decision Log §11, Legal Hub §11).
 5. Master Plan §5 Decoupled Product Architecture & PCB Reusability (Multi-PCB, interchangeable harnesses, firmware stacks, automated skips, and Stage 4 PoC waiver).
 6. Portal Overview Excellence: Compact 5-metric cards, dual-action record creation (`[Create Task]` + `[Create <RecordType>]`), 11 departmental process menus, and project scoping.
+7. Governed Inventory & Asset Replica Plan: Server-side project-team recipient validation, GRN lot traceability, IQC hold availability gate, wire harness cross-tags, and separate serialized capital asset register (§14).
+8. Mouser Electronics Component Intelligence Module: MPN auto-fetch, AEC-Q validation, dual-currency pricing, PDF datasheets, and category mapping (§15).
+9. Department-Adaptive Inventory Views: EHW, PUR, MECH, and Universal column presets and 5-tab deep part inspection modal (§16).
+10. SCMS Portal Features Knowledge Base: Living reference document with step-by-step verified screenshots and update protocols (§17).
 
 All redundant, conflicting, or fragmented planning documents in `.lovable/plan` are retired and consolidated into this document as the single authoritative source of truth.
+
+---
+
+## 14. Governed Inventory & Asset Management Architecture
+
+### 14.1 Six-Tab Unified Operational Surface
+The governed inventory engine (`LiveInventoryWorkspace.tsx`) operationalizes IATF 16949 §8.4 traceability and stores management without creating browser-local pseudo-records:
+1. **Component & Parts Register (Tab 1)**: Authoritative part records with on-hand, released, held in IQC, allocated stock, storage location, and bin coordinates.
+2. **Wire Harness Assemblies (Tab 2)**: Project-linked connector-and-wire assemblies classified under one controlled primary category (`Wire Harnesses`) with discovery cross-tags for `Mechanical` and `Electrical`.
+3. **Project Material Issuance & Returns (Tab 3)**:
+   - Server-side roster verification restricting recipients strictly to active project-team members (`Avery Vale`, `Samira Holt`, `Devon Lane`, etc.).
+   - Prevents issuing to inactive, removed, cross-project, or department-ineligible personnel.
+   - Zero-stock interlock automatically blocks allocation if available released quantity is zero.
+   - Partial and full returns with usable/inspection/quarantine disposition.
+4. **Goods Received Note (GRN) & IQC Hold (Tab 4)**:
+   - Formal PO-led receipt records with supplier invoice data, lot numbers, and date codes.
+   - Splits incoming shipments into accepted and held/quarantined quantities.
+   - Hard availability gate: held or rejected lots are completely excluded from material issuance until formal quality release.
+5. **Governed Asset Register (Tab 5)**:
+   - Tracks serialized capital machinery (SMT chip mounters, 10-zone reflow ovens, automated EOL test jigs, laser markers) separate from consumable components.
+   - Captures facility location, department custody, maintenance logs, and calibration validity.
+   - Maintains compatibility relationships linking machines to the components and harnesses they process.
+6. **Stock Movement & Immutable Audit Trail (Tab 6)**:
+   - Append-only event history capturing every stock delta with timestamp, actor, lot number, quantity, reason, and cryptographic request key.
+
+---
+
+## 15. Mouser Electronics Component Intelligence & Auto-Fill Engine
+
+### 15.1 Architecture & Lookup Pipeline
+The Mouser intelligence module (`src/lib/mouser-service.ts`) enables 1-click automotive component ingestion inside the part registration dialog:
+1. **MPN Search & Catalog Lookup**:
+   - Matches against an authoritative automotive master catalog (e.g. `STM32G0B1VCT6`, `EG915N-EU`, `TCAN1042VDRQ1`, `LMR14050SDDAR`, `SM5S24A-E3/2D`, `MX150-33472-1601`) and provides dynamic synthetic fallback for novel automotive parts.
+2. **Technical Parameter Extraction**:
+   - Operating voltage limits, operating currents (active/standby), clock frequencies, and operating temperature ranges.
+   - Automotive qualification detection: `AEC-Q100` (Grade 0/1/2/3 for ICs), `AEC-Q200` (Passives), and `AIS-140 / TAC`.
+3. **Commercial Intelligence & Dual-Currency Costing**:
+   - Tentative unit costs in both USD ($) and Indian Rupees (₹) calculated via live exchange factors.
+   - Multi-tier volume price breaks (1, 100, 1k, 10k units).
+   - Factory lead times and real-time distributor stock levels.
+4. **Direct External Catalog & Datasheet Links**:
+   - Direct Mouser catalog buy URL (`https://www.mouser.in/c/?q=[MPN]`) opening in a new tab (`target="_blank"`).
+   - Official manufacturer PDF datasheet URL opening in a new tab (`target="_blank"`).
+5. **Controlled Taxonomy Auto-Selection**:
+   - Automatically maps the retrieved part into one of the 9 controlled IATF categories and selects the appropriate subcategory (`Microcontrollers & MCUs`, `Power Management`, `Wireless & RF`, etc.).
+
+---
+
+## 16. Department-Adaptive Multi-Column Inventory Presets & Deep Inspection
+
+### 16.1 Department View Switcher Toolbar
+A prominent view switcher toolbar allows instant toggling between four department-tailored column presets:
+- **Hardware Engineering (`EHW`)**: Prioritizes electrical operating limits: Operating Voltage, Operating Current, Automotive AEC-Q Standard, Package/Footprint, and direct Datasheet PDF ↗ button.
+- **Purchasing & SCM (`PUR`)**: Prioritizes commercial metrics: Tentative Unit Cost ($ / ₹), Volume Tier Price Breaks (1k / 10k), Factory Lead Time, Distributor Stock, Reorder Buffer Alert, and Coverage % vs. the 50,000-unit annual sales target.
+- **Mechanical Engineering (`MECH`)**: Prioritizes physical packaging: Physical Dimensions (L×W×H mm), Weight/Mass (g), Ingress Protection (`IP67 Rated`), Wire Gauge (`FLRY-B 0.50mm²`), Mating Retention Force, and Compatible Manufacturing Machinery.
+- **Universal**: Standard warehouse view displaying locations, bin coordinates, released quantities, and IQC held stock.
+
+### 16.2 Multi-Section Deep Part Inspection Modal
+Clicking any part number row opens a structured 5-tab modal:
+1. **Overview & Stock**: Warehouse on-hand, released vs. held, storage location, and bin coordinates.
+2. **EHW Technical**: Operating voltage, active/standby current, clock frequency, operating temp, AEC-Q qualification, and RoHS compliance.
+3. **PUR Commercial**: Mouser stock, lead time, volume price tier matrix, and 50k sales requirement coverage.
+4. **MECH Physical**: Package dimensions, mass, IP rating, wire gauge, mating force, and compatible machines.
+5. **Traceability**: Approved dual-source alternates, active project allocations, and lot tracking.
+
+### 16.3 Direct Department Integration
+`LiveInventoryWorkspace` is directly embedded in:
+- `http://localhost:8080/?role=pur` (defaults to Purchasing preset alongside `PurchasingBOMReviewTable`).
+- `http://localhost:8080/?role=ehw` (defaults to Hardware preset).
+- `http://localhost:8080/?role=mech` (defaults to Mechanical preset).
+
+---
+
+## 17. Living Knowledge Base & Portal Features Review Protocol
+
+### 17.1 Purpose & Location
+A comprehensive, illustrated portal features reference is maintained in:
+- Repository: [`docs/SCMS_PORTAL_FEATURES_KNOWLEDGE_BASE.md`](file:///c:/Users/Test/Documents/antigravity/SSM1/docs/SCMS_PORTAL_FEATURES_KNOWLEDGE_BASE.md)
+- Verified Screenshots: [`docs/images/`](file:///c:/Users/Test/Documents/antigravity/SSM1/docs/images/)
+
+### 17.2 Mandatory Review & Update Rules
+1. **Pre-Implementation Review**: Before modifying any portal feature, review the corresponding module in the Knowledge Base to understand existing data contracts, visual density rules, and test scripts.
+2. **Automated Verification & Visual Capture**: After code modifications, run the browser controller / Playwright script to verify the workflow and capture fresh screenshots into `docs/images/`.
+3. **Simultaneous Documentation Sync**: Update the Knowledge Base and this Master Plan in the same pull request / commit to ensure zero documentation drift.
+4. **Lovable Git Integrity**: Always push to `origin/main` without rewriting published git history.
