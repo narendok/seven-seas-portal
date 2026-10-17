@@ -58,3 +58,4 @@
 ## 5. Procurement-Led Live Inventory
 - [x] Compare the browser-local inventory workspace with the read-only SSM one phase 8 reference.
 - [x] Expand the local inventory register with the reference's searchable component fields, broader controlled categories, stock states, project links and research-team allocations.
+- [x] Derive the assigned department directly from the selected research owner; do not ask the allocator to choose it separately.
