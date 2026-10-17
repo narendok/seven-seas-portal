@@ -85,6 +85,7 @@ import {
   defaultProjectModularConfigs,
   type ProjectModularConfiguration,
 } from "@/components/ModularProductArchitectureAndPcbCatalog";
+import { DeviceVisualSpecAndBlockDiagram } from "@/components/DeviceVisualSpecAndBlockDiagram";
 
 type AreaId =
   | "home"
@@ -301,10 +302,11 @@ const ai4tStages = [
   ["Stage 6", "DVP&R Pre-Compliance", "QA-DVP-01 records 18 illustrative electrical and environmental verification checks."],
   ["Stage 7", "Production Release & PPAP", "Gerber Rev B, EHW-DFMEA-01 and supplier PPAP Level 3 package are released."],
   ["Stage 8", "Type Approval & Production Authorization", "Illustrative TAC evidence and the 50,000-unit authorization are human-reviewed."],
-  ["Stage 9", "PDI & Commercial Invoice", "TST-PDI-01 and FIN-INV-01 complete the simulated delivery record."],
+  ["Stage 9", "PDI, Field Mounting & Commercial Invoice", "TST-PDI-01, SIT Service Field Installation & Vehicle Mounting Checklist (HLPL-OBD4-SIT-MNT-01), and FIN-INV-01 complete the full deployment cycle."],
 ] as const;
 const raciDepartments = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "TST", "FIN", "SIT", "HR"] as const;
 const projectDocumentProfiles: Record<string, ProjectDocumentProfile> = {
+  "HLPL-OBD4-01": { name: "4G OBD-II Smart Telematics Tracker & Fleet Gateway", customer: "Ashok Leyland Limited · Fleet Solutions Division, Chennai", contact: "Mr. K. Ramanathan · General Manager Telematics", quantity: "25,000 units / year", techSpec: "4G Cat-1 · J1962 OBD-II · Dual CAN · GNSS · BLE 5.2 Sensor Hub", commercialValue: "₹11,25,00,000 · $1.35M", environmental: "12V / 24V (9V–36V) · −40°C to +85°C · IP54 / IP67 Mated", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · ISO 15031 / SAE J1962 · RoHS" },
   "HLPL-AI4T-01": { name: "Tata Ace EV 4G Telematics Gateway", customer: "Tata Motors Limited · EV Fleet Division, Pune", contact: "Mr. Rajesh Sharma · Lead D&D EV", quantity: "50,000 units / year", techSpec: "4G Cat-1 · IP67 · CAN J1939 · Dual SIM · GNSS", commercialValue: "₹20,33,50,000 · $2.45M", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · RoHS / REACH" },
   "HLPL-SLCT-01": { name: "AIS-140 GPS Gateway", customer: "Select Motors · fictional DEMO", contact: "Demo client contact · review required", quantity: "10,000 units / year", techSpec: "AIS-140 GNSS gateway · 4G · OBD-II · IP67", commercialValue: "₹4,12,00,000 · illustrative", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS" },
   "HLPL-XLINK-03": { name: "Commercial Fleet Gateway", customer: "Commercial Fleet Programme · fictional DEMO", contact: "Demo fleet programme SPOC", quantity: "25,000 units / year", techSpec: "Dual CAN · OBD-II · GNSS · 4G fleet gateway", commercialValue: "Commercial value pending controlled review", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AEC-Q100 · ISO 7637-2 · RoHS / REACH" },
@@ -354,8 +356,9 @@ export type DepartmentAnalysisEntry = {
 export function defaultProjectAnalysis(projectId: string): Record<string, DepartmentAnalysisEntry> {
   const isAi4t = projectId === "HLPL-AI4T-01";
   const isXlink = projectId === "HLPL-XLINK-03";
-  const pfx = isAi4t ? "HLPL-AI4T" : isXlink ? "HLPL-XLINK" : "HLPL-SLCT";
-  const customerName = isAi4t ? "Tata Motors Limited" : isXlink ? "Commercial Fleet Operators" : "Select Motors Ltd";
+  const isObd = projectId === "HLPL-OBD4-01" || projectId.includes("OBD");
+  const pfx = isObd ? "HLPL-OBD4" : isAi4t ? "HLPL-AI4T" : isXlink ? "HLPL-XLINK" : "HLPL-SLCT";
+  const customerName = isObd ? "Ashok Leyland Limited" : isAi4t ? "Tata Motors Limited" : isXlink ? "Commercial Fleet Operators" : "Select Motors Ltd";
 
   return {
     SAL: {
@@ -488,15 +491,19 @@ export function defaultProjectAnalysis(projectId: string): Record<string, Depart
       departmentCode: "SIT",
       departmentName: "Service & IT Infrastructure",
       lead: "Kai Morgan",
-      progress: 85,
+      progress: isObd ? 95 : 85,
       status: "On Track",
-      currentDeliverable: "AWS Telematics Broker & Private APN Ingestion",
+      currentDeliverable: isObd ? "Vehicle Field Fitment, OBD-II Port Mounting & SIT Cloud Linking" : "AWS Telematics Broker & Private APN Ingestion",
       targetDate: "2026-12-22",
-      internalRemarks: "Dual Airtel/Jio eSIM profiles tested with auto-switching logic. AWS IoT Core connection throughput verified at 10k msgs/sec.",
-      clientRemarks: `Dedicated cloud backend and fleet telemetry APIs connected with ${customerName} Fleet Edge platform.`,
-      keyDocumentId: `${pfx}-SIT-INFRA-01`,
-      stageGate: "Stage 8 · Field TAC Integration",
-      lastUpdated: "2026-10-14",
+      internalRemarks: isObd
+        ? "Under-dash J1962 retention verified on commercial vehicle chassis. 100% OBD port latch engagement confirmed. SIT diagnostic app pairs IMEI to VIN in < 30 seconds."
+        : "Dual Airtel/Jio eSIM profiles tested with auto-switching logic. AWS IoT Core connection throughput verified at 10k msgs/sec.",
+      clientRemarks: isObd
+        ? `Service installation SOP HLPL-OBD4-SIT-MNT-01 approved for ${customerName} dealer network. Plug-and-play fitment with zero wiring splice ensures vehicle OEM warranty intact.`
+        : `Dedicated cloud backend and fleet telemetry APIs connected with ${customerName} Fleet Edge platform.`,
+      keyDocumentId: isObd ? `${pfx}-SIT-MNT-01` : `${pfx}-SIT-INFRA-01`,
+      stageGate: isObd ? "Stage 9 · Vehicle Mounting & PDI" : "Stage 8 · Field TAC Integration",
+      lastUpdated: "2026-10-16",
     },
     HR: {
       departmentCode: "HR",
@@ -3685,6 +3692,7 @@ function ProjectDetail({
   const [copyNotice, setCopyNotice] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [clientAckDone, setClientAckDone] = useState(false);
+  const [activeRev, setActiveRev] = useState<"01" | "02">("01");
 
   const [deptDraft, setDeptDraft] = useState<DepartmentAnalysisEntry>(() => {
     return analysisMap[selectedDeptCode] ?? analysisMap["EHW"]!;
@@ -3806,6 +3814,7 @@ function ProjectDetail({
               onChange={(e) => onSelectProject(e.target.value)}
               className="h-8 rounded border border-border bg-background px-2.5 text-xs font-semibold"
             >
+              <option value="HLPL-OBD4-01">HLPL-OBD4-01 · 4G OBD-II Smart Tracker</option>
               <option value="HLPL-AI4T-01">HLPL-AI4T-01 · Tata Ace EV 4G</option>
               <option value="HLPL-SLCT-01">HLPL-SLCT-01 · AIS-140 GPS</option>
               <option value="HLPL-XLINK-03">HLPL-XLINK-03 · Commercial CV</option>
@@ -3957,6 +3966,14 @@ function ProjectDetail({
               </div>
             </div>
           </div>
+
+          {/* Device Architecture, One-View & Mechanical Blueprint */}
+          <DeviceVisualSpecAndBlockDiagram
+            projectId={activeProjectKey}
+            activeRev={activeRev}
+            onRevChange={setActiveRev}
+            onOpenDocument={onOpenDocument ? (id) => onOpenDocument({ id, title: id, url: `/documents/${id}`, type: id, revision: activeRev, lifecycle: "Approved", departmentId: "ehw", classification: "Internal" }) : undefined}
+          />
 
           {/* Search & Filter Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3">
