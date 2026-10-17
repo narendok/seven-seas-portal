@@ -270,9 +270,47 @@ Displays full vendor dossier: contact details, official automotive warranty term
 Allows purchasing and hardware engineers to configure their official Mouser Search API key for real-time live component and pricing lookups, with seamless fallback to the verified automotive catalog.
 ![Mouser Search API Key Configuration](images/scms_mouser_api_key_modal.png)
 
+## Module 10: Role-Aware Sidebar Navigation with Favorites & Dynamic Accordion Work Groups
+
+### 10.1 Architectural Overview & Core Capabilities
+The Hexense Labs SCMS sidebar navigation adapts intelligently to the signed-in persona (`admin`, department leads, `client`):
+- **Favorites System at Top**:
+  - Always appears first with pinned items.
+  - Hovering any item in any work group reveals a pin/unpin star trigger (`★`).
+  - Pinned items persist across browser sessions in `localStorage` under `scms_user_favorites_${persona.id}`.
+  - Sensible role-focused defaults:
+    - **Executive Admin**: Overview, Projects, Work queue, Inventory, Procurement, Quality, Documents, People.
+    - **Department Leads**: My work, Department queue, Active projects, Department primary workspace (e.g. for PUR: Recordage, Quotations, Orders, Suppliers).
+- **Expandable Accordion Work Groups with Dynamic Arrow Rules**:
+  - **Administrator View**:
+    - Favorites is open at the top.
+    - **`Overview`** section is **expanded by default** (with arrow pointing down `ChevronDown`).
+    - **All remaining work groups** (`Commercial & Projects`, `Engineering & Delivery`, `Inventory & Procurement`, `Quality & Compliance`, `Documents & Collaboration`, `People & Organization`, `Administration`) start **unexpanded (collapsed)** by default with arrow pointing right (`ChevronRight`).
+    - Clicking any group header toggles expansion, and navigating to any page automatically auto-expands its containing group.
+  - **Department Lead View**:
+    - "For others all expanded": All department work groups (`My work`, `Projects`, `Department workspace`, `Reference`) start **expanded by default** with downward chevrons, giving immediate visibility into all permitted department tasks, workflows, and documents.
+- **Dual Display Modes**:
+  - **Expanded View (`w-64`)**: Full company branding (`SS` monogram badge + Six Sense Mobility / Hexense Labs title), group headers, badges, open task counters, pin stars, and bottom setup wizard status.
+  - **Compact Rail View (`w-16`)**: Icon-only navigation with tooltips on hover, active indicator badges, and one-click expand toggle (supporting `[` keyboard shortcut).
+  - **Accessible Mobile Drawer**: Complete responsive drawer matching the exact desktop role-aware group structure.
+
+### 10.2 Verified Screenshot Evidence
+
+#### 1. Administrator Role-Aware Sidebar View
+Overview section is expanded with arrow down; remaining work groups (Commercial, Engineering, Inventory, Quality, Documents, People, Administration) start cleanly collapsed with rightward arrows.
+![Admin Role-Aware Sidebar](images/scms_sidebar_admin_role_aware.png)
+
+#### 2. Department Lead Role-Aware Sidebar View
+All department groups (My work, Projects, Department workspace, Reference) start expanded by default with quick access to all department-specific options.
+![Department Role-Aware Sidebar](images/scms_sidebar_dept_role_aware.png)
+
+#### 3. Compact Rail Sidebar View
+Icon-only compact navigation with SS badge, tooltips, and fast collapse/expand toggle.
+![Compact Rail Sidebar](images/scms_sidebar_compact_role_aware.png)
+
 ---
 
-## Module 10: Living Update Protocol for Engineering Agents
+## Module 11: Living Update Protocol for Engineering Agents
 
 When adding, modifying, or refactoring portal features:
 1. **Pre-Check**: Read this Knowledge Base and [`SSM_ONE_WEB_PORTAL_MASTER_PLAN.md`](file:///c:/Users/Test/Documents/antigravity/SSM1/SSM_ONE_WEB_PORTAL_MASTER_PLAN.md) to understand existing data models and UI patterns.

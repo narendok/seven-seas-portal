@@ -538,6 +538,7 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
 - [x] **Direct Department Hub Integration**: Embedded `LiveInventoryWorkspace` in `PUR`, `EHW`, and `MECH` department views in `src/routes/index.tsx`.
 - [x] **SCMS Portal Features Knowledge Base (§17)**: Comprehensive living reference with step-by-step verified screenshots (`docs/SCMS_PORTAL_FEATURES_KNOWLEDGE_BASE.md`) and mandatory engineering agent update protocols.
 - [x] **Purchasing Command Center & Department-Specific Sidebar Navigation (§4.5, §18)**: Complete 4-module command center (`PurchasingCommandCenter.tsx`) integrating Recordage (stores & IQC), Quotations with volume pricing breaks (1k/10k/50k), Purchase Orders with 50,000 sales target alignment & 1-click GRN receiving, Approved Supplier List (ASL) with explicit warranty terms, validity (IATF 16949 & ISO 9001 expiry dates, VDA 6.3 score), verified documentation dossiers (PPAP L3, NDA, GST, RoHS), expanded sidebar department sub-navigation, and persistent Mouser Search API key configuration.
+- [x] **Role-Aware Sidebar Navigation & Favorites Engine (§19)**: Adaptive sidebar with persistent Favorites at top, accordion work groups with chevron indicators, Admin Overview auto-expansion with rest collapsed, all-expanded default for department leads, compact rail mode with tooltips, and responsive mobile drawer.
 
 ---
 
@@ -663,3 +664,28 @@ $$\text{Supplier ASL (Warranty + Validity)} \longleftrightarrow \text{Quotation 
 3. **Supplier Dossier Inspection**: Clicking any supplier opens the interactive dossier displaying warranty SLAs, accreditation validity schedules, and compliance documents (PPAP L3, NDA, GST, RoHS/REACH).
 4. **Mouser Electronics Search API Key**: Live REST API integration with fallback to the verified automotive master catalog, configurable directly from the interface.
 
+---
+
+## 19. Role-Aware Sidebar Navigation with Favorites & Accordion Work Groups
+
+### 19.1 Architectural Overview & Core Capabilities
+The Hexense Labs SCMS sidebar navigation adapts intelligently to the signed-in persona (`admin`, department leads, `client`):
+- **Favorites System at Top**:
+  - Always appears first with pinned items.
+  - Hovering any item in any work group reveals a pin/unpin star trigger (`★`).
+  - Pinned items persist across browser sessions in `localStorage` under `scms_user_favorites_${persona.id}`.
+  - Sensible role-focused defaults:
+    - **Executive Admin**: Overview, Projects, Work queue, Inventory, Procurement, Quality, Documents, People.
+    - **Department Leads**: My work, Department queue, Active projects, Department primary workspace (e.g. for PUR: Recordage, Quotations, Orders, Suppliers).
+- **Expandable Accordion Work Groups with Dynamic Arrow Rules**:
+  - **Administrator View**:
+    - Favorites is open at the top.
+    - **`Overview`** section is **expanded by default** (with arrow pointing down `ChevronDown`).
+    - **All remaining work groups** (`Commercial & Projects`, `Engineering & Delivery`, `Inventory & Procurement`, `Quality & Compliance`, `Documents & Collaboration`, `People & Organization`, `Administration`) start **unexpanded (collapsed)** by default with arrow pointing right (`ChevronRight`).
+    - Clicking any group header toggles expansion, and navigating to any page automatically auto-expands its containing group.
+  - **Department Lead View**:
+    - "For others all expanded": All department work groups (`My work`, `Projects`, `Department workspace`, `Reference`) start **expanded by default** with downward chevrons, giving immediate visibility into all permitted department tasks, workflows, and documents.
+- **Dual Display Modes**:
+  - **Expanded View (`w-64`)**: Full company branding (`SS` monogram badge + Six Sense Mobility / Hexense Labs title), group headers, badges, open task counters, pin stars, and bottom setup wizard status.
+  - **Compact Rail View (`w-16`)**: Icon-only navigation with tooltips on hover, active indicator badges, and one-click expand toggle (supporting `[` keyboard shortcut).
+  - **Accessible Mobile Drawer**: Complete responsive drawer matching the exact desktop role-aware group structure.

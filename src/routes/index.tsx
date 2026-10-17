@@ -99,6 +99,7 @@ import {
   type ProjectModularConfiguration,
 } from "@/components/ModularProductArchitectureAndPcbCatalog";
 import { DeviceVisualSpecAndBlockDiagram } from "@/components/DeviceVisualSpecAndBlockDiagram";
+import { RoleAwareSidebar } from "@/components/RoleAwareSidebar";
 
 type AreaId =
   | "home"
@@ -2259,96 +2260,49 @@ function Portal() {
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
-        <div className={`relative flex items-center ${sidebarExpanded ? "justify-between" : "justify-center"}`}>
-          <Brand compact={!sidebarExpanded} />
-          <SidebarToggle
-            expanded={sidebarExpanded}
-            onToggle={() => setSidebarExpanded((value) => !value)}
-            compact={!sidebarExpanded}
-          />
+        <RoleAwareSidebar
+          persona={persona}
+          activeArea={activeArea as any}
+          view={view}
+          sidebarExpanded={sidebarExpanded}
+          onToggleExpanded={() => setSidebarExpanded((value) => !value)}
+          purchasingSubView={purchasingSubView}
+          onSelectPurchasingSubView={setPurchasingSubView}
+          onNavigate={(area, targetView) => {
+            navigate(area);
+            if (targetView) setView(targetView);
+          }}
+          onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
+          onOpenAi4tLifecycle={() => setAi4tOpen(true)}
+          onOpenProjectAnalysis={() => {
+            setView("project");
+            navigate("home");
+          }}
+          onOpenDrive={() => setModal("documents")}
+          onOpenDraftHub={() => setDraftHubOpen(true)}
+          onOpenDirectory={() => setDirectoryOpen(true)}
+          onOpenLegalHub={() => setLegalHubOpen(true)}
+          onOpenDecisionLog={() => setDecisionLogOpen(true)}
+          onOpenAdminSettings={() => setModal("admin")}
+          onOpenWizard={() => setModal("wizard")}
+          onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
+          onOpenApprovals={() => setModal("approvals")}
+          onOpenAlerts={() => setAlertsOpen(true)}
+          onOpenHistory={() => setModal("history")}
+          setupStep={portal.setupStep}
+          totalSetupSteps={setupSteps.length}
+          openTaskCounts={Object.fromEntries(
+            areas.map((area) => [
+              area.id,
+              portal.records.filter(
+                (r) => r.area === area.id && !r.archived && !["Approved", "Released", "Archived"].includes(r.status)
+              ).length,
+            ])
+          )}
+        />
+        <div className="mt-2 pt-2 border-t border-sidebar-border/60">
+          <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} expanded={sidebarExpanded} />
         </div>
-        <nav className={`mt-6 space-y-1 ${sidebarExpanded ? "" : "flex flex-1 flex-col items-center"}`} aria-label="Primary navigation">
-          {areas.map((area) => (
-            <div key={area.id} className="w-full">
-              <AreaNav
-                area={area}
-                active={activeArea === area.id && view !== "index"}
-                onClick={() => navigate(area.id)}
-                expanded={sidebarExpanded}
-                openCount={portal.records.filter((record) => record.area === area.id && !record.archived && !["Approved", "Released", "Archived"].includes(record.status)).length}
-              />
-              {area.id === "pur" && sidebarExpanded && (
-                <div className="ml-5 my-1 space-y-0.5 border-l-2 border-border/60 pl-2">
-                  <button
-                    onClick={() => {
-                      setPurchasingSubView("recordage");
-                      if (activeArea !== "pur" || view === "index") navigate("pur");
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                      activeArea === "pur" && view !== "index" && purchasingSubView === "recordage"
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <Package className="size-3.5 shrink-0" />
-                    <span className="truncate">Recordage</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPurchasingSubView("quotations");
-                      if (activeArea !== "pur" || view === "index") navigate("pur");
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                      activeArea === "pur" && view !== "index" && purchasingSubView === "quotations"
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <FileText className="size-3.5 shrink-0" />
-                    <span className="truncate">Quotations</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPurchasingSubView("orders");
-                      if (activeArea !== "pur" || view === "index") navigate("pur");
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                      activeArea === "pur" && view !== "index" && purchasingSubView === "orders"
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <ShoppingCart className="size-3.5 shrink-0" />
-                    <span className="truncate">Purchase Orders</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPurchasingSubView("suppliers");
-                      if (activeArea !== "pur" || view === "index") navigate("pur");
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                      activeArea === "pur" && view !== "index" && purchasingSubView === "suppliers"
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <Building className="size-3.5 shrink-0" />
-                    <span className="truncate">Suppliers (ASL)</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
-        <button
-          title={sidebarExpanded ? "Portal setup" : "Portal setup"}
-          onClick={() => setModal("wizard")}
-          className={`mt-auto flex h-10 items-center rounded-lg border border-sidebar-border bg-card text-left text-sm font-semibold transition-colors hover:bg-sidebar-accent ${sidebarExpanded ? "w-full gap-3 px-3" : "w-10 justify-center"}`}
-        >
-          <Settings2 className="size-4 text-steel" />
-          {sidebarExpanded && <><span>Portal setup</span><span className="ml-auto font-mono text-[10px]">{portal.setupStep + 1}/{setupSteps.length}</span></>}
-        </button>
-        <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} expanded={sidebarExpanded} />
       </aside>
       <section className={`min-h-screen transition-[padding] duration-200 motion-reduce:transition-none ${sidebarExpanded ? "lg:pl-64" : "lg:pl-16"}`}>
         <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
@@ -2649,11 +2603,44 @@ function Portal() {
       {mobileMenu && (
         <MobileMenu
           onClose={() => setMobileMenu(false)}
-          onNavigate={navigate}
+          onNavigate={(area, targetView) => {
+            navigate(area);
+            if (targetView) setView(targetView);
+          }}
           darkMode={darkMode}
           onToggleTheme={() => setDarkMode((value) => !value)}
           purchasingSubView={purchasingSubView}
           onSelectPurchasingSubView={setPurchasingSubView}
+          persona={persona}
+          activeArea={activeArea}
+          view={view}
+          onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
+          onOpenAi4tLifecycle={() => setAi4tOpen(true)}
+          onOpenProjectAnalysis={() => {
+            setView("project");
+            navigate("home");
+          }}
+          onOpenDrive={() => setModal("documents")}
+          onOpenDraftHub={() => setDraftHubOpen(true)}
+          onOpenDirectory={() => setDirectoryOpen(true)}
+          onOpenLegalHub={() => setLegalHubOpen(true)}
+          onOpenDecisionLog={() => setDecisionLogOpen(true)}
+          onOpenAdminSettings={() => setModal("admin")}
+          onOpenWizard={() => setModal("wizard")}
+          onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
+          onOpenApprovals={() => setModal("approvals")}
+          onOpenAlerts={() => setAlertsOpen(true)}
+          onOpenHistory={() => setModal("history")}
+          setupStep={portal.setupStep}
+          totalSetupSteps={setupSteps.length}
+          openTaskCounts={Object.fromEntries(
+            areas.map((area) => [
+              area.id,
+              portal.records.filter(
+                (r) => r.area === area.id && !r.archived && !["Approved", "Released", "Archived"].includes(r.status)
+              ).length,
+            ])
+          )}
         />
       )} 
       {modal === "create" && (
@@ -9886,106 +9873,89 @@ function MobileMenu({
   onToggleTheme,
   purchasingSubView,
   onSelectPurchasingSubView,
+  persona,
+  activeArea,
+  view,
+  onOpenCustomerRegister,
+  onOpenAi4tLifecycle,
+  onOpenProjectAnalysis,
+  onOpenDrive,
+  onOpenDraftHub,
+  onOpenDirectory,
+  onOpenLegalHub,
+  onOpenDecisionLog,
+  onOpenAdminSettings,
+  onOpenWizard,
+  onOpenAssetCatalog,
+  onOpenApprovals,
+  onOpenAlerts,
+  onOpenHistory,
+  setupStep,
+  totalSetupSteps,
+  openTaskCounts,
 }: {
   onClose: () => void;
-  onNavigate: (area: AreaId) => void;
+  onNavigate: (area: AreaId, targetView?: "queue" | "detail" | "summary" | "project" | "assignee" | "index" | "pmss") => void;
   darkMode: boolean;
   onToggleTheme: () => void;
-  purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers";
-  onSelectPurchasingSubView?: (view: "recordage" | "quotations" | "orders" | "suppliers") => void;
+  purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers" | undefined;
+  onSelectPurchasingSubView?: ((view: "recordage" | "quotations" | "orders" | "suppliers") => void) | undefined;
+  persona: Persona;
+  activeArea: AreaId;
+  view: string;
+  onOpenCustomerRegister?: (() => void) | undefined;
+  onOpenAi4tLifecycle?: (() => void) | undefined;
+  onOpenProjectAnalysis?: (() => void) | undefined;
+  onOpenDrive?: (() => void) | undefined;
+  onOpenDraftHub?: (() => void) | undefined;
+  onOpenDirectory?: (() => void) | undefined;
+  onOpenLegalHub?: (() => void) | undefined;
+  onOpenDecisionLog?: (() => void) | undefined;
+  onOpenAdminSettings?: (() => void) | undefined;
+  onOpenWizard?: (() => void) | undefined;
+  onOpenAssetCatalog?: (() => void) | undefined;
+  onOpenApprovals?: (() => void) | undefined;
+  onOpenAlerts?: (() => void) | undefined;
+  onOpenHistory?: (() => void) | undefined;
+  setupStep?: number | undefined;
+  totalSetupSteps?: number | undefined;
+  openTaskCounts?: Record<string, number> | undefined;
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-[2px] lg:hidden">
-      <div className="h-full w-[min(19rem,88vw)] border-r border-sidebar-border bg-sidebar p-4 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <Brand />
-          <button
-            aria-label="Close menu"
-            onClick={onClose}
-            className="grid size-9 place-items-center rounded-lg border border-border bg-card"
-          >
-            <X className="size-4" />
-          </button>
+      <div className="h-full w-[min(20rem,90vw)] border-r border-sidebar-border bg-sidebar p-3 shadow-2xl flex flex-col justify-between">
+        <RoleAwareSidebar
+          persona={persona}
+          activeArea={activeArea}
+          view={view}
+          sidebarExpanded={true}
+          isMobile={true}
+          onCloseMobile={onClose}
+          onToggleExpanded={() => {}}
+          purchasingSubView={purchasingSubView}
+          onSelectPurchasingSubView={onSelectPurchasingSubView}
+          onNavigate={onNavigate}
+          onOpenCustomerRegister={onOpenCustomerRegister}
+          onOpenAi4tLifecycle={onOpenAi4tLifecycle}
+          onOpenProjectAnalysis={onOpenProjectAnalysis}
+          onOpenDrive={onOpenDrive}
+          onOpenDraftHub={onOpenDraftHub}
+          onOpenDirectory={onOpenDirectory}
+          onOpenLegalHub={onOpenLegalHub}
+          onOpenDecisionLog={onOpenDecisionLog}
+          onOpenAdminSettings={onOpenAdminSettings}
+          onOpenWizard={onOpenWizard}
+          onOpenAssetCatalog={onOpenAssetCatalog}
+          onOpenApprovals={onOpenApprovals}
+          onOpenAlerts={onOpenAlerts}
+          onOpenHistory={onOpenHistory}
+          setupStep={setupStep}
+          totalSetupSteps={totalSetupSteps}
+          openTaskCounts={openTaskCounts}
+        />
+        <div className="mt-2 pt-2 border-t border-sidebar-border/60">
+          <ThemeToggle darkMode={darkMode} onToggle={onToggleTheme} expanded />
         </div>
-        <nav className="mt-8 space-y-1">
-          {areas.map((area) => (
-            <div key={area.id} className="w-full">
-              <AreaNav
-                area={area}
-                active={false}
-                onClick={() => {
-                  onNavigate(area.id);
-                  onClose();
-                }}
-              />
-              {area.id === "pur" && (
-                <div className="ml-5 my-1 space-y-0.5 border-l-2 border-border/60 pl-2">
-                  <button
-                    onClick={() => {
-                      onSelectPurchasingSubView?.("recordage");
-                      onNavigate("pur");
-                      onClose();
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                      purchasingSubView === "recordage"
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <Package className="size-3.5 shrink-0" />
-                    <span className="truncate">Recordage</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      onSelectPurchasingSubView?.("quotations");
-                      onNavigate("pur");
-                      onClose();
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                      purchasingSubView === "quotations"
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <FileText className="size-3.5 shrink-0" />
-                    <span className="truncate">Quotations</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      onSelectPurchasingSubView?.("orders");
-                      onNavigate("pur");
-                      onClose();
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                      purchasingSubView === "orders"
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <ShoppingCart className="size-3.5 shrink-0" />
-                    <span className="truncate">Purchase Orders</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      onSelectPurchasingSubView?.("suppliers");
-                      onNavigate("pur");
-                      onClose();
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                      purchasingSubView === "suppliers"
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <Building className="size-3.5 shrink-0" />
-                    <span className="truncate">Suppliers (ASL)</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
-        <ThemeToggle darkMode={darkMode} onToggle={onToggleTheme} expanded />
       </div>
     </div>
   );
