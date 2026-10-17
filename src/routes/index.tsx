@@ -75,6 +75,7 @@ import {
   type EnquiryOpportunity,
 } from "@/components/SalesWorkspaceAndCustomerRegister";
 import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable";
+import { LiveInventoryWorkspace, type InventoryCategory } from "@/components/LiveInventoryWorkspace";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
 import {
   CompanyDirectoryModal,
@@ -238,6 +239,36 @@ type LocalControlledFile = {
   encoding: "text" | "data-url";
   checksum?: string | undefined;
 };
+type InventoryItem = {
+  id: string;
+  partNumber: string;
+  description: string;
+  category: "Electronics" | "Hardware / PCB" | "Mechanical";
+  location: string;
+  bin: string;
+  onHand: number;
+  allocated: number;
+  reorderPoint: number;
+  unit: string;
+  updatedAt: string;
+  isDemo?: boolean;
+};
+type InventoryMovement = {
+  id: string;
+  inventoryItemId: string;
+  change: number;
+  reason: "Receipt" | "Issue" | "Adjustment";
+  at: string;
+  actor: string;
+  note: string;
+};
+const inventorySeed = (): InventoryItem[] => [
+  { id: "inv-stm32", partNumber: "STM32G0B1VCT6", description: "Main host MCU · 512 KB flash", category: "Electronics", location: "Greater Noida SMT Plant 2", bin: "E-02-14", onHand: 18540, allocated: 2500, reorderPoint: 8000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-eg915", partNumber: "EG915N-EU", description: "LTE Cat-1 bis modem with GNSS", category: "Electronics", location: "Greater Noida SMT Plant 2", bin: "E-05-03", onHand: 7200, allocated: 2500, reorderPoint: 9000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-tcan", partNumber: "TCAN1042VDRQ1", description: "Automotive CAN transceiver", category: "Hardware / PCB", location: "Greater Noida SMT Plant 2", bin: "P-01-22", onHand: 38100, allocated: 5000, reorderPoint: 12000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-obd", partNumber: "MX150-33472-1601", description: "Sealed OBD-II vehicle interface", category: "Hardware / PCB", location: "Noida Tech Center", bin: "H-03-08", onHand: 4300, allocated: 2500, reorderPoint: 3000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-enclosure", partNumber: "HLPL-ENC-PCABS-01", description: "IP67 PC/ABS enclosure shell", category: "Mechanical", location: "Greater Noida SMT Plant 2", bin: "M-01-04", onHand: 6200, allocated: 2500, reorderPoint: 3500, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+];
 type ControlledFile = {
   id: string;
   revision: string;
@@ -551,6 +582,8 @@ type PortalState = {
   enquiriesOpportunities?: EnquiryOpportunity[] | undefined;
   modularConfigs?: Record<string, ProjectModularConfiguration> | undefined;
   projectAnalysis?: Record<string, Record<string, DepartmentAnalysisEntry>> | undefined;
+  inventory?: InventoryItem[] | undefined;
+  inventoryMovements?: InventoryMovement[] | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -873,6 +906,8 @@ const emptyPortal = (): PortalState => ({
   customersRegistry: defaultCustomers,
   enquiriesOpportunities: defaultEnquiriesOpportunities,
   modularConfigs: defaultProjectModularConfigs,
+  inventory: [],
+  inventoryMovements: [],
 });
 
 function defaultTemplateSettings(): TemplateSettings {
@@ -1564,6 +1599,7 @@ const demoPortal = (): PortalState => {
   return {
     ...base,
     demoLoaded: true,
+    inventory: inventorySeed(),
     setupStep: setupSteps.length - 1,
     setup: {
       ...base.setup,
@@ -1869,6 +1905,8 @@ const readPortal = (): PortalState => {
       audit: Array.isArray(value.audit) ? value.audit : [],
       notifications: Array.isArray(value.notifications) ? value.notifications : [],
       alerts: Array.isArray(value.alerts) ? value.alerts : [],
+      inventory: Array.isArray(value.inventory) ? value.inventory : value.demoLoaded ? inventorySeed() : [],
+      inventoryMovements: Array.isArray(value.inventoryMovements) ? value.inventoryMovements : [],
       raciMatrix: value.raciMatrix ?? defaultRaciMatrix(),
     };
     // A legacy browser snapshot may retain the DEMO marker while losing its arrays.
@@ -2182,6 +2220,17 @@ function Portal() {
     log(action, `${task.reference} · ${task.title}`);
     announce(`${task.title} updated.`);
   };
+  const moveInventory = (itemId: string, change: number, reason: InventoryMovement["reason"]) => {
+    const item = portal.inventory?.find((entry) => entry.id === itemId);
+    if (!item || (change < 0 && item.onHand - item.allocated < Math.abs(change))) return;
+    update((state) => ({
+      ...state,
+      inventory: (state.inventory ?? []).map((entry) => entry.id === itemId ? { ...entry, onHand: entry.onHand + change, updatedAt: now() } : entry),
+      inventoryMovements: [{ id: createId(), inventoryItemId: itemId, change, reason, at: now(), actor: persona.label, note: `${reason} via Live Inventory` }, ...(state.inventoryMovements ?? [])].slice(0, 100),
+      audit: [{ id: createId(), at: now(), action: `Inventory ${reason.toLowerCase()}`, detail: `${item.partNumber} · ${change > 0 ? "+" : ""}${change} ${item.unit}` }, ...state.audit].slice(0, 100),
+    }));
+    announce(`${item.partNumber}: ${change > 0 ? "receipt" : "issue"} recorded.`);
+  };
   const activeRecords = portal.records.filter((record) => !record.archived);
   const selected = activeRecords.find((record) => record.id === selectedId);
   const selectedDocument = portal.documents.find((document) => document.id === selectedDocumentId);
@@ -2272,6 +2321,7 @@ function Portal() {
               }}
             />
             <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
+            <HeaderAction label="Live Inventory" icon={PackageSearch} onClick={() => navigate("pur")} />
             <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
             <HeaderAction label="Directory" icon={Users} onClick={() => setDirectoryOpen(true)} />
             <HeaderAction label="Decision Log" icon={BookOpen} onClick={() => setDecisionLogOpen(true)} />
@@ -2495,6 +2545,10 @@ function Portal() {
               onSendForFeasibility={(enquiry) => setFeasibilityDispatchEnquiry(enquiry)}
               onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
               onConfigureModularAssets={(projectCode) => setAssetLinkerProjectId(projectCode)}
+              inventory={portal.inventory ?? []}
+              inventoryMovements={portal.inventoryMovements ?? []}
+              persona={persona}
+              onMoveInventory={moveInventory}
             />
           )}
         </div>
@@ -5079,6 +5133,10 @@ function DepartmentWorkspace({
   onSendForFeasibility,
   onOpenAssetCatalog,
   onConfigureModularAssets,
+  inventory,
+  inventoryMovements,
+  persona,
+  onMoveInventory,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -5102,6 +5160,10 @@ function DepartmentWorkspace({
   onSendForFeasibility?: ((enquiry: EnquiryOpportunity) => void) | undefined;
   onOpenAssetCatalog?: (() => void) | undefined;
   onConfigureModularAssets?: ((projectCode: string) => void) | undefined;
+  inventory: InventoryItem[];
+  inventoryMovements: InventoryMovement[];
+  persona: Persona;
+  onMoveInventory: (itemId: string, change: number, reason: InventoryMovement["reason"]) => void;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -5211,6 +5273,13 @@ function DepartmentWorkspace({
         </section>
       ) : area.id === "pur" ? (
         <section className="mt-8">
+          <LiveInventoryWorkspace
+            items={inventory}
+            movements={inventoryMovements}
+            allowedCategories={["Electronics", "Hardware / PCB", "Mechanical"]}
+            readOnly={persona.kind === "client"}
+            onMove={onMoveInventory}
+          />
           <PurchasingBOMReviewTable
             projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
             onReleaseToManufacturing={() => {
