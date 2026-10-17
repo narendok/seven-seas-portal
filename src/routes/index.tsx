@@ -75,7 +75,7 @@ import {
   type EnquiryOpportunity,
 } from "@/components/SalesWorkspaceAndCustomerRegister";
 import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable";
-import { LiveInventoryWorkspace, type InventoryCategory } from "@/components/LiveInventoryWorkspace";
+import { LiveInventoryWorkspace, type InventoryAssignment, type InventoryCategory } from "@/components/LiveInventoryWorkspace";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
 import {
   CompanyDirectoryModal,
@@ -243,7 +243,7 @@ type InventoryItem = {
   id: string;
   partNumber: string;
   description: string;
-  category: "Electronics" | "Hardware / PCB" | "Mechanical";
+  category: InventoryCategory;
   location: string;
   bin: string;
   onHand: number;
@@ -251,6 +251,9 @@ type InventoryItem = {
   reorderPoint: number;
   unit: string;
   updatedAt: string;
+  manufacturer?: string;
+  packageCase?: string;
+  linkedProjects?: string[];
   isDemo?: boolean;
 };
 type InventoryMovement = {
@@ -263,11 +266,16 @@ type InventoryMovement = {
   note: string;
 };
 const inventorySeed = (): InventoryItem[] => [
-  { id: "inv-stm32", partNumber: "STM32G0B1VCT6", description: "Main host MCU · 512 KB flash", category: "Electronics", location: "Greater Noida SMT Plant 2", bin: "E-02-14", onHand: 18540, allocated: 2500, reorderPoint: 8000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
-  { id: "inv-eg915", partNumber: "EG915N-EU", description: "LTE Cat-1 bis modem with GNSS", category: "Electronics", location: "Greater Noida SMT Plant 2", bin: "E-05-03", onHand: 7200, allocated: 2500, reorderPoint: 9000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
-  { id: "inv-tcan", partNumber: "TCAN1042VDRQ1", description: "Automotive CAN transceiver", category: "Hardware / PCB", location: "Greater Noida SMT Plant 2", bin: "P-01-22", onHand: 38100, allocated: 5000, reorderPoint: 12000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
-  { id: "inv-obd", partNumber: "MX150-33472-1601", description: "Sealed OBD-II vehicle interface", category: "Hardware / PCB", location: "Noida Tech Center", bin: "H-03-08", onHand: 4300, allocated: 2500, reorderPoint: 3000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
-  { id: "inv-enclosure", partNumber: "HLPL-ENC-PCABS-01", description: "IP67 PC/ABS enclosure shell", category: "Mechanical", location: "Greater Noida SMT Plant 2", bin: "M-01-04", onHand: 6200, allocated: 2500, reorderPoint: 3500, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-stm32", partNumber: "STM32G0B1VCT6", description: "Main host MCU · 512 KB flash", category: "Electronics", manufacturer: "STMicroelectronics", packageCase: "LQFP-100", linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01"], location: "Greater Noida SMT Plant 2", bin: "E-02-14", onHand: 18540, allocated: 2500, reorderPoint: 8000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-eg915", partNumber: "EG915N-EU", description: "LTE Cat-1 bis modem with GNSS", category: "Electronics", manufacturer: "Quectel", packageCase: "LGA", linkedProjects: ["HLPL-AI4T-01"], location: "Greater Noida SMT Plant 2", bin: "E-05-03", onHand: 7200, allocated: 2500, reorderPoint: 9000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-tcan", partNumber: "TCAN1042VDRQ1", description: "Automotive CAN transceiver", category: "Hardware / PCB", manufacturer: "Texas Instruments", packageCase: "SOIC-8", linkedProjects: ["HLPL-AI4T-01", "HLPL-XLINK-03"], location: "Greater Noida SMT Plant 2", bin: "P-01-22", onHand: 38100, allocated: 5000, reorderPoint: 12000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-obd", partNumber: "MX150-33472-1601", description: "Sealed OBD-II vehicle interface", category: "Hardware / PCB", manufacturer: "Molex", packageCase: "16-way connector", linkedProjects: ["HLPL-SLCT-01", "HLPL-XLINK-03"], location: "Noida Tech Center", bin: "H-03-08", onHand: 4300, allocated: 2500, reorderPoint: 3000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-enclosure", partNumber: "HLPL-ENC-PCABS-01", description: "IP67 PC/ABS enclosure shell", category: "Mechanical", manufacturer: "HLPL approved molder", packageCase: "IP67 enclosure", linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01"], location: "Greater Noida SMT Plant 2", bin: "M-01-04", onHand: 6200, allocated: 2500, reorderPoint: 3500, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-stencil", partNumber: "HLPL-SMT-STN-AI4T-01", description: "Laser-cut SMT prototype stencil", category: "Hardware / PCB", manufacturer: "Approved ECAD supplier", packageCase: "120 µm stainless", linkedProjects: ["HLPL-AI4T-01"], location: "Noida Tech Center", bin: "P-02-01", onHand: 4, allocated: 1, reorderPoint: 2, unit: "sets", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-cal-fixture", partNumber: "HLPL-TST-CAN-FXT-01", description: "CAN loopback and harness verification fixture", category: "Test & Calibration", manufacturer: "HLPL internal", packageCase: "Bench fixture", linkedProjects: ["HLPL-AI4T-01", "HLPL-XLINK-03"], location: "Noida Tech Center", bin: "T-01-06", onHand: 12, allocated: 3, reorderPoint: 3, unit: "sets", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-esd-tray", partNumber: "HLPL-ESD-TRAY-01", description: "ESD-safe tray for prototype and sample kitting", category: "Production Consumables", manufacturer: "Approved stores supplier", packageCase: "Conductive polymer", linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03"], location: "Greater Noida SMT Plant 2", bin: "C-01-09", onHand: 140, allocated: 30, reorderPoint: 40, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-label-roll", partNumber: "HLPL-LBL-AIS140-01", description: "Serialized AIS-140 product label roll", category: "Packaging & Logistics", manufacturer: "Approved print partner", packageCase: "Thermal-transfer", linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01"], location: "Greater Noida SMT Plant 2", bin: "L-01-11", onHand: 18, allocated: 6, reorderPoint: 5, unit: "rolls", updatedAt: "DEMO · live local register", isDemo: true },
+  { id: "inv-fw-kit", partNumber: "HLPL-FW-FLASH-ADP-01", description: "Controlled SWD flashing adapter kit", category: "Firmware / Software", manufacturer: "Segger", packageCase: "J-Link kit", linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03"], location: "Noida Tech Center", bin: "S-01-02", onHand: 10, allocated: 2, reorderPoint: 2, unit: "kits", updatedAt: "DEMO · live local register", isDemo: true },
 ];
 type ControlledFile = {
   id: string;
@@ -584,6 +592,7 @@ type PortalState = {
   projectAnalysis?: Record<string, Record<string, DepartmentAnalysisEntry>> | undefined;
   inventory?: InventoryItem[] | undefined;
   inventoryMovements?: InventoryMovement[] | undefined;
+  inventoryAssignments?: InventoryAssignment[] | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -908,6 +917,7 @@ const emptyPortal = (): PortalState => ({
   modularConfigs: defaultProjectModularConfigs,
   inventory: [],
   inventoryMovements: [],
+  inventoryAssignments: [],
 });
 
 function defaultTemplateSettings(): TemplateSettings {
@@ -1907,6 +1917,7 @@ const readPortal = (): PortalState => {
       alerts: Array.isArray(value.alerts) ? value.alerts : [],
       inventory: Array.isArray(value.inventory) ? value.inventory : value.demoLoaded ? inventorySeed() : [],
       inventoryMovements: Array.isArray(value.inventoryMovements) ? value.inventoryMovements : [],
+      inventoryAssignments: Array.isArray(value.inventoryAssignments) ? value.inventoryAssignments : [],
       raciMatrix: value.raciMatrix ?? defaultRaciMatrix(),
     };
     // A legacy browser snapshot may retain the DEMO marker while losing its arrays.
@@ -2231,6 +2242,19 @@ function Portal() {
     }));
     announce(`${item.partNumber}: ${change > 0 ? "receipt" : "issue"} recorded.`);
   };
+  const assignInventory = (itemId: string, assignee: string, department: InventoryAssignment["department"], project: string, quantity: number, note: string) => {
+    const item = portal.inventory?.find((entry) => entry.id === itemId);
+    if (!item || quantity < 1 || quantity > item.onHand - item.allocated) return;
+    const assignment: InventoryAssignment = { id: createId(), inventoryItemId: itemId, assignee, department, project, quantity, assignedAt: now(), note: note || "Research allocation" };
+    update((state) => ({
+      ...state,
+      inventory: (state.inventory ?? []).map((entry) => entry.id === itemId ? { ...entry, allocated: entry.allocated + quantity, updatedAt: now() } : entry),
+      inventoryAssignments: [assignment, ...(state.inventoryAssignments ?? [])].slice(0, 100),
+      inventoryMovements: [{ id: createId(), inventoryItemId: itemId, change: 0, reason: "Adjustment" as const, at: now(), actor: persona.label, note: `Allocated ${quantity} ${item.unit} to ${assignee} · ${department} · ${project}` }, ...(state.inventoryMovements ?? [])].slice(0, 100),
+      audit: [{ id: createId(), at: now(), action: "Inventory assigned to research", detail: `${item.partNumber} · ${quantity} ${item.unit} · ${assignee} · ${department} · ${project}` }, ...state.audit].slice(0, 100),
+    }));
+    announce(`${item.partNumber}: ${quantity} ${item.unit} allocated to ${assignee}.`);
+  };
   const activeRecords = portal.records.filter((record) => !record.archived);
   const selected = activeRecords.find((record) => record.id === selectedId);
   const selectedDocument = portal.documents.find((document) => document.id === selectedDocumentId);
@@ -2547,8 +2571,10 @@ function Portal() {
               onConfigureModularAssets={(projectCode) => setAssetLinkerProjectId(projectCode)}
               inventory={portal.inventory ?? []}
               inventoryMovements={portal.inventoryMovements ?? []}
+              inventoryAssignments={portal.inventoryAssignments ?? []}
               persona={persona}
               onMoveInventory={moveInventory}
+              onAssignInventory={assignInventory}
             />
           )}
         </div>
@@ -5135,8 +5161,10 @@ function DepartmentWorkspace({
   onConfigureModularAssets,
   inventory,
   inventoryMovements,
+  inventoryAssignments,
   persona,
   onMoveInventory,
+  onAssignInventory,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -5162,8 +5190,10 @@ function DepartmentWorkspace({
   onConfigureModularAssets?: ((projectCode: string) => void) | undefined;
   inventory: InventoryItem[];
   inventoryMovements: InventoryMovement[];
+  inventoryAssignments: InventoryAssignment[];
   persona: Persona;
   onMoveInventory: (itemId: string, change: number, reason: InventoryMovement["reason"]) => void;
+  onAssignInventory: (itemId: string, assignee: string, department: InventoryAssignment["department"], project: string, quantity: number, note: string) => void;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -5276,9 +5306,11 @@ function DepartmentWorkspace({
           <LiveInventoryWorkspace
             items={inventory}
             movements={inventoryMovements}
-            allowedCategories={["Electronics", "Hardware / PCB", "Mechanical"]}
+            assignments={inventoryAssignments}
+            allowedCategories={["Electronics", "Hardware / PCB", "Mechanical", "Firmware / Software", "Test & Calibration", "Production Consumables", "Packaging & Logistics"]}
             readOnly={persona.kind === "client"}
             onMove={onMoveInventory}
+            onAssign={onAssignInventory}
           />
           <PurchasingBOMReviewTable
             projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
