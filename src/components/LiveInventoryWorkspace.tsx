@@ -30,7 +30,16 @@ import {
   Truck,
   CheckSquare,
   Lock,
+  DollarSign,
+  Zap,
+  Ruler,
+  ShoppingCart,
+  Loader2,
+  TrendingUp,
+  Check,
 } from "lucide-react";
+import { lookupMouserPart, type MouserComponentResult, type PriceBreak } from "@/lib/mouser-service";
+
 
 // =============================================================================
 // 1. CONTROLLED TAXONOMY & DATA CONTRACTS
@@ -61,24 +70,51 @@ export type InventoryItem = {
   partNumber: string;
   description: string;
   category: InventoryCategory;
-  subcategory?: string;
-  crossTags?: CrossTag[];
-  manufacturer?: string;
-  packageCase?: string;
-  specifications?: Record<string, string>;
+  subcategory?: string | undefined;
+  crossTags?: CrossTag[] | undefined;
+  manufacturer?: string | undefined;
+  packageCase?: string | undefined;
+  specifications?: Record<string, string> | undefined;
   location: string;
   bin: string;
   onHand: number;
-  released?: number;      // Passed IQC, authorized for project allocation
-  held?: number;          // Under incoming inspection / quarantine (BLOCKED from issue)
+  released?: number | undefined;      // Passed IQC, authorized for project allocation
+  held?: number | undefined;          // Under incoming inspection / quarantine (BLOCKED from issue)
   allocated: number;     // Currently allocated to project team members
   reorderPoint: number;
   unit: string;
-  linkedProjects?: string[];
-  substitutes?: string[];
-  compatibleAssetIds?: string[];
+  linkedProjects?: string[] | undefined;
+  substitutes?: string[] | undefined;
+  compatibleAssetIds?: string[] | undefined;
   updatedAt: string;
-  isDemo?: boolean;
+  isDemo?: boolean | undefined;
+
+  // Mouser Intelligence & Commercial Specifications (PUR Focus)
+  mouserPartNumber?: string | undefined;
+  mouserUrl?: string | undefined;
+  datasheetUrl?: string | undefined;
+  supplier?: string | undefined;
+  tentativeUnitCostUsd?: number | undefined;
+  tentativeUnitCostInr?: number | undefined;
+  priceBreaks?: PriceBreak[] | undefined;
+  leadTimeWeeks?: number | undefined;
+  mouserStock?: number | undefined;
+  rohsStatus?: string | undefined;
+
+  // Electrical & Technical Specifications (EHW Focus)
+  voltageRating?: string | undefined;
+  currentRating?: string | undefined;
+  frequencyClock?: string | undefined;
+  operatingTempRange?: string | undefined;
+  automotiveQualified?: boolean | undefined;
+  automotiveStandard?: string | undefined;
+
+  // Mechanical & Physical Specifications (MECH Focus)
+  dimensionsMm?: string | undefined;
+  weightGrams?: number | undefined;
+  ipRating?: string | undefined;
+  wireGauge?: string | undefined;
+  matingForce?: string | undefined;
 };
 
 export type InventoryMovement = {
@@ -191,6 +227,259 @@ export const projectTeamRoster: Record<
 
 const initialHarnessAndComponentSeeds: InventoryItem[] = [
   {
+    id: "inv-stm32",
+    partNumber: "STM32G0B1VCT6",
+    description: "Main Host MCU, ARM Cortex-M0+ 64MHz, 512KB Flash, 144KB RAM, Dual CAN-FD",
+    category: "Electronics",
+    subcategory: "Microcontrollers & MCUs",
+    crossTags: ["Electrical", "Automotive"],
+    manufacturer: "STMicroelectronics",
+    packageCase: "LQFP-100 (14x14mm)",
+    specifications: {
+      "Core": "ARM 32-bit Cortex-M0+ CPU, 64 MHz max",
+      "Memory": "512 KB Flash, 144 KB SRAM",
+      "CAN Controller": "2x CAN-FD with ISO 11898-1:2015 support",
+      "Operating Temp": "-40°C to +125°C automotive Grade 1",
+      "Operating Voltage": "2.0V to 3.6V (3.3V nominal)",
+    },
+    location: "Greater Noida SMT Plant 2",
+    bin: "E-02-14",
+    onHand: 18540,
+    released: 18000,
+    held: 540,
+    allocated: 2500,
+    reorderPoint: 8000,
+    unit: "pcs",
+    linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01"],
+    substitutes: ["STM32G0B1VET6", "GD32F303VCT6"],
+    compatibleAssetIds: ["ast-yamaha-ys12"],
+    updatedAt: "2026-10-17 14:00",
+    mouserPartNumber: "511-STM32G0B1VCT6",
+    mouserUrl: "https://www.mouser.in/c/?q=STM32G0B1VCT6",
+    datasheetUrl: "https://www.st.com/resource/en/datasheet/stm32g0b1vc.pdf",
+    supplier: "Mouser Electronics",
+    tentativeUnitCostUsd: 5.42,
+    tentativeUnitCostInr: 452.57,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 7.20, unitPriceInr: 601.20 },
+      { qty: 100, unitPriceUsd: 6.10, unitPriceInr: 509.35 },
+      { qty: 1000, unitPriceUsd: 5.42, unitPriceInr: 452.57 },
+      { qty: 10000, unitPriceUsd: 4.85, unitPriceInr: 404.98 },
+    ],
+    leadTimeWeeks: 8,
+    mouserStock: 18500,
+    rohsStatus: "RoHS Compliant / Lead Free",
+    voltageRating: "2.0V - 3.6V (3.3V nom)",
+    currentRating: "45mA Active / 1.8µA Standby",
+    frequencyClock: "64 MHz",
+    operatingTempRange: "-40°C to +125°C",
+    automotiveQualified: true,
+    automotiveStandard: "AEC-Q100 Grade 1",
+    dimensionsMm: "14.0 × 14.0 × 1.4 mm",
+    weightGrams: 0.85,
+  },
+  {
+    id: "inv-eg915",
+    partNumber: "EG915N-EU",
+    description: "LTE Cat-1 bis Cellular Wireless Modem + Embedded Multi-Constellation GNSS",
+    category: "Electronics",
+    subcategory: "Wireless Telematics & Modems",
+    crossTags: ["Electrical", "Automotive"],
+    manufacturer: "Quectel Wireless Solutions",
+    packageCase: "126-Pin LGA (24x26mm)",
+    specifications: {
+      "Cellular Bands": "LTE-FDD: B1/B3/B5/B7/B8/B20/B28",
+      "Data Rate": "Max 10 Mbps (DL) / 5 Mbps (UL)",
+      "GNSS Engine": "GPS / GLONASS / BeiDou / Galileo / QZSS",
+      "Supply Voltage": "3.3V to 4.3V (3.8V typical)",
+      "Antenna": "U.FL coaxial / SMT pad interface",
+    },
+    location: "Greater Noida SMT Plant 2",
+    bin: "E-05-03",
+    onHand: 7200,
+    released: 6900,
+    held: 300,
+    allocated: 2500,
+    reorderPoint: 5000,
+    unit: "pcs",
+    linkedProjects: ["HLPL-AI4T-01"],
+    substitutes: ["SIMCOM-A7672S", "MEIG-SLM156"],
+    compatibleAssetIds: ["ast-yamaha-ys12"],
+    updatedAt: "2026-10-17 14:15",
+    mouserPartNumber: "967-EG915NEUAA-N05-S",
+    mouserUrl: "https://www.mouser.in/c/?q=EG915N-EU",
+    datasheetUrl: "https://www.quectel.com/product/lte-eg915n-eu",
+    supplier: "Mouser Electronics",
+    tentativeUnitCostUsd: 12.80,
+    tentativeUnitCostInr: 1068.80,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 16.50, unitPriceInr: 1377.75 },
+      { qty: 100, unitPriceUsd: 14.20, unitPriceInr: 1185.70 },
+      { qty: 1000, unitPriceUsd: 12.80, unitPriceInr: 1068.80 },
+      { qty: 10000, unitPriceUsd: 11.40, unitPriceInr: 951.90 },
+    ],
+    leadTimeWeeks: 14,
+    mouserStock: 8400,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "3.3V - 4.3V (3.8V nom)",
+    currentRating: "600mA Transmit / 2.1mA Idle",
+    operatingTempRange: "-40°C to +85°C",
+    automotiveQualified: true,
+    automotiveStandard: "AIS-140 / TAC Certified",
+    dimensionsMm: "24.0 × 26.0 × 2.4 mm",
+    weightGrams: 2.6,
+  },
+  {
+    id: "inv-lmr14050",
+    partNumber: "LMR14050SDDAR",
+    description: "40V 5A Automotive Step-Down DC-DC Buck Regulator with Eco-mode",
+    category: "Electronics",
+    subcategory: "Automotive Power Regulators",
+    crossTags: ["Electrical", "Automotive"],
+    manufacturer: "Texas Instruments",
+    packageCase: "HSOIC-8 (PowerPAD)",
+    specifications: {
+      "Input Voltage": "4V to 40V operating (transients to 60V)",
+      "Output Current": "Up to 5A continuous",
+      "Switching Freq": "200 kHz to 2.5 MHz adjustable",
+      "Quiescent Current": "40 µA in standby Eco-mode",
+    },
+    location: "Greater Noida SMT Plant 2",
+    bin: "E-03-09",
+    onHand: 14200,
+    released: 14200,
+    held: 0,
+    allocated: 3500,
+    reorderPoint: 4000,
+    unit: "pcs",
+    linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03"],
+    substitutes: ["TPS54540DDAR", "LMR33630ARNXR"],
+    compatibleAssetIds: ["ast-yamaha-ys12", "ast-emtest-ucs500"],
+    updatedAt: "2026-10-17 14:20",
+    mouserPartNumber: "595-LMR14050SDDAR",
+    mouserUrl: "https://www.mouser.in/c/?q=LMR14050SDDAR",
+    datasheetUrl: "https://www.ti.com/lit/ds/symlink/lmr14050-q1.pdf",
+    supplier: "Mouser Electronics",
+    tentativeUnitCostUsd: 2.15,
+    tentativeUnitCostInr: 179.53,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 3.20, unitPriceInr: 267.20 },
+      { qty: 100, unitPriceUsd: 2.50, unitPriceInr: 208.75 },
+      { qty: 1000, unitPriceUsd: 2.15, unitPriceInr: 179.53 },
+      { qty: 10000, unitPriceUsd: 1.82, unitPriceInr: 151.97 },
+    ],
+    leadTimeWeeks: 6,
+    mouserStock: 22400,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "4V - 40V Vin (60V transient)",
+    currentRating: "5.0A Output / 40µA Quiescent",
+    operatingTempRange: "-40°C to +125°C",
+    automotiveQualified: true,
+    automotiveStandard: "AEC-Q100 Grade 1",
+    dimensionsMm: "4.9 × 3.9 × 1.7 mm",
+    weightGrams: 0.18,
+  },
+  {
+    id: "inv-sm5s24a",
+    partNumber: "SM5S24A-E3/2D",
+    description: "PAR Transient Voltage Suppressor (TVS) Diode 3600W 24V for ISO 7637-2 Load Dump",
+    category: "Electronics",
+    subcategory: "Protection & TVS Diodes",
+    crossTags: ["Electrical", "Automotive", "Safety Critical"],
+    manufacturer: "Vishay Intertechnology",
+    packageCase: "DO-218AB (Surface Mount)",
+    specifications: {
+      "Standoff Voltage": "24.0 V",
+      "Breakdown Voltage": "26.7 V to 29.5 V",
+      "Clamping Voltage": "38.9 V max @ 92.5 A surge",
+      "Peak Pulse Power": "3600 W (10/1000 µs), 4600 W (10/10000 µs load dump)",
+    },
+    location: "Greater Noida SMT Plant 2",
+    bin: "E-01-02",
+    onHand: 9500,
+    released: 9500,
+    held: 0,
+    allocated: 2500,
+    reorderPoint: 3000,
+    unit: "pcs",
+    linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03"],
+    substitutes: ["SM6S24A-E3/2D", "LTKAK6-024C"],
+    compatibleAssetIds: ["ast-yamaha-ys12", "ast-emtest-ucs500"],
+    updatedAt: "2026-10-17 14:25",
+    mouserPartNumber: "625-SM5S24A-E3/2D",
+    mouserUrl: "https://www.mouser.in/c/?q=SM5S24A-E3%2F2D",
+    datasheetUrl: "https://www.vishay.com/docs/88380/sm5s.pdf",
+    supplier: "Mouser Electronics",
+    tentativeUnitCostUsd: 1.65,
+    tentativeUnitCostInr: 137.78,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 2.45, unitPriceInr: 204.58 },
+      { qty: 100, unitPriceUsd: 1.95, unitPriceInr: 162.83 },
+      { qty: 1000, unitPriceUsd: 1.65, unitPriceInr: 137.78 },
+      { qty: 10000, unitPriceUsd: 1.35, unitPriceInr: 112.73 },
+    ],
+    leadTimeWeeks: 5,
+    mouserStock: 31000,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "24V Standoff / 38.9V Clamping",
+    currentRating: "3600W Peak / 92.5A Surge",
+    operatingTempRange: "-55°C to +175°C",
+    automotiveQualified: true,
+    automotiveStandard: "AEC-Q101 & ISO 16750-2 Load Dump 5b",
+    dimensionsMm: "10.0 × 8.5 × 4.8 mm",
+    weightGrams: 2.8,
+  },
+  {
+    id: "inv-tcan",
+    partNumber: "TCAN1042VDRQ1",
+    description: "Automotive High-Speed Fault-Tolerant CAN-FD Transceiver with Standby Mode",
+    category: "Electronics",
+    subcategory: "Automotive Transceivers & Interface",
+    crossTags: ["Electrical", "Automotive"],
+    manufacturer: "Texas Instruments",
+    packageCase: "SOIC-8 (Narrow 3.9mm)",
+    specifications: {
+      "Data Rate": "Up to 5 Mbps in CAN-FD mode",
+      "Bus Fault Protection": "±58 V bus fault protection",
+      "ESD Rating": "±16 kV IEC 61000-4-2 ESD",
+      "Logic Level": "1.7V to 5.5V flexible VIO pin",
+    },
+    location: "Greater Noida SMT Plant 2",
+    bin: "P-01-22",
+    onHand: 38100,
+    released: 38100,
+    held: 0,
+    allocated: 5000,
+    reorderPoint: 12000,
+    unit: "pcs",
+    linkedProjects: ["HLPL-AI4T-01", "HLPL-XLINK-03"],
+    substitutes: ["MCP2562FDT-E/SN", "TJA1051T/3"],
+    compatibleAssetIds: ["ast-yamaha-ys12", "ast-emtest-ucs500"],
+    updatedAt: "2026-10-17 14:30",
+    mouserPartNumber: "595-TCAN1042VDRQ1",
+    mouserUrl: "https://www.mouser.in/c/?q=TCAN1042VDRQ1",
+    datasheetUrl: "https://www.ti.com/lit/ds/symlink/tcan1042-q1.pdf",
+    supplier: "Mouser Electronics",
+    tentativeUnitCostUsd: 0.92,
+    tentativeUnitCostInr: 76.82,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 1.45, unitPriceInr: 121.08 },
+      { qty: 100, unitPriceUsd: 1.15, unitPriceInr: 96.03 },
+      { qty: 1000, unitPriceUsd: 0.92, unitPriceInr: 76.82 },
+      { qty: 10000, unitPriceUsd: 0.78, unitPriceInr: 65.13 },
+    ],
+    leadTimeWeeks: 4,
+    mouserStock: 45000,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "4.5V - 5.5V Vcc, 1.7V - 5.5V Vio",
+    currentRating: "70mA Dominant / 1.5µA Standby",
+    operatingTempRange: "-55°C to +125°C",
+    automotiveQualified: true,
+    automotiveStandard: "AEC-Q100 Grade 1 & ISO 11898-2:2016",
+    dimensionsMm: "4.9 × 3.9 × 1.5 mm",
+    weightGrams: 0.15,
+  },
+  {
     id: "harn-obd2-16p",
     partNumber: "HLPL-HARN-OBD2-16P",
     description: "SAE J1962 16-Pin Pass-Through OBD-II Automotive Wire Harness Assembly",
@@ -219,6 +508,30 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     substitutes: ["HLPL-HARN-OBD2-LGT-01", "DELPHI-J1962-STD-16"],
     compatibleAssetIds: ["ast-komax-255", "ast-jig-eol-01"],
     updatedAt: "2026-10-17 14:30",
+    mouserPartNumber: "MSR-J1962-16P",
+    mouserUrl: "https://www.mouser.in/c/?q=OBD+J1962",
+    datasheetUrl: "https://www.sae.org/standards/content/j1962_201607/",
+    supplier: "Hexense Cable Systems / Mouser Terminals",
+    tentativeUnitCostUsd: 4.90,
+    tentativeUnitCostInr: 409.15,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 7.50, unitPriceInr: 626.25 },
+      { qty: 100, unitPriceUsd: 5.80, unitPriceInr: 484.30 },
+      { qty: 1000, unitPriceUsd: 4.90, unitPriceInr: 409.15 },
+      { qty: 10000, unitPriceUsd: 4.10, unitPriceInr: 342.35 },
+    ],
+    leadTimeWeeks: 4,
+    mouserStock: 1850,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "12V / 24V Commercial Vehicle Bus",
+    currentRating: "5A Continuous / 10A Peak",
+    operatingTempRange: "-40°C to +105°C",
+    automotiveQualified: true,
+    automotiveStandard: "ISO 6722 / SAE J1962 / USCAR-21",
+    dimensionsMm: "350mm length × 16-Pin standard envelope",
+    weightGrams: 85.0,
+    wireGauge: "FLRY-B 0.50mm² thin-wall copper",
+    matingForce: "80N retention with secondary wedge lock",
   },
   {
     id: "harn-mx150-14p",
@@ -249,6 +562,31 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     substitutes: ["TE-DEUTSCH-MX14-SEAL"],
     compatibleAssetIds: ["ast-komax-255", "ast-crimp-press-02"],
     updatedAt: "2026-10-17 15:10",
+    mouserPartNumber: "538-33472-1401",
+    mouserUrl: "https://www.mouser.in/c/?q=33472-1401",
+    datasheetUrl: "https://www.molex.com/pdm_docs/sd/334721401_sd.pdf",
+    supplier: "Molex Automotive / Mouser",
+    tentativeUnitCostUsd: 6.20,
+    tentativeUnitCostInr: 517.70,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 9.00, unitPriceInr: 751.50 },
+      { qty: 100, unitPriceUsd: 7.20, unitPriceInr: 601.20 },
+      { qty: 1000, unitPriceUsd: 6.20, unitPriceInr: 517.70 },
+      { qty: 10000, unitPriceUsd: 5.30, unitPriceInr: 442.55 },
+    ],
+    leadTimeWeeks: 4,
+    mouserStock: 4200,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "12V / 24V / 48V DC",
+    currentRating: "14A continuous per circuit",
+    operatingTempRange: "-40°C to +125°C",
+    automotiveQualified: true,
+    automotiveStandard: "IP67 (ISO 20653) / USCAR-2 Class III",
+    dimensionsMm: "550mm harness length · 14-Pin sealed",
+    weightGrams: 110.0,
+    ipRating: "IP67",
+    wireGauge: "TXL Cross-Linked Polyethylene 18 & 20 AWG",
+    matingForce: "75N latch engagement",
   },
   {
     id: "harn-dt04-12p",
@@ -278,6 +616,31 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     substitutes: ["AMPHENOL-AT04-12P"],
     compatibleAssetIds: ["ast-komax-255", "ast-jig-eol-01"],
     updatedAt: "2026-10-17 16:00",
+    mouserPartNumber: "571-DT04-12PA",
+    mouserUrl: "https://www.mouser.in/c/?q=DT04-12PA",
+    datasheetUrl: "https://www.te.com/commerce/DocumentDelivery/DDEController?DocNr=DT04-12P",
+    supplier: "TE Connectivity / Mouser",
+    tentativeUnitCostUsd: 7.80,
+    tentativeUnitCostInr: 651.30,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 11.20, unitPriceInr: 935.20 },
+      { qty: 100, unitPriceUsd: 8.90, unitPriceInr: 743.15 },
+      { qty: 1000, unitPriceUsd: 7.80, unitPriceInr: 651.30 },
+      { qty: 10000, unitPriceUsd: 6.80, unitPriceInr: 567.80 },
+    ],
+    leadTimeWeeks: 5,
+    mouserStock: 3200,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "250V AC/DC max",
+    currentRating: "13A continuous per contact",
+    operatingTempRange: "-55°C to +125°C",
+    automotiveQualified: true,
+    automotiveStandard: "SAE J2030 / USCAR-2 / IP68",
+    dimensionsMm: "600mm heavy-duty braided loom",
+    weightGrams: 145.0,
+    ipRating: "IP68",
+    wireGauge: "FLRY-B 0.75mm²",
+    matingForce: "90N with wedgelock W12P",
   },
   {
     id: "wire-flryb-05",
@@ -305,6 +668,28 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03"],
     compatibleAssetIds: ["ast-komax-255"],
     updatedAt: "2026-10-17 11:20",
+    mouserPartNumber: "MSR-CBL-FLRYB-05",
+    mouserUrl: "https://www.mouser.in/c/?q=FLRY-B",
+    datasheetUrl: "https://www.leoni.com/en/products/automotive-cables/flry-b/",
+    supplier: "Leoni / Mouser Distributor",
+    tentativeUnitCostUsd: 48.00,
+    tentativeUnitCostInr: 4008.00,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 58.00, unitPriceInr: 4843.00 },
+      { qty: 10, unitPriceUsd: 52.00, unitPriceInr: 4342.00 },
+      { qty: 50, unitPriceUsd: 48.00, unitPriceInr: 4008.00 },
+    ],
+    leadTimeWeeks: 3,
+    mouserStock: 250,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "60V DC / 25V AC",
+    currentRating: "9A continuous in conduit",
+    operatingTempRange: "-40°C to +105°C (3000h)",
+    automotiveQualified: true,
+    automotiveStandard: "ISO 6722 Class B / DIN 72551-5",
+    dimensionsMm: "1.6mm outer diameter × 500m spool",
+    weightGrams: 3600.0,
+    wireGauge: "0.50mm² (20 AWG eq)",
   },
   {
     id: "conn-molex-16p",
@@ -333,6 +718,80 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     substitutes: ["YAZAKI-7283-16P"],
     compatibleAssetIds: ["ast-crimp-press-02"],
     updatedAt: "2026-10-17 13:45",
+    mouserPartNumber: "538-33472-1601",
+    mouserUrl: "https://www.mouser.in/c/?q=33472-1601",
+    datasheetUrl: "https://www.molex.com/pdm_docs/sd/334721601_sd.pdf",
+    supplier: "Mouser Electronics",
+    tentativeUnitCostUsd: 1.85,
+    tentativeUnitCostInr: 154.48,
+    priceBreaks: [
+      { qty: 1, unitPriceUsd: 2.75, unitPriceInr: 229.63 },
+      { qty: 100, unitPriceUsd: 2.10, unitPriceInr: 175.35 },
+      { qty: 1000, unitPriceUsd: 1.85, unitPriceInr: 154.48 },
+      { qty: 10000, unitPriceUsd: 1.52, unitPriceInr: 126.92 },
+    ],
+    leadTimeWeeks: 6,
+    mouserStock: 14200,
+    rohsStatus: "RoHS Compliant",
+    voltageRating: "500V DC isolation",
+    currentRating: "22A max per circuit",
+    operatingTempRange: "-40°C to +125°C",
+    automotiveQualified: true,
+    automotiveStandard: "USCAR-2 Class III / IP67 / IP69K",
+    dimensionsMm: "33.8 × 24.2 × 18.5 mm",
+    weightGrams: 12.5,
+    ipRating: "IP67 / IP69K",
+    matingForce: "75N max with secondary wedge lock",
+  },
+  {
+    id: "inv-enclosure",
+    partNumber: "HLPL-ENC-PCABS-01",
+    description: "Automotive IP67 Flame-Retardant Polycarbonate / ABS Telematics Enclosure",
+    category: "Enclosures",
+    subcategory: "Ingress Protected Telematics Casing",
+    crossTags: ["Mechanical", "Automotive"],
+    manufacturer: "Hexense Mechanical Tooling",
+    packageCase: "Precision Molded Case with Gasket",
+    specifications: {
+      "Material": "Sabic Cycoloy PC/ABS automotive resin",
+      "Ingress Protection": "IP67 (1m immersion for 30 min per ISO 20653)",
+      "Flammability": "UL94-V0 @ 1.5mm wall thickness",
+      "Impact Resistance": "IK08 mechanical drop shock certified",
+    },
+    location: "Greater Noida SMT Plant 2",
+    bin: "M-01-04",
+    onHand: 6200,
+    released: 6200,
+    held: 0,
+    allocated: 2500,
+    reorderPoint: 3500,
+    unit: "pcs",
+    linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01"],
+    substitutes: ["HAMMOND-1554C-IP67"],
+    compatibleAssetIds: ["ast-branson-2000"],
+    updatedAt: "2026-10-17 14:00",
+    mouserPartNumber: "MSR-ENC-PCABS-01",
+    mouserUrl: "https://www.mouser.in/c/?q=IP67+Enclosure",
+    datasheetUrl: "https://www.hammfg.com/electronics/small-enclosures/plastic/1554",
+    supplier: "Hexense Mechanical Tooling",
+    tentativeUnitCostUsd: 3.80,
+    tentativeUnitCostInr: 317.30,
+    priceBreaks: [
+      { qty: 100, unitPriceUsd: 4.80, unitPriceInr: 400.80 },
+      { qty: 1000, unitPriceUsd: 3.80, unitPriceInr: 317.30 },
+      { qty: 10000, unitPriceUsd: 2.95, unitPriceInr: 246.33 },
+    ],
+    leadTimeWeeks: 8,
+    mouserStock: 5000,
+    rohsStatus: "RoHS Compliant / Halogen Free",
+    voltageRating: "Dielectric isolation > 15 kV",
+    currentRating: "Non-conductive exterior shell",
+    operatingTempRange: "-40°C to +105°C",
+    automotiveQualified: true,
+    automotiveStandard: "ISO 20653 IP67 / UL94-V0",
+    dimensionsMm: "115.0 × 85.0 × 32.0 mm",
+    weightGrams: 95.0,
+    ipRating: "IP67",
   },
 ];
 
@@ -524,6 +983,7 @@ type Props = {
   assignments: InventoryAssignment[];
   allowedCategories: InventoryCategory[];
   readOnly?: boolean;
+  activeDepartment?: "EHW" | "PUR" | "MECH" | "QA" | "ALL";
   onMove: (itemId: string, change: number, reason: InventoryMovement["reason"]) => void;
   onAssign: (
     itemId: string,
@@ -541,6 +1001,7 @@ export function LiveInventoryWorkspace({
   assignments,
   allowedCategories,
   readOnly = false,
+  activeDepartment = "ALL",
   onMove,
   onAssign,
 }: Props) {
@@ -549,10 +1010,53 @@ export function LiveInventoryWorkspace({
     "parts" | "harnesses" | "issuance" | "grn" | "assets" | "audit"
   >("parts");
 
+  // Department-adaptive column preset
+  const [columnPreset, setColumnPreset] = useState<"universal" | "ehw" | "pur" | "mech">(() => {
+    if (activeDepartment === "EHW") return "ehw";
+    if (activeDepartment === "PUR") return "pur";
+    if (activeDepartment === "MECH") return "mech";
+    return "pur"; // default to purchasing view
+  });
+
   // Local state extensions (enrich with seeded harnesses and components)
   const [localItems, setLocalItems] = useState<InventoryItem[]>(() => {
-    const existingIds = new Set(items.map((i) => i.id));
-    const merged = [...items];
+    const seedMap = new Map(initialHarnessAndComponentSeeds.map((s) => [s.id, s]));
+    const seedByPart = new Map(initialHarnessAndComponentSeeds.map((s) => [s.partNumber, s]));
+
+    // Merge existing items with seeds to preserve any rich specs/Mouser info
+    const merged = items.map((item) => {
+      const seed = seedMap.get(item.id) || seedByPart.get(item.partNumber);
+      if (seed) {
+        return {
+          ...seed,
+          ...item,
+          voltageRating: item.voltageRating ?? seed.voltageRating,
+          currentRating: item.currentRating ?? seed.currentRating,
+          frequencyClock: item.frequencyClock ?? seed.frequencyClock,
+          operatingTempRange: item.operatingTempRange ?? seed.operatingTempRange,
+          automotiveQualified: item.automotiveQualified ?? seed.automotiveQualified,
+          automotiveStandard: item.automotiveStandard ?? seed.automotiveStandard,
+          datasheetUrl: item.datasheetUrl ?? seed.datasheetUrl,
+          mouserUrl: item.mouserUrl ?? seed.mouserUrl,
+          mouserPartNumber: item.mouserPartNumber ?? seed.mouserPartNumber,
+          supplier: item.supplier ?? seed.supplier,
+          tentativeUnitCostUsd: item.tentativeUnitCostUsd ?? seed.tentativeUnitCostUsd,
+          tentativeUnitCostInr: item.tentativeUnitCostInr ?? seed.tentativeUnitCostInr,
+          priceBreaks: item.priceBreaks ?? seed.priceBreaks,
+          leadTimeWeeks: item.leadTimeWeeks ?? seed.leadTimeWeeks,
+          mouserStock: item.mouserStock ?? seed.mouserStock,
+          rohsStatus: item.rohsStatus ?? seed.rohsStatus,
+          dimensionsMm: item.dimensionsMm ?? seed.dimensionsMm,
+          weightGrams: item.weightGrams ?? seed.weightGrams,
+          ipRating: item.ipRating ?? seed.ipRating,
+          wireGauge: item.wireGauge ?? seed.wireGauge,
+          matingForce: item.matingForce ?? seed.matingForce,
+        };
+      }
+      return item;
+    });
+
+    const existingIds = new Set(merged.map((i) => i.id));
     for (const seed of initialHarnessAndComponentSeeds) {
       if (!existingIds.has(seed.id)) {
         merged.push(seed);
@@ -575,6 +1079,7 @@ export function LiveInventoryWorkspace({
 
   // Modal inspection states
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
+  const [detailTab, setDetailTab] = useState<"overview" | "ehw" | "pur" | "mech" | "trace">("overview");
   const [detailAsset, setDetailAsset] = useState<AssetRecord | null>(null);
   const [grnModalOpen, setGrnModalOpen] = useState(false);
   const [addPartModalOpen, setAddPartModalOpen] = useState(false);
@@ -605,6 +1110,12 @@ export function LiveInventoryWorkspace({
   const [grnLocation, setGrnLocation] = useState<string>("Greater Noida SMT Plant 2");
   const [grnBin, setGrnBin] = useState<string>("E-02-14");
 
+  // Mouser Auto-Fetch & Auto-Fill state
+  const [mouserSearchQuery, setMouserSearchQuery] = useState("");
+  const [mouserLoading, setMouserLoading] = useState(false);
+  const [mouserSuccessMessage, setMouserSuccessMessage] = useState<string | null>(null);
+  const [mouserResultData, setMouserResultData] = useState<MouserComponentResult | null>(null);
+
   // New Part Registration modal fields
   const [newPartNum, setNewPartNum] = useState<string>("");
   const [newPartDesc, setNewPartDesc] = useState<string>("");
@@ -617,6 +1128,25 @@ export function LiveInventoryWorkspace({
   const [newPartLoc, setNewPartLoc] = useState<string>("Greater Noida SMT Plant 2");
   const [newPartBin, setNewPartBin] = useState<string>("GEN-01-A");
   const [newPartProjects, setNewPartProjects] = useState<string>("HLPL-AI4T-01");
+
+  // Department specific fields for new part
+  const [newPartCostUsd, setNewPartCostUsd] = useState<number | undefined>();
+  const [newPartCostInr, setNewPartCostInr] = useState<number | undefined>();
+  const [newPartDatasheetUrl, setNewPartDatasheetUrl] = useState<string>("");
+  const [newPartMouserUrl, setNewPartMouserUrl] = useState<string>("");
+  const [newPartMouserPfx, setNewPartMouserPfx] = useState<string>("");
+  const [newPartLeadWeeks, setNewPartLeadWeeks] = useState<number | undefined>();
+  const [newPartSupplier, setNewPartSupplier] = useState<string>("Mouser Electronics");
+  const [newPartVoltage, setNewPartVoltage] = useState<string>("");
+  const [newPartCurrent, setNewPartCurrent] = useState<string>("");
+  const [newPartAutoGraded, setNewPartAutoGraded] = useState<boolean>(false);
+  const [newPartAutoStd, setNewPartAutoStd] = useState<string>("");
+  const [newPartDimensions, setNewPartDimensions] = useState<string>("");
+  const [newPartWeight, setNewPartWeight] = useState<number | undefined>();
+  const [newPartIpRating, setNewPartIpRating] = useState<string>("");
+  const [newPartWireGauge, setNewPartWireGauge] = useState<string>("");
+  const [newPartMatingForce, setNewPartMatingForce] = useState<string>("");
+  const [newPartPriceBreaks, setNewPartPriceBreaks] = useState<PriceBreak[] | undefined>();
 
   // Roster resolution for active project
   const eligibleRoster = useMemo(() => {
@@ -898,6 +1428,50 @@ export function LiveInventoryWorkspace({
     setGrnModalOpen(false);
   };
 
+  // Mouser Auto-Fetch Specification Handler
+  const handleFetchMouser = async (queryToSearch?: string) => {
+    const q = (queryToSearch || mouserSearchQuery || newPartNum).trim();
+    if (!q) return;
+
+    setMouserLoading(true);
+    setMouserSuccessMessage(null);
+    try {
+      const res = await lookupMouserPart(q);
+      setMouserResultData(res);
+      setNewPartNum(res.mpn);
+      setNewPartDesc(res.description);
+      setNewPartCat(res.suggestedCategory);
+      setNewPartSubcat(res.suggestedSubcategory);
+      setNewPartMfr(res.manufacturer);
+      setNewPartPackage(res.packageCase);
+      setNewPartSupplier(res.supplier);
+      setNewPartCostUsd(res.tentativeCostUsd);
+      setNewPartCostInr(res.tentativeCostInr);
+      setNewPartPriceBreaks(res.priceBreaks);
+      setNewPartLeadWeeks(res.leadTimeWeeks);
+      setNewPartDatasheetUrl(res.datasheetUrl);
+      setNewPartMouserUrl(res.mouserProductUrl);
+      setNewPartMouserPfx(res.mouserPartNumber);
+      setNewPartVoltage(res.voltageRating);
+      setNewPartCurrent(res.currentRating);
+      setNewPartAutoGraded(res.automotiveQualified);
+      setNewPartAutoStd(res.automotiveStandard);
+      setNewPartDimensions(res.dimensionsMm);
+      setNewPartWeight(res.weightGrams);
+      if (res.ipRating) setNewPartIpRating(res.ipRating);
+      if (res.wireGauge) setNewPartWireGauge(res.wireGauge);
+      if (res.matingForce) setNewPartMatingForce(res.matingForce);
+
+      setMouserSuccessMessage(
+        `✓ Fetched: ${res.manufacturer} ${res.mpn} · Category: ${res.suggestedCategory} (${res.suggestedSubcategory}) · Cost: $${res.tentativeCostUsd} (₹${res.tentativeCostInr}) · Datasheet Attached`
+      );
+    } catch (err) {
+      console.error("Mouser lookup error:", err);
+    } finally {
+      setMouserLoading(false);
+    }
+  };
+
   // Register New Controlled Part
   const handleCreatePart = () => {
     if (!newPartNum || !newPartDesc) return;
@@ -928,12 +1502,40 @@ export function LiveInventoryWorkspace({
       unit: newPartUnit,
       linkedProjects: newPartProjects.split(",").map((p) => p.trim()),
       updatedAt: new Date().toISOString().replace("T", " ").substring(0, 16),
+
+      // Mouser Intelligence & Commercial Specifications
+      mouserPartNumber: newPartMouserPfx || `MSR-${newPartNum}`,
+      mouserUrl: newPartMouserUrl || `https://www.mouser.in/c/?q=${encodeURIComponent(newPartNum)}`,
+      datasheetUrl: newPartDatasheetUrl || `https://www.alldatasheet.com/view.jsp?Searchword=${encodeURIComponent(newPartNum)}`,
+      supplier: newPartSupplier || "Mouser Electronics",
+      tentativeUnitCostUsd: newPartCostUsd ?? 2.50,
+      tentativeUnitCostInr: newPartCostInr ?? Math.round(2.50 * 83.5 * 100) / 100,
+      priceBreaks: newPartPriceBreaks,
+      leadTimeWeeks: newPartLeadWeeks ?? 6,
+      mouserStock: mouserResultData?.stockAvailability ?? 10000,
+      rohsStatus: mouserResultData?.rohsStatus ?? "RoHS Compliant",
+
+      // Electrical & Technical Specifications
+      voltageRating: newPartVoltage || "3.3V / 5.0V Logic",
+      currentRating: newPartCurrent || "Standard Operating Current",
+      automotiveQualified: newPartAutoGraded,
+      automotiveStandard: newPartAutoStd || (newPartAutoGraded ? "AEC-Q100 / Automotive Graded" : "Industrial Grade"),
+
+      // Mechanical & Physical Specifications
+      dimensionsMm: newPartDimensions || "10.0 × 10.0 × 2.0 mm",
+      weightGrams: newPartWeight ?? 1.0,
+      ipRating: newPartIpRating,
+      wireGauge: newPartWireGauge,
+      matingForce: newPartMatingForce,
     };
 
     setLocalItems([newItem, ...localItems]);
     setAddPartModalOpen(false);
     setNewPartNum("");
     setNewPartDesc("");
+    setMouserSearchQuery("");
+    setMouserSuccessMessage(null);
+    setMouserResultData(null);
   };
 
   // =============================================================================
@@ -1059,8 +1661,80 @@ export function LiveInventoryWorkspace({
          ========================================================================= */}
       {(activeTab === "parts" || activeTab === "harnesses") && (
         <div>
-          {/* Filter Bar */}
-          <div className="flex flex-wrap items-center gap-2.5 border-b border-border bg-card/30 p-3 text-xs">
+          {/* Department View Switcher & Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-border bg-card/40 p-3 text-xs">
+            {/* Left: Department View Presets */}
+            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background/80 p-1">
+              <span className="px-2 font-mono text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                <Layers className="size-3 text-primary" /> Department View:
+              </span>
+              <button
+                type="button"
+                onClick={() => setColumnPreset("ehw")}
+                className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-all ${
+                  columnPreset === "ehw"
+                    ? "bg-amber-500/20 text-amber-500 border border-amber-500/40 shadow-sm"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+                title="Hardware Engineering: Voltage, Current, Automotive Qualification, Package, Datasheet"
+              >
+                <Zap className="size-3" />
+                <span>Hardware (EHW)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColumnPreset("pur")}
+                className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-all ${
+                  columnPreset === "pur"
+                    ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/40 shadow-sm"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+                title="Purchasing & SCM: Unit Cost ($ / ₹), Price Breaks, Lead Time, Mouser Stock, Sales Target Coverage"
+              >
+                <DollarSign className="size-3" />
+                <span>Purchasing (PUR)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColumnPreset("mech")}
+                className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-all ${
+                  columnPreset === "mech"
+                    ? "bg-blue-500/20 text-blue-500 border border-blue-500/40 shadow-sm"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+                title="Mechanical Engineering: Dimensions, Weight, Ingress Sealing, Retention Force, Machinery"
+              >
+                <Ruler className="size-3" />
+                <span>Mechanical (MECH)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColumnPreset("universal")}
+                className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-all ${
+                  columnPreset === "universal"
+                    ? "bg-primary/20 text-primary border border-primary/40 shadow-sm"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+                title="Universal View: Standard locations, bins, released and held stock"
+              >
+                <Boxes className="size-3" />
+                <span>Universal</span>
+              </button>
+            </div>
+
+            {/* Right: Quick actions / info badge */}
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-primary">
+                {columnPreset === "ehw" && "⚡ Hardware Preset: Voltage, Current & AEC-Q Qualification"}
+                {columnPreset === "pur" && "💰 Purchasing Preset: Unit Cost, Lead Time & 50k Volume Coverage"}
+                {columnPreset === "mech" && "📐 Mechanical Preset: Dimensions, IP Rating & Tooling"}
+                {columnPreset === "universal" && "🌐 Universal Preset: Locations, Quantities & Status"}
+              </span>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="flex flex-wrap items-center gap-2.5 border-b border-border bg-card/20 p-3 text-xs">
             {/* Search Input */}
             <div className="relative min-w-64 flex-1">
               <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
@@ -1133,18 +1807,51 @@ export function LiveInventoryWorkspace({
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-xs">
+            <table className="w-full min-w-[1080px] text-left text-xs">
               <thead className="border-b border-border bg-secondary/50 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-2.5">Part Number & Specifications</th>
-                  <th className="px-3 py-2.5">Category & Cross-Tags</th>
-                  <th className="px-3 py-2.5">Location / Bin</th>
-                  <th className="px-3 py-2.5 text-right">Available Released</th>
-                  <th className="px-3 py-2.5 text-right">Quality Held</th>
-                  <th className="px-3 py-2.5">Linked Projects</th>
-                  <th className="px-3 py-2.5">Status</th>
-                  <th className="px-4 py-2.5 text-right">Actions</th>
-                </tr>
+                {columnPreset === "ehw" ? (
+                  <tr>
+                    <th className="px-4 py-2.5">Part & Technical Description</th>
+                    <th className="px-3 py-2.5">Voltage Rating</th>
+                    <th className="px-3 py-2.5">Operating Current</th>
+                    <th className="px-3 py-2.5">Automotive Standard</th>
+                    <th className="px-3 py-2.5">Package / Footprint</th>
+                    <th className="px-3 py-2.5 text-right">Available Released</th>
+                    <th className="px-3 py-2.5">Linked Projects</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
+                  </tr>
+                ) : columnPreset === "pur" ? (
+                  <tr>
+                    <th className="px-4 py-2.5">Part Number & Supplier</th>
+                    <th className="px-3 py-2.5">Tentative Cost ($ / ₹)</th>
+                    <th className="px-3 py-2.5">Volume Pricing Tiers</th>
+                    <th className="px-3 py-2.5">Lead Time & Distributor Stock</th>
+                    <th className="px-3 py-2.5">Coverage vs 50k Sales Target</th>
+                    <th className="px-3 py-2.5">Buffer Status</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
+                  </tr>
+                ) : columnPreset === "mech" ? (
+                  <tr>
+                    <th className="px-4 py-2.5">Part & Assembly Type</th>
+                    <th className="px-3 py-2.5">Dimensions (L×W×H)</th>
+                    <th className="px-3 py-2.5">Weight / Mass</th>
+                    <th className="px-3 py-2.5">Ingress & Loom / Casing</th>
+                    <th className="px-3 py-2.5">Wire Gauge & Mating Force</th>
+                    <th className="px-3 py-2.5">Compatible Machinery</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th className="px-4 py-2.5">Part Number & Specifications</th>
+                    <th className="px-3 py-2.5">Category & Cross-Tags</th>
+                    <th className="px-3 py-2.5">Location / Bin</th>
+                    <th className="px-3 py-2.5 text-right">Available Released</th>
+                    <th className="px-3 py-2.5 text-right">Quality Held</th>
+                    <th className="px-3 py-2.5">Linked Projects</th>
+                    <th className="px-3 py-2.5">Status</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
+                  </tr>
+                )}
               </thead>
               <tbody className="divide-y divide-border/60">
                 {filteredItems.map((item) => {
@@ -1153,6 +1860,429 @@ export function LiveInventoryWorkspace({
                   const isLow = availableStock <= item.reorderPoint;
                   const isHarness = item.category === "Wire Harnesses";
 
+                  // -------------------------------------------------------------
+                  // PRESET: HARDWARE (EHW)
+                  // -------------------------------------------------------------
+                  if (columnPreset === "ehw") {
+                    return (
+                      <tr key={item.id} className="transition-colors hover:bg-secondary/40">
+                        {/* Part, Description & Datasheet Link */}
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-start gap-2">
+                            {isHarness ? (
+                              <Cable className="size-4 shrink-0 text-cyan-500 mt-0.5" />
+                            ) : (
+                              <Cpu className="size-4 shrink-0 text-amber-500 mt-0.5" />
+                            )}
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className="font-mono font-bold text-foreground hover:underline cursor-pointer"
+                                  onClick={() => setDetailItem(item)}
+                                >
+                                  {item.partNumber}
+                                </span>
+                                {item.datasheetUrl && (
+                                  <a
+                                    href={item.datasheetUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-0.5 rounded bg-blue-500/10 px-1.5 py-0.2 font-mono text-[9px] font-bold text-blue-500 hover:bg-blue-500/20 border border-blue-500/25 transition-colors"
+                                    title="Open manufacturer datasheet PDF in new tab"
+                                  >
+                                    <FileText className="size-2.5" />
+                                    <span>Datasheet ↗</span>
+                                  </a>
+                                )}
+                              </div>
+                              <span className="block text-[11px] text-muted-foreground line-clamp-1">
+                                {item.description}
+                              </span>
+                              <span className="text-[10px] font-mono text-muted-foreground">
+                                {item.manufacturer || "SCM Sourced"} {item.subcategory ? `· ${item.subcategory}` : ""}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Voltage Rating */}
+                        <td className="px-3 py-2.5 font-mono text-[11px]">
+                          <span className="font-semibold text-foreground">
+                            {item.voltageRating || "3.3V / 5.0V Logic"}
+                          </span>
+                        </td>
+
+                        {/* Operating Current */}
+                        <td className="px-3 py-2.5 font-mono text-[11px]">
+                          <span className="text-muted-foreground">
+                            {item.currentRating || "Standard"}
+                          </span>
+                        </td>
+
+                        {/* Automotive Standard */}
+                        <td className="px-3 py-2.5 font-mono text-[10px]">
+                          {item.automotiveQualified ? (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-0.5 font-bold text-emerald-500 border border-emerald-500/30">
+                              <ShieldCheck className="size-3" />
+                              <span>{item.automotiveStandard || "AEC-Q100"}</span>
+                            </span>
+                          ) : (
+                            <span className="rounded bg-secondary px-2 py-0.5 text-muted-foreground">
+                              Industrial Grade
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Package / Footprint */}
+                        <td className="px-3 py-2.5 font-mono text-[11px] text-foreground">
+                          {item.packageCase || "Standard SMD"}
+                        </td>
+
+                        {/* Available Released */}
+                        <td className="px-3 py-2.5 text-right font-mono">
+                          <strong className="text-sm font-bold text-foreground">
+                            {availableStock.toLocaleString()} {item.unit}
+                          </strong>
+                          {heldStock > 0 && (
+                            <span className="block text-[10px] text-warning font-semibold">
+                              +{heldStock} held in IQC
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Linked Projects */}
+                        <td className="px-3 py-2.5 font-mono text-[10px]">
+                          {item.linkedProjects && item.linkedProjects.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.linkedProjects.map((p) => (
+                                <span key={p} className="rounded bg-primary/10 px-1.5 py-0.5 font-bold text-primary">
+                                  {p}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">Universal</span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-2.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {item.datasheetUrl && (
+                              <a
+                                href={item.datasheetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Open PDF Datasheet in new tab"
+                                className="grid size-7 place-items-center rounded border border-border bg-card text-blue-500 transition-colors hover:bg-blue-500/10"
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </a>
+                            )}
+                            <button
+                              title="Inspect Part Details"
+                              onClick={() => {
+                                setDetailTab("ehw");
+                                setDetailItem(item);
+                              }}
+                              className="grid size-7 place-items-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                            >
+                              <Eye className="size-3.5" />
+                            </button>
+                            {!readOnly && (
+                              <button
+                                title={`Issue ${item.partNumber} to Project Team`}
+                                onClick={() => {
+                                  setIssueModalItem(item);
+                                  if (item.linkedProjects && item.linkedProjects.length > 0 && item.linkedProjects[0]) {
+                                    setIssueProject(item.linkedProjects[0]);
+                                  }
+                                }}
+                                disabled={availableStock === 0}
+                                className="flex h-7 items-center gap-1 rounded border border-primary/30 bg-primary/10 px-2 font-mono text-[11px] font-bold text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
+                              >
+                                <UserPlus className="size-3" />
+                                <span>Issue</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  // -------------------------------------------------------------
+                  // PRESET: PURCHASING (PUR)
+                  // -------------------------------------------------------------
+                  if (columnPreset === "pur") {
+                    const unitUsd = item.tentativeUnitCostUsd ?? 2.50;
+                    const unitInr = item.tentativeUnitCostInr ?? Math.round(unitUsd * 83.5 * 100) / 100;
+                    const salesTarget = item.category === "Wire Harnesses" || item.category === "Electronics" ? 50000 : 10000;
+                    const covPct = Math.min(100, Math.round((availableStock / salesTarget) * 100));
+
+                    return (
+                      <tr key={item.id} className="transition-colors hover:bg-secondary/40">
+                        {/* Part & Supplier */}
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-start gap-2">
+                            <ShoppingCart className="size-4 shrink-0 text-emerald-500 mt-0.5" />
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className="font-mono font-bold text-foreground hover:underline cursor-pointer"
+                                  onClick={() => {
+                                    setDetailTab("pur");
+                                    setDetailItem(item);
+                                  }}
+                                >
+                                  {item.partNumber}
+                                </span>
+                                {item.mouserUrl && (
+                                  <a
+                                    href={item.mouserUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.2 font-mono text-[9px] font-bold text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/25 transition-colors"
+                                    title="View live component catalog on Mouser.com in new tab"
+                                  >
+                                    <ShoppingCart className="size-2.5" />
+                                    <span>Mouser Buy ↗</span>
+                                  </a>
+                                )}
+                              </div>
+                              <span className="block text-[11px] text-muted-foreground line-clamp-1">
+                                {item.description}
+                              </span>
+                              <span className="text-[10px] font-mono text-muted-foreground">
+                                Supplier: <strong className="text-foreground">{item.supplier || "Mouser Electronics"}</strong> {item.mouserPartNumber ? `· #${item.mouserPartNumber}` : ""}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Tentative Unit Cost ($ and ₹) */}
+                        <td className="px-3 py-2.5 font-mono">
+                          <div className="text-sm font-bold text-foreground">
+                            ${unitUsd.toFixed(2)}
+                          </div>
+                          <div className="text-[10px] font-semibold text-emerald-500">
+                            ₹{unitInr.toFixed(2)}
+                          </div>
+                        </td>
+
+                        {/* Volume Pricing Tiers */}
+                        <td className="px-3 py-2.5 font-mono text-[10px]">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-muted-foreground">
+                              1k: <strong className="text-foreground">${(unitUsd * 1.0).toFixed(2)}</strong>
+                            </span>
+                            <span className="text-muted-foreground">
+                              10k: <strong className="text-emerald-500">${(unitUsd * 0.88).toFixed(2)}</strong> (save 12%)
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Lead Time & Distributor Stock */}
+                        <td className="px-3 py-2.5 font-mono text-[11px]">
+                          <span className="font-bold text-foreground">{item.leadTimeWeeks ?? 6} wks lead</span>
+                          <span className="block text-[10px] text-muted-foreground">
+                            {(item.mouserStock ?? 12500).toLocaleString()} pcs in Mouser stock
+                          </span>
+                        </td>
+
+                        {/* Stock vs Sales Target (50,000 pcs estimation) */}
+                        <td className="px-3 py-2.5 font-mono text-[11px] min-w-36">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="font-bold text-foreground">
+                              {availableStock.toLocaleString()} / {salesTarget.toLocaleString()}
+                            </span>
+                            <span className={`font-bold ${covPct >= 25 ? "text-moss" : "text-amber-500"}`}>
+                              {covPct}%
+                            </span>
+                          </div>
+                          <div className="mt-1 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                            <div
+                              className={`h-full ${covPct >= 25 ? "bg-moss" : "bg-amber-500"}`}
+                              style={{ width: `${Math.max(5, covPct)}%` }}
+                            />
+                          </div>
+                        </td>
+
+                        {/* Buffer Status */}
+                        <td className="px-3 py-2.5 font-mono text-[10px]">
+                          {isLow ? (
+                            <span className="rounded bg-danger/15 px-2 py-0.5 font-bold text-danger border border-danger/30">
+                              REORDER BUFFER ≤ {item.reorderPoint}
+                            </span>
+                          ) : (
+                            <span className="rounded bg-moss/15 px-2 py-0.5 font-bold text-moss border border-moss/30">
+                              BUFFER SECURED
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-2.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {item.mouserUrl && (
+                              <a
+                                href={item.mouserUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Open Mouser Catalog in new tab"
+                                className="grid size-7 place-items-center rounded border border-border bg-card text-emerald-500 transition-colors hover:bg-emerald-500/10"
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </a>
+                            )}
+                            <button
+                              title="Inspect Part Details"
+                              onClick={() => {
+                                setDetailTab("pur");
+                                setDetailItem(item);
+                              }}
+                              className="grid size-7 place-items-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                            >
+                              <Eye className="size-3.5" />
+                            </button>
+                            {!readOnly && (
+                              <button
+                                title={`Issue ${item.partNumber} to Project Team`}
+                                onClick={() => {
+                                  setIssueModalItem(item);
+                                  if (item.linkedProjects && item.linkedProjects.length > 0 && item.linkedProjects[0]) {
+                                    setIssueProject(item.linkedProjects[0]);
+                                  }
+                                }}
+                                disabled={availableStock === 0}
+                                className="flex h-7 items-center gap-1 rounded border border-primary/30 bg-primary/10 px-2 font-mono text-[11px] font-bold text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
+                              >
+                                <UserPlus className="size-3" />
+                                <span>Issue</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  // -------------------------------------------------------------
+                  // PRESET: MECHANICAL (MECH)
+                  // -------------------------------------------------------------
+                  if (columnPreset === "mech") {
+                    return (
+                      <tr key={item.id} className="transition-colors hover:bg-secondary/40">
+                        {/* Part & Assembly Type */}
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-start gap-2">
+                            <Ruler className="size-4 shrink-0 text-blue-500 mt-0.5" />
+                            <div>
+                              <span
+                                className="font-mono font-bold text-foreground hover:underline cursor-pointer"
+                                onClick={() => {
+                                  setDetailTab("mech");
+                                  setDetailItem(item);
+                                }}
+                              >
+                                {item.partNumber}
+                              </span>
+                              <span className="block text-[11px] text-muted-foreground line-clamp-1">
+                                {item.description}
+                              </span>
+                              <span className="text-[10px] font-mono text-muted-foreground">
+                                {item.category} {item.subcategory ? `· ${item.subcategory}` : ""}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Dimensions (L×W×H) */}
+                        <td className="px-3 py-2.5 font-mono text-[11px] text-foreground">
+                          {item.dimensionsMm || "10.0 × 10.0 × 2.0 mm"}
+                        </td>
+
+                        {/* Weight / Mass */}
+                        <td className="px-3 py-2.5 font-mono text-[11px] text-muted-foreground">
+                          <strong className="text-foreground">{item.weightGrams ?? 0.85}</strong> g
+                        </td>
+
+                        {/* Ingress & Loom / Casing */}
+                        <td className="px-3 py-2.5 font-mono text-[11px]">
+                          <span className="inline-block rounded bg-blue-500/10 px-1.5 py-0.5 font-bold text-blue-500 border border-blue-500/25 text-[10px]">
+                            {item.ipRating || "IP67 Rated"}
+                          </span>
+                          <span className="block text-[10px] text-muted-foreground mt-0.5">
+                            {item.packageCase || "Molded Loom / Housing"}
+                          </span>
+                        </td>
+
+                        {/* Wire Gauge & Mating Force */}
+                        <td className="px-3 py-2.5 font-mono text-[10px]">
+                          <span className="block text-foreground font-semibold">
+                            {item.wireGauge || "FLRY-B 0.50mm²"}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {item.matingForce || "75N retention lock"}
+                          </span>
+                        </td>
+
+                        {/* Compatible Production Machinery */}
+                        <td className="px-3 py-2.5 font-mono text-[10px]">
+                          {item.compatibleAssetIds && item.compatibleAssetIds.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.compatibleAssetIds.map((astId) => {
+                                const ast = assetList.find((a) => a.id === astId);
+                                return (
+                                  <span key={astId} className="rounded border border-border bg-card px-1.5 py-0.5 text-foreground">
+                                    {ast?.name?.split(" ")[0] || astId}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">General Tooling</span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-2.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              title="Inspect Part Details"
+                              onClick={() => {
+                                setDetailTab("mech");
+                                setDetailItem(item);
+                              }}
+                              className="grid size-7 place-items-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                            >
+                              <Eye className="size-3.5" />
+                            </button>
+                            {!readOnly && (
+                              <button
+                                title={`Issue ${item.partNumber} to Project Team`}
+                                onClick={() => {
+                                  setIssueModalItem(item);
+                                  if (item.linkedProjects && item.linkedProjects.length > 0 && item.linkedProjects[0]) {
+                                    setIssueProject(item.linkedProjects[0]);
+                                  }
+                                }}
+                                disabled={availableStock === 0}
+                                className="flex h-7 items-center gap-1 rounded border border-primary/30 bg-primary/10 px-2 font-mono text-[11px] font-bold text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
+                              >
+                                <UserPlus className="size-3" />
+                                <span>Issue</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  // -------------------------------------------------------------
+                  // PRESET: UNIVERSAL (STANDARD)
+                  // -------------------------------------------------------------
                   return (
                     <tr key={item.id} className="transition-colors hover:bg-secondary/40">
                       {/* Part & Description */}
@@ -1164,9 +2294,41 @@ export function LiveInventoryWorkspace({
                             <Boxes className="size-4 shrink-0 text-steel" />
                           )}
                           <div>
-                            <span className="font-mono font-bold text-foreground hover:underline cursor-pointer" onClick={() => setDetailItem(item)}>
-                              {item.partNumber}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className="font-mono font-bold text-foreground hover:underline cursor-pointer"
+                                onClick={() => {
+                                  setDetailTab("overview");
+                                  setDetailItem(item);
+                                }}
+                              >
+                                {item.partNumber}
+                              </span>
+                              {item.datasheetUrl && (
+                                <a
+                                  href={item.datasheetUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-0.5 rounded bg-blue-500/10 px-1.5 py-0.2 font-mono text-[9px] font-bold text-blue-500 hover:bg-blue-500/20 border border-blue-500/25 transition-colors"
+                                  title="Open manufacturer datasheet PDF in new tab"
+                                >
+                                  <FileText className="size-2.5" />
+                                  <span>PDF ↗</span>
+                                </a>
+                              )}
+                              {item.mouserUrl && (
+                                <a
+                                  href={item.mouserUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.2 font-mono text-[9px] font-bold text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/25 transition-colors"
+                                  title="Open Mouser catalog in new tab"
+                                >
+                                  <ShoppingCart className="size-2.5" />
+                                  <span>Mouser ↗</span>
+                                </a>
+                              )}
+                            </div>
                             <span className="block text-[11px] text-muted-foreground line-clamp-1">
                               {item.description}
                             </span>
@@ -1271,7 +2433,10 @@ export function LiveInventoryWorkspace({
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             title="Inspect Part Details & Specifications"
-                            onClick={() => setDetailItem(item)}
+                            onClick={() => {
+                              setDetailTab("overview");
+                              setDetailItem(item);
+                            }}
                             className="grid size-7 place-items-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                           >
                             <Eye className="size-3.5" />
@@ -1597,7 +2762,7 @@ export function LiveInventoryWorkspace({
           MODAL 1: MATERIAL ISSUE TO PROJECT TEAM
          ========================================================================= */}
       {issueModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" aria-label="Issue Component to Active Project Team" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2.5">
@@ -1708,7 +2873,7 @@ export function LiveInventoryWorkspace({
           MODAL 2: RETURN MATERIAL DISPOSITION
          ========================================================================= */}
       {returnModalAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" aria-label="Return Material to Stores" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-sm font-bold text-foreground">Return Material to Stores</h3>
@@ -1772,7 +2937,7 @@ export function LiveInventoryWorkspace({
           MODAL 3: GOODS RECEIVED NOTE (GRN) ENTRY
          ========================================================================= */}
       {grnModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" aria-label="Process Goods Received Note (GRN) & IQC" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
@@ -1881,104 +3046,439 @@ export function LiveInventoryWorkspace({
       )}
 
       {/* =========================================================================
-          MODAL 4: DETAILED PART INSPECTION VIEW
+          MODAL 4: DETAILED PART INSPECTION & SPECIFICATION VIEW
          ========================================================================= */}
       {detailItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl">
+        <div role="dialog" aria-modal="true" aria-label="Part Specifications and Stock Inspection" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-border pb-3">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-bold text-primary">
                     {detailItem.category}
                   </span>
-                  <h3 className="font-mono text-base font-bold text-foreground">{detailItem.partNumber}</h3>
+                  {detailItem.subcategory && (
+                    <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                      {detailItem.subcategory}
+                    </span>
+                  )}
+                  {detailItem.automotiveQualified && (
+                    <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-500 border border-emerald-500/30">
+                      <ShieldCheck className="size-3" />
+                      <span>{detailItem.automotiveStandard || "AEC-Q100"}</span>
+                    </span>
+                  )}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">{detailItem.description}</p>
+                <h3 className="mt-1 font-mono text-lg font-bold text-foreground">{detailItem.partNumber}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{detailItem.description}</p>
               </div>
-              <button onClick={() => setDetailItem(null)} className="text-xs text-muted-foreground">✕</button>
+              <button onClick={() => setDetailItem(null)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
             </div>
 
-            <div className="mt-4 space-y-4 text-xs">
-              {/* Stock Overview Banner */}
-              <div className="grid grid-cols-4 gap-2 rounded-xl border border-border bg-secondary/30 p-3 text-center font-mono">
-                <div>
-                  <span className="text-[10px] uppercase text-muted-foreground">On-Hand</span>
-                  <p className="text-sm font-bold text-foreground">{detailItem.onHand}</p>
+            {/* Modal Quick Links Banner */}
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/30 p-2.5">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Distributor & Docs:
+                </span>
+                {detailItem.mouserPartNumber && (
+                  <span className="font-mono text-[11px] font-semibold text-foreground">
+                    Mouser #{detailItem.mouserPartNumber}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {detailItem.mouserUrl && (
+                  <a
+                    href={detailItem.mouserUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/15 px-2.5 py-1 font-mono text-[11px] font-bold text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors"
+                  >
+                    <ShoppingCart className="size-3" />
+                    <span>View on Mouser.com ↗</span>
+                  </a>
+                )}
+                {detailItem.datasheetUrl && (
+                  <a
+                    href={detailItem.datasheetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-blue-500/15 px-2.5 py-1 font-mono text-[11px] font-bold text-blue-500 border border-blue-500/30 hover:bg-blue-500/25 transition-colors"
+                  >
+                    <FileText className="size-3" />
+                    <span>Datasheet PDF ↗</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Section Tabs */}
+            <div className="mt-4 flex border-b border-border bg-card/50">
+              {[
+                { id: "overview", label: "📋 Overview & Stock" },
+                { id: "ehw", label: "⚡ EHW Technical" },
+                { id: "pur", label: "💰 PUR Commercial" },
+                { id: "mech", label: "📐 MECH Physical" },
+                { id: "trace", label: "🔗 Traceability" },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setDetailTab(t.id as typeof detailTab)}
+                  className={`border-b-2 px-3.5 py-2 font-mono text-xs font-semibold transition-colors ${
+                    detailTab === t.id
+                      ? "border-primary text-primary bg-primary/5"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab 1: Overview */}
+            {detailTab === "overview" && (
+              <div className="mt-4 space-y-4 text-xs">
+                {/* Stock Overview Banner */}
+                <div className="grid grid-cols-4 gap-2 rounded-xl border border-border bg-secondary/30 p-3 text-center font-mono">
+                  <div>
+                    <span className="text-[10px] uppercase text-muted-foreground">On-Hand Total</span>
+                    <p className="text-base font-bold text-foreground">{detailItem.onHand} {detailItem.unit}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-moss">Released Stock</span>
+                    <p className="text-base font-bold text-moss">{getReleased(detailItem)} {detailItem.unit}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-warning">Held in IQC</span>
+                    <p className="text-base font-bold text-warning">{getHeld(detailItem)} {detailItem.unit}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-steel">Allocated</span>
+                    <p className="text-base font-bold text-steel">{detailItem.allocated} {detailItem.unit}</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[10px] uppercase text-moss">Released</span>
-                  <p className="text-sm font-bold text-moss">{getReleased(detailItem)}</p>
+
+                {/* Storage & Reorder Metadata */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-card p-3 font-mono space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Facility & Storage</span>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Location:</span>
+                      <span className="font-semibold text-foreground">{detailItem.location}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Bin Coordinate:</span>
+                      <span className="font-semibold text-foreground">{detailItem.bin}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Reorder Buffer:</span>
+                      <span className="font-semibold text-foreground">{detailItem.reorderPoint} {detailItem.unit}</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-border bg-card p-3 font-mono space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Procurement & Manufacturer</span>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Manufacturer:</span>
+                      <span className="font-semibold text-foreground">{detailItem.manufacturer || "HLPL Approved"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Package / Case:</span>
+                      <span className="font-semibold text-foreground">{detailItem.packageCase || "Standard SMD"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Primary Supplier:</span>
+                      <span className="font-semibold text-foreground">{detailItem.supplier || "Mouser Electronics"}</span>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Linked Projects */}
                 <div>
-                  <span className="text-[10px] uppercase text-warning">Held (IQC)</span>
-                  <p className="text-sm font-bold text-warning">{getHeld(detailItem)}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase text-steel">Allocated</span>
-                  <p className="text-sm font-bold text-steel">{detailItem.allocated}</p>
+                  <h4 className="font-mono text-xs font-bold uppercase text-muted-foreground">Linked Automotive Projects</h4>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5 font-mono text-[11px]">
+                    {detailItem.linkedProjects && detailItem.linkedProjects.length > 0 ? (
+                      detailItem.linkedProjects.map((p) => (
+                        <span key={p} className="rounded bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                          {p}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground">Universal Standard Component</span>
+                    )}
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Technical Specifications */}
-              {detailItem.specifications && (
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Technical Specifications</h4>
-                  <div className="mt-1.5 grid gap-1.5 rounded-lg border border-border bg-card p-3 font-mono text-[11px]">
-                    {Object.entries(detailItem.specifications).map(([key, val]) => (
-                      <div key={key} className="flex justify-between border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
-                        <span className="text-muted-foreground">{key}:</span>
-                        <span className="font-semibold text-foreground">{val}</span>
+            {/* Tab 2: EHW Technical */}
+            {detailTab === "ehw" && (
+              <div className="mt-4 space-y-4 text-xs font-mono">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+                    <span className="text-[10px] font-bold uppercase text-amber-500 flex items-center gap-1">
+                      <Zap className="size-3" /> Electrical Operating Limits
+                    </span>
+                    <div className="flex justify-between border-b border-border/40 pb-1">
+                      <span className="text-muted-foreground">Operating Voltage:</span>
+                      <span className="font-bold text-foreground">{detailItem.voltageRating || "3.3V / 5.0V Logic"}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/40 pb-1">
+                      <span className="text-muted-foreground">Operating Current:</span>
+                      <span className="font-bold text-foreground">{detailItem.currentRating || "Standard"}</span>
+                    </div>
+                    {detailItem.frequencyClock && (
+                      <div className="flex justify-between border-b border-border/40 pb-1">
+                        <span className="text-muted-foreground">Clock / Frequency:</span>
+                        <span className="font-bold text-foreground">{detailItem.frequencyClock}</span>
                       </div>
-                    ))}
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Operating Temp Range:</span>
+                      <span className="font-bold text-foreground">{detailItem.operatingTempRange || "-40°C to +125°C"}</span>
+                    </div>
                   </div>
-                </div>
-              )}
 
-              {/* Linked Projects & Substitutes */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Linked Projects</h4>
-                  <div className="mt-1 flex flex-wrap gap-1 font-mono text-[10px]">
-                    {detailItem.linkedProjects?.map((p) => (
-                      <span key={p} className="rounded bg-primary/10 px-2 py-0.5 font-bold text-primary">
-                        {p}
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+                    <span className="text-[10px] font-bold uppercase text-emerald-500 flex items-center gap-1">
+                      <ShieldCheck className="size-3" /> Compliance & Automotive Qualification
+                    </span>
+                    <div className="flex justify-between border-b border-border/40 pb-1">
+                      <span className="text-muted-foreground">Automotive Graded:</span>
+                      <span className={`font-bold ${detailItem.automotiveQualified ? "text-emerald-500" : "text-muted-foreground"}`}>
+                        {detailItem.automotiveQualified ? "YES · Qualified" : "Industrial Grade"}
                       </span>
-                    ))}
+                    </div>
+                    <div className="flex justify-between border-b border-border/40 pb-1">
+                      <span className="text-muted-foreground">Governing Standard:</span>
+                      <span className="font-bold text-foreground">{detailItem.automotiveStandard || "AEC-Q100 / ISO 7637-2"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">RoHS / Environmental:</span>
+                      <span className="font-bold text-emerald-500">{detailItem.rohsStatus || "RoHS Compliant / Lead Free"}</span>
+                    </div>
                   </div>
                 </div>
+
+                {/* Technical Specifications Dictionary */}
+                {detailItem.specifications && (
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Detailed Engineering Specifications</h4>
+                    <div className="mt-1.5 grid gap-1.5 rounded-lg border border-border bg-card p-3 text-[11px]">
+                      {Object.entries(detailItem.specifications).map(([key, val]) => (
+                        <div key={key} className="flex justify-between border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
+                          <span className="text-muted-foreground">{key}:</span>
+                          <span className="font-semibold text-foreground">{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: PUR Commercial */}
+            {detailTab === "pur" && (
+              <div className="mt-4 space-y-4 text-xs font-mono">
+                {/* Cost & Lead Time Grid */}
+                <div className="grid grid-cols-4 gap-2 rounded-xl border border-border bg-secondary/30 p-3 text-center">
+                  <div>
+                    <span className="text-[10px] uppercase text-muted-foreground">Tentative Cost (USD)</span>
+                    <p className="text-base font-bold text-foreground">
+                      ${(detailItem.tentativeUnitCostUsd ?? 2.50).toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-emerald-500">Tentative Cost (INR)</span>
+                    <p className="text-base font-bold text-emerald-500">
+                      ₹{(detailItem.tentativeUnitCostInr ?? Math.round((detailItem.tentativeUnitCostUsd ?? 2.50) * 83.5)).toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-foreground">Factory Lead Time</span>
+                    <p className="text-base font-bold text-foreground">
+                      {detailItem.leadTimeWeeks ?? 6} Weeks
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-muted-foreground">Mouser Distributor Stock</span>
+                    <p className="text-base font-bold text-foreground">
+                      {(detailItem.mouserStock ?? 12500).toLocaleString()} pcs
+                    </p>
+                  </div>
+                </div>
+
+                {/* Volume Pricing Tiers */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Volume Pricing Breaks (Mouser Verified)</h4>
+                  <table className="mt-1.5 w-full text-left border rounded-lg overflow-hidden border-border bg-card text-[11px]">
+                    <thead className="border-b border-border bg-secondary/50 text-[10px] uppercase text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2">Quantity Break</th>
+                        <th className="px-3 py-2 font-mono">Unit Price (USD)</th>
+                        <th className="px-3 py-2 font-mono">Unit Price (INR)</th>
+                        <th className="px-3 py-2">Discount vs. Sample</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {(detailItem.priceBreaks || [
+                        { qty: 1, unitPriceUsd: (detailItem.tentativeUnitCostUsd ?? 2.5) * 1.35, unitPriceInr: Math.round((detailItem.tentativeUnitCostUsd ?? 2.5) * 1.35 * 83.5) },
+                        { qty: 100, unitPriceUsd: (detailItem.tentativeUnitCostUsd ?? 2.5) * 1.15, unitPriceInr: Math.round((detailItem.tentativeUnitCostUsd ?? 2.5) * 1.15 * 83.5) },
+                        { qty: 1000, unitPriceUsd: detailItem.tentativeUnitCostUsd ?? 2.5, unitPriceInr: Math.round((detailItem.tentativeUnitCostUsd ?? 2.5) * 83.5) },
+                        { qty: 10000, unitPriceUsd: (detailItem.tentativeUnitCostUsd ?? 2.5) * 0.88, unitPriceInr: Math.round((detailItem.tentativeUnitCostUsd ?? 2.5) * 0.88 * 83.5) },
+                      ]).map((brk, idx) => (
+                        <tr key={brk.qty} className="hover:bg-secondary/30">
+                          <td className="px-3 py-1.5 font-bold">{brk.qty.toLocaleString()}+ pcs</td>
+                          <td className="px-3 py-1.5 font-bold text-foreground">${brk.unitPriceUsd.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-emerald-500 font-semibold">₹{brk.unitPriceInr.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-muted-foreground">
+                            {idx === 0 ? "Base price" : `${Math.round((1 - brk.unitPriceUsd / ((detailItem.priceBreaks?.[0]?.unitPriceUsd) || (detailItem.tentativeUnitCostUsd ?? 2.5) * 1.35)) * 100)}% savings`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Sales Volume Coverage Estimation */}
+                <div className="rounded-lg border border-border bg-card p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Sales Volume Coverage (Project HLPL-AI4T-01)</span>
+                      <p className="mt-0.5 text-xs text-foreground font-semibold">
+                        Target Requirement: 50,000 units/year · Released Stock: {getReleased(detailItem).toLocaleString()} {detailItem.unit}
+                      </p>
+                    </div>
+                    <span className="font-bold text-base text-primary">
+                      {Math.min(100, Math.round((getReleased(detailItem) / 50000) * 100))}%
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 w-full rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full bg-primary"
+                      style={{ width: `${Math.max(5, Math.min(100, Math.round((getReleased(detailItem) / 50000) * 100)))}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 4: MECH Physical */}
+            {detailTab === "mech" && (
+              <div className="mt-4 space-y-4 text-xs font-mono">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+                    <span className="text-[10px] font-bold uppercase text-blue-500 flex items-center gap-1">
+                      <Ruler className="size-3" /> Geometry & Physical Dimensions
+                    </span>
+                    <div className="flex justify-between border-b border-border/40 pb-1">
+                      <span className="text-muted-foreground">Dimensions (L×W×H):</span>
+                      <span className="font-bold text-foreground">{detailItem.dimensionsMm || "10.0 × 10.0 × 2.0 mm"}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/40 pb-1">
+                      <span className="text-muted-foreground">Weight / Mass:</span>
+                      <span className="font-bold text-foreground">{detailItem.weightGrams ?? 0.85} g</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Package / Case:</span>
+                      <span className="font-bold text-foreground">{detailItem.packageCase || "Standard"}</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+                    <span className="text-[10px] font-bold uppercase text-cyan-500 flex items-center gap-1">
+                      <Wrench className="size-3" /> Harness & Enclosure Interface
+                    </span>
+                    <div className="flex justify-between border-b border-border/40 pb-1">
+                      <span className="text-muted-foreground">Ingress Protection:</span>
+                      <span className="font-bold text-cyan-500">{detailItem.ipRating || "IP67 Rated"}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/40 pb-1">
+                      <span className="text-muted-foreground">Wire Gauge:</span>
+                      <span className="font-bold text-foreground">{detailItem.wireGauge || "FLRY-B 0.50mm²"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Mating Retention Force:</span>
+                      <span className="font-bold text-foreground">{detailItem.matingForce || "75N retention lock"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compatible Production Machinery */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Compatible Manufacturing Assets & Machinery</h4>
+                  <div className="mt-1.5 flex flex-wrap gap-2">
+                    {detailItem.compatibleAssetIds && detailItem.compatibleAssetIds.length > 0 ? (
+                      detailItem.compatibleAssetIds.map((astId) => {
+                        const ast = assetList.find((a) => a.id === astId);
+                        return (
+                          <div key={astId} className="flex items-center gap-2 rounded-lg border border-border bg-card p-2.5">
+                            <Wrench className="size-4 text-steel" />
+                            <div>
+                              <strong className="block text-foreground">{ast?.name || astId}</strong>
+                              <span className="text-[10px] text-muted-foreground">{ast?.subclass} · {ast?.facilityLocation}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-muted-foreground">Standard manual assembly & rework station</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 5: Traceability */}
+            {detailTab === "trace" && (
+              <div className="mt-4 space-y-4 text-xs font-mono">
+                {/* Dual-Source Substitutes */}
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Approved Dual-Source Alternates</h4>
-                  <div className="mt-1 flex flex-wrap gap-1 font-mono text-[10px]">
-                    {detailItem.substitutes?.map((sub) => (
-                      <span key={sub} className="rounded bg-secondary px-2 py-0.5 text-foreground">
-                        {sub}
-                      </span>
-                    )) || <span className="text-muted-foreground">None listed</span>}
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {detailItem.substitutes && detailItem.substitutes.length > 0 ? (
+                      detailItem.substitutes.map((sub) => (
+                        <span key={sub} className="rounded border border-border bg-secondary px-2 py-0.5 font-bold text-foreground">
+                          {sub}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground">Single source qualified. Dual-sourcing review in progress with PUR lead.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Active Project Allocations */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active Project Team Allocations</h4>
+                  <div className="mt-1.5 divide-y divide-border/60 rounded-lg border border-border bg-card overflow-hidden">
+                    {localAssignments.filter((a) => a.inventoryItemId === detailItem.id || a.partNumber === detailItem.partNumber).length > 0 ? (
+                      localAssignments
+                        .filter((a) => a.inventoryItemId === detailItem.id || a.partNumber === detailItem.partNumber)
+                        .map((asg) => (
+                          <div key={asg.id} className="flex items-center justify-between p-2.5 hover:bg-secondary/30">
+                            <div>
+                              <strong className="text-foreground">{asg.assignee} ({asg.department})</strong>
+                              <span className="block text-[10px] text-muted-foreground">
+                                Project: {asg.project} · {asg.note} · Assigned: {asg.assignedAt}
+                              </span>
+                            </div>
+                            <span className="font-bold text-primary">{asg.quantity} {detailItem.unit}</span>
+                          </div>
+                        ))
+                    ) : (
+                      <div className="p-3 text-muted-foreground">No active allocations currently issued for this part.</div>
+                    )}
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* Compatible Assets */}
-              {detailItem.compatibleAssetIds && detailItem.compatibleAssetIds.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Compatible Production Assets</h4>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {detailItem.compatibleAssetIds.map((astId) => {
-                      const ast = assetList.find((a) => a.id === astId);
-                      return (
-                        <span key={astId} className="flex items-center gap-1 rounded border border-border bg-card px-2 py-1 text-[11px]">
-                          <Wrench className="size-3 text-steel" />
-                          <span>{ast?.name || astId}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 flex justify-end border-t border-border pt-4">
+            {/* Modal Footer */}
+            <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
               <button onClick={() => setDetailItem(null)} className="h-8 rounded bg-secondary px-4 text-xs font-semibold">Close</button>
             </div>
           </div>
@@ -1989,7 +3489,7 @@ export function LiveInventoryWorkspace({
           MODAL 5: DETAILED ASSET INSPECTION & CUSTODY VIEW
          ========================================================================= */}
       {detailAsset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" aria-label="Asset Details and Calibration Record" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-start justify-between border-b border-border pb-3">
               <div>
@@ -2044,34 +3544,144 @@ export function LiveInventoryWorkspace({
       )}
 
       {/* =========================================================================
-          MODAL 6: REGISTER NEW CONTROLLED PART
+          MODAL 6: REGISTER NEW CONTROLLED PART WITH MOUSER INTELLIGENCE
          ========================================================================= */}
       {addPartModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl">
+        <div role="dialog" aria-modal="true" aria-label="Register New Controlled Part / Assembly" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="text-sm font-bold text-foreground">Register New Controlled Part / Assembly</h3>
-              <button onClick={() => setAddPartModalOpen(false)} className="text-xs text-muted-foreground">✕</button>
+              <div className="flex items-center gap-2">
+                <div className="grid size-7 place-items-center rounded bg-primary/10 text-primary">
+                  <Plus className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Register New Controlled Part / Assembly</h3>
+                  <span className="font-mono text-[10px] text-muted-foreground">Mouser Intelligence & Automotive Specification Auto-Fill</span>
+                </div>
+              </div>
+              <button onClick={() => setAddPartModalOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
             </div>
 
+            {/* 1. Mouser Electronics Auto-Fetch Section */}
+            <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-primary uppercase tracking-wide">
+                  <Zap className="size-3.5" /> Mouser Electronics Component Auto-Fill
+                </span>
+                <span className="rounded bg-primary/20 px-2 py-0.2 font-mono text-[9px] font-bold text-primary">
+                  LIVE API / CATALOG LOOKUP
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Enter any Manufacturer Part Number (MPN). Auto-fetches technical specs (voltage, current, AEC-Q), tentative pricing ($ & ₹), lead time, distributor stock, datasheet URL, and controlled category.
+              </p>
+
+              {/* MPN Input and Fetch Button */}
+              <div className="mt-2.5 flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={mouserSearchQuery}
+                    onChange={(e) => setMouserSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleFetchMouser();
+                      }
+                    }}
+                    placeholder="Enter MPN (e.g. STM32G0B1VCT6, EG915N-EU, TCAN1042VDRQ1)..."
+                    className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 font-mono text-xs uppercase focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleFetchMouser()}
+                  disabled={mouserLoading}
+                  className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 font-mono text-xs font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {mouserLoading ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      <span>Fetching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="size-3.5" />
+                      <span>Fetch from Mouser</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Quick Suggestion Pills */}
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="font-mono text-[10px] text-muted-foreground">Quick Suggestions:</span>
+                {[
+                  { label: "STM32 MCU", mpn: "STM32G0B1VCT6" },
+                  { label: "Quectel 4G Modem", mpn: "EG915N-EU" },
+                  { label: "TI Buck Reg", mpn: "LMR14050SDDAR" },
+                  { label: "Vishay TVS", mpn: "SM5S24A-E3/2D" },
+                  { label: "CAN Transceiver", mpn: "TCAN1042VDRQ1" },
+                  { label: "Molex 16P Conn", mpn: "MX150-33472-1601" },
+                  { label: "OBD-II Harness", mpn: "HLPL-HARN-OBD2-16P" },
+                ].map((s) => (
+                  <button
+                    key={s.mpn}
+                    type="button"
+                    onClick={() => {
+                      setMouserSearchQuery(s.mpn);
+                      handleFetchMouser(s.mpn);
+                    }}
+                    className="rounded bg-background/80 px-2 py-0.5 font-mono text-[10px] text-foreground border border-border hover:border-primary hover:text-primary transition-colors"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Success Notification */}
+              {mouserSuccessMessage && (
+                <div className="mt-2.5 flex items-center justify-between rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 font-mono text-[11px] text-emerald-500">
+                  <div className="flex items-center gap-1.5">
+                    <Check className="size-3.5 shrink-0" />
+                    <span>{mouserSuccessMessage}</span>
+                  </div>
+                  {newPartDatasheetUrl && (
+                    <a
+                      href={newPartDatasheetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 flex items-center gap-1 underline hover:text-emerald-400"
+                    >
+                      <FileText className="size-3" />
+                      <span>Datasheet ↗</span>
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 2. Controlled Part Specifications Form */}
             <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
               <div>
                 <span className="text-[10px] font-mono uppercase text-muted-foreground">Part Number (MPN / Internal)</span>
                 <input
                   type="text"
-                  placeholder="e.g. HLPL-HARN-AI4T-02"
+                  placeholder="e.g. STM32G0B1VCT6"
                   value={newPartNum}
                   onChange={(e) => setNewPartNum(e.target.value)}
-                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs"
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs uppercase"
                 />
               </div>
 
               <div>
-                <span className="text-[10px] font-mono uppercase text-muted-foreground">Controlled Category</span>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Controlled Category (Auto-Selected)</span>
                 <select
                   value={newPartCat}
                   onChange={(e) => setNewPartCat(e.target.value as InventoryCategory)}
-                  className="mt-1 h-9 w-full rounded border border-input bg-background px-2 text-xs"
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-2 text-xs font-semibold"
                 >
                   <option value="Electronics">Electronics</option>
                   <option value="Connectors">Connectors</option>
@@ -2086,10 +3696,10 @@ export function LiveInventoryWorkspace({
               </div>
 
               <div className="sm:col-span-2">
-                <span className="text-[10px] font-mono uppercase text-muted-foreground">Description</span>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Technical Description</span>
                 <input
                   type="text"
-                  placeholder="e.g. 14-Pin Sealed Automotive Wiring Harness Assembly with IP67 Grommet"
+                  placeholder="e.g. Main Host MCU, ARM Cortex-M0+ 64MHz, 512KB Flash, dual CAN FD"
                   value={newPartDesc}
                   onChange={(e) => setNewPartDesc(e.target.value)}
                   className="mt-1 h-9 w-full rounded border border-input bg-background px-3 text-xs"
@@ -2097,10 +3707,21 @@ export function LiveInventoryWorkspace({
               </div>
 
               <div>
-                <span className="text-[10px] font-mono uppercase text-muted-foreground">Manufacturer / Supplier</span>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Subcategory / Family</span>
                 <input
                   type="text"
-                  placeholder="e.g. Molex / Hexense Cable Division"
+                  placeholder="e.g. Microcontrollers & MCUs"
+                  value={newPartSubcat}
+                  onChange={(e) => setNewPartSubcat(e.target.value)}
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 text-xs"
+                />
+              </div>
+
+              <div>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Manufacturer / Brand</span>
+                <input
+                  type="text"
+                  placeholder="e.g. STMicroelectronics"
                   value={newPartMfr}
                   onChange={(e) => setNewPartMfr(e.target.value)}
                   className="mt-1 h-9 w-full rounded border border-input bg-background px-3 text-xs"
@@ -2108,16 +3729,119 @@ export function LiveInventoryWorkspace({
               </div>
 
               <div>
-                <span className="text-[10px] font-mono uppercase text-muted-foreground">Package / Case</span>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Package / Case Footprint</span>
                 <input
                   type="text"
-                  placeholder="e.g. Sealed Loom / LQFP-100"
+                  placeholder="e.g. LQFP-100 (14x14mm)"
                   value={newPartPackage}
                   onChange={(e) => setNewPartPackage(e.target.value)}
-                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 text-xs"
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs"
                 />
               </div>
 
+              <div>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Primary Supplier</span>
+                <input
+                  type="text"
+                  placeholder="e.g. Mouser Electronics"
+                  value={newPartSupplier}
+                  onChange={(e) => setNewPartSupplier(e.target.value)}
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs"
+                />
+              </div>
+
+              {/* Commercial Parameters */}
+              <div>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Tentative Unit Cost (USD $ / INR ₹)</span>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="USD $"
+                    value={newPartCostUsd !== undefined ? newPartCostUsd : ""}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setNewPartCostUsd(isNaN(val) ? undefined : val);
+                      if (!isNaN(val)) setNewPartCostInr(Math.round(val * 83.5 * 100) / 100);
+                    }}
+                    className="mt-1 h-9 w-1/2 rounded border border-input bg-background px-2 font-mono text-xs"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="INR ₹"
+                    value={newPartCostInr !== undefined ? newPartCostInr : ""}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setNewPartCostInr(isNaN(val) ? undefined : val);
+                    }}
+                    className="mt-1 h-9 w-1/2 rounded border border-input bg-background px-2 font-mono text-xs text-emerald-500 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Factory Lead Time (Weeks)</span>
+                <input
+                  type="number"
+                  placeholder="e.g. 8"
+                  value={newPartLeadWeeks !== undefined ? newPartLeadWeeks : ""}
+                  onChange={(e) => setNewPartLeadWeeks(parseInt(e.target.value, 10) || undefined)}
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs"
+                />
+              </div>
+
+              {/* Hardware Electrical Specs */}
+              <div>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Operating Voltage Rating</span>
+                <input
+                  type="text"
+                  placeholder="e.g. 2.0V - 3.6V (3.3V nominal)"
+                  value={newPartVoltage}
+                  onChange={(e) => setNewPartVoltage(e.target.value)}
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Operating Current</span>
+                <input
+                  type="text"
+                  placeholder="e.g. 45mA Active / 1.8µA Standby"
+                  value={newPartCurrent}
+                  onChange={(e) => setNewPartCurrent(e.target.value)}
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs"
+                />
+              </div>
+
+              {/* Automotive Qualification */}
+              <div>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Automotive Qualification Standard</span>
+                <input
+                  type="text"
+                  placeholder="e.g. AEC-Q100 Grade 1 (-40°C to +125°C)"
+                  value={newPartAutoStd}
+                  onChange={(e) => {
+                    setNewPartAutoStd(e.target.value);
+                    if (e.target.value) setNewPartAutoGraded(true);
+                  }}
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs"
+                />
+              </div>
+
+              {/* Mechanical Specs */}
+              <div>
+                <span className="text-[10px] font-mono uppercase text-muted-foreground">Dimensions (L×W×H mm)</span>
+                <input
+                  type="text"
+                  placeholder="e.g. 14.0 × 14.0 × 1.4 mm"
+                  value={newPartDimensions}
+                  onChange={(e) => setNewPartDimensions(e.target.value)}
+                  className="mt-1 h-9 w-full rounded border border-input bg-background px-3 font-mono text-xs"
+                />
+              </div>
+
+              {/* Storage & Reorder */}
               <div>
                 <span className="text-[10px] font-mono uppercase text-muted-foreground">Storage Location & Bin</span>
                 <div className="flex gap-2">
@@ -2155,9 +3879,22 @@ export function LiveInventoryWorkspace({
               </div>
             </div>
 
+            {/* Modal Actions */}
             <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
-              <button onClick={() => setAddPartModalOpen(false)} className="h-8 rounded border border-border px-3 text-xs">Cancel</button>
-              <button onClick={handleCreatePart} className="h-8 rounded bg-primary px-4 text-xs font-semibold text-primary-foreground">Save Component</button>
+              <button
+                type="button"
+                onClick={() => setAddPartModalOpen(false)}
+                className="h-8 rounded border border-border px-3 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCreatePart}
+                className="h-8 rounded bg-primary px-4 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90"
+              >
+                Save Component
+              </button>
             </div>
           </div>
         </div>

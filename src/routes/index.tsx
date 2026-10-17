@@ -5306,6 +5306,7 @@ function DepartmentWorkspace({
             readOnly={persona.kind === "client"}
             onMove={onMoveInventory}
             onAssign={onAssignInventory}
+            activeDepartment="PUR"
           />
           <PurchasingBOMReviewTable
             projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
@@ -5316,6 +5317,165 @@ function DepartmentWorkspace({
               });
             }}
           />
+        </section>
+      ) : area.id === "ehw" ? (
+        <section className="mt-8 space-y-8">
+          <LiveInventoryWorkspace
+            items={inventory}
+            movements={inventoryMovements}
+            assignments={inventoryAssignments}
+            allowedCategories={[
+              "Electronics",
+              "Connectors",
+              "Wire and Cable",
+              "Wire Harnesses",
+              "Hardware / PCB",
+              "Firmware Tools",
+              "Production Tools",
+            ]}
+            readOnly={persona.kind === "client"}
+            onMove={onMoveInventory}
+            onAssign={onAssignInventory}
+            activeDepartment="EHW"
+          />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="ops-section overflow-hidden">
+              {view === "summary" ? (
+                <AreaSummary records={scopedRecords} />
+              ) : scopedRecords.length ? (
+                <div>
+                  {scopedRecords.map((record) => (
+                    <button
+                      key={record.id}
+                      onClick={() => onSelect(record.id)}
+                      className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
+                    >
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {record.reference}
+                      </span>
+                      <span>
+                        <strong className="block">{record.title}</strong>
+                        <small className="mt-1 block text-muted-foreground">
+                          {record.type} · {record.updatedAt}
+                        </small>
+                      </span>
+                      <Status status={record.status} />
+                      <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                        {record.priority}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
+              )}
+            </div>
+            <aside className="ops-section bg-panel p-4">
+              <p className="text-sm font-semibold">Lead view</p>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div>
+                  <dt className="font-mono text-[10px] uppercase text-muted-foreground">
+                    Overdue / blockers
+                  </dt>
+                  <dd className="mt-1">
+                    {blocked.length} blocked record{blocked.length === 1 ? "" : "s"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[10px] uppercase text-muted-foreground">
+                    Upcoming milestones
+                  </dt>
+                  <dd className="mt-1">
+                    {upcoming.length
+                      ? upcoming.map((record) => <p key={record.id}>{record.title}</p>)
+                      : "No upcoming milestones."}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-5">
+                <Action onClick={onAdmin} label="Department settings" />
+              </div>
+            </aside>
+          </div>
+        </section>
+      ) : area.id === "mech" ? (
+        <section className="mt-8 space-y-8">
+          <LiveInventoryWorkspace
+            items={inventory}
+            movements={inventoryMovements}
+            assignments={inventoryAssignments}
+            allowedCategories={[
+              "Mechanical Parts",
+              "Enclosures",
+              "Wire Harnesses",
+              "Mechanical",
+              "Production Tools",
+              "Packaging & Consumables",
+            ]}
+            readOnly={persona.kind === "client"}
+            onMove={onMoveInventory}
+            onAssign={onAssignInventory}
+            activeDepartment="MECH"
+          />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="ops-section overflow-hidden">
+              {view === "summary" ? (
+                <AreaSummary records={scopedRecords} />
+              ) : scopedRecords.length ? (
+                <div>
+                  {scopedRecords.map((record) => (
+                    <button
+                      key={record.id}
+                      onClick={() => onSelect(record.id)}
+                      className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
+                    >
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {record.reference}
+                      </span>
+                      <span>
+                        <strong className="block">{record.title}</strong>
+                        <small className="mt-1 block text-muted-foreground">
+                          {record.type} · {record.updatedAt}
+                        </small>
+                      </span>
+                      <Status status={record.status} />
+                      <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                        {record.priority}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
+              )}
+            </div>
+            <aside className="ops-section bg-panel p-4">
+              <p className="text-sm font-semibold">Lead view</p>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div>
+                  <dt className="font-mono text-[10px] uppercase text-muted-foreground">
+                    Overdue / blockers
+                  </dt>
+                  <dd className="mt-1">
+                    {blocked.length} blocked record{blocked.length === 1 ? "" : "s"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[10px] uppercase text-muted-foreground">
+                    Upcoming milestones
+                  </dt>
+                  <dd className="mt-1">
+                    {upcoming.length
+                      ? upcoming.map((record) => <p key={record.id}>{record.title}</p>)
+                      : "No upcoming milestones."}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-5">
+                <Action onClick={onAdmin} label="Department settings" />
+              </div>
+            </aside>
+          </div>
         </section>
       ) : area.id === "qa" ? (
         <section className="mt-8">
