@@ -56,6 +56,7 @@ import {
   Building,
   Package,
   ShoppingCart,
+  Key,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
@@ -101,6 +102,11 @@ import {
 } from "@/components/ModularProductArchitectureAndPcbCatalog";
 import { DeviceVisualSpecAndBlockDiagram } from "@/components/DeviceVisualSpecAndBlockDiagram";
 import { RoleAwareSidebar } from "@/components/RoleAwareSidebar";
+import {
+  DepartmentLeadLoginModal,
+  DEPARTMENT_CREDENTIALS,
+  type DepartmentCredential,
+} from "@/components/DepartmentLeadLoginModal";
 
 type AreaId =
   | "home"
@@ -1944,7 +1950,20 @@ export const Route = createFileRoute("/")({
 
 function Portal() {
   const [portal, setPortal] = useState<PortalState | null>(null);
-  const initialRole = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("role") : null;
+  const initialRole =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("role") ||
+        (() => {
+          try {
+            const stored = window.localStorage.getItem("scms_auth_session");
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (parsed && typeof parsed.personaId === "string") return parsed.personaId;
+            }
+          } catch (_) {}
+          return null;
+        })()
+      : null;
   const initialPersona = personas.find((p) => p.id === initialRole) ?? (personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
   const [activeArea, setActiveArea] = useState<AreaId>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? initialPersona.departmentId : "home"));
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -1989,6 +2008,7 @@ function Portal() {
   const [darkMode, setDarkMode] = useState(true);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [customerRegisterOpen, setCustomerRegisterOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [feasibilityDispatchEnquiry, setFeasibilityDispatchEnquiry] = useState<EnquiryOpportunity | null>(null);
   const [directoryOpen, setDirectoryOpen] = useState(false);
   const [decisionLogOpen, setDecisionLogOpen] = useState(false);
@@ -2340,7 +2360,23 @@ function Portal() {
                   : `All departments · ${portal.setup.location}`}
               </p>
             </button>
-            <PersonaSwitcher persona={persona} onSelect={switchPersona} />
+            <PersonaSwitcher
+              persona={persona}
+              onSelect={switchPersona}
+              onOpenAuth={() => setLoginModalOpen(true)}
+            />
+            <button
+              type="button"
+              onClick={() => setLoginModalOpen(true)}
+              title="Department Lead Sign-In & Authentication Modal"
+              className="hidden items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 hover:border-primary shadow-sm sm:inline-flex"
+            >
+              <Key className="size-3.5 text-primary" />
+              <span>Lead Auth</span>
+              {persona.id !== "admin" ? (
+                <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+              ) : null}
+            </button>
             <HeaderAction label="PMSS" icon={ClipboardCheck} onClick={() => setView("pmss")} />
             <HeaderAction
               label="Project Analysis (Page 1)"
@@ -2849,6 +2885,37 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
+      <DepartmentLeadLoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        currentPersonaId={persona.id}
+        onLoginSuccess={(personaId, leadInfo) => {
+          const matched = personas.find((p) => p.id === personaId);
+          if (matched) {
+            switchPersona(matched);
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(
+                "scms_auth_session",
+                JSON.stringify({
+                  personaId,
+                  leadEmail: leadInfo.email,
+                  leadName: leadInfo.leadName,
+                  timestamp: new Date().toISOString(),
+                })
+              );
+            }
+          }
+        }}
+        onLogout={() => {
+          const adminPersona = personas.find((p) => p.id === "admin") ?? personas[0];
+          if (adminPersona) {
+            switchPersona(adminPersona);
+            if (typeof window !== "undefined") {
+              window.localStorage.removeItem("scms_auth_session");
+            }
+          }
+        }}
+      />
       {customerRegisterOpen && (
         <CustomerRegisterModal
           customers={portal.customersRegistry ?? defaultCustomers}
@@ -9846,7 +9913,15 @@ function HeaderAction({
     </button>
   );
 }
-function PersonaSwitcher({ persona, onSelect }: { persona: Persona; onSelect: (persona: Persona) => void }) {
+function PersonaSwitcher({
+  persona,
+  onSelect,
+  onOpenAuth,
+}: {
+  persona: Persona;
+  onSelect: (persona: Persona) => void;
+  onOpenAuth?: () => void;
+}) {
   return (
     <div className="hidden items-center gap-1.5 md:flex">
       <label className="flex min-w-48 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-ring/50">
@@ -9861,6 +9936,17 @@ function PersonaSwitcher({ persona, onSelect }: { persona: Persona; onSelect: (p
           {personas.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select>
       </label>
+      {onOpenAuth && (
+        <button
+          type="button"
+          title="Authenticate / Sign In as Department Lead with Email & Password"
+          aria-label="Department Lead Credentials Login"
+          onClick={onOpenAuth}
+          className="inline-flex size-9 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary transition-colors hover:bg-primary/20 hover:border-primary shadow-sm"
+        >
+          <Key className="size-3.5" />
+        </button>
+      )}
       <button
         type="button"
         title={`Open ${persona.label} in a new browser tab`}
