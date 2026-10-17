@@ -38,6 +38,7 @@ import {
   TrendingUp,
   Check,
   Key,
+  ArrowLeft,
 } from "lucide-react";
 import {
   lookupMouserPart,
@@ -991,6 +992,8 @@ type Props = {
   allowedCategories: InventoryCategory[];
   readOnly?: boolean;
   activeDepartment?: "EHW" | "PUR" | "MECH" | "QA" | "ALL";
+  isFullPage?: boolean;
+  onBack?: () => void;
   onMove: (itemId: string, change: number, reason: InventoryMovement["reason"]) => void;
   onAssign: (
     itemId: string,
@@ -1009,6 +1012,8 @@ export function LiveInventoryWorkspace({
   allowedCategories,
   readOnly = false,
   activeDepartment = "ALL",
+  isFullPage = false,
+  onBack,
   onMove,
   onAssign,
 }: Props) {
@@ -1552,7 +1557,25 @@ export function LiveInventoryWorkspace({
   // =============================================================================
 
   return (
-    <div className="ops-section mt-8 overflow-hidden rounded-xl border border-border bg-panel shadow-sm">
+    <div className={`ops-section overflow-hidden rounded-xl border border-border bg-panel shadow-sm ${isFullPage ? "mt-2" : "mt-8"}`}>
+      {/* Full Page Breadcrumb Header */}
+      {isFullPage && onBack && (
+        <div className="flex items-center justify-between border-b border-border bg-card/80 px-5 py-3">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+          >
+            <ArrowLeft className="size-4" />
+            <span>Back to Department Overview</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase text-primary">
+              Full Page Governed Inventory & Parts Management
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Workspace Header */}
       <div className="ops-section-header flex flex-col gap-4 border-b border-border bg-card/60 p-5 md:flex-row md:items-center md:justify-between">
         <div>

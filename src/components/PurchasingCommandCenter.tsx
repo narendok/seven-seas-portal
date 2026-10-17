@@ -27,6 +27,9 @@ import {
   Mail,
   MapPin,
   TrendingUp,
+  ChevronDown,
+  ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import {
   LiveInventoryWorkspace,
@@ -440,6 +443,8 @@ export type PurchasingCommandCenterProps = {
   onReleaseToManufacturing?: (() => void) | undefined;
   activeSubView?: ("recordage" | "quotations" | "orders" | "suppliers") | undefined;
   onSelectSubView?: ((view: "recordage" | "quotations" | "orders" | "suppliers") => void) | undefined;
+  isFullPage?: boolean | undefined;
+  onBack?: (() => void) | undefined;
 };
 
 export function PurchasingCommandCenter({
@@ -454,9 +459,12 @@ export function PurchasingCommandCenter({
   onReleaseToManufacturing,
   activeSubView = "recordage",
   onSelectSubView,
+  isFullPage = false,
+  onBack,
 }: PurchasingCommandCenterProps) {
   // Navigation sub-tab state (synced with sidebar)
   const [currentTab, setCurrentTab] = useState<"recordage" | "quotations" | "orders" | "suppliers">(activeSubView);
+  const [showMorePoDetails, setShowMorePoDetails] = useState(false);
 
   // Sync external sub-view change
   React.useEffect(() => {
@@ -581,6 +589,55 @@ export function PurchasingCommandCenter({
 
   return (
     <div className="space-y-6">
+      {isFullPage && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-xs font-mono font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <ArrowLeft className="size-3.5" />
+                  <span>Back to Department Overview</span>
+                </button>
+              )}
+              {onBack && <span className="text-muted-foreground">/</span>}
+              <span className="font-mono text-xs uppercase text-primary font-bold">
+                Purchasing & Supply Chain Management
+              </span>
+            </div>
+            <h1 className="mt-1 font-mono text-xl font-bold text-foreground flex items-center gap-2.5">
+              {currentTab === "orders" && (
+                <>
+                  <ShoppingCart className="size-5 text-primary" />
+                  <span>Purchase Orders (POs) & Volume Alignment</span>
+                </>
+              )}
+              {currentTab === "recordage" && (
+                <>
+                  <Package className="size-5 text-primary" />
+                  <span>Recordage & Governed Stock Master</span>
+                </>
+              )}
+              {currentTab === "quotations" && (
+                <>
+                  <FileText className="size-5 text-primary" />
+                  <span>Commercial Vendor Quotations & Pricing Breaks</span>
+                </>
+              )}
+              {currentTab === "suppliers" && (
+                <>
+                  <Building className="size-5 text-primary" />
+                  <span>Approved Supplier List (ASL) & Vendor Governance</span>
+                </>
+              )}
+            </h1>
+          </div>
+        </div>
+      )}
+
       {/* =========================================================================
           PURCHASING SUB-NAVIGATION BAR (SYNCHRONIZED WITH SIDEBAR)
          ========================================================================= */}
@@ -887,6 +944,55 @@ export function PurchasingCommandCenter({
               </p>
               <span className="text-[10px] text-muted-foreground">Ready for IQC Inspection</span>
             </div>
+          </div>
+
+          {/* Secondary PO Details Unexpanded by Default with Arrow */}
+          <div className="rounded-xl border border-border/80 bg-card/60 p-3 font-mono">
+            <button
+              type="button"
+              onClick={() => setShowMorePoDetails((v) => !v)}
+              className="flex w-full items-center justify-between text-left text-xs font-bold text-foreground hover:text-primary transition-colors cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-2">
+                <span className="grid size-5 place-items-center rounded bg-secondary text-primary">
+                  {showMorePoDetails ? (
+                    <ChevronDown className="size-3.5" />
+                  ) : (
+                    <ChevronRight className="size-3.5" />
+                  )}
+                </span>
+                <span>Secondary PO Allocation Breakdown & Buffer Details</span>
+              </div>
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
+                {showMorePoDetails ? "Hide secondary details" : "Expand secondary details"}
+                <ChevronDown className={`size-3 transition-transform ${showMorePoDetails ? "rotate-180" : ""}`} />
+              </span>
+            </button>
+
+            {showMorePoDetails && (
+              <div className="mt-3 pt-3 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs animate-in fade-in duration-150">
+                <div className="rounded-lg bg-secondary/30 p-2.5 space-y-1">
+                  <span className="text-[10px] uppercase text-muted-foreground font-bold">14-Week Long-Lead Modem Buffer</span>
+                  <p className="text-foreground font-semibold">10,000 Quectel EG915N PO Active</p>
+                  <p className="text-[10px] text-emerald-500 font-medium">Dual-sourced alternate: SimCom A7672S</p>
+                </div>
+                <div className="rounded-lg bg-secondary/30 p-2.5 space-y-1">
+                  <span className="text-[10px] uppercase text-muted-foreground font-bold">Vendor Payment & Credit Aging</span>
+                  <p className="text-foreground font-semibold">Net 45 Days Commercial Terms</p>
+                  <p className="text-[10px] text-muted-foreground">0 Overdue Invoices · 100% On-Time</p>
+                </div>
+                <div className="rounded-lg bg-secondary/30 p-2.5 space-y-1">
+                  <span className="text-[10px] uppercase text-muted-foreground font-bold">Scheduled Batch Delivery Milestones</span>
+                  <p className="text-foreground font-semibold">Batch 1: 12k units (Nov 15, 2026)</p>
+                  <p className="text-[10px] text-muted-foreground">Batch 2: 12k units (Dec 20, 2026)</p>
+                </div>
+                <div className="rounded-lg bg-secondary/30 p-2.5 space-y-1">
+                  <span className="text-[10px] uppercase text-muted-foreground font-bold">Inward IQC Inspection SLA</span>
+                  <p className="text-foreground font-semibold">24-Hr Quarantine & Hold TAT</p>
+                  <p className="text-[10px] text-moss font-medium">AEC-Q100 / Q200 CoC Verification</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* PO Register Table */}

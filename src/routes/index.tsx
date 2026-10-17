@@ -79,6 +79,7 @@ import {
 } from "@/components/SalesWorkspaceAndCustomerRegister";
 import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable";
 import { PurchasingCommandCenter } from "@/components/PurchasingCommandCenter";
+import { CustomerManagementFullPageView } from "@/components/CustomerManagementFullPageView";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
 import {
   LiveInventoryWorkspace,
@@ -1948,7 +1949,18 @@ function Portal() {
   const [activeArea, setActiveArea] = useState<AreaId>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? initialPersona.departmentId : "home"));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<
-    "queue" | "detail" | "summary" | "project" | "assignee" | "index" | "pmss"
+    | "queue"
+    | "detail"
+    | "summary"
+    | "project"
+    | "assignee"
+    | "index"
+    | "pmss"
+    | "inventory"
+    | "orders"
+    | "quotations"
+    | "suppliers"
+    | "customers"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
@@ -2269,8 +2281,12 @@ function Portal() {
           purchasingSubView={purchasingSubView}
           onSelectPurchasingSubView={setPurchasingSubView}
           onNavigate={(area, targetView) => {
-            navigate(area);
-            if (targetView) setView(targetView);
+            setActiveArea(area);
+            setView(targetView ?? "queue");
+            setSelectedId(null);
+            setSelectedAssignee(null);
+            setQueueStage(null);
+            setMobileMenu(false);
           }}
           onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
           onOpenAi4tLifecycle={() => setAi4tOpen(true)}
@@ -2428,6 +2444,80 @@ function Portal() {
                 if (match) setSelectedId(match.id);
               }}
               selectedProjectId={selectedProjectId}
+            />
+          ) : view === "inventory" ? (
+            <LiveInventoryWorkspace
+              items={portal.inventory ?? []}
+              movements={portal.inventoryMovements ?? []}
+              assignments={portal.inventoryAssignments ?? []}
+              allowedCategories={[
+                "Electronics",
+                "Connectors",
+                "Wire and Cable",
+                "Wire Harnesses",
+                "Mechanical Parts",
+                "Enclosures",
+                "Firmware Tools",
+                "Production Tools",
+                "Packaging & Consumables",
+                "Hardware / PCB",
+                "Mechanical",
+                "Firmware / Software",
+                "Test & Calibration",
+                "Packaging & Logistics",
+              ]}
+              readOnly={persona.kind === "client"}
+              onMove={moveInventory}
+              onAssign={assignInventory}
+              activeDepartment="PUR"
+              isFullPage={true}
+              onBack={() => setView("queue")}
+            />
+          ) : view === "orders" || view === "quotations" || view === "suppliers" ? (
+            <PurchasingCommandCenter
+              items={portal.inventory ?? []}
+              movements={portal.inventoryMovements ?? []}
+              assignments={portal.inventoryAssignments ?? []}
+              allowedCategories={[
+                "Electronics",
+                "Connectors",
+                "Wire and Cable",
+                "Wire Harnesses",
+                "Mechanical Parts",
+                "Enclosures",
+                "Firmware Tools",
+                "Production Tools",
+                "Packaging & Consumables",
+                "Hardware / PCB",
+                "Mechanical",
+                "Firmware / Software",
+                "Test & Calibration",
+                "Packaging & Logistics",
+              ]}
+              readOnly={persona.kind === "client"}
+              onMove={moveInventory}
+              onAssign={assignInventory}
+              projectScope={projectScopes[activeArea] === "all" ? "HLPL-AI4T-01" : (projectScopes[activeArea] ?? "HLPL-AI4T-01")}
+              activeSubView={view as "orders" | "quotations" | "suppliers"}
+              onSelectSubView={(sub) => {
+                setPurchasingSubView(sub);
+                setView(sub === "recordage" ? "inventory" : sub);
+              }}
+              isFullPage={true}
+              onBack={() => setView("queue")}
+              onReleaseToManufacturing={() => {
+                handleOpenCreate("Task", {
+                  title: "BOM Procurement Lock Released to EMF SMT Line 2",
+                  scope: "All critical line items approved with dual-sourcing and long-lead modem buffer PO issued.",
+                });
+              }}
+            />
+          ) : view === "customers" ? (
+            <CustomerManagementFullPageView
+              customers={portal.customersRegistry ?? defaultCustomers}
+              onAddCustomer={handleCustomerCreated}
+              onBack={() => setView("queue")}
+              departmentRole={activeArea}
             />
           ) : activeArea === "home" && view === "assignee" && selectedAssignee ? (
             <AssigneeWorkload
@@ -2604,8 +2694,12 @@ function Portal() {
         <MobileMenu
           onClose={() => setMobileMenu(false)}
           onNavigate={(area, targetView) => {
-            navigate(area);
-            if (targetView) setView(targetView);
+            setActiveArea(area);
+            setView(targetView ?? "queue");
+            setSelectedId(null);
+            setSelectedAssignee(null);
+            setQueueStage(null);
+            setMobileMenu(false);
           }}
           darkMode={darkMode}
           onToggleTheme={() => setDarkMode((value) => !value)}
@@ -9895,7 +9989,22 @@ function MobileMenu({
   openTaskCounts,
 }: {
   onClose: () => void;
-  onNavigate: (area: AreaId, targetView?: "queue" | "detail" | "summary" | "project" | "assignee" | "index" | "pmss") => void;
+  onNavigate: (
+    area: AreaId,
+    targetView?:
+      | "queue"
+      | "detail"
+      | "summary"
+      | "project"
+      | "assignee"
+      | "index"
+      | "pmss"
+      | "inventory"
+      | "orders"
+      | "quotations"
+      | "suppliers"
+      | "customers"
+  ) => void;
   darkMode: boolean;
   onToggleTheme: () => void;
   purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers" | undefined;

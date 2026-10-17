@@ -98,7 +98,22 @@ export type RoleAwareSidebarProps = {
   onToggleExpanded: () => void;
   purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers" | undefined;
   onSelectPurchasingSubView?: ((subView: "recordage" | "quotations" | "orders" | "suppliers") => void) | undefined;
-  onNavigate: (area: AreaId, view?: "queue" | "detail" | "summary" | "project" | "assignee" | "index" | "pmss") => void;
+  onNavigate: (
+    area: AreaId,
+    view?:
+      | "queue"
+      | "detail"
+      | "summary"
+      | "project"
+      | "assignee"
+      | "index"
+      | "pmss"
+      | "inventory"
+      | "orders"
+      | "quotations"
+      | "suppliers"
+      | "customers"
+  ) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   onOpenAi4tLifecycle?: (() => void) | undefined;
   onOpenProjectAnalysis?: (() => void) | undefined;
@@ -132,7 +147,7 @@ const DEFAULT_FAVORITES_BY_ROLE: Record<string, string[]> = {
     "adm-documents",
     "adm-people",
   ],
-  pur: ["dept-mywork", "pur-inventory", "pur-quotations", "pur-orders", "pur-suppliers"],
+  pur: ["dept-mywork", "pur-inventory", "pur-orders", "pur-quotations", "pur-suppliers"],
   ehw: ["dept-mywork", "ehw-hub", "ehw-specs", "ehw-schematics", "dept-projects"],
   sales: ["dept-mywork", "sales-opps", "sales-customers", "dept-projects", "dept-drive"],
   qa: ["dept-mywork", "qa-hub", "qa-dvpr", "dept-projects", "dept-drive"],
@@ -140,7 +155,7 @@ const DEFAULT_FAVORITES_BY_ROLE: Record<string, string[]> = {
   esw: ["dept-mywork", "esw-hub", "dept-projects", "dept-drive"],
   emf: ["dept-mywork", "emf-hub", "dept-projects"],
   tst: ["dept-mywork", "tst-hub", "dept-projects"],
-  fin: ["dept-mywork", "fin-hub", "dept-projects"],
+  fin: ["dept-mywork", "fin-hub", "fin-customers", "dept-projects"],
   sit: ["dept-mywork", "sit-hub", "dept-projects"],
   hrops: ["dept-mywork", "hrops-hub", "dept-projects"],
   client: ["client-milestones", "client-lifecycle", "client-documents"],
@@ -217,7 +232,7 @@ export function RoleAwareSidebar({
     if (isAdmin) {
       return {
         favorites: true,
-        overview: true,
+        overview: false,
         commercial: false,
         engineering: false,
         inventory: false,
@@ -242,7 +257,7 @@ export function RoleAwareSidebar({
     if (isAdmin) {
       setExpandedGroups({
         favorites: true,
-        overview: true,
+        overview: false,
         commercial: false,
         engineering: false,
         inventory: false,
@@ -331,8 +346,8 @@ export function RoleAwareSidebar({
             label: "Customers & Accounts",
             shortLabel: "Customers",
             icon: Building,
-            isActive: false,
-            onClick: () => handleItemClick(() => onOpenCustomerRegister?.()),
+            isActive: view === "customers",
+            onClick: () => handleItemClick(() => onNavigate("sales", "customers")),
           },
           {
             id: "adm-opps",
@@ -432,11 +447,11 @@ export function RoleAwareSidebar({
             label: "Governed Parts & Stock",
             shortLabel: "Stock",
             icon: Package,
-            isActive: activeArea === "pur" && purchasingSubView === "recordage",
+            isActive: activeArea === "pur" && (view === "inventory" || (view === "queue" && purchasingSubView === "recordage")),
             onClick: () =>
               handleItemClick(() => {
                 onSelectPurchasingSubView?.("recordage");
-                onNavigate("pur");
+                onNavigate("pur", "inventory");
               }),
           },
           {
@@ -444,11 +459,11 @@ export function RoleAwareSidebar({
             label: "Purchase Orders (POs)",
             shortLabel: "POs",
             icon: ShoppingCart,
-            isActive: activeArea === "pur" && purchasingSubView === "orders",
+            isActive: activeArea === "pur" && (view === "orders" || (view === "queue" && purchasingSubView === "orders")),
             onClick: () =>
               handleItemClick(() => {
                 onSelectPurchasingSubView?.("orders");
-                onNavigate("pur");
+                onNavigate("pur", "orders");
               }),
           },
           {
@@ -456,11 +471,11 @@ export function RoleAwareSidebar({
             label: "Quotations & Pricing",
             shortLabel: "Quotes",
             icon: FileText,
-            isActive: activeArea === "pur" && purchasingSubView === "quotations",
+            isActive: activeArea === "pur" && (view === "quotations" || (view === "queue" && purchasingSubView === "quotations")),
             onClick: () =>
               handleItemClick(() => {
                 onSelectPurchasingSubView?.("quotations");
-                onNavigate("pur");
+                onNavigate("pur", "quotations");
               }),
           },
           {
@@ -468,11 +483,11 @@ export function RoleAwareSidebar({
             label: "Suppliers & ASL Governance",
             shortLabel: "Suppliers",
             icon: Building2,
-            isActive: activeArea === "pur" && purchasingSubView === "suppliers",
+            isActive: activeArea === "pur" && (view === "suppliers" || (view === "queue" && purchasingSubView === "suppliers")),
             onClick: () =>
               handleItemClick(() => {
                 onSelectPurchasingSubView?.("suppliers");
-                onNavigate("pur");
+                onNavigate("pur", "suppliers");
               }),
           },
           {
@@ -584,8 +599,16 @@ export function RoleAwareSidebar({
             shortLabel: "Finance",
             icon: ClipboardCheck,
             badge: openTaskCounts["fin"],
-            isActive: activeArea === "fin",
+            isActive: activeArea === "fin" && view !== "customers",
             onClick: () => handleItemClick(() => onNavigate("fin")),
+          },
+          {
+            id: "adm-fin-customers",
+            label: "Customer Billing & Credit Terms",
+            shortLabel: "Billing",
+            icon: Building,
+            isActive: activeArea === "fin" && view === "customers",
+            onClick: () => handleItemClick(() => onNavigate("fin", "customers")),
           },
         ],
       },
@@ -683,23 +706,11 @@ export function RoleAwareSidebar({
               label: "Recordage & Governed Stock",
               shortLabel: "Recordage",
               icon: Package,
-              isActive: activeArea === "pur" && purchasingSubView === "recordage",
+              isActive: activeArea === "pur" && (view === "inventory" || (view === "queue" && purchasingSubView === "recordage")),
               onClick: () =>
                 handleItemClick(() => {
                   onSelectPurchasingSubView?.("recordage");
-                  onNavigate("pur");
-                }),
-            },
-            {
-              id: "pur-quotations",
-              label: "Quotations & Vendor Pricing",
-              shortLabel: "Quotes",
-              icon: FileText,
-              isActive: activeArea === "pur" && purchasingSubView === "quotations",
-              onClick: () =>
-                handleItemClick(() => {
-                  onSelectPurchasingSubView?.("quotations");
-                  onNavigate("pur");
+                  onNavigate("pur", "inventory");
                 }),
             },
             {
@@ -707,11 +718,23 @@ export function RoleAwareSidebar({
               label: "Purchase Orders (POs)",
               shortLabel: "POs",
               icon: ShoppingCart,
-              isActive: activeArea === "pur" && purchasingSubView === "orders",
+              isActive: activeArea === "pur" && (view === "orders" || (view === "queue" && purchasingSubView === "orders")),
               onClick: () =>
                 handleItemClick(() => {
                   onSelectPurchasingSubView?.("orders");
-                  onNavigate("pur");
+                  onNavigate("pur", "orders");
+                }),
+            },
+            {
+              id: "pur-quotations",
+              label: "Quotations & Vendor Pricing",
+              shortLabel: "Quotes",
+              icon: FileText,
+              isActive: activeArea === "pur" && (view === "quotations" || (view === "queue" && purchasingSubView === "quotations")),
+              onClick: () =>
+                handleItemClick(() => {
+                  onSelectPurchasingSubView?.("quotations");
+                  onNavigate("pur", "quotations");
                 }),
             },
             {
@@ -719,11 +742,11 @@ export function RoleAwareSidebar({
               label: "Suppliers (ASL) & Governance",
               shortLabel: "Suppliers",
               icon: Building2,
-              isActive: activeArea === "pur" && purchasingSubView === "suppliers",
+              isActive: activeArea === "pur" && (view === "suppliers" || (view === "queue" && purchasingSubView === "suppliers")),
               onClick: () =>
                 handleItemClick(() => {
                   onSelectPurchasingSubView?.("suppliers");
-                  onNavigate("pur");
+                  onNavigate("pur", "suppliers");
                 }),
             },
           ];
@@ -769,21 +792,48 @@ export function RoleAwareSidebar({
               label: "Sales Opportunities & Leads",
               shortLabel: "Opps",
               icon: UsersRound,
-              isActive: activeArea === "sales",
-              onClick: () => handleItemClick(() => onNavigate("sales")),
+              isActive: activeArea === "sales" && view === "queue",
+              onClick: () => handleItemClick(() => onNavigate("sales", "queue")),
             },
             {
               id: "sales-customers",
               label: "Customer Register & Accounts",
               shortLabel: "Customers",
               icon: Building,
-              isActive: false,
-              onClick: () => handleItemClick(() => onOpenCustomerRegister?.()),
+              isActive: activeArea === "sales" && view === "customers",
+              onClick: () => handleItemClick(() => onNavigate("sales", "customers")),
             },
             {
               id: "sales-quotations",
               label: "Commercial Quotations (SAL-QUO)",
               shortLabel: "Quotes",
+              icon: FileText,
+              isActive: false,
+              onClick: () => handleItemClick(() => onOpenDraftHub?.()),
+            },
+          ];
+        case "fin":
+          return [
+            {
+              id: "fin-hub",
+              label: "Accounts & Financial Queue",
+              shortLabel: "Queue",
+              icon: ClipboardCheck,
+              isActive: activeArea === "fin" && view === "queue",
+              onClick: () => handleItemClick(() => onNavigate("fin", "queue")),
+            },
+            {
+              id: "fin-customers",
+              label: "Customer Master & Credit Accounts",
+              shortLabel: "Customers",
+              icon: Building,
+              isActive: activeArea === "fin" && view === "customers",
+              onClick: () => handleItemClick(() => onNavigate("fin", "customers")),
+            },
+            {
+              id: "fin-invoices",
+              label: "Commercial Tax Invoices (FIN-INV)",
+              shortLabel: "Invoices",
               icon: FileText,
               isActive: false,
               onClick: () => handleItemClick(() => onOpenDraftHub?.()),
@@ -930,11 +980,11 @@ export function RoleAwareSidebar({
             label: "Governed Parts & Stock (Read-only)",
             shortLabel: "Parts",
             icon: PackageSearch,
-            isActive: activeArea === "pur" && purchasingSubView === "recordage",
+            isActive: activeArea === "pur" && (view === "inventory" || (view === "queue" && purchasingSubView === "recordage")),
             onClick: () =>
               handleItemClick(() => {
                 onSelectPurchasingSubView?.("recordage");
-                onNavigate("pur");
+                onNavigate("pur", "inventory");
               }),
           },
           {
