@@ -21,7 +21,6 @@ import {
   PackageSearch,
   Plus,
   Upload,
-  Play,
   Search,
   Settings2,
   ShieldCheck,
@@ -87,7 +86,6 @@ import {
   type ProjectModularConfiguration,
 } from "@/components/ModularProductArchitectureAndPcbCatalog";
 import { DeviceVisualSpecAndBlockDiagram } from "@/components/DeviceVisualSpecAndBlockDiagram";
-import { ProjectLifecycleAutoPilot } from "@/components/ProjectLifecycleAutoPilot";
 
 type AreaId =
   | "home"
@@ -1888,12 +1886,6 @@ function Portal() {
   const [ai4tOpen, setAi4tOpen] = useState(false);
   const [ai4tInitialTab, setAi4tInitialTab] = useState<"stages" | "feasibility" | "binder">("stages");
   const [ai4tSimulation, setAi4tSimulation] = useState<Ai4tSimulation>({ stage: 0, history: [] });
-  const [autoPilotActive, setAutoPilotActive] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.location.search.includes("autopilot") || window.location.search.includes("demo");
-    }
-    return false;
-  });
   const [projectScopes, setProjectScopes] = useState<Partial<Record<AreaId, ProjectScope>>>({});
   const [selectedProjectId, setSelectedProjectId] = useState("HLPL-SLCT-01");
   const [darkMode, setDarkMode] = useState(true);
@@ -2350,7 +2342,6 @@ function Portal() {
                 setAdminTab("cloud");
                 setModal("admin");
               }}
-              onStartAutoPilot={() => setAutoPilotActive(true)}
               persona={persona}
             />
           ) : view === "detail" && selected ? (
@@ -2828,74 +2819,6 @@ function Portal() {
           activeProject={selectedProjectId}
         />
       )}
-      <ProjectLifecycleAutoPilot
-        active={autoPilotActive}
-        onClose={() => setAutoPilotActive(false)}
-        onCreateTask={(title, priority, scope) => {
-          const today = new Date().toISOString().slice(0, 10);
-          const newTask: RecordItem = {
-            id: createId(),
-            reference: "HLPL-OBD4-01-TSK",
-            area: "sales",
-            type: "Task",
-            title,
-            priority: priority as Priority,
-            status: "Open",
-            createdAt: now(),
-            updatedAt: now(),
-            notes: scope,
-            fields: {
-              dueDate: today,
-              assignee: "Priya Sharma",
-              project: "HLPL-OBD4-01",
-              stage: "Stage 1 · Customer Intake & Enquiry",
-              scope,
-            },
-          };
-          update((state) => ({ ...state, records: [newTask, ...state.records] }));
-          announce(`${newTask.title} created.`);
-          log("Auto-Pilot Task Created", `${newTask.reference} · ${newTask.title}`);
-        }}
-        onUpdateTaskStatus={(newStatus) => {
-          update((state) => ({
-            ...state,
-            records: state.records.map((r) =>
-              r.reference === "HLPL-OBD4-01-TSK" ? { ...r, status: newStatus as RecordStatus, updatedAt: now() } : r
-            ),
-          }));
-          log("Auto-Pilot Task Updated", `HLPL-OBD4-01-TSK status set to ${newStatus}`);
-        }}
-        onSwitchPersona={(personaId) => {
-          const next = personas.find((p) => p.id === personaId) ?? personas[0];
-          if (next) switchPersona(next);
-        }}
-        onOpenLifecycleHub={() => {
-          setSelectedProjectId("HLPL-OBD4-01");
-          setAi4tInitialTab("stages");
-          setAi4tOpen(true);
-        }}
-        onAdvanceLifecycleStage={(stageIndex) => {
-          const entry = ai4tStages[stageIndex] ?? ai4tStages[0];
-          if (!entry) return;
-          setAi4tSimulation((prev) => ({
-            stage: stageIndex,
-            history: [`${now()} · Auto-Pilot advanced to ${entry[0]} · ${entry[1]}`, ...prev.history],
-          }));
-          log("Auto-Pilot Lifecycle Advanced", `${entry[0]} · ${entry[1]}`);
-        }}
-        onCloseLifecycleHub={() => setAi4tOpen(false)}
-        onOpenProjectAnalysis={(projectId) => {
-          setSelectedProjectId(projectId);
-          setView("project");
-        }}
-        onSelectProjectTab={() => {}}
-        onToggleBleUpgrade={() => {}}
-        onOpenClientPreview={() => {}}
-        onSignOffClientMilestone={() => {
-          announce("Customer milestone signed off and verified.");
-          log("Auto-Pilot Client Milestone Approved", "Ashok Leyland Fleet Solutions verified");
-        }}
-      />
       {legalHubOpen && (
         <OperationsLegalAndLetterheadModal onClose={() => setLegalHubOpen(false)} />
       )}
@@ -2967,7 +2890,6 @@ function CommandCenter({
   onOpenDirectory,
   onOpenAssetCatalog,
   onOpenCloudSync,
-  onStartAutoPilot,
   persona,
 }: {
   portal: PortalState;
@@ -2989,7 +2911,6 @@ function CommandCenter({
   onOpenDirectory?: (() => void) | undefined;
   onOpenAssetCatalog?: (() => void) | undefined;
   onOpenCloudSync?: (() => void) | undefined;
-  onStartAutoPilot?: (() => void) | undefined;
   persona: Persona;
 }) {
   const records = portal.records.filter((record) => !record.archived);
@@ -3009,32 +2930,6 @@ function CommandCenter({
     <>
       {portal.demoLoaded && <DemoMarker />}
       {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-SLCT-01" />}
-      
-      {/* Top Prominent Live Auto-Pilot Banner */}
-      <div className="surface-card mb-4 flex flex-wrap items-center justify-between gap-3 border-2 border-cyan-500/50 bg-gradient-to-r from-cyan-950/70 via-slate-900 to-indigo-950/70 p-4 shadow-[0_4px_25px_rgba(6,182,212,0.2)] rounded-xl">
-        <div className="flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 grid place-items-center text-cyan-400 shadow-inner">
-            <Sparkles className="size-5 text-amber-400 animate-pulse" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              Live End-to-End Project Lifecycle Auto-Pilot Demo
-              <span className="rounded-full bg-emerald-500/20 border border-emerald-400/50 px-2 py-0.5 text-[10px] text-emerald-300 font-mono font-semibold">Ready to Play</span>
-            </h3>
-            <p className="text-xs text-slate-300 mt-0.5">
-              Watch the full OBD tracker lifecycle run right here: Intake record creation → status update → multi-department accounts switching (SAL, EHW, QA, SIT) → 9-stage engineering gates → client portal approval.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onStartAutoPilot}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-[0_0_25px_rgba(6,182,212,0.6)] hover:brightness-110 active:scale-95 transition-all cursor-pointer"
-        >
-          <Play className="size-4 fill-white text-white" />
-          Play Live Auto-Pilot Walkthrough
-        </button>
-      </div>
-
       <PageHeader
         eyebrow={persona.kind === "admin" ? (departmentContext ? "Administrator context" : "Operational workspace") : `${persona.label} · active persona`}
         title="Command Center"
@@ -3046,10 +2941,9 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
-            {onStartAutoPilot && <Action onClick={onStartAutoPilot} label="▶ Live Auto-Pilot Tour" primary />}
-            <Action onClick={() => onOpenProject("HLPL-AI4T-01")} label="Project Analysis (Page 1)" />
+            <Action onClick={() => onOpenProject("HLPL-AI4T-01")} label="Project Analysis (Page 1)" primary />
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" />
-            <Action onClick={onOpenAi4t} label="End-to-End Project Lifecycle Hub (HLPL-AI4T-01)" />
+            <Action onClick={onOpenAi4t} label="End-to-End Project Lifecycle Hub (HLPL-AI4T-01)" primary />
             {onOpenFeasibilityGate && (
               <Action onClick={() => onOpenFeasibilityGate("HLPL-AI4T-01")} label="Feasibility & Hardware Gate" />
             )}
