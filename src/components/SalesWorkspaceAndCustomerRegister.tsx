@@ -570,6 +570,7 @@ export function SendForFeasibilityModal({
             </div>
           </div>
           <button
+            aria-label="Close"
             onClick={onClose}
             className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           >
@@ -973,6 +974,7 @@ export function CustomerRegisterModal({
               Add Customer
             </button>
             <button
+              aria-label="Close"
               onClick={onClose}
               className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
             >

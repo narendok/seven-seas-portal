@@ -21,6 +21,7 @@ import {
   Bluetooth,
   Truck,
   Sparkles,
+  Download,
 } from "lucide-react";
 
 export interface DeviceVisualSpecProps {
@@ -60,6 +61,53 @@ export function DeviceVisualSpecAndBlockDiagram({
     14: { name: "Pin 14", signal: "CAN_L (ISO 15765)", desc: "High-Speed Vehicle Bus Low (500 kbps)", color: "bg-emerald-500 text-black font-bold" },
     16: { name: "Pin 16", signal: "+12V / 24V BATT", desc: "Direct Permanent Vehicle Battery (9V–36V)", color: "bg-rose-500 text-white font-bold" },
   };
+
+  const downloadSampleFile = (filename: string, content: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const sampleSchematicText = `%PDF-1.4
+% Hexense Labs Automotive Schematic Package
+% Doc ID: HLPL-OBD4-EHW-SCH-${rev} Rev ${rev}
+% Project: 4G OBD-II Smart Telematics Tracker
+% Microcontroller: STM32G0B1VET6 (Arm Cortex-M0+ 64MHz, 512KB Flash)
+% Cellular Modem: Quectel EC200U-CN (LTE Cat-1 + GNSS Active Ceramic)
+% Power Stage: TI LM5017 Buck + TVS (9V-36V ISO 7637-2 Clamped)
+% CAN Transceiver: NXP TJA1051T/3 (ISO 11898-2 @ 500kbps)
+% Pinout: SAE J1962 Male Plug (Pin 4 GND, Pin 6 CAN_H, Pin 14 CAN_L, Pin 16 BATT)
+% Standard: AIS-140 / AEC-Q100 / ISO 7637-2
+%%EOF`;
+
+  const sampleStepText = `ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('Hexense Labs SCMS 3D STEP Model','J1962 Enclosure Model'),'2;1');
+FILE_NAME('HLPL-OBD4-MECH-3D.step','2026-10-17T00:00:00',('Samira Holt'),('Hexense Labs Mechanical Engineering'),'AutoCAD / FreeCAD STEP Export','Hexense SCMS','Authorized');
+FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));
+ENDSEC;
+DATA;
+#10=APPLICATION_CONTEXT('automotive mechanical enclosure configuration');
+#20=PRODUCT('HLPL-OBD4-MECH-CAD-01','OBD-II Enclosure Housing','Cycoloy PC/ABS Flame Retardant UL94-V0',(#10));
+#30=PRODUCT_DEFINITION_SHAPE('Enclosure Outer Envelope: 52.4mm x 48.2mm x 26.0mm with J1962 Dual Detent Snap Latches',$,#20);
+ENDSEC;
+END-ISO-10303-21;`;
+
+  const sampleBomText = `Line,Item Category,Manufacturer,Manufacturer Part Number (MPN),Description,Package,Unit Cost (USD),AEC-Q Grade,Lead Time (Weeks),Sourcing Status
+1,Active IC,STMicroelectronics,STM32G0B1VET6,MCU 32-Bit 64MHz 512KB Flash,LQFP-100,$2.85,AEC-Q100 Grade 1,8,In Stock (Arrow)
+2,Cellular / GNSS,Quectel Wireless,EC200U-CN,LTE Cat-1 + BeiDou/GPS Engine,LCC-144,$7.20,AEC-Q100 Grade 2,6,Direct Alloc
+3,Power Buck IC,Texas Instruments,LM5017MR/NOPB,100V 600mA Buck Converter,SO-8 PowerPAD,$1.15,AEC-Q100 Grade 1,4,Active (Avnet)
+4,CAN Transceiver,NXP Semiconductors,TJA1051T/3,High-Speed CAN Transceiver 500k,SOIC-8,$0.72,AEC-Q100 Grade 1,4,Active
+5,Protection TVS,Littelfuse,SMDJ36CA,3000W Bi-directional TVS 36V,DO-214AB,$0.38,AEC-Q101,2,Qualified
+6,Battery Backup,EVE Energy,PL-502535-450mAh,3.7V 450mAh LiPo Cell with NTC,Custom Pack,$1.65,UN 38.3 / UL 1642,6,Verified
+7,Chassis Enclosure,SABIC / Hexense Mold,HLPL-MECH-OBD4-HSG,Cycoloy PC/ABS Flame Retardant UL94-V0,Injection Molded,$1.40,Automotive Resin,4,Tooling Complete
+8,OBD Connector,Molex / JST,J1962-16P-M,SAE J1962 Male 16-Pin Gold-Plated,Right-Angle SMT,$0.85,USCAR-2 Footprint,3,Active`;
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-5 shadow-sm transition-all">
@@ -274,6 +322,9 @@ export function DeviceVisualSpecAndBlockDiagram({
                       return (
                         <button
                           key={p}
+                          type="button"
+                          data-pin={p}
+                          aria-label={`OBD Pin ${p}${isConnected ? `: ${isConnected.signal} (${isConnected.desc})` : ""}`}
                           onMouseEnter={() => setHoveredPin(p)}
                           onMouseLeave={() => setHoveredPin(null)}
                           className={`size-7 rounded text-[10px] font-mono font-bold transition-all flex items-center justify-center ${
@@ -298,6 +349,9 @@ export function DeviceVisualSpecAndBlockDiagram({
                       return (
                         <button
                           key={p}
+                          type="button"
+                          data-pin={p}
+                          aria-label={`OBD Pin ${p}${isConnected ? `: ${isConnected.signal} (${isConnected.desc})` : ""}`}
                           onMouseEnter={() => setHoveredPin(p)}
                           onMouseLeave={() => setHoveredPin(null)}
                           className={`size-7 rounded text-[10px] font-mono font-bold transition-all flex items-center justify-center ${
@@ -393,14 +447,18 @@ export function DeviceVisualSpecAndBlockDiagram({
               </div>
             </div>
 
-            {/* Controlled Documentation Cross-Reference */}
+            {/* Controlled Documentation Cross-Reference & Sample Engineering Deliverables */}
             <div className="rounded-lg border border-border bg-panel p-4 space-y-2.5">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <FileText className="size-3.5 text-steel" />
-                Controlled Documents for this Baseline
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <FileText className="size-3.5 text-steel" />
+                  Engineering Deliverables & Sample Files
+                </h4>
+                <span className="text-[10px] text-muted-foreground font-mono">IATF 16949 / ISO 9001</span>
+              </div>
 
               <div className="space-y-1.5 text-xs">
+                {/* 1. PRS */}
                 <div className="flex items-center justify-between rounded border border-border bg-card p-2">
                   <div>
                     <span className="font-mono font-bold text-primary block">
@@ -412,6 +470,7 @@ export function DeviceVisualSpecAndBlockDiagram({
                   </div>
                   {onOpenDocument && (
                     <button
+                      type="button"
                       onClick={() => onOpenDocument(`${isObd ? "HLPL-OBD4" : projectId}-EHW-PRS-${rev}`)}
                       className="text-[11px] font-semibold text-primary hover:underline"
                     >
@@ -420,25 +479,86 @@ export function DeviceVisualSpecAndBlockDiagram({
                   )}
                 </div>
 
+                {/* 2. Sample Schematic PDF */}
                 <div className="flex items-center justify-between rounded border border-border bg-card p-2">
                   <div>
                     <span className="font-mono font-bold text-foreground block">
-                      {isObd ? `HLPL-OBD4-EHW-SCH-${rev}` : `${projectId}-EHW-SCH-01`}
+                      {isObd ? `HLPL-OBD4-EHW-SCH-${rev}.pdf` : `${projectId}-EHW-SCH-01.pdf`}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
-                      Schematics ({rev === "02" ? "Rev 02 BLE Co-processor" : "Rev 01 Core MCU"})
+                      Automotive ECAD Schematic Package (TI LM5017 · Quectel EC200U · J1962)
                     </span>
                   </div>
-                  <span className="text-[10px] text-emerald-500 font-semibold">✓ Released</span>
+                  <button
+                    type="button"
+                    onClick={() => downloadSampleFile(
+                      isObd ? `HLPL-OBD4-EHW-SCH-${rev}.pdf` : `${projectId}-EHW-SCH-01.pdf`,
+                      sampleSchematicText,
+                      "application/pdf"
+                    )}
+                    className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-1 text-[10px] font-semibold text-foreground hover:bg-secondary/80 border border-border"
+                  >
+                    <Download className="size-3 text-primary" />
+                    Download PDF
+                  </button>
                 </div>
 
+                {/* 3. Sample 3D STEP Enclosure CAD */}
+                <div className="flex items-center justify-between rounded border border-border bg-card p-2">
+                  <div>
+                    <span className="font-mono font-bold text-foreground block">
+                      {isObd ? "HLPL-OBD4-MECH-3D.step" : `${projectId}-MECH-3D.step`}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Mechanical 3D STEP CAD Enclosure (Cycoloy PC/ABS · 52.4 × 48.2 × 26mm)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => downloadSampleFile(
+                      isObd ? "HLPL-OBD4-MECH-3D.step" : `${projectId}-MECH-3D.step`,
+                      sampleStepText,
+                      "model/step"
+                    )}
+                    className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-1 text-[10px] font-semibold text-foreground hover:bg-secondary/80 border border-border"
+                  >
+                    <Download className="size-3 text-cyan-500" />
+                    Download STEP
+                  </button>
+                </div>
+
+                {/* 4. Sample Costed BOM CSV */}
+                <div className="flex items-center justify-between rounded border border-border bg-card p-2">
+                  <div>
+                    <span className="font-mono font-bold text-foreground block">
+                      {isObd ? "HLPL-OBD4-PUR-BOM-01.csv" : `${projectId}-PUR-BOM-01.csv`}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Procurement Costed BOM Tracker (AEC-Q Grade & Lead Time SCM Analysis)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => downloadSampleFile(
+                      isObd ? "HLPL-OBD4-PUR-BOM-01.csv" : `${projectId}-PUR-BOM-01.csv`,
+                      sampleBomText,
+                      "text/csv"
+                    )}
+                    className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-1 text-[10px] font-semibold text-foreground hover:bg-secondary/80 border border-border"
+                  >
+                    <Download className="size-3 text-emerald-500" />
+                    Download CSV
+                  </button>
+                </div>
+
+                {/* 5. SIT Mounting SOP */}
                 <div className="flex items-center justify-between rounded border border-border bg-card p-2">
                   <div>
                     <span className="font-mono font-bold text-foreground block">
                       {isObd ? "HLPL-OBD4-SIT-MNT-01" : `${projectId}-SIT-MNT-01`}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
-                      Vehicle Field Mounting & SIT PDI Protocol
+                      Vehicle Field Mounting & SIT PDI Protocol (Dealer SOP)
                     </span>
                   </div>
                   <span className="text-[10px] text-blue-500 font-semibold">Service SOP</span>

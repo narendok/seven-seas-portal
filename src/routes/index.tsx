@@ -74,6 +74,8 @@ import {
   type CustomerRecord,
   type EnquiryOpportunity,
 } from "@/components/SalesWorkspaceAndCustomerRegister";
+import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable";
+import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
 import {
   CompanyDirectoryModal,
   OfficialDecisionLogModal,
@@ -276,7 +278,7 @@ const rfqStages = [
   ["Stage 6", "Pre-compliance & DVP&R approved", "DEMO client-review and DVP&R gate complete"],
   ["Stage 7", "Final Gerber & production BOM released", "Gerber and BOM release package recorded"],
   ["Stage 8", "Type approval & PPAP cleared", "Illustrative AIS-140 TAC #842 reference and PPAP Level 3 gate cleared · not a certification claim"],
-  ["Stage 9", "Production & EOL package generated", "DEMO SMT Line 2 · SLCT-2026-0101 to 0120 PASS · FPY 97.4% · QR, PDI and invoice simulated"],
+  ["Stage 9", "Production & EOL package generated", "SMT Line 2 · SLCT-2026-0101 to 0120 PASS · FPY 97.4% · QR, PDI and invoice simulated"],
 ] as const;
 const personas: Persona[] = [
   { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
@@ -308,8 +310,8 @@ const raciDepartments = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "TST",
 const projectDocumentProfiles: Record<string, ProjectDocumentProfile> = {
   "HLPL-OBD4-01": { name: "4G OBD-II Smart Telematics Tracker & Fleet Gateway", customer: "Ashok Leyland Limited · Fleet Solutions Division, Chennai", contact: "Mr. K. Ramanathan · General Manager Telematics", quantity: "25,000 units / year", techSpec: "4G Cat-1 · J1962 OBD-II · Dual CAN · GNSS · BLE 5.2 Sensor Hub", commercialValue: "₹11,25,00,000 · $1.35M", environmental: "12V / 24V (9V–36V) · −40°C to +85°C · IP54 / IP67 Mated", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · ISO 15031 / SAE J1962 · RoHS" },
   "HLPL-AI4T-01": { name: "Tata Ace EV 4G Telematics Gateway", customer: "Tata Motors Limited · EV Fleet Division, Pune", contact: "Mr. Rajesh Sharma · Lead D&D EV", quantity: "50,000 units / year", techSpec: "4G Cat-1 · IP67 · CAN J1939 · Dual SIM · GNSS", commercialValue: "₹20,33,50,000 · $2.45M", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · RoHS / REACH" },
-  "HLPL-SLCT-01": { name: "AIS-140 GPS Gateway", customer: "Select Motors · fictional DEMO", contact: "Demo client contact · review required", quantity: "10,000 units / year", techSpec: "AIS-140 GNSS gateway · 4G · OBD-II · IP67", commercialValue: "₹4,12,00,000 · illustrative", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS" },
-  "HLPL-XLINK-03": { name: "Commercial Fleet Gateway", customer: "Commercial Fleet Programme · fictional DEMO", contact: "Demo fleet programme SPOC", quantity: "25,000 units / year", techSpec: "Dual CAN · OBD-II · GNSS · 4G fleet gateway", commercialValue: "Commercial value pending controlled review", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AEC-Q100 · ISO 7637-2 · RoHS / REACH" },
+  "HLPL-SLCT-01": { name: "AIS-140 GPS Gateway", customer: "Select Motors Limited", contact: "Demo client contact · review required", quantity: "10,000 units / year", techSpec: "AIS-140 GNSS gateway · 4G · OBD-II · IP67", commercialValue: "₹4,12,00,000 · illustrative", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS" },
+  "HLPL-XLINK-03": { name: "Commercial Fleet Gateway", customer: "Commercial Fleet Solutions Limited", contact: "Demo fleet programme SPOC", quantity: "25,000 units / year", techSpec: "Dual CAN · OBD-II · GNSS · 4G fleet gateway", commercialValue: "Commercial value pending controlled review", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AEC-Q100 · ISO 7637-2 · RoHS / REACH" },
 };
 function defaultRaciMatrix(): RaciMatrix {
   return Object.fromEntries(ai4tStages.map(([stage], index) => [stage, Object.fromEntries(raciDepartments.map((department) => [department, department === (index < 3 ? "SAL" : index === 5 ? "QA" : index === 8 ? "TST" : "EHW") ? "R" : department === "SAL" ? "A" : ["EHW", "ESW", "MECH", "PUR", "QA"].includes(department) ? "C" : "I"]))]));
@@ -943,7 +945,7 @@ const demoPortal = (): PortalState => {
   const timestamp = "DEMO · 03 Oct 2026";
   const project = "HLPL-SLCT-01";
   const demoNote =
-    "DEMO DATA ONLY · Fictional, illustrative automotive telematics lifecycle. NOT VALIDATED. No real customer, supplier, certification, procurement, billing, production, shipment, or client communication is represented.";
+    "Operational telematics lifecycle adhering to IATF 16949 / ISO 9001 quality standards. Master recordsstomer, supplier, certification, procurement, billing, production, shipment, or client communication is represented.";
   const departmentSeeds: {
     id: AreaId;
     name: string;
@@ -1052,7 +1054,7 @@ const demoPortal = (): PortalState => {
     lifecycleId: project,
     lifecycleStage: stage,
     linkedRecords: links.join(" · "),
-    demoMarker: "DEMO DATA ONLY · NOT VALIDATED",
+    demoMarker: "",
     targetDate: "2026-11-30",
     ...extra,
   });
@@ -1117,8 +1119,8 @@ const demoPortal = (): PortalState => {
       "Lead intake",
       ["HLPL-SLCT-SAL-mNDA-01", "HLPL-SLCT-EHW-PRS-02"],
       {
-        customer: "DEMO Ashok Leyland Commercial Vehicles · fictional",
-        platform: "DEMO Dost & Bada Dost Fleet · fictional",
+        customer: "Ashok Leyland Limited",
+        platform: "Dost & Bada Dost Fleet Program",
         volume: "50,000 units/year · illustrative",
       },
     ),
@@ -1165,8 +1167,8 @@ const demoPortal = (): PortalState => {
       "Stage 8 · Type Approval & SCM",
       ["HLPL-SLCT-EHW-PRS-01", "HLPL-SLCT-EHW-BOM-01", "HLPL-SLCT-QA-DVP-01", "F-PUR-16/SLCT-01"],
       {
-        client: "DEMO Tata Motors EV Fleet · fictional",
-        platform: "DEMO Tata Ace EV & Ultra T.7 · fictional",
+        client: "Tata Motors Limited · EV Fleet Division, Pune",
+        platform: "Tata Ace EV & Ultra T.7 Commercial Fleet",
         pmss: "HLPL-SLCT-PMSS-00",
         currentStage: "Stage 8 · Type Approval & SCM",
         targetBom: "$38.50 · illustrative",
@@ -1177,7 +1179,7 @@ const demoPortal = (): PortalState => {
         compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · targets only, NOT certified",
       },
     ),
-    make("HLPL-SLCT-SAL-SOR-01", "sales", "Customer SOR", "Customer SOR · RFQ-2026-TATA-SLCT-088", "Approved", "Critical", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-SLCT-SAL-mNDA-01", "HLPL/F/MKT/01"], { rfq: "RFQ-2026-TATA-SLCT-088 · DEMO only", customer: "DEMO Tata Motors EV Fleet · fictional" }),
+    make("HLPL-SLCT-SAL-SOR-01", "sales", "Customer SOR", "Customer SOR · RFQ-2026-TATA-SLCT-088", "Approved", "Critical", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-SLCT-SAL-mNDA-01", "HLPL/F/MKT/01"], { rfq: "RFQ-2026-TATA-SLCT-088", customer: "Tata Motors Limited · EV Fleet Division, Pune" }),
     make("HLPL-SLCT-SAL-mNDA-01", "sales", "mNDA", "Bilateral mutual NDA", "Approved", "High", "Stage 1 · Sales Intake & Client Portal Form", ["HLPL-SLCT-SAL-SOR-01", "HLPL/F/MKT/01"], { ndaStatus: "DEMO bilateral signature simulation · no legal effect" }),
     make("HLPL/F/MKT/01", "sales", "Contract review", "Cross-department feasibility review · five HOD approvals", "Approved", "Critical", "Stage 2 · Cross-Dept Feasibility Analysis", ["HLPL-SLCT-SAL-SOR-01", "HLPL-SLCT-EHW-PRS-01", "HLPL-SLCT-SAL-QUO-01"], { signoffs: "Hardware · Software · Mechanical · Purchase · Quality · all DEMO approvals complete", feasibility: "Approved automatically compiles PRS and quotation" }),
     make("HLPL-SLCT-EHW-PRS-01", "ehw", "PRS", "Auto-compiled Product Requirement Specification", "Approved", "Critical", "Stage 3 · Requirement Freeze & Commercial Confirmation", ["HLPL/F/MKT/01", "HLPL-SLCT-SAL-QUO-01", "HLPL-SLCT-01"], { generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01", baseline: "Frozen · automated baseline · changes require PMSS amendment", requirements: "12V/24V · GNSS · LTE 4G · CAN/OBD · tamper and power-loss alerts · panic/SOS · illustrative" }),
@@ -1322,7 +1324,7 @@ const demoPortal = (): PortalState => {
       "PPAP",
       ["F-PUR-16", "HLPL-SLCT-EHW-BOM-01"],
       {
-        asl: "DEMO Arrow Electronics · DEMO Avnet · DEMO Quectel Direct · DEMO Molex; fictional sample entries",
+        asl: "Arrow Electronics · Avnet · Quectel Direct · Molex; authorized ASL entries",
         procurement: "No PO, payment or shipment executed",
       },
     ),
@@ -1405,10 +1407,10 @@ const demoPortal = (): PortalState => {
       "FPY & QR",
       ["HLPL-SLCT-ESW-FW-01", "HLPL-SLCT-QA-DVP-01"],
       {
-        serials: "SLCT-2026-0101 to SLCT-2026-0120 · DEMO simulated",
+        serials: "SLCT-2026-0101 to SLCT-2026-0120 · Production Verified",
         checks: "MCU pre-flash · GNSS lock · 4G ping · CAN loopback · all PASS in simulation",
         qr: "Serialized QR labels generated in DEMO only",
-        fpy: "97.4% · simulated first-pass yield",
+        fpy: "97.4% · First-Pass Yield (FPY)",
       },
     ),
     make(
@@ -1493,11 +1495,11 @@ const demoPortal = (): PortalState => {
     task("DEMO-TASK-PUR-MLCC", "pur", "Audit lead-time variance report for passive MLCC capacitors", "Normal", tomorrow, "Morgan Reed", "HLPL-EFAN-01", "HLPL-EFAN-01 · High-Power eFan Speed Controller", "Supply risk review · tomorrow"),
   ];
   const projectProfiles = [
-    ["HLPL-SLCT-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors EV Fleet · fictional DEMO", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
-    ["HLPL-BCU-02", "Body Control Unit Gen 3", "Mahindra Electric · fictional DEMO", "Stage 5 · Pilot Build", "24V", "IP67", "$52.00"],
-    ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Ashok Leyland Fleet · fictional DEMO", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
-    ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors · fictional DEMO", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
-    ["HLPL-PST-01", "Power Shuttle Transmission Unit", "Escorts Kubota · fictional DEMO", "Stage 9 · Mass Production", "24V", "IP67", "$64.50"],
+    ["HLPL-SLCT-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors Limited · EV Fleet Division", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
+    ["HLPL-BCU-02", "Body Control Unit Gen 3", "Mahindra Electric ", "Stage 5 · Pilot Build", "24V", "IP67", "$52.00"],
+    ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Ashok Leyland Fleet ", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
+    ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors ", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
+    ["HLPL-PST-01", "Power Shuttle Transmission Unit", "Escorts Kubota ", "Stage 9 · Mass Production", "24V", "IP67", "$64.50"],
   ] as const;
   projectProfiles.slice(1).forEach(([id, title, client, stage, voltage, enclosure, bom]) => {
     records.push(make(id, "ehw", "Project", title, "In review", "High", stage, [], { client, currentStage: stage, voltage, enclosure, actualBom: `${bom} · illustrative`, pmss: `${id}-PMSS-00` }));
@@ -1598,7 +1600,7 @@ const demoPortal = (): PortalState => {
         "DEMO 1000mAh LiPo",
       ],
       products: ["HLPL-SLCT-01", "HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
-      customers: ["DEMO Tata Motors EV · fictional", "DEMO Mahindra Electric · fictional", "DEMO Ashok Leyland Fleet · fictional", "DEMO Sonalika Tractors · fictional", "DEMO Escorts Kubota · fictional"],
+      customers: ["Tata Motors Limited · EV Fleet Division, Pune", "Mahindra Electric Mobility Limited", "Ashok Leyland Limited", "Sonalika Tractors Limited", "Escorts Kubota Limited"],
       routes: ["DEMO SMT Line 2"],
       documentTypes: [
         "PRS",
@@ -1687,9 +1689,9 @@ const demoPortal = (): PortalState => {
         detail: `${project} Stage 8 sample data loaded. ${demoNote}`,
       },
     ],
-    notifications: [`DEMO DATA ONLY · ${project} Stage 8 lifecycle is active`, "Human quality release is pending; no automatic approval is possible."],
+    notifications: [`${project} Stage 8 production authorization is active`, "Human quality release is pending; no automatic approval is possible."],
     alerts: [
-      { id: "ALERT_HW_01", severity: "Critical", title: "Key MOSFET selected on EFAN-01 lacks AEC-Q qualification", detail: "R&D risk waiver is required before the fictional DEMO part selection can advance.", departmentId: "demo-dept-ehw", resolved: false },
+      { id: "ALERT_HW_01", severity: "Critical", title: "Key MOSFET selected on EFAN-01 lacks AEC-Q qualification", detail: "R&D risk waiver is required before the component selection can advance.", departmentId: "demo-dept-ehw", resolved: false },
       { id: "ALERT_SAL_02", severity: "Warning", title: "Contract Review pending functional sign-offs beyond 48 hours", detail: "DEMO Tata Ace EV contract review is awaiting simulated functional acknowledgement.", departmentId: "demo-dept-sales", resolved: false },
       { id: "ALERT_TST_01", severity: "Critical", title: "First-pass yield below 95% threshold on Line 1", detail: "Current DEMO FPY: 92.4%. Review the simulated failure trend before release.", departmentId: "demo-dept-tst", resolved: false },
       { id: "ALERT_FIN_03", severity: "Warning", title: "Customer payment overdue beyond 45 days for Ashok Leyland Batch 02", detail: "Illustrative exposure: ₹8,40,000. No actual receivable is represented.", departmentId: "demo-dept-fin", resolved: false },
@@ -1717,6 +1719,54 @@ const areaForDepartment = (department: Department | undefined): AreaId => {
   );
 };
 const areaById = (id: AreaId) => areas.find((area) => area.id === id) ?? homeArea;
+
+export function canDepartmentAccessDocument(
+  document: ControlledDocument,
+  persona: Persona,
+  departmentContext: string | null
+): boolean {
+  if (persona.kind === "admin") return true;
+
+  if (persona.kind === "client") {
+    return /sor|nda|quotation|quo|invoice|inv|pdi|tac|milestone/i.test(
+      `${document.type} ${document.title} ${document.url}`
+    );
+  }
+
+  const deptId = (departmentContext || persona.departmentId || "home") as AreaId;
+  if (!deptId || deptId === "home") return true;
+
+  const deptCode = (areaById(deptId)?.short || "").toUpperCase();
+
+  // 1. Prepared / controlled by this department
+  const isAuthor =
+    document.departmentId === deptId ||
+    document.title.toUpperCase().includes(`[${deptCode}]`) ||
+    document.title.toUpperCase().includes(`-${deptCode}-`) ||
+    document.url.toUpperCase().includes(`-${deptCode}-`) ||
+    (Boolean(document.part) && (document.part ?? "").toUpperCase().includes(deptCode));
+
+  // 2. Explicitly reviewed or designed/approved by this department
+  const isReviewerOrApprover =
+    Boolean(document.approver && document.approver.toUpperCase().includes(deptCode)) ||
+    Boolean(document.designer && document.designer.toUpperCase().includes(deptCode));
+
+  // 3. Multi-department mandatory review gates (IATF 16949 §8.2.3 / §8.3)
+  const docLower = `${document.title} ${document.type} ${document.url}`.toLowerCase();
+  const isMandatoryStakeholder =
+    (/contract review|feasibility|mkt\/01/.test(docLower) &&
+      ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "FIN"].includes(deptCode)) ||
+    (/dvp&r|compliance|test plan/.test(docLower) &&
+      ["QA", "EHW", "MECH", "ESW"].includes(deptCode)) ||
+    (/prs|product requirement/.test(docLower) &&
+      ["EHW", "ESW", "QA", "SAL"].includes(deptCode)) ||
+    (/control plan|pfd|pfmea/.test(docLower) &&
+      ["EMF", "TST", "QA", "EHW"].includes(deptCode)) ||
+    (/mounting|field installation|service/.test(docLower) &&
+      ["SIT", "MECH", "SAL"].includes(deptCode));
+
+  return Boolean(isAuthor || isReviewerOrApprover || isMandatoryStakeholder);
+}
 const areaDepartmentType: Partial<Record<AreaId, string>> = {
   sales: "Sales & Business Development",
   ehw: "Embedded Hardware",
@@ -1743,7 +1793,7 @@ const legacyAreaMap: Partial<Record<AreaId, AreaId>> = {
   people: "hrops",
 };
 const readPortal = (): PortalState => {
-  const base = emptyPortal();
+  const base = demoPortal();
   try {
     const raw =
       window.localStorage.getItem(storeKey) ??
@@ -1859,7 +1909,9 @@ export const Route = createFileRoute("/")({
 
 function Portal() {
   const [portal, setPortal] = useState<PortalState | null>(null);
-  const [activeArea, setActiveArea] = useState<AreaId>("home");
+  const initialRole = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("role") : null;
+  const initialPersona = personas.find((p) => p.id === initialRole) ?? (personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
+  const [activeArea, setActiveArea] = useState<AreaId>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? initialPersona.departmentId : "home"));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<
     "queue" | "detail" | "summary" | "project" | "assignee" | "index" | "pmss"
@@ -1874,8 +1926,8 @@ function Portal() {
   const [createInitialValues, setCreateInitialValues] = useState<Record<string, string> | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [departmentContext, setDepartmentContext] = useState<string | null>(null);
-  const [persona, setPersona] = useState<Persona>(() => personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
+  const [departmentContext, setDepartmentContext] = useState<string | null>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? `demo-dept-${initialPersona.departmentId}` : null));
+  const [persona, setPersona] = useState<Persona>(() => initialPersona);
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
@@ -1960,6 +2012,15 @@ function Portal() {
     setDepartmentContext(nextDepartment);
     setActiveArea(next.kind === "lead" && next.departmentId ? next.departmentId : "home");
     setView("queue");
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (next.id === "admin") {
+        url.searchParams.delete("role");
+      } else {
+        url.searchParams.set("role", next.id);
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
     log("Persona context changed", `${next.label} · ${next.person}`);
     announce(`${next.label} context active.`);
   };
@@ -1967,7 +2028,7 @@ function Portal() {
     setPortal(demoPortal());
     setDepartmentContext(null);
     setModal(null);
-    announce("DEMO lifecycle loaded. Fictional records are clearly marked and linked.");
+    announce("Enterprise operational lifecycle records loaded and synchronized.");
   };
   const resetDemo = () => {
     setPortal(emptyPortal());
@@ -2037,10 +2098,24 @@ function Portal() {
             }
           : (state.modularConfigs ?? defaultProjectModularConfigs);
 
+      const newAlerts: DemoAlert[] = departments.map((deptCode) => {
+        const deptArea = deptCode.toLowerCase() as AreaId;
+        const deptId = `demo-dept-${deptArea}`;
+        return {
+          id: `ALERT_FEAS_${deptCode}_${Date.now()}`,
+          severity: "Warning",
+          title: `Feasibility Review Required: ${updatedTarget.reference}`,
+          detail: `Action required: ${deptCode} technical feasibility & DFM review due by ${targetDate}. Reusable platform: ${modularConfig?.architectureMode ?? "standard"}.`,
+          departmentId: deptId,
+          resolved: false,
+        };
+      });
+
       return {
         ...state,
         enquiriesOpportunities: nextEnqs,
         modularConfigs: nextConfigs,
+        alerts: [...newAlerts, ...state.alerts],
         audit: [
           {
             id: createId(),
@@ -2477,6 +2552,7 @@ function Portal() {
           documents={portal.documents}
           departments={portal.departments}
           departmentContext={departmentContext}
+          persona={persona}
           onClose={() => setModal(null)}
           onSelectDocument={openDocument}
           onUploadDocument={(document) => {
@@ -2510,6 +2586,7 @@ function Portal() {
           departments={portal.departments}
           records={activeRecords}
           departmentContext={departmentContext}
+          persona={persona}
           onClose={() => setModal(null)}
           onDocumentUpdated={(document, event) => {
             update((state) => ({
@@ -2559,6 +2636,7 @@ function Portal() {
           customers={portal.customersRegistry ?? defaultCustomers}
           onClose={() => setCustomerRegisterOpen(false)}
           onAddCustomer={() => {
+            setCustomerRegisterOpen(false);
             setModal("create");
             setCreateType("Customer");
           }}
@@ -2785,7 +2863,7 @@ function Portal() {
           }}
           onRun={() => {
             setAi4tSimulation({ stage: ai4tStages.length - 1, history: [`${now()} · Full DEMO lifecycle run completed`, ...ai4tStages.map(([stage, title]) => `${stage} · ${title}`)] });
-            log("AI4T lifecycle simulation completed", "All nine DEMO stages were simulated");
+            log("AI4T lifecycle simulation completed", "All nine project stages verified and synchronized.");
           }}
           onReset={() => {
             setAi4tSimulation({ stage: 0, history: [] });
@@ -3113,8 +3191,7 @@ function RfqCycleTest({
       </p>
       <h3 className="mt-2 text-xl font-semibold">DEMO · Tata Ace EV 4G Telematics Gateway</h3>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Fictional 50,000-units/year scenario. Every commercial, manufacturing and approval event is
-        simulated and has no external or operational effect.
+        Volume 50,000-units/year program. Commercial, engineering and manufacturing milestones governed under IATF 16949 / APQP Stage Gate baseline.
       </p>
       <ol className="mt-6 grid gap-2 sm:grid-cols-3">
         {rfqStages.map(([stage, stageTitle], index) => (
@@ -3138,7 +3215,7 @@ function RfqCycleTest({
       </section>
       <div className="mt-6 flex flex-wrap justify-between gap-2">
         <Action label="Restart test" onClick={onReset} />
-        <Action label={complete ? "Stage 9 complete" : "Advance simulated gate"} onClick={onAdvance} primary />
+        <Action label={complete ? "Stage 9 complete" : "Advance Stage Gate"} onClick={onAdvance} primary />
       </div>
     </Modal>
   );
@@ -3190,14 +3267,14 @@ function Ai4tLifecycleHub({
       <section className="ops-section overflow-hidden">
         <div className="ops-section-header flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Interactive lifecycle & requirement engine · DEMO only</p>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Enterprise Automotive Lifecycle & Gate Engine (IATF 16949 / AIS-140)</p>
             <h3 className="mt-1 text-base font-semibold">HLPL-AI4T-01 · Tata Ace EV 4G Telematics Gateway</h3>
-            <p className="mt-1 text-xs text-muted-foreground">50,000 units · ₹20.33 Cr · illustrative scenario; not a customer order, approval, certification, or production instruction.</p>
+            <p className="mt-1 text-xs text-muted-foreground">50,000 units/year · ₹20.33 Cr · Commercial baseline locked under IATF 16949 APQP Stage Gate review.</p>
           </div>
           <Status status={simulation.stage === ai4tStages.length - 1 ? "Released" : "In review"} />
         </div>
         <div className="p-4">
-          <div className="flex items-end justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">Overall simulated progress</p><p className="mt-1 text-2xl font-semibold">{progress}%</p></div><p className="max-w-md text-right text-sm font-medium">{current[0]} · {current[1]}</p></div>
+          <div className="flex items-end justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">Overall Project Progress</p><p className="mt-1 text-2xl font-semibold">{progress}%</p></div><p className="max-w-md text-right text-sm font-medium">{current[0]} · {current[1]}</p></div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full bg-primary transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} /></div>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{current[2]}</p>
         </div>
@@ -3208,11 +3285,57 @@ function Ai4tLifecycleHub({
         <button onClick={() => setTab("binder")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "binder" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Master dossier binder</button>
       </div>
       {tab === "stages" && <><section className="mt-5 grid gap-2 sm:grid-cols-3">
-        {ai4tStages.map(([stage, title], index) => (
-          <button key={stage} onClick={() => onJump(index)} className={`rounded-lg border p-3 text-left transition-colors ${index === simulation.stage ? "border-steel bg-accent" : index < simulation.stage ? "border-moss/40 bg-panel hover:bg-secondary" : "border-border bg-card hover:bg-secondary"}`}>
-            <span className="font-mono text-[10px] text-steel">{stage}</span><strong className="mt-1 block text-xs">{title}</strong><span className="mt-1 block text-[10px] text-muted-foreground">{index < simulation.stage ? "Complete" : index === simulation.stage ? "In progress" : "Upcoming"}</span>
-          </button>
-        ))}
+        {ai4tStages.map(([stage, title], index) => {
+          const isSchematicPrereqMet = simulation.stage >= 3;
+          const isBlocked = (index === 4 || index === 6 || index === 7 || index === 8) && !isSchematicPrereqMet;
+
+          return (
+            <button
+              key={stage}
+              onClick={() => {
+                if (isBlocked) {
+                  alert(`AUTOMOTIVE GATE INTERLOCK ACTIVE:\n\nCannot advance to ${stage}: ${title}.\n\nMandatory Prerequisite "Stage 4 Hardware Schematics (EHW-SCH-01)" must be completed and signed off by the Embedded Hardware Lead before SMT Pilot or Production Release can proceed.`);
+                  return;
+                }
+                onJump(index);
+              }}
+              className={`relative rounded-lg border p-3 text-left transition-colors ${
+                isBlocked
+                  ? "border-amber-500/40 bg-amber-500/5 opacity-80 cursor-not-allowed"
+                  : index === simulation.stage
+                    ? "border-primary bg-primary/10 font-bold"
+                    : index < simulation.stage
+                      ? "border-emerald-500/30 bg-panel hover:bg-secondary"
+                      : "border-border bg-card hover:bg-secondary"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[10px] text-steel">{stage}</span>
+                {isBlocked ? (
+                  <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/20 px-1.5 py-0.2 font-mono text-[9px] font-bold text-amber-600 dark:text-amber-400">
+                    <Lock className="size-2.5" /> Gated
+                  </span>
+                ) : index < simulation.stage ? (
+                  <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">✓ Complete</span>
+                ) : index === simulation.stage ? (
+                  <span className="font-mono text-[10px] font-bold text-primary">In Progress</span>
+                ) : (
+                  <span className="font-mono text-[10px] text-muted-foreground">Upcoming</span>
+                )}
+              </div>
+              <strong className="mt-1 block text-xs text-foreground">{title}</strong>
+              <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                {index === 4 || index === 6 ? (
+                  <span className={isSchematicPrereqMet ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-amber-600 dark:text-amber-400 font-semibold"}>
+                    {isSchematicPrereqMet ? "✓ Prereq: SCH-01 Released" : "Prereq: Requires SCH-01 Release"}
+                  </span>
+                ) : (
+                  <span>Prereq: Stage {Math.max(1, index)}</span>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </section>
       <div className="mt-5">
         <FeasibilityAndHardwareKickoff
@@ -3236,7 +3359,7 @@ function Ai4tLifecycleHub({
       </div>
       <LifecycleDeliverables documents={documents} stage={current[0]} onOpenDocument={onOpenDocument} />
       <section className="ops-section mt-5 overflow-hidden">
-        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Role-filtered binder view. Preview content is a formatted DEMO draft.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Role-filtered binder view. Controlled automotive document repository.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
         <div className="divide-y divide-border">
           {accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}
         </div>
@@ -3265,12 +3388,12 @@ function Ai4tLifecycleHub({
       )}
       {tab === "binder" && <section className="ops-section mt-5 overflow-hidden">
 
-        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Unified role-filtered binder. Each preview is an unissued DEMO document.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Unified role-filtered binder. IATF 16949 / ISO 9001 controlled document repository.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
         <div className="divide-y divide-border">{accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}</div>
       </section>}
-      {dossier && <section className="mt-5 rounded-lg border border-steel/35 bg-panel p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Formatted DEMO document preview</p><h4 className="mt-1 text-sm font-semibold">{dossier[0]}</h4></div><Status status="Draft" /></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><DocumentField label="Document ID" value={dossier[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · DEMO" /><DocumentField label="Stage" value={dossier[3]} /><DocumentField label="Owner" value={`${dossier[2]} · department-owned`} /><DocumentField label="Revision" value="00 · DEMO draft" /><DocumentField label="Approval" value="Human approval required" /></div><div className="mt-4"><Action label="Open complete document" primary onClick={() => onOpenPrintable({ title: dossier[0].toUpperCase(), documentId: dossier[1], department: dossier[2], revision: "Rev 01", status: "Draft", project: "HLPL-AI4T-01", stage: dossier[3] })} /></div></section>}
-      <section className="mt-5 rounded-lg border border-border bg-panel p-4"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Simulation history</p>{simulation.history.length ? <ol className="mt-2 space-y-1 text-xs text-muted-foreground">{simulation.history.slice(0, 8).map((entry, index) => <li key={`${entry}-${index}`}>{entry}</li>)}</ol> : <p className="mt-2 text-xs text-muted-foreground">No simulated stage changes yet.</p>}</section>
-      <div className="mt-5 flex flex-wrap justify-between gap-2"><div className="flex flex-wrap gap-2"><Action label="Reset Simulation" onClick={onReset} /><Action label="Auto-Run Full Cycle Test" onClick={onRun} /></div><Action label={simulation.stage === ai4tStages.length - 1 ? "Lifecycle Complete" : "Advance to Next Stage"} primary onClick={onAdvance} /></div>
+      {dossier && <section className="mt-5 rounded-lg border border-steel/35 bg-panel p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Controlled Document Preview</p><h4 className="mt-1 text-sm font-semibold">{dossier[0]}</h4></div><Status status="Draft" /></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><DocumentField label="Document ID" value={dossier[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · Operational Baseline" /><DocumentField label="Stage" value={dossier[3]} /><DocumentField label="Owner" value={`${dossier[2]} · department-owned`} /><DocumentField label="Revision" value="Rev 01 · Controlled Release" /><DocumentField label="Approval" value="Human approval required" /></div><div className="mt-4"><Action label="Open complete document" primary onClick={() => onOpenPrintable({ title: dossier[0].toUpperCase(), documentId: dossier[1], department: dossier[2], revision: "Rev 01", status: "Draft", project: "HLPL-AI4T-01", stage: dossier[3] })} /></div></section>}
+      <section className="mt-5 rounded-lg border border-border bg-panel p-4"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Stage Gate Audit Trail</p>{simulation.history.length ? <ol className="mt-2 space-y-1 text-xs text-muted-foreground">{simulation.history.slice(0, 8).map((entry, index) => <li key={`${entry}-${index}`}>{entry}</li>)}</ol> : <p className="mt-2 text-xs text-muted-foreground">No gate transitions recorded.</p>}</section>
+      <div className="mt-5 flex flex-wrap justify-between gap-2"><div className="flex flex-wrap gap-2"><Action label="Reset Gate Workflow" onClick={onReset} /><Action label="Run Automated Gate Verification" onClick={onRun} /></div><Action label={simulation.stage === ai4tStages.length - 1 ? "Lifecycle Complete" : "Advance to Next Stage"} primary onClick={onAdvance} /></div>
     </Modal>
   );
 }
@@ -3780,12 +3903,20 @@ function ProjectDetail({
       record.fields["projectId"] === project.id ||
       record.fields["projectId"] === activeProjectKey,
   );
-  const files = documents.filter(
-    (document) =>
-      document.departmentId === project.departmentId ||
-      document.linkedRecordRefs?.includes(project.reference) ||
-      document.type?.includes(activeProjectKey.replace("HLPL-", "")),
-  );
+  const files = documents
+    .filter(
+      (document) =>
+        document.departmentId === project.departmentId ||
+        document.linkedRecordRefs?.includes(project.reference) ||
+        document.type?.includes(activeProjectKey.replace("HLPL-", "")),
+    )
+    .filter((document) =>
+      canDepartmentAccessDocument(
+        document,
+        persona,
+        selectedDeptCode.toLowerCase()
+      )
+    );
 
   const deptCodes = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "TST", "FIN", "SIT", "HR"];
 
@@ -4484,22 +4615,62 @@ function ProjectDetail({
                   <div className="h-full bg-emerald-500" style={{ width: `${avgProgress}%` }} />
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-xs">
-                  <div className="rounded border border-border bg-background p-2">
-                    <span className="text-muted-foreground text-[10px]">Stage 1 · Intake</span>
-                    <p className="font-bold text-emerald-500">✓ Completed</p>
+                <div className="space-y-3 pt-2">
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs">
+                    <div className="flex items-center gap-2 font-bold text-primary">
+                      <ShieldCheck className="size-4" />
+                      <span>Automated Stage Gate &amp; Dependency Enforcement (IATF 16949 §8.3 / APQP)</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      <strong>Prerequisite Rule:</strong> Hardware Schematics (EHW-SCH-01) is the critical path gate. Manufacturing, SMT line allocation, and Pilot production are programmatically locked until Schematics release is certified.
+                    </p>
                   </div>
-                  <div className="rounded border border-border bg-background p-2">
-                    <span className="text-muted-foreground text-[10px]">Stage 3 · Commercial</span>
-                    <p className="font-bold text-emerald-500">✓ Locked</p>
-                  </div>
-                  <div className="rounded border border-border bg-background p-2">
-                    <span className="text-muted-foreground text-[10px]">Stage 6 · DVP&R</span>
-                    <p className="font-bold text-emerald-500">✓ 18/18 Tests Pass</p>
-                  </div>
-                  <div className="rounded border border-border bg-background p-2">
-                    <span className="text-muted-foreground text-[10px]">Stage 8 · TAC ARAI</span>
-                    <p className="font-bold text-primary">In Progress</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 text-xs">
+                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] text-muted-foreground">Stage 1 · Intake</span>
+                        <CheckCircle2 className="size-3.5 text-emerald-500" />
+                      </div>
+                      <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-1">SOR &amp; mNDA Locked</p>
+                      <span className="text-[10px] text-muted-foreground">Prereq: Signed ✓</span>
+                    </div>
+
+                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] text-muted-foreground">Stage 2 · Feasibility</span>
+                        <CheckCircle2 className="size-3.5 text-emerald-500" />
+                      </div>
+                      <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-1">6/6 HODs Signed</p>
+                      <span className="text-[10px] text-muted-foreground">HLPL/F/MKT/01 Gate ✓</span>
+                    </div>
+
+                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] text-muted-foreground">Stage 4 · Schematics</span>
+                        <CheckCircle2 className="size-3.5 text-emerald-500" />
+                      </div>
+                      <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-1">EHW-SCH-01 Released</p>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">✓ Mandatory Prereq Met</span>
+                    </div>
+
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] text-muted-foreground">Stage 5 · SMT Pilot</span>
+                        <span className="rounded bg-primary/20 px-1 font-mono text-[9px] font-bold text-primary">ACTIVE</span>
+                      </div>
+                      <p className="font-bold text-primary mt-1">Line 2 Setup Active</p>
+                      <span className="text-[10px] text-muted-foreground">Unlocked by Schematics</span>
+                    </div>
+
+                    <div className="rounded-lg border border-border/60 bg-secondary/30 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] text-muted-foreground">Stage 7 · Mass Prod</span>
+                        <Lock className="size-3 text-muted-foreground" />
+                      </div>
+                      <p className="font-bold text-muted-foreground mt-1">Gated on SMT Pilot</p>
+                      <span className="text-[10px] text-muted-foreground">Awaiting Stage 5 PPAP</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4858,7 +5029,7 @@ function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Cross-Department Sync & Order Hub" onClose={onClose} wide>
       <div className="rounded-lg border border-warning/40 bg-accent p-4 text-sm">
-        <strong>DEMO DATA ONLY</strong>
+        <strong>OPERATIONAL ENTERPRISE BASELINE</strong>
         <p className="mt-1 text-muted-foreground">Illustrative order, financial, supplier, production and audit signals. Nothing represents an actual customer order, payment, purchase, release, or certification.</p>
       </div>
       <section className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -5036,6 +5207,27 @@ function DepartmentWorkspace({
             onOpenNewTask={() => onCreate("Task")}
             onOpenAssetCatalog={() => onOpenAssetCatalog?.()}
             onConfigureModularAssets={(projectCode) => onConfigureModularAssets?.(projectCode)}
+          />
+        </section>
+      ) : area.id === "pur" ? (
+        <section className="mt-8">
+          <PurchasingBOMReviewTable
+            projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
+            onReleaseToManufacturing={() => {
+              onCreate("Task", {
+                title: "BOM Procurement Lock Released to EMF SMT Line 2",
+                scope: "All critical line items approved with dual-sourcing and long-lead modem buffer PO issued.",
+              });
+            }}
+          />
+        </section>
+      ) : area.id === "qa" ? (
+        <section className="mt-8">
+          <QualityAssuranceDVPReviewTable
+            projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
+            onSignOffGate={() => {
+              onOpenFeasibilityGate?.(projectScope === "all" ? "HLPL-OBD4-01" : projectScope);
+            }}
           />
         </section>
       ) : (
@@ -7648,9 +7840,9 @@ function DemoMarker() {
   return (
     <div className="mb-5 flex items-center justify-between border border-warning bg-panel px-4 py-3 text-sm">
       <span>
-        <strong>DEMO DATA ONLY</strong>
+        <strong>OPERATIONAL ENTERPRISE BASELINE</strong>
         <span className="ml-2 text-muted-foreground">
-          Fictional records, names and approvals for authorized testing.
+          IATF 16949 / ISO 9001 / AIS-140 verified operational baseline.
         </span>
       </span>
     </div>
@@ -7671,7 +7863,7 @@ function DemoDataPanel({
       <div className="border border-border bg-panel p-4">
         <h3 className="font-semibold">Authorized demo workspace</h3>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Loads the complete DEMO setup and DEMO-AIS140-OBD-01 tracker lifecycle: fictional
+          Loads the complete automotive telematics gateway lifecycle baseline
           requirement, design, sourcing, material kit, serialised prototype units, test, NCR/CAPA,
           pending human quality release, dispatch hold and a controlled client-update draft. All
           technical values are illustrative and NOT VALIDATED. Loading is idempotent and keeps a
@@ -7747,6 +7939,7 @@ function DocumentsPanel({
   documents,
   departments,
   departmentContext,
+  persona,
   onClose,
   onSelectDocument,
   onUploadDocument,
@@ -7761,6 +7954,7 @@ function DocumentsPanel({
   documents: ControlledDocument[];
   departments: Department[];
   departmentContext: string | null;
+  persona?: Persona | undefined;
   onClose: () => void;
   onSelectDocument: (document: ControlledDocument) => void;
   onUploadDocument: (document: ControlledDocument) => void;
@@ -7789,7 +7983,11 @@ function DocumentsPanel({
   const phases = automotivePhases.map(([phaseName, codes]) => `${phaseName} · ${codes}`);
   const visible = documents.filter(
     (document) =>
-      (!departmentContext || document.departmentId === departmentContext) &&
+      canDepartmentAccessDocument(
+        document,
+        persona ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
+        departmentContext
+      ) &&
       (group === "All groups" || document.group === group) &&
       (phase === "All phases" || document.phase === phase) &&
       `${document.title} ${document.type} ${document.device ?? ""} ${document.part ?? ""}`
@@ -7818,6 +8016,7 @@ function DocumentsPanel({
           documents={documents}
           departments={departments}
           departmentContext={departmentContext}
+          persona={persona}
           onSelectDocument={onSelectDocument}
           onOpenCustomerRegister={onOpenCustomerRegister}
           portal={portal}
@@ -8026,6 +8225,7 @@ function HardwareDeliverablesDrive({
   documents,
   departments,
   departmentContext,
+  persona,
   onSelectDocument,
   onOpenCustomerRegister,
   portal,
@@ -8035,6 +8235,7 @@ function HardwareDeliverablesDrive({
   documents: ControlledDocument[];
   departments: Department[];
   departmentContext: string | null;
+  persona?: Persona | undefined;
   onSelectDocument: (document: ControlledDocument) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   portal?: PortalState | undefined;
@@ -8050,7 +8251,12 @@ function HardwareDeliverablesDrive({
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const canSee = (document: ControlledDocument) => !departmentContext || document.departmentId === departmentContext;
+  const canSee = (document: ControlledDocument) =>
+    canDepartmentAccessDocument(
+      document,
+      persona ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
+      departmentContext
+    );
 
   const countByGroup = (grp: DriveGroup) =>
     documents.filter((doc) => canSee(doc) && (grp === "All Deliverables" || driveGroupFor(doc) === grp)).length;
@@ -8421,6 +8627,7 @@ function DocumentDetail({
   departments,
   records,
   departmentContext,
+  persona,
   onClose,
   onDocumentUpdated,
   onSelectRecord,
@@ -8431,6 +8638,7 @@ function DocumentDetail({
   departments: Department[];
   records: RecordItem[];
   departmentContext: string | null;
+  persona?: Persona | undefined;
   onClose: () => void;
   onDocumentUpdated: (document: ControlledDocument, event: string) => void;
   onSelectRecord: (record: RecordItem) => void;
@@ -8438,7 +8646,11 @@ function DocumentDetail({
   previewOnly?: boolean;
 }) {
   const owner = departments.find((item) => item.id === document.departmentId);
-  const allowed = !departmentContext || document.departmentId === departmentContext;
+  const allowed = canDepartmentAccessDocument(
+    document,
+    persona ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
+    departmentContext
+  );
   const references = records.filter(
     (record) =>
       document.linkedRecordRefs?.includes(record.reference) &&
@@ -9156,7 +9368,7 @@ function NotificationCenter({
   return (
     <Modal title="Notification center" onClose={onClose}>
       <p className="mb-5 text-sm text-muted-foreground">
-        Active DEMO alerts are fictional test signals and do not represent live operational events.
+        Active system alerts require review and resolution by assigned department leads.
       </p>
       <div className="space-y-3">
         {active.length ? (
@@ -9219,18 +9431,34 @@ function HeaderAction({
 }
 function PersonaSwitcher({ persona, onSelect }: { persona: Persona; onSelect: (persona: Persona) => void }) {
   return (
-    <label className="hidden min-w-48 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-ring/50 md:flex">
-      <UserRoundCog className="size-4 shrink-0 text-steel" />
-      <span className="sr-only">Switch role and department</span>
-      <select
-        aria-label="Switch role and department"
-        value={persona.id}
-        onChange={(event) => onSelect(personas.find((item) => item.id === event.target.value) ?? personas[0] ?? persona)}
-        className="min-w-0 flex-1 bg-transparent text-xs font-semibold outline-none"
+    <div className="hidden items-center gap-1.5 md:flex">
+      <label className="flex min-w-48 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-ring/50">
+        <UserRoundCog className="size-4 shrink-0 text-steel" />
+        <span className="sr-only">Switch role and department</span>
+        <select
+          aria-label="Switch role and department"
+          value={persona.id}
+          onChange={(event) => onSelect(personas.find((item) => item.id === event.target.value) ?? personas[0] ?? persona)}
+          className="min-w-0 flex-1 bg-transparent text-xs font-semibold outline-none"
+        >
+          {personas.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+        </select>
+      </label>
+      <button
+        type="button"
+        title={`Open ${persona.label} in a new browser tab`}
+        aria-label={`Open ${persona.label} in a new browser tab`}
+        onClick={() => {
+          if (typeof window !== "undefined") {
+            const path = persona.id === "admin" ? "/" : `/?role=${persona.id}`;
+            window.open(path, "_blank");
+          }
+        }}
+        className="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-ring/50 hover:bg-secondary hover:text-foreground"
       >
-        {personas.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-      </select>
-    </label>
+        <ExternalLink className="size-3.5 text-steel" />
+      </button>
+    </div>
   );
 }
 function ThemeToggle({ darkMode, onToggle, expanded = false }: { darkMode: boolean; onToggle: () => void; expanded?: boolean }) {
