@@ -2250,7 +2250,7 @@ function Portal() {
       ...state,
       inventory: (state.inventory ?? []).map((entry) => entry.id === itemId ? { ...entry, allocated: entry.allocated + quantity, updatedAt: now() } : entry),
       inventoryAssignments: [assignment, ...(state.inventoryAssignments ?? [])].slice(0, 100),
-      inventoryMovements: [{ id: createId(), inventoryItemId: itemId, change: 0, reason: "Adjustment", at: now(), actor: persona.label, note: `Allocated ${quantity} ${item.unit} to ${assignee} · ${department} · ${project}` }, ...(state.inventoryMovements ?? [])].slice(0, 100),
+      inventoryMovements: [{ id: createId(), inventoryItemId: itemId, change: 0, reason: "Adjustment" as const, at: now(), actor: persona.label, note: `Allocated ${quantity} ${item.unit} to ${assignee} · ${department} · ${project}` }, ...(state.inventoryMovements ?? [])].slice(0, 100),
       audit: [{ id: createId(), at: now(), action: "Inventory assigned to research", detail: `${item.partNumber} · ${quantity} ${item.unit} · ${assignee} · ${department} · ${project}` }, ...state.audit].slice(0, 100),
     }));
     announce(`${item.partNumber}: ${quantity} ${item.unit} allocated to ${assignee}.`);
