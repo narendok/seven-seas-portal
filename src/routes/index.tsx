@@ -1599,6 +1599,7 @@ const demoPortal = (): PortalState => {
   return {
     ...base,
     demoLoaded: true,
+    inventory: inventorySeed(),
     setupStep: setupSteps.length - 1,
     setup: {
       ...base.setup,
