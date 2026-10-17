@@ -5132,6 +5132,10 @@ function DepartmentWorkspace({
   onSendForFeasibility,
   onOpenAssetCatalog,
   onConfigureModularAssets,
+  inventory,
+  inventoryMovements,
+  persona,
+  onMoveInventory,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -5155,6 +5159,10 @@ function DepartmentWorkspace({
   onSendForFeasibility?: ((enquiry: EnquiryOpportunity) => void) | undefined;
   onOpenAssetCatalog?: (() => void) | undefined;
   onConfigureModularAssets?: ((projectCode: string) => void) | undefined;
+  inventory: InventoryItem[];
+  inventoryMovements: InventoryMovement[];
+  persona: Persona;
+  onMoveInventory: (itemId: string, change: number, reason: InventoryMovement["reason"]) => void;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -5264,6 +5272,13 @@ function DepartmentWorkspace({
         </section>
       ) : area.id === "pur" ? (
         <section className="mt-8">
+          <LiveInventoryWorkspace
+            items={inventory}
+            movements={inventoryMovements}
+            allowedCategories={["Electronics", "Hardware / PCB", "Mechanical"]}
+            readOnly={persona.kind === "client"}
+            onMove={onMoveInventory}
+          />
           <PurchasingBOMReviewTable
             projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
             onReleaseToManufacturing={() => {
