@@ -42,6 +42,9 @@ import {
   Send,
   BookOpen,
   Shield,
+  Boxes,
+  Minus,
+  PlusCircle,
   Users,
   Cpu,
   Layers,
@@ -237,6 +240,29 @@ type LocalControlledFile = {
   content: string;
   encoding: "text" | "data-url";
   checksum?: string | undefined;
+};
+type InventoryItem = {
+  id: string;
+  partNumber: string;
+  description: string;
+  category: "Electronics" | "Hardware / PCB" | "Mechanical";
+  location: string;
+  bin: string;
+  onHand: number;
+  allocated: number;
+  reorderPoint: number;
+  unit: string;
+  updatedAt: string;
+  isDemo?: boolean;
+};
+type InventoryMovement = {
+  id: string;
+  inventoryItemId: string;
+  change: number;
+  reason: "Receipt" | "Issue" | "Adjustment";
+  at: string;
+  actor: string;
+  note: string;
 };
 type ControlledFile = {
   id: string;
@@ -551,6 +577,8 @@ type PortalState = {
   enquiriesOpportunities?: EnquiryOpportunity[] | undefined;
   modularConfigs?: Record<string, ProjectModularConfiguration> | undefined;
   projectAnalysis?: Record<string, Record<string, DepartmentAnalysisEntry>> | undefined;
+  inventory?: InventoryItem[] | undefined;
+  inventoryMovements?: InventoryMovement[] | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -873,6 +901,8 @@ const emptyPortal = (): PortalState => ({
   customersRegistry: defaultCustomers,
   enquiriesOpportunities: defaultEnquiriesOpportunities,
   modularConfigs: defaultProjectModularConfigs,
+  inventory: [],
+  inventoryMovements: [],
 });
 
 function defaultTemplateSettings(): TemplateSettings {
