@@ -233,8 +233,8 @@ export function PurchasingBOMReviewTable({
   projectId = "HLPL-OBD4-01",
   onReleaseToManufacturing,
 }: {
-  projectId?: string;
-  onReleaseToManufacturing?: () => void;
+  projectId?: string | undefined;
+  onReleaseToManufacturing?: (() => void) | undefined;
 }) {
   const [items, setItems] = useState<BOMReviewItem[]>(defaultBOMReviewItems);
   const [categoryFilter, setCategoryFilter] = useState<string>("All");

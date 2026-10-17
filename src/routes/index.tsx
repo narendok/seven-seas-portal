@@ -53,6 +53,9 @@ import {
   Share2,
   ExternalLink,
   Sliders,
+  Building,
+  Package,
+  ShoppingCart,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
@@ -75,6 +78,7 @@ import {
   type EnquiryOpportunity,
 } from "@/components/SalesWorkspaceAndCustomerRegister";
 import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable";
+import { PurchasingCommandCenter } from "@/components/PurchasingCommandCenter";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
 import {
   LiveInventoryWorkspace,
@@ -1978,6 +1982,7 @@ function Portal() {
   const [legalHubOpen, setLegalHubOpen] = useState(false);
   const [assetCatalogOpen, setAssetCatalogOpen] = useState(false);
   const [assetLinkerProjectId, setAssetLinkerProjectId] = useState<string | null>(null);
+  const [purchasingSubView, setPurchasingSubView] = useState<"recordage" | "quotations" | "orders" | "suppliers">("recordage");
   const [adminTab, setAdminTab] = useState<
     "company" | "templates" | "raci" | "departments" | "roles" | "masters" | "settings" | "cloud" | "team" | "demo"
   >("company");
@@ -2264,14 +2269,75 @@ function Portal() {
         </div>
         <nav className={`mt-6 space-y-1 ${sidebarExpanded ? "" : "flex flex-1 flex-col items-center"}`} aria-label="Primary navigation">
           {areas.map((area) => (
-            <AreaNav
-              key={area.id}
-              area={area}
-              active={activeArea === area.id && view !== "index"}
-              onClick={() => navigate(area.id)}
-              expanded={sidebarExpanded}
-              openCount={portal.records.filter((record) => record.area === area.id && !record.archived && !["Approved", "Released", "Archived"].includes(record.status)).length}
-            />
+            <div key={area.id} className="w-full">
+              <AreaNav
+                area={area}
+                active={activeArea === area.id && view !== "index"}
+                onClick={() => navigate(area.id)}
+                expanded={sidebarExpanded}
+                openCount={portal.records.filter((record) => record.area === area.id && !record.archived && !["Approved", "Released", "Archived"].includes(record.status)).length}
+              />
+              {area.id === "pur" && sidebarExpanded && (
+                <div className="ml-5 my-1 space-y-0.5 border-l-2 border-border/60 pl-2">
+                  <button
+                    onClick={() => {
+                      setPurchasingSubView("recordage");
+                      if (activeArea !== "pur" || view === "index") navigate("pur");
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      activeArea === "pur" && view !== "index" && purchasingSubView === "recordage"
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <Package className="size-3.5 shrink-0" />
+                    <span className="truncate">Recordage</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPurchasingSubView("quotations");
+                      if (activeArea !== "pur" || view === "index") navigate("pur");
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      activeArea === "pur" && view !== "index" && purchasingSubView === "quotations"
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <FileText className="size-3.5 shrink-0" />
+                    <span className="truncate">Quotations</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPurchasingSubView("orders");
+                      if (activeArea !== "pur" || view === "index") navigate("pur");
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      activeArea === "pur" && view !== "index" && purchasingSubView === "orders"
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <ShoppingCart className="size-3.5 shrink-0" />
+                    <span className="truncate">Purchase Orders</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPurchasingSubView("suppliers");
+                      if (activeArea !== "pur" || view === "index") navigate("pur");
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      activeArea === "pur" && view !== "index" && purchasingSubView === "suppliers"
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <Building className="size-3.5 shrink-0" />
+                    <span className="truncate">Suppliers (ASL)</span>
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
         </nav>
         <button
@@ -2555,6 +2621,8 @@ function Portal() {
               persona={persona}
               onMoveInventory={moveInventory}
               onAssignInventory={assignInventory}
+              purchasingSubView={purchasingSubView}
+              onSelectPurchasingSubView={setPurchasingSubView}
             />
           )}
         </div>
@@ -2578,7 +2646,16 @@ function Portal() {
           <span>More</span>
         </button>
       </nav>
-      {mobileMenu && <MobileMenu onClose={() => setMobileMenu(false)} onNavigate={navigate} darkMode={darkMode} onToggleTheme={() => setDarkMode((value) => !value)} />} 
+      {mobileMenu && (
+        <MobileMenu
+          onClose={() => setMobileMenu(false)}
+          onNavigate={navigate}
+          darkMode={darkMode}
+          onToggleTheme={() => setDarkMode((value) => !value)}
+          purchasingSubView={purchasingSubView}
+          onSelectPurchasingSubView={setPurchasingSubView}
+        />
+      )} 
       {modal === "create" && (
         <RecordForm
           area={activeArea}
@@ -5145,6 +5222,8 @@ function DepartmentWorkspace({
   persona,
   onMoveInventory,
   onAssignInventory,
+  purchasingSubView,
+  onSelectPurchasingSubView,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -5174,6 +5253,8 @@ function DepartmentWorkspace({
   persona: Persona;
   onMoveInventory: (itemId: string, change: number, reason: InventoryMovement["reason"]) => void;
   onAssignInventory: (itemId: string, assignee: string, department: InventoryAssignment["department"], project: string, quantity: number, note: string) => void;
+  purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers";
+  onSelectPurchasingSubView?: (view: "recordage" | "quotations" | "orders" | "suppliers") => void;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -5283,7 +5364,7 @@ function DepartmentWorkspace({
         </section>
       ) : area.id === "pur" ? (
         <section className="mt-8">
-          <LiveInventoryWorkspace
+          <PurchasingCommandCenter
             items={inventory}
             movements={inventoryMovements}
             assignments={inventoryAssignments}
@@ -5306,10 +5387,9 @@ function DepartmentWorkspace({
             readOnly={persona.kind === "client"}
             onMove={onMoveInventory}
             onAssign={onAssignInventory}
-            activeDepartment="PUR"
-          />
-          <PurchasingBOMReviewTable
-            projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
+            projectScope={projectScope === "all" ? "HLPL-AI4T-01" : projectScope}
+            activeSubView={purchasingSubView}
+            onSelectSubView={onSelectPurchasingSubView}
             onReleaseToManufacturing={() => {
               onCreate("Task", {
                 title: "BOM Procurement Lock Released to EMF SMT Line 2",
@@ -9804,11 +9884,15 @@ function MobileMenu({
   onNavigate,
   darkMode,
   onToggleTheme,
+  purchasingSubView,
+  onSelectPurchasingSubView,
 }: {
   onClose: () => void;
   onNavigate: (area: AreaId) => void;
   darkMode: boolean;
   onToggleTheme: () => void;
+  purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers";
+  onSelectPurchasingSubView?: (view: "recordage" | "quotations" | "orders" | "suppliers") => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-[2px] lg:hidden">
@@ -9825,15 +9909,80 @@ function MobileMenu({
         </div>
         <nav className="mt-8 space-y-1">
           {areas.map((area) => (
-            <AreaNav
-              key={area.id}
-              area={area}
-              active={false}
-              onClick={() => {
-                onNavigate(area.id);
-                onClose();
-              }}
-            />
+            <div key={area.id} className="w-full">
+              <AreaNav
+                area={area}
+                active={false}
+                onClick={() => {
+                  onNavigate(area.id);
+                  onClose();
+                }}
+              />
+              {area.id === "pur" && (
+                <div className="ml-5 my-1 space-y-0.5 border-l-2 border-border/60 pl-2">
+                  <button
+                    onClick={() => {
+                      onSelectPurchasingSubView?.("recordage");
+                      onNavigate("pur");
+                      onClose();
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      purchasingSubView === "recordage"
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <Package className="size-3.5 shrink-0" />
+                    <span className="truncate">Recordage</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSelectPurchasingSubView?.("quotations");
+                      onNavigate("pur");
+                      onClose();
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      purchasingSubView === "quotations"
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <FileText className="size-3.5 shrink-0" />
+                    <span className="truncate">Quotations</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSelectPurchasingSubView?.("orders");
+                      onNavigate("pur");
+                      onClose();
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      purchasingSubView === "orders"
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <ShoppingCart className="size-3.5 shrink-0" />
+                    <span className="truncate">Purchase Orders</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSelectPurchasingSubView?.("suppliers");
+                      onNavigate("pur");
+                      onClose();
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      purchasingSubView === "suppliers"
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <Building className="size-3.5 shrink-0" />
+                    <span className="truncate">Suppliers (ASL)</span>
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
         </nav>
         <ThemeToggle darkMode={darkMode} onToggle={onToggleTheme} expanded />

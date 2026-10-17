@@ -37,8 +37,15 @@ import {
   Loader2,
   TrendingUp,
   Check,
+  Key,
 } from "lucide-react";
-import { lookupMouserPart, type MouserComponentResult, type PriceBreak } from "@/lib/mouser-service";
+import {
+  lookupMouserPart,
+  getMouserApiKey,
+  setMouserApiKey,
+  type MouserComponentResult,
+  type PriceBreak,
+} from "@/lib/mouser-service";
 
 
 // =============================================================================
@@ -1115,6 +1122,8 @@ export function LiveInventoryWorkspace({
   const [mouserLoading, setMouserLoading] = useState(false);
   const [mouserSuccessMessage, setMouserSuccessMessage] = useState<string | null>(null);
   const [mouserResultData, setMouserResultData] = useState<MouserComponentResult | null>(null);
+  const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+  const [mouserApiKeyInput, setMouserApiKeyInput] = useState(() => getMouserApiKey());
 
   // New Part Registration modal fields
   const [newPartNum, setNewPartNum] = useState<string>("");
@@ -3569,9 +3578,23 @@ export function LiveInventoryWorkspace({
                 <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-primary uppercase tracking-wide">
                   <Zap className="size-3.5" /> Mouser Electronics Component Auto-Fill
                 </span>
-                <span className="rounded bg-primary/20 px-2 py-0.2 font-mono text-[9px] font-bold text-primary">
-                  LIVE API / CATALOG LOOKUP
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMouserApiKeyInput(getMouserApiKey());
+                      setApiKeyModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 rounded border border-primary/40 bg-primary/10 px-2 py-0.5 font-mono text-[9px] font-bold text-primary hover:bg-primary/20 transition-colors"
+                    title="Configure / Enter Mouser Search API Key"
+                  >
+                    <Key className="size-2.5" />
+                    <span>{getMouserApiKey() ? "API Key Configured ✓" : "Enter API Key"}</span>
+                  </button>
+                  <span className="rounded bg-primary/20 px-2 py-0.2 font-mono text-[9px] font-bold text-primary">
+                    LIVE API / CATALOG LOOKUP
+                  </span>
+                </div>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 Enter any Manufacturer Part Number (MPN). Auto-fetches technical specs (voltage, current, AEC-Q), tentative pricing ($ & ₹), lead time, distributor stock, datasheet URL, and controlled category.
@@ -3894,6 +3917,56 @@ export function LiveInventoryWorkspace({
                 className="h-8 rounded bg-primary px-4 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90"
               >
                 Save Component
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mouser API Key Configuration Modal */}
+      {apiKeyModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Configure Mouser Search API Key"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm font-mono"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Key className="size-4 text-primary" />
+                <h3 className="font-bold text-sm text-foreground">Configure Mouser Search API Key</h3>
+              </div>
+              <button onClick={() => setApiKeyModalOpen(false)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+            <div className="mt-4 space-y-3 text-xs">
+              <p className="text-muted-foreground">
+                Enter your official Mouser Search API v1 Key. When configured, live component specs, real-time distributor pricing, and stock levels are queried over the REST API.
+              </p>
+              <div>
+                <label className="font-bold text-[10px] uppercase text-muted-foreground">Mouser API Key</label>
+                <input
+                  type="text"
+                  value={mouserApiKeyInput}
+                  onChange={(e) => setMouserApiKeyInput(e.target.value)}
+                  placeholder="e.g. 78f8b39c-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <div className="rounded-lg bg-secondary/50 p-2 text-[10px] text-muted-foreground">
+                Status: {mouserApiKeyInput.trim() ? "Live REST API Calls Enabled" : "Using Verified Automotive Master Catalog (Offline Safe)"}
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
+              <button onClick={() => setApiKeyModalOpen(false)} className="h-8 rounded border border-border px-3 text-xs">Cancel</button>
+              <button
+                onClick={() => {
+                  setMouserApiKey(mouserApiKeyInput);
+                  setApiKeyModalOpen(false);
+                }}
+                className="h-8 rounded bg-primary px-4 text-xs font-bold text-primary-foreground shadow"
+              >
+                Save API Key
               </button>
             </div>
           </div>

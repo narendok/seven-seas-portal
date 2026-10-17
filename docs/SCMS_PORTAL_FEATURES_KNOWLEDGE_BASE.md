@@ -20,7 +20,8 @@
 6. [Module 6: Automated Stage Gate & Manufacturing Interlock Engine](#module-6-automated-stage-gate--manufacturing-interlock-engine)
 7. [Module 7: Executive Command Center, RACI Governance & Document Printing](#module-7-executive-command-center-raci-governance--document-printing)
 8. [Module 8: Dual-Track Persistence & Lovable Supabase Cloud Sync](#module-8-dual-track-persistence--lovable-supabase-cloud-sync)
-9. [Module 9: Living Update Protocol for Engineering Agents](#module-9-living-update-protocol-for-engineering-agents)
+9. [Module 9: Purchasing Command Center & Department-Specific Sidebar Navigation](#module-9-purchasing-command-center--department-specific-sidebar-navigation)
+10. [Module 10: Living Update Protocol for Engineering Agents](#module-10-living-update-protocol-for-engineering-agents)
 
 ---
 
@@ -226,7 +227,52 @@ The client and internal portals feature hard dependency interlocks:
 
 ---
 
-## Module 9: Living Update Protocol for Engineering Agents
+## Module 9: Purchasing Command Center & Department-Specific Sidebar Navigation
+
+### 9.1 Overview & Architectural Integration
+The Purchasing & Supply Chain Management (`PUR`) Command Center unifies commercial quotations, purchase orders, governed inventory stores, and supplier governance into a deeply interconnected digital workflow:
+
+- **Department-Specific Sidebar Navigation**: When the sidebar is expanded (`w-64`), the `PUR` navigation rail renders four dedicated 1-click department sub-options:
+  1. `Recordage`: Stores & Governed Inventory (Mouser lookup, Inward GRN, lot tracking, stock movements).
+  2. `Quotations`: Commercial vendor quotations, volume price breaks (1k, 10k, 50k), lead times, and 1-click `[Convert to PO]`.
+  3. `Purchase Orders`: Official PO register, 50,000 annual sales target coverage progress bar, batch delivery schedules, unit costs, inherited warranty terms, and 1-click `[📦 Receive GRN]`.
+  4. `Suppliers (ASL)`: Approved Vendor List, supplier warranty terms, accreditation validity (IATF 16949 / ISO 9001 expiry dates, VDA 6.3 scores), verified documentation badges (PPAP L3, NDA, GST, RoHS/REACH), and comprehensive Supplier Dossier modals.
+- **Mutual Cross-Linkage**:
+  - Quotations seamlessly convert into active Purchase Orders, auto-locking MPN, price tier, and warranty terms.
+  - POs inherit supplier warranty and accreditation validity from the ASL.
+  - Issued POs feature 1-click `[Receive GRN]` which routes directly to Recordage & Stores for incoming receipt and IQC inspection.
+  - Supplier cards link to their active POs and Quotations, with interactive Dossier modals for audit inspection.
+- **Mouser Search API v1 Key Configuration**: Full support for entering and persistently storing a Mouser Search API key (`localStorage["scms_mouser_api_key"]` or `VITE_MOUSER_API_KEY`). When configured, live component specs, real-time pricing, stock levels, and datasheets are queried over the REST API, falling back gracefully to the offline verified automotive catalog.
+
+### 9.2 Verified Screenshot Evidence
+
+#### 1. Department-Specific Sidebar Navigation (PUR Expanded Rail)
+The sidebar provides indented 1-click access to the 4 core purchasing modules directly under the `PUR` department button.
+![Sidebar PUR Sub-Options Expanded](images/scms_sidebar_pur_expanded.png)
+
+#### 2. Commercial Quotations & Volume Pricing Breaks (1k / 10k / 50k Tiers)
+Tracks commercial vendor quotations with tiered volume pricing breaks, quoted factory lead times, warranty standards, and 1-click PO conversion. Also embeds the R&D SCM BOM Review table.
+![Quotations and Vendor Pricing Breaks](images/scms_pur_quotations_view.png)
+
+#### 3. Purchase Orders (POs) Register & 50,000 Sales Volume Alignment
+Monitors total committed PO spend, quantity coverage vs. the 50,000 annual sales target for project `HLPL-AI4T-01`, batch delivery schedules, inherited supplier warranty, and 1-click `[Receive GRN]`.
+![Purchase Orders Management](images/scms_pur_orders_view.png)
+
+#### 4. Approved Supplier List (ASL) & Vendor Governance
+Displays Tier-1 automotive suppliers (Mouser, Arrow, Quectel, TI, Molex) with warranty coverage, accreditation validity expiry dates, VDA 6.3 audit scores, verified documentation badges, and `+ Raise PO` action.
+![Approved Supplier List](images/scms_pur_suppliers_view.png)
+
+#### 5. Comprehensive Supplier Dossier Modal
+Displays full vendor dossier: contact details, official automotive warranty terms (coverage, RMA TAT SLA), accreditation validity schedule (IATF 16949 & ISO 9001 expiry dates, VDA 6.3 score, next audit date), and compliance documentation (PPAP Level 3, Bilateral NDA, GST, RoHS/REACH).
+![Supplier Dossier Modal](images/scms_pur_supplier_dossier_modal.png)
+
+#### 6. Mouser Search API Key Configuration Modal
+Allows purchasing and hardware engineers to configure their official Mouser Search API key for real-time live component and pricing lookups, with seamless fallback to the verified automotive catalog.
+![Mouser Search API Key Configuration](images/scms_mouser_api_key_modal.png)
+
+---
+
+## Module 10: Living Update Protocol for Engineering Agents
 
 When adding, modifying, or refactoring portal features:
 1. **Pre-Check**: Read this Knowledge Base and [`SSM_ONE_WEB_PORTAL_MASTER_PLAN.md`](file:///c:/Users/Test/Documents/antigravity/SSM1/SSM_ONE_WEB_PORTAL_MASTER_PLAN.md) to understand existing data models and UI patterns.

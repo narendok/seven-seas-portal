@@ -354,13 +354,129 @@ const automotiveCatalog: Record<string, MouserComponentResult> = {
   },
 };
 
+export function getMouserApiKey(): string {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("scms_mouser_api_key");
+    if (saved) return saved;
+  }
+  return (import.meta.env["VITE_MOUSER_API_KEY"] as string) || "";
+}
+
+export function setMouserApiKey(key: string): void {
+  if (typeof window !== "undefined") {
+    if (key.trim()) {
+      localStorage.setItem("scms_mouser_api_key", key.trim());
+    } else {
+      localStorage.removeItem("scms_mouser_api_key");
+    }
+  }
+}
+
 /**
  * Intelligent Component Search & Specification Synthesis
- * Matches exact catalog entries or dynamically generates realistic
- * parameters, pricing, and Mouser URLs for any custom MPN entered.
+ * Matches exact catalog entries, calls live Mouser REST API if key is present,
+ * or dynamically generates realistic parameters, pricing, and Mouser URLs.
  */
 export async function lookupMouserPart(query: string): Promise<MouserComponentResult> {
   const clean = query.trim().toUpperCase();
+
+  // 0. Live Mouser API lookup if API key is configured
+  const apiKey = getMouserApiKey();
+  if (apiKey) {
+    try {
+      const response = await fetch(
+        `https://api.mouser.com/api/v1/search/partnumber?apiKey=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            SearchByPartRequest: {
+              mouserPartNumber: clean,
+              partSearchOptions: "Exact",
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const parts = data?.SearchResults?.Parts;
+        if (Array.isArray(parts) && parts.length > 0) {
+          const part = parts[0];
+          const rawPrice = part.PriceBreaks?.[0]?.Price?.replace(/[^0-9.]/g, "") || "0";
+          const unitCostUsd = parseFloat(rawPrice) || 3.50;
+          const costInr = Math.round(unitCostUsd * USD_TO_INR_RATE * 100) / 100;
+
+          return {
+            mpn: part.ManufacturerPartNumber || clean,
+            manufacturer: part.Manufacturer || "Mouser Supplier",
+            description: part.Description || `${clean} · Automotive Electronic Component`,
+            suggestedCategory: "Electronics",
+            suggestedSubcategory: part.Category || "Integrated Circuits (ICs)",
+            crossTags: ["Electrical", "Automotive"],
+            packageCase: part.Package || "SMD / SMT",
+            datasheetUrl:
+              part.DataSheetUrl ||
+              `https://www.alldatasheet.com/view.jsp?Searchword=${encodeURIComponent(clean)}`,
+            mouserPartNumber: part.MouserPartNumber || `511-${clean}`,
+            mouserProductUrl:
+              part.ProductDetailUrl ||
+              `https://www.mouser.in/c/?q=${encodeURIComponent(clean)}`,
+            supplier: "Mouser Electronics",
+            tentativeCostUsd: unitCostUsd,
+            tentativeCostInr: costInr,
+            priceBreaks:
+              Array.isArray(part.PriceBreaks) && part.PriceBreaks.length > 0
+                ? part.PriceBreaks.map((pb: { Quantity?: number; Price?: string }) => {
+                    const pUsd =
+                      parseFloat(pb.Price?.replace(/[^0-9.]/g, "") || "0") || unitCostUsd;
+                    return {
+                      qty: pb.Quantity || 1,
+                      unitPriceUsd: pUsd,
+                      unitPriceInr: Math.round(pUsd * USD_TO_INR_RATE * 100) / 100,
+                    };
+                  })
+                : [
+                    {
+                      qty: 1,
+                      unitPriceUsd: Math.round(unitCostUsd * 1.35 * 100) / 100,
+                      unitPriceInr: Math.round(costInr * 1.35),
+                    },
+                    {
+                      qty: 100,
+                      unitPriceUsd: Math.round(unitCostUsd * 1.15 * 100) / 100,
+                      unitPriceInr: Math.round(costInr * 1.15),
+                    },
+                    { qty: 1000, unitPriceUsd: unitCostUsd, unitPriceInr: costInr },
+                    {
+                      qty: 10000,
+                      unitPriceUsd: Math.round(unitCostUsd * 0.88 * 100) / 100,
+                      unitPriceInr: Math.round(costInr * 0.88),
+                    },
+                  ],
+            leadTimeWeeks: parseInt(part.LeadTime?.replace(/[^0-9]/g, "") || "8", 10),
+            stockAvailability: parseInt(
+              part.Availability?.replace(/[^0-9]/g, "") || "15000",
+              10
+            ),
+            rohsStatus: part.ROHSStatus || "RoHS Compliant / Lead Free",
+            voltageRating: "Automotive Qualified (2.0V - 36V)",
+            currentRating: "Automotive Operating Limit",
+            automotiveQualified: true,
+            automotiveStandard: "AEC-Q100 / AEC-Q200 Grade 1",
+            operatingTempRange: "-40°C to +125°C",
+            dimensionsMm: "Standard Package",
+            weightGrams: 0.5,
+          };
+        }
+      }
+    } catch {
+      // Fallback silently to master catalog
+    }
+  }
 
   // 1. Direct Catalog Match
   if (automotiveCatalog[clean]) {
