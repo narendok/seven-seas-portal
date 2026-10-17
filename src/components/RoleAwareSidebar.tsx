@@ -241,6 +241,12 @@ export function RoleAwareSidebar({
         people: false,
         administration: false,
       };
+    } else if (persona.kind === "client") {
+      return {
+        favorites: true,
+        client_delivery: true,
+        client_documents: true,
+      };
     } else {
       return {
         favorites: true,
@@ -266,6 +272,12 @@ export function RoleAwareSidebar({
         people: false,
         administration: false,
       });
+    } else if (persona.kind === "client") {
+      setExpandedGroups({
+        favorites: true,
+        client_delivery: true,
+        client_documents: true,
+      });
     } else {
       setExpandedGroups({
         favorites: true,
@@ -275,7 +287,7 @@ export function RoleAwareSidebar({
         dept_reference: true,
       });
     }
-  }, [isAdmin, persona.id]);
+  }, [isAdmin, persona.id, persona.kind]);
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) => ({
@@ -898,6 +910,49 @@ export function RoleAwareSidebar({
           ];
       }
     };
+
+    if (persona.kind === "client") {
+      return [
+        {
+          id: "client_delivery",
+          title: "Project Delivery & Milestones",
+          icon: CheckCircle2,
+          items: [
+            {
+              id: "client-milestones",
+              label: "OEM Delivery Dashboard",
+              shortLabel: "Dashboard",
+              icon: CheckCircle2,
+              isActive: activeArea === "home",
+              onClick: () => handleItemClick(() => onNavigate("home")),
+            },
+            {
+              id: "client-lifecycle",
+              label: "Stage-by-Stage Lifecycle Hub",
+              shortLabel: "Lifecycle",
+              icon: PlayCircle,
+              isActive: false,
+              onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
+            },
+          ],
+        },
+        {
+          id: "client_documents",
+          title: "Released Deliverables",
+          icon: Award,
+          items: [
+            {
+              id: "client-documents",
+              label: "Released Specifications & TAC",
+              shortLabel: "Specifications",
+              icon: Award,
+              isActive: false,
+              onClick: () => handleItemClick(() => onOpenDrive?.()),
+            },
+          ],
+        },
+      ];
+    }
 
     return [
       {

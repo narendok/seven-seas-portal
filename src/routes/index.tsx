@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   ArrowLeft,
+  Award,
   Bell,
   BriefcaseBusiness,
   CheckCircle2,
@@ -103,6 +104,7 @@ import {
 } from "@/components/ModularProductArchitectureAndPcbCatalog";
 import { DeviceVisualSpecAndBlockDiagram } from "@/components/DeviceVisualSpecAndBlockDiagram";
 import { RoleAwareSidebar } from "@/components/RoleAwareSidebar";
+import { ClientOEMPortal } from "@/components/ClientOEMPortal";
 import {
   DepartmentLeadLoginModal,
   DEPARTMENT_CREDENTIALS,
@@ -2077,8 +2079,21 @@ function Portal() {
       | "suppliers"
       | "customers" = "queue",
   ) => {
+    if (persona.kind === "client") {
+      if (area !== "home") {
+        announce("Access restricted under ISO 27001 §A.9: External OEM Clients are contained within the Client Delivery Portal.");
+        setActiveArea("home");
+        setView("queue");
+        setSelectedId(null);
+        setSelectedAssignee(null);
+        setQueueStage(null);
+        setMobileMenu(false);
+        return;
+      }
+    }
     if (persona.kind === "lead" && persona.departmentId) {
       if (area !== persona.departmentId) {
+        announce(`Access restricted under IATF 16949 / ISO 27001: As ${persona.label}, you are confined to your assigned department workspace (${persona.departmentId.toUpperCase()}).`);
         setActiveArea(persona.departmentId);
         setView(targetView);
         setSelectedId(null);
@@ -2317,9 +2332,24 @@ function Portal() {
   const selectedProjectProfile = activeRecords.find(
     (record) => record.reference === selectedProjectId && record.type === "Project",
   );
-  const effectiveArea: AreaId = persona.kind === "lead" && persona.departmentId ? persona.departmentId : activeArea;
+  const effectiveArea: AreaId =
+    persona.kind === "client"
+      ? "home"
+      : persona.kind === "lead" && persona.departmentId
+      ? persona.departmentId
+      : activeArea;
   const active = areaById(effectiveArea);
   const openRecord = (record: RecordItem) => {
+    if (persona.kind === "client") {
+      const allowedClientTypes = ["sor", "nda", "quotation", "quo", "invoice", "inv", "pdi", "tac", "milestone"];
+      const isAllowed = allowedClientTypes.some((t) =>
+        `${record.type} ${record.title} ${record.reference}`.toLowerCase().includes(t)
+      );
+      if (!isAllowed) {
+        announce("Access restricted under ISO 27001: Internal operational record is not accessible to OEM clients.");
+        return;
+      }
+    }
     if (persona.kind === "lead" && persona.departmentId && record.area !== persona.departmentId) {
       announce(`Access restricted: record belongs to ${record.area.toUpperCase()} department.`);
       return;
@@ -2329,6 +2359,15 @@ function Portal() {
     setView("detail");
   };
   const openDocument = (document: ControlledDocument) => {
+    if (persona.kind === "client") {
+      const isAllowed = /sor|nda|quotation|quo|invoice|inv|pdi|tac|milestone/i.test(
+        `${document.type} ${document.title} ${document.url}`
+      );
+      if (!isAllowed) {
+        announce("Access restricted: Internal engineering document is not released for OEM client inspection.");
+        return;
+      }
+    }
     setSelectedDocumentId(document.id);
     setModal("document");
   };
@@ -2394,7 +2433,9 @@ function Portal() {
             </button>
             <button
               onClick={() => {
-                if (persona.kind === "lead" && persona.departmentId) {
+                if (persona.kind === "client") {
+                  navigate("home");
+                } else if (persona.kind === "lead" && persona.departmentId) {
                   navigate(persona.departmentId);
                 } else {
                   navigate("home");
@@ -2403,12 +2444,16 @@ function Portal() {
               className="min-w-0 flex-1 text-left"
             >
               <p className="truncate text-sm font-semibold md:text-base">
-                {persona.kind === "lead"
+                {persona.kind === "client"
+                  ? "Tata Motors Limited · EV Fleet Solutions Delivery Portal"
+                  : persona.kind === "lead"
                   ? (portal?.departments.find((item) => item.id === (departmentContext ?? `demo-dept-${persona.departmentId}`))?.name ?? active.name)
                   : (view === "index" ? "Unified index" : active.name)}
               </p>
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                {persona.kind === "lead"
+                {persona.kind === "client"
+                  ? "Rohan Verma · Authorized External OEM Stakeholder (ISO 27001 §A.9)"
+                  : persona.kind === "lead"
                   ? `${persona.label} · Authorized Department Scope (IATF 16949 / ISO 27001)`
                   : departmentContext
                   ? `${portal?.departments.find((item) => item.id === departmentContext)?.name ?? "Department"} · Administrator context`
@@ -2447,22 +2492,30 @@ function Portal() {
                 }}
               />
             )}
+            {persona.kind !== "client" && (
+              <HeaderAction
+                label="Search"
+                icon={Search}
+                onClick={() => {
+                  setView("index");
+                  setMobileMenu(false);
+                }}
+              />
+            )}
             <HeaderAction
-              label="Search"
-              icon={Search}
-              onClick={() => {
-                setView("index");
-                setMobileMenu(false);
-              }}
+              label={persona.kind === "client" ? "Released Deliverables" : "Documents"}
+              icon={persona.kind === "client" ? Award : FileText}
+              onClick={() => setModal("documents")}
             />
-            <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
             {(persona.id === "admin" || persona.id === "pur") && (
               <HeaderAction label="Live Inventory" icon={PackageSearch} onClick={() => navigate("pur")} />
             )}
             {persona.id === "admin" && (
               <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
             )}
-            <HeaderAction label="Directory" icon={Users} onClick={() => setDirectoryOpen(true)} />
+            {persona.kind !== "client" && (
+              <HeaderAction label="Directory" icon={Users} onClick={() => setDirectoryOpen(true)} />
+            )}
             {persona.id === "admin" && (
               <HeaderAction label="Decision Log" icon={BookOpen} onClick={() => setDecisionLogOpen(true)} />
             )}
@@ -2629,6 +2682,19 @@ function Portal() {
               onAddCustomer={handleCustomerCreated}
               onBack={() => setView("queue")}
               departmentRole={activeArea}
+            />
+          ) : persona.kind === "client" ? (
+            <ClientOEMPortal
+              onOpenDocument={(docId) => {
+                const match = portal.documents.find((d) => d.id === docId || d.url.includes(docId));
+                if (match) {
+                  setSelectedDocumentId(match.id);
+                  setModal("document");
+                } else {
+                  setModal("documents");
+                }
+              }}
+              onOpenLifecycleModal={() => setAi4tOpen(true)}
             />
           ) : effectiveArea === "home" && view === "assignee" && selectedAssignee ? (
             <AssigneeWorkload
@@ -2847,8 +2913,7 @@ function Portal() {
         <MobileMenu
           onClose={() => setMobileMenu(false)}
           onNavigate={(area, targetView) => {
-            setActiveArea(area);
-            setView(targetView ?? "queue");
+            navigate(area as AreaId, (targetView as any) ?? "queue");
             setSelectedId(null);
             setSelectedAssignee(null);
             setQueueStage(null);
@@ -2901,7 +2966,7 @@ function Portal() {
           onAddCustomer={handleCustomerCreated}
         />
       )}{" "}
-      {modal === "wizard" && (
+      {modal === "wizard" && persona.kind === "admin" && (
         <Wizard
           portal={portal}
           onClose={() => setModal(null)}
@@ -2974,7 +3039,7 @@ function Portal() {
           previewOnly={false}
         />
       )}{" "}
-      {modal === "admin" && (
+      {modal === "admin" && persona.kind === "admin" && (
         <AdminCommandCenter
           portal={portal}
           activeDepartmentId={departmentContext}
@@ -3079,8 +3144,10 @@ function Portal() {
           }}
         />
       )}
-      {syncHubOpen && <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />}
-      {draftHubOpen && (
+      {syncHubOpen && (persona.kind === "admin" || persona.id === "sales" || persona.id === "pur") && (
+        <CrossDepartmentSyncHub onClose={() => setSyncHubOpen(false)} />
+      )}
+      {draftHubOpen && persona.kind !== "client" && (
         <AutoDraftHub
           onClose={() => setDraftHubOpen(false)}
           settings={portal.templateSettings ?? defaultTemplateSettings()}
@@ -3090,7 +3157,7 @@ function Portal() {
           onTemplateBodiesChange={(templateBodies) => update((state) => ({ ...state, templateBodies }))}
         />
       )}
-      {templateSettingsOpen && (
+      {templateSettingsOpen && persona.kind === "admin" && (
         <TemplateSettingsPanel
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onClose={() => setTemplateSettingsOpen(false)}
@@ -3290,19 +3357,19 @@ function Portal() {
           onReset={() => setRfqStep(0)}
         />
       )}
-      {directoryOpen && (
+      {directoryOpen && persona.kind !== "client" && (
         <CompanyDirectoryModal onClose={() => setDirectoryOpen(false)} />
       )}
-      {decisionLogOpen && (
+      {decisionLogOpen && persona.kind === "admin" && (
         <OfficialDecisionLogModal
           onClose={() => setDecisionLogOpen(false)}
           activeProject={selectedProjectId}
         />
       )}
-      {legalHubOpen && (
+      {legalHubOpen && persona.kind === "admin" && (
         <OperationsLegalAndLetterheadModal onClose={() => setLegalHubOpen(false)} />
       )}
-      {assetCatalogOpen && (
+      {assetCatalogOpen && (persona.kind === "admin" || persona.id === "ehw") && (
         <ModularAssetCatalogModal onClose={() => setAssetCatalogOpen(false)} />
       )}
       {assetLinkerProjectId && (
@@ -10041,6 +10108,35 @@ function PersonaSwitcher({
   onOpenAuth?: () => void;
   onLogout?: () => void;
 }) {
+  if (persona.kind === "client") {
+    return (
+      <div className="hidden items-center gap-2 md:flex">
+        <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs">
+          <span className="flex size-2 rounded-full bg-blue-500 animate-pulse" />
+          <span className="rounded bg-blue-500/20 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase text-blue-600 dark:text-blue-400 border border-blue-500/30">
+            OEM CLIENT
+          </span>
+          <span className="font-semibold text-foreground truncate max-w-48">
+            {persona.person.split(" · ")[0]} (Tata Motors)
+          </span>
+          <Lock className="size-3 text-blue-500 ml-0.5" />
+        </div>
+        {onLogout && (
+          <button
+            type="button"
+            title="Sign Out of Client Portal Session"
+            aria-label="Sign Out"
+            onClick={onLogout}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs font-bold text-destructive hover:bg-destructive/20 transition-colors shadow-xs"
+          >
+            <LogOut className="size-3.5" />
+            <span>Sign Out</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
   const isLead = persona.id !== "admin";
 
   if (isLead) {

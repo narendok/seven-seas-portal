@@ -246,7 +246,7 @@ export function DepartmentLeadLoginModal({
                           {activeCred.leadName}
                         </h4>
                         <span className={`rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${activeCred.badgeTone}`}>
-                          {activeCred.departmentCode} Lead
+                          {activeCred.id === "client" ? "OEM Client" : `${activeCred.departmentCode} Lead`}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground font-mono mt-0.5">
@@ -269,7 +269,7 @@ export function DepartmentLeadLoginModal({
                   </div>
                   <p className="leading-relaxed">
                     You are authenticated as <strong>{activeCred.leadName}</strong> ({activeCred.departmentName}).
-                    To guarantee data integrity and prevent unauthorized cross-department modifications, switching to Executive Admin or other department leads is locked. Only your department's records and tools are accessible.
+                    To guarantee data integrity and prevent unauthorized modifications, switching to Executive Admin or other roles is locked. Only your authorized workspace and deliverables are accessible.
                   </p>
                 </div>
 
@@ -287,7 +287,7 @@ export function DepartmentLeadLoginModal({
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-destructive/40 bg-destructive/15 px-4 py-2 text-xs font-bold text-destructive hover:bg-destructive/25 transition-colors shadow-xs"
                   >
                     <LogOut className="size-4" />
-                    <span>Sign Out of {activeCred.departmentCode} Lead Session</span>
+                    <span>Sign Out of {activeCred.id === "client" ? "OEM Client" : `${activeCred.departmentCode} Lead`} Session</span>
                   </button>
                 </div>
               </div>
