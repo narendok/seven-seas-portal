@@ -75,8 +75,14 @@ import {
   type EnquiryOpportunity,
 } from "@/components/SalesWorkspaceAndCustomerRegister";
 import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable";
-import { LiveInventoryWorkspace, type InventoryAssignment, type InventoryCategory } from "@/components/LiveInventoryWorkspace";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
+import {
+  LiveInventoryWorkspace,
+  type InventoryAssignment,
+  type InventoryCategory,
+  type InventoryItem,
+  type InventoryMovement,
+} from "@/components/LiveInventoryWorkspace";
 import {
   CompanyDirectoryModal,
   OfficialDecisionLogModal,
@@ -238,32 +244,6 @@ type LocalControlledFile = {
   content: string;
   encoding: "text" | "data-url";
   checksum?: string | undefined;
-};
-type InventoryItem = {
-  id: string;
-  partNumber: string;
-  description: string;
-  category: InventoryCategory;
-  location: string;
-  bin: string;
-  onHand: number;
-  allocated: number;
-  reorderPoint: number;
-  unit: string;
-  updatedAt: string;
-  manufacturer?: string;
-  packageCase?: string;
-  linkedProjects?: string[];
-  isDemo?: boolean;
-};
-type InventoryMovement = {
-  id: string;
-  inventoryItemId: string;
-  change: number;
-  reason: "Receipt" | "Issue" | "Adjustment";
-  at: string;
-  actor: string;
-  note: string;
 };
 const inventorySeed = (): InventoryItem[] => [
   { id: "inv-stm32", partNumber: "STM32G0B1VCT6", description: "Main host MCU · 512 KB flash", category: "Electronics", manufacturer: "STMicroelectronics", packageCase: "LQFP-100", linkedProjects: ["HLPL-AI4T-01", "HLPL-SLCT-01"], location: "Greater Noida SMT Plant 2", bin: "E-02-14", onHand: 18540, allocated: 2500, reorderPoint: 8000, unit: "pcs", updatedAt: "DEMO · live local register", isDemo: true },
@@ -2245,7 +2225,7 @@ function Portal() {
   const assignInventory = (itemId: string, assignee: string, department: InventoryAssignment["department"], project: string, quantity: number, note: string) => {
     const item = portal.inventory?.find((entry) => entry.id === itemId);
     if (!item || quantity < 1 || quantity > item.onHand - item.allocated) return;
-    const assignment: InventoryAssignment = { id: createId(), inventoryItemId: itemId, assignee, department, project, quantity, assignedAt: now(), note: note || "Research allocation" };
+    const assignment: InventoryAssignment = { id: createId(), inventoryItemId: itemId, assignee, department, project, quantity, assignedAt: now(), status: "Active", note: note || "Research allocation" };
     update((state) => ({
       ...state,
       inventory: (state.inventory ?? []).map((entry) => entry.id === itemId ? { ...entry, allocated: entry.allocated + quantity, updatedAt: now() } : entry),
@@ -5307,7 +5287,22 @@ function DepartmentWorkspace({
             items={inventory}
             movements={inventoryMovements}
             assignments={inventoryAssignments}
-            allowedCategories={["Electronics", "Hardware / PCB", "Mechanical", "Firmware / Software", "Test & Calibration", "Production Consumables", "Packaging & Logistics"]}
+            allowedCategories={[
+              "Electronics",
+              "Connectors",
+              "Wire and Cable",
+              "Wire Harnesses",
+              "Mechanical Parts",
+              "Enclosures",
+              "Firmware Tools",
+              "Production Tools",
+              "Packaging & Consumables",
+              "Hardware / PCB",
+              "Mechanical",
+              "Firmware / Software",
+              "Test & Calibration",
+              "Packaging & Logistics",
+            ]}
             readOnly={persona.kind === "client"}
             onMove={onMoveInventory}
             onAssign={onAssignInventory}
