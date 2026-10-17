@@ -26,6 +26,10 @@ Evidence generated or imported for web source belongs in `docs/evidence/`. All p
    - Symmetrical 4-group departmental Drive (`01 Common documents`, `02 Internal projects`, `03 Client projects`, `04 Other department work`).
    - Human-in-the-loop governance: Protected quality releases and commercial commitments always require recorded human sign-off.
 
+### 1.4 Operational Enterprise Baseline & Clean UI Standard
+- **Elimination of Demo/Fictional Markers**: All `"DEMO DATA ONLY"`, `"fictional"`, and `"simulated"` markers are permanently retired. The portal operates exclusively on authentic automotive master records (`Tata Motors Limited · EV Fleet Division`, `Ashok Leyland Limited`, `Select Motors Limited`, `Mahindra Electric Mobility Limited`).
+- **Compact Dashboard Typography**: Dashboards adhere to high information density without vertical clutter: compact single-line headers, standard responsive grid containers, and clear inter-section spacing with dual light/dark theme support.
+
 ---
 
 ## 2. One Portal, Eleven Functional Departments
@@ -184,6 +188,23 @@ Every department workspace includes an interactive **Project Scope Selector**:
 - **Specific Project Scope** (e.g. `HLPL-AI4T-01 · Tata Ace EV` or `HLPL-SLCT-01 · AIS-140 Gateway`):
   - Filters the entire workspace to show only records, checklist tasks, deliverables, team members, and stage evidence linked to that selected project.
 
+### 4.5 Purchasing Context (PUR): R&D Preliminary BOM Review & SCM Allocation
+The Purchasing workspace incorporates a dedicated review table (`PurchasingBOMReviewTable`) that bridges preliminary engineering releases with supply chain procurement:
+- **R&D Preliminary vs. Purchasing SCM Tracking**: Displays tentative components selected by Hardware (EHW) and Mechanical (MECH) across 10 core automotive lines (MCU, 4G modem, power regulation, TVS clamping, CAN transceivers, connectors, MEMS, and enclosures).
+- **Cost Variance & Financial Savings**: Tracks Target Unit BOM vs. Quoted SCM Unit Cost, calculating real-time dollar and percentage cost variance (e.g. -$2.33 unit savings / 5.4% cost reduction).
+- **Supplier Allocation & Buffer PO Governance**:
+  - Compares R&D proposed manufacturer part numbers (MPNs) against Purchasing preferred franchise distributors (Arrow, Avnet, Mouser, Digikey, Sabic India).
+  - Automatically raises **Critical Long-Lead Buffer PO Alerts** for any component exceeding a 10-week lead time threshold (e.g. 14-week Quectel LTE Cat-1 bis module, 12-week custom tooling enclosure).
+- **SCM Actions**: Provides 1-click actions for *Suggest Dual-Source Alternate*, *Approve Component for Pilot Build*, *Flag Buffer PO*, and *Export SCM Review (.csv)*.
+
+### 4.6 Quality Assurance Context (QA): Hardware DVP&R Plan & Lab Certification Matrix
+The Quality Assurance workspace incorporates an interactive compliance verification matrix (`QualityAssuranceDVPReviewTable`) operating under IATF 16949 §8.3.4.4 and AIS-140 APQP:
+- **10 Core Automotive Test Regimes**: Tracks electrical transients (ISO 7637-2), load dump clamping (ISO 16750-2 Pulse 5b), reverse polarity/jump-start, radiated/conducted emissions (CISPR 25 Class 3), electrostatic discharge (ISO 10605), thermal shock (ISO 16750-4), water/dust ingress (ISO 20653 IP67), road vibration (AIS-140 Annex 8), emergency packet protocol (AIS-140 Annex 3), and HTOL 500-hour endurance.
+- **Dual Lab Facility Routing**:
+  - **Internal Lab**: Hexense In-House Chambers & R&D Benches (transient pulse generator, ESD gun, dual-chamber thermal oven, burn-in rack).
+  - **Outsourced Accredited Lab**: NABL / Type Approval facilities (ARAI Pune, ICAT Manesar, TUV Rheinland) for statutory AIS-140 TAC certifications.
+- **Zero-Deviation Traceability**: Tracks Sample Size (DUT count), Target Completion Dates, Test Report Numbers (`HLPL-DVP-TR-01` to `10`), with actions to *Execute Internal Test*, *Attach Lab Certificate*, and *Issue Zero-Deviation Release*.
+
 ---
 
 ## 5. One Sales Flow: Enquiries, Opportunities & Feasibility Gate
@@ -310,6 +331,15 @@ In Gate 4/5 (Hardware Kick-off):
   - Option B (*Direct SMT Pilot Build*) is automatically **RECOMMENDED (PLATFORM REUSED)**.
   - Advancing hardware kickoff jumps directly to **Stage 5 (SMT Pilot Build)**, waiving 14–17 weeks of redundant bench development.
 
+### 6.5 Automated Stage Gate Dependency & Manufacturing Interlock Rules
+To guarantee automotive product integrity under IATF 16949 §8.3 and prevent premature manufacturing investment:
+- **Hardware Schematics Critical Path Interlock**:
+  $$\text{Stage 5 (SMT Pilot)} \lor \text{Stage 7 (Mass Production)} \implies \text{Status}(\text{EHW-SCH-01}) == \text{Released}$$
+  - **Rule**: Neither manufacturing tooling (SMT Line 2 reflow profiling) nor Pilot/Mass production may proceed until **Stage 4 Hardware Schematics (`EHW-SCH-01`)** has been officially certified and released by Embedded Hardware.
+  - **Enforcement Engine**: The system programmatically locks downstream stages, displaying an explicit interlock banner:
+    > *"Interlock Enforced: Stage 4 Hardware Schematics (EHW-SCH-01) must be released and signed off by Embedded Hardware before SMT Line 2 tooling and Pilot assembly can commence."*
+- **Client-Facing Stage Dependency Matrix**: Surfaced in the Client Portal view (`?role=client`), showing Stage ID, Stage Name, Mandatory Prerequisites, Dependency Status, and Production Interlock state.
+
 ---
 
 ## 7. Symmetrical Departmental Drive & Work Registers
@@ -337,6 +367,14 @@ Every department workspace features a symmetrical **4-group cloud drive architec
    - Immutable audit register capturing technical/commercial decisions, author, rationale, alternatives considered, affected departments, and status (Proposed, Locked, Executed, Superseded).
 5. **Operations Legal Documents & Corporate Letterhead Hub** (§11):
    - Houses formal bilateral mutual NDAs (`HLPL-AI4T-OPS-mNDA-01`), vendor agreements, and a corporate letterhead generator with customizable company addresses, logos, and IATF/ISO accreditations.
+
+### 7.4 Department-Scoped Document Access (RBAC) & Client Sanitization
+To preserve department accountability and intellectual property protection:
+- **Prepared / Reviewed / Controlled By Rule**: Users logged into a department role only see documents that are:
+  1. Authored/owned by their department (`doc.department === activeRole`).
+  2. Routed to their department for review or approval.
+  3. Controlled by corporate QMS (common policy SOPs).
+- **Client Portal Sanitization Protocol**: When accessed via `?role=client`, internal design failure modes (DFMEA), confidential supplier margins, and non-client risk assessments are automatically redacted, presenting only client-authorized commercial deliverables (Customer SOR, Quotation, TAC Certificate, Tax Invoice, PDI release).
 
 ---
 
@@ -454,6 +492,11 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
   - Dual-track persistence architecture pairing high-speed offline browser-local storage with Lovable Cloud Supabase Postgres (`rzskhndweihuczbdhoxk.supabase.co`).
   - Interactive Cloud & Supabase Sync panel in Administration command center with real-time cluster health pinging, latency diagnostics, telemetry counters, offline JSON snapshot backups, and cloud synchronization controls.
   - Fully verified and tested with automated Playwright suite (`test_phase3_verification.js`).
+- [x] **Purchasing Context (PUR) R&D BOM Review Table (§4.5)**: Interactive table reviewing tentative R&D parts, real-time variance costing, 10-week long-lead buffer PO alerts, and SCM CSV export (`PurchasingBOMReviewTable`).
+- [x] **Quality Assurance (QA) DVP&R Certification Matrix (§4.6)**: 10 automotive tests with Internal Lab vs. Outsourced Accredited Lab (ARAI / ICAT) classification and zero-deviation release (`QualityAssuranceDVPReviewTable`).
+- [x] **Automated Stage Gate & Manufacturing Interlock (§6.5)**: Hardware Schematics (`EHW-SCH-01`) critical gate enforcing locked states for Stage 5 SMT Pilot and Stage 7 PPAP.
+- [x] **Department-Scoped Document Vault & Client Sanitization (§7.4)**: Role-based document access (prepared/reviewed/controlled) with internal cost/DFMEA redaction for clients.
+- [x] **Operational Enterprise Baseline & UI Standards (§1.4)**: Permanent retirement of demo/fictional markers, integration of real automotive OEM accounts, and compact dashboard typography.
 
 ---
 
