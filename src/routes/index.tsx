@@ -2571,8 +2571,10 @@ function Portal() {
               onConfigureModularAssets={(projectCode) => setAssetLinkerProjectId(projectCode)}
               inventory={portal.inventory ?? []}
               inventoryMovements={portal.inventoryMovements ?? []}
+              inventoryAssignments={portal.inventoryAssignments ?? []}
               persona={persona}
               onMoveInventory={moveInventory}
+              onAssignInventory={assignInventory}
             />
           )}
         </div>
@@ -5159,8 +5161,10 @@ function DepartmentWorkspace({
   onConfigureModularAssets,
   inventory,
   inventoryMovements,
+  inventoryAssignments,
   persona,
   onMoveInventory,
+  onAssignInventory,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -5186,8 +5190,10 @@ function DepartmentWorkspace({
   onConfigureModularAssets?: ((projectCode: string) => void) | undefined;
   inventory: InventoryItem[];
   inventoryMovements: InventoryMovement[];
+  inventoryAssignments: InventoryAssignment[];
   persona: Persona;
   onMoveInventory: (itemId: string, change: number, reason: InventoryMovement["reason"]) => void;
+  onAssignInventory: (itemId: string, assignee: string, department: InventoryAssignment["department"], project: string, quantity: number, note: string) => void;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -5300,11 +5306,11 @@ function DepartmentWorkspace({
           <LiveInventoryWorkspace
             items={inventory}
             movements={inventoryMovements}
-            assignments={portal?.inventoryAssignments ?? []}
+            assignments={inventoryAssignments}
             allowedCategories={["Electronics", "Hardware / PCB", "Mechanical", "Firmware / Software", "Test & Calibration", "Production Consumables", "Packaging & Logistics"]}
             readOnly={persona.kind === "client"}
             onMove={onMoveInventory}
-            onAssign={assignInventory}
+            onAssign={onAssignInventory}
           />
           <PurchasingBOMReviewTable
             projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
