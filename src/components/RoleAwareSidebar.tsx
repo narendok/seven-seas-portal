@@ -975,18 +975,22 @@ export function RoleAwareSidebar({
         title: "Reference",
         icon: BookOpen,
         items: [
-          {
-            id: "dept-ref-parts",
-            label: "Governed Parts & Stock (Read-only)",
-            shortLabel: "Parts",
-            icon: PackageSearch,
-            isActive: activeArea === "pur" && (view === "inventory" || (view === "queue" && purchasingSubView === "recordage")),
-            onClick: () =>
-              handleItemClick(() => {
-                onSelectPurchasingSubView?.("recordage");
-                onNavigate("pur", "inventory");
-              }),
-          },
+          ...(deptId === "pur"
+            ? [
+                {
+                  id: "dept-ref-parts",
+                  label: "Governed Parts & Stock (Read-only)",
+                  shortLabel: "Parts",
+                  icon: PackageSearch,
+                  isActive: activeArea === "pur" && (view === "inventory" || (view === "queue" && purchasingSubView === "recordage")),
+                  onClick: () =>
+                    handleItemClick(() => {
+                      onSelectPurchasingSubView?.("recordage");
+                      onNavigate("pur", "inventory");
+                    }),
+                },
+              ]
+            : []),
           {
             id: "dept-ref-templates",
             label: "Controlled Templates & Standards",

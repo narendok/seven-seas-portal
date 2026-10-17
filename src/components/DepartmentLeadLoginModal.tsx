@@ -231,153 +231,224 @@ export function DepartmentLeadLoginModal({
         </div>
 
         <div className="max-h-[80vh] overflow-y-auto p-6 space-y-6">
-          {/* Current Session Banner */}
-          {activeCred && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/80 bg-secondary/30 p-3.5">
-              <div className="flex items-center gap-3">
-                <div className="grid size-9 place-items-center rounded-lg bg-primary/15 text-primary font-bold font-mono text-xs">
-                  {activeCred.departmentCode}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-foreground">
-                      Active User: {activeCred.leadName}
-                    </span>
-                    <span className={`rounded-md border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase ${activeCred.badgeTone}`}>
-                      {activeCred.departmentCode} Lead
-                    </span>
+          {/* If already signed in as a department lead (non-admin), show locked session card only */}
+          {activeCred && currentPersonaId !== "admin" ? (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="rounded-xl border border-border/80 bg-secondary/30 p-5 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3.5">
+                    <div className="grid size-12 place-items-center rounded-xl bg-primary/15 text-primary font-bold font-mono text-sm border border-primary/20">
+                      {activeCred.departmentCode}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-foreground">
+                          {activeCred.leadName}
+                        </h4>
+                        <span className={`rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${activeCred.badgeTone}`}>
+                          {activeCred.departmentCode} Lead
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                        {activeCred.email}
+                      </p>
+                      <p className="text-xs text-foreground font-medium mt-1">
+                        {activeCred.departmentName}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-mono">
-                    {activeCred.email} · {activeCred.departmentName}
+                  <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    Active Session
+                  </span>
+                </div>
+
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <ShieldCheck className="size-4 shrink-0 text-amber-500" />
+                    <span>IATF 16949 / ISO 27001 Access Control Enforced</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    You are authenticated as <strong>{activeCred.leadName}</strong> ({activeCred.departmentName}).
+                    To guarantee data integrity and prevent unauthorized cross-department modifications, switching to Executive Admin or other department leads is locked. Only your department's records and tools are accessible.
                   </p>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  onLogout();
-                  setEmail("");
-                  setPassword("");
-                }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors"
-              >
-                <LogOut className="size-3.5" />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          )}
 
-          {/* Login Form */}
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
-            {errorMessage && (
-              <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive font-medium animate-in fade-in duration-150">
-                <AlertTriangle className="size-4 shrink-0" />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400 font-medium animate-in fade-in duration-150">
-                <CheckCircle2 className="size-4 shrink-0" />
-                <span>{successMessage}</span>
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-foreground">
-                Work Email Address / Department Username
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. morgan.reed@hexenselabs.com"
-                  className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-foreground">
-                  Access Password
-                </label>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  Standard format: Hexense@[DEPT]2026
-                </span>
-              </div>
-              <div className="relative">
-                <Key className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
-                  className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90 transition-colors cursor-pointer"
-            >
-              <ShieldCheck className="size-4" />
-              <span>Authenticate & Sign In as Department Lead</span>
-              <ArrowRight className="size-4" />
-            </button>
-          </form>
-
-          {/* Quick-Autofill Credentials Roster */}
-          <div className="pt-2 border-t border-border/70 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                <Sparkles className="size-3.5 text-amber-500" />
-                <span>1-Click Lead Autofill & Demo Credentials Directory</span>
-              </span>
-              <span className="text-[10px] text-muted-foreground font-mono">
-                Click any lead below to load login & password
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              {DEPARTMENT_CREDENTIALS.map((cred) => (
-                <button
-                  key={cred.id}
-                  type="button"
-                  onClick={() => handleAutofill(cred)}
-                  className={`flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition-all hover:border-primary/50 hover:bg-accent/40 ${
-                    email.toLowerCase() === cred.email.toLowerCase()
-                      ? "border-primary bg-primary/5 shadow-xs"
-                      : "border-border/80 bg-card/60"
-                  }`}
-                >
-                  <span className={`grid size-7 shrink-0 place-items-center rounded-md font-mono text-[10px] font-bold border ${cred.badgeTone}`}>
-                    {cred.departmentCode}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/60">
+                  <span className="text-[11px] text-muted-foreground font-mono">
+                    Session ID: HLPL-SESS-{activeCred.departmentCode}-2026
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="font-semibold text-foreground truncate">{cred.leadName}</span>
-                      <span className="font-mono text-[9px] text-muted-foreground">{cred.departmentCode}</span>
-                    </div>
-                    <p className="font-mono text-[10px] text-muted-foreground truncate">{cred.email}</p>
-                    <p className="font-mono text-[9px] text-primary/80 font-medium mt-0.5">Password: {cred.password}</p>
-                  </div>
-                </button>
-              ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onLogout();
+                      setEmail("");
+                      setPassword("");
+                    }}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-destructive/40 bg-destructive/15 px-4 py-2 text-xs font-bold text-destructive hover:bg-destructive/25 transition-colors shadow-xs"
+                  >
+                    <LogOut className="size-4" />
+                    <span>Sign Out of {activeCred.departmentCode} Lead Session</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/60 bg-card p-4 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Need to switch to another lead or Executive Admin? Click <strong>Sign Out</strong> above to terminate your current session and return to the login gateway.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Active Admin Session (if logged in as admin) */}
+              {activeCred && currentPersonaId === "admin" && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/80 bg-secondary/30 p-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="grid size-9 place-items-center rounded-lg bg-primary/15 text-primary font-bold font-mono text-xs">
+                      {activeCred.departmentCode}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-foreground">
+                          Active User: {activeCred.leadName}
+                        </span>
+                        <span className={`rounded-md border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase ${activeCred.badgeTone}`}>
+                          {activeCred.departmentCode}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground font-mono">
+                        {activeCred.email} · {activeCred.departmentName}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onLogout();
+                      setEmail("");
+                      setPassword("");
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+                  >
+                    <LogOut className="size-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Login Form */}
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                {errorMessage && (
+                  <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive font-medium animate-in fade-in duration-150">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
+                {successMessage && (
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400 font-medium animate-in fade-in duration-150">
+                    <CheckCircle2 className="size-4 shrink-0" />
+                    <span>{successMessage}</span>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-foreground">
+                    Work Email Address / Department Username
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. morgan.reed@hexenselabs.com"
+                      className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-foreground">
+                      Access Password
+                    </label>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      Standard format: Hexense@[DEPT]2026
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password"
+                      className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90 transition-colors cursor-pointer"
+                >
+                  <ShieldCheck className="size-4" />
+                  <span>Authenticate & Sign In as Department Lead</span>
+                  <ArrowRight className="size-4" />
+                </button>
+              </form>
+
+              {/* Quick-Autofill Credentials Roster (Visible to Admin or Unauthenticated users only) */}
+              <div className="pt-2 border-t border-border/70 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                    <Sparkles className="size-3.5 text-amber-500" />
+                    <span>Department Lead Credentials Roster (Sign-in Directory)</span>
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    Select a department lead to sign in
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {DEPARTMENT_CREDENTIALS.map((cred) => (
+                    <button
+                      key={cred.id}
+                      type="button"
+                      onClick={() => handleAutofill(cred)}
+                      className={`flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition-all hover:border-primary/50 hover:bg-accent/40 ${
+                        email.toLowerCase() === cred.email.toLowerCase()
+                          ? "border-primary bg-primary/5 shadow-xs"
+                          : "border-border/80 bg-card/60"
+                      }`}
+                    >
+                      <span className={`grid size-7 shrink-0 place-items-center rounded-md font-mono text-[10px] font-bold border ${cred.badgeTone}`}>
+                        {cred.departmentCode}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-semibold text-foreground truncate">{cred.leadName}</span>
+                          <span className="font-mono text-[9px] text-muted-foreground">{cred.departmentCode}</span>
+                        </div>
+                        <p className="font-mono text-[10px] text-muted-foreground truncate">{cred.email}</p>
+                        <p className="font-mono text-[9px] text-primary/80 font-medium mt-0.5">Password: {cred.password}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -57,6 +57,7 @@ import {
   Package,
   ShoppingCart,
   Key,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
@@ -1952,16 +1953,17 @@ function Portal() {
   const [portal, setPortal] = useState<PortalState | null>(null);
   const initialRole =
     typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("role") ||
-        (() => {
+      ? (() => {
           try {
             const stored = window.localStorage.getItem("scms_auth_session");
             if (stored) {
               const parsed = JSON.parse(stored);
-              if (parsed && typeof parsed.personaId === "string") return parsed.personaId;
+              if (parsed && typeof parsed.personaId === "string" && parsed.personaId !== "admin") {
+                return parsed.personaId;
+              }
             }
           } catch (_) {}
-          return null;
+          return new URLSearchParams(window.location.search).get("role");
         })()
       : null;
   const initialPersona = personas.find((p) => p.id === initialRole) ?? (personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
@@ -2059,13 +2061,49 @@ function Portal() {
     setNotice(message);
     window.setTimeout(() => setNotice(null), 3500);
   };
-  const navigate = (area: AreaId) => {
+  const navigate = (
+    area: AreaId,
+    targetView:
+      | "queue"
+      | "detail"
+      | "summary"
+      | "project"
+      | "assignee"
+      | "index"
+      | "pmss"
+      | "inventory"
+      | "orders"
+      | "quotations"
+      | "suppliers"
+      | "customers" = "queue",
+  ) => {
+    if (persona.kind === "lead" && persona.departmentId) {
+      if (area !== persona.departmentId) {
+        setActiveArea(persona.departmentId);
+        setView(targetView);
+        setSelectedId(null);
+        setSelectedAssignee(null);
+        setQueueStage(null);
+        setMobileMenu(false);
+        return;
+      }
+    }
     setActiveArea(area);
-    setView("queue");
+    setView(targetView);
     setSelectedId(null);
     setSelectedAssignee(null);
     setQueueStage(null);
     setMobileMenu(false);
+  };
+  const handleLogout = () => {
+    const adminPersona = personas.find((p) => p.id === "admin") ?? personas[0];
+    if (adminPersona) {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("scms_auth_session");
+      }
+      switchPersona(adminPersona);
+      announce("Signed out of department lead session. Returned to default gateway.");
+    }
   };
   const handleOpenCreate = (typeOrEvent?: unknown, initialValues?: Record<string, string>) => {
     const type = typeof typeOrEvent === "string" ? typeOrEvent : null;
@@ -2279,8 +2317,13 @@ function Portal() {
   const selectedProjectProfile = activeRecords.find(
     (record) => record.reference === selectedProjectId && record.type === "Project",
   );
-  const active = areaById(activeArea);
+  const effectiveArea: AreaId = persona.kind === "lead" && persona.departmentId ? persona.departmentId : activeArea;
+  const active = areaById(effectiveArea);
   const openRecord = (record: RecordItem) => {
+    if (persona.kind === "lead" && persona.departmentId && record.area !== persona.departmentId) {
+      announce(`Access restricted: record belongs to ${record.area.toUpperCase()} department.`);
+      return;
+    }
     setActiveArea(record.area);
     setSelectedId(record.id);
     setView("detail");
@@ -2301,8 +2344,7 @@ function Portal() {
           purchasingSubView={purchasingSubView}
           onSelectPurchasingSubView={setPurchasingSubView}
           onNavigate={(area, targetView) => {
-            setActiveArea(area);
-            setView(targetView ?? "queue");
+            navigate(area as AreaId, (targetView as any) ?? "queue");
             setSelectedId(null);
             setSelectedAssignee(null);
             setQueueStage(null);
@@ -2350,44 +2392,61 @@ function Portal() {
             >
               <Menu className="size-4" />
             </button>
-            <button onClick={() => navigate("home")} className="min-w-0 flex-1 text-left">
+            <button
+              onClick={() => {
+                if (persona.kind === "lead" && persona.departmentId) {
+                  navigate(persona.departmentId);
+                } else {
+                  navigate("home");
+                }
+              }}
+              className="min-w-0 flex-1 text-left"
+            >
               <p className="truncate text-sm font-semibold md:text-base">
-                {view === "index" ? "Unified index" : active.name}
+                {persona.kind === "lead"
+                  ? (portal?.departments.find((item) => item.id === (departmentContext ?? `demo-dept-${persona.departmentId}`))?.name ?? active.name)
+                  : (view === "index" ? "Unified index" : active.name)}
               </p>
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                {departmentContext
-                  ? `${portal.departments.find((item) => item.id === departmentContext)?.name ?? "Department"} · Administrator context`
-                  : `All departments · ${portal.setup.location}`}
+                {persona.kind === "lead"
+                  ? `${persona.label} · Authorized Department Scope (IATF 16949 / ISO 27001)`
+                  : departmentContext
+                  ? `${portal?.departments.find((item) => item.id === departmentContext)?.name ?? "Department"} · Administrator context`
+                  : `All departments · ${portal?.setup.location ?? ""}`}
               </p>
             </button>
             <PersonaSwitcher
               persona={persona}
               onSelect={switchPersona}
               onOpenAuth={() => setLoginModalOpen(true)}
+              onLogout={handleLogout}
             />
-            <button
-              type="button"
-              onClick={() => setLoginModalOpen(true)}
-              title="Department Lead Sign-In & Authentication Modal"
-              className="hidden items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 hover:border-primary shadow-sm sm:inline-flex"
-            >
-              <Key className="size-3.5 text-primary" />
-              <span>Lead Auth</span>
-              {persona.id !== "admin" ? (
-                <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
-              ) : null}
-            </button>
-            <HeaderAction label="PMSS" icon={ClipboardCheck} onClick={() => setView("pmss")} />
-            <HeaderAction
-              label="Project Analysis (Page 1)"
-              icon={Layers}
-              onClick={() => {
-                setSelectedProjectId((prev) => prev || "HLPL-AI4T-01");
-                const match = activeRecords.find((r) => (r.reference === selectedProjectId || r.reference === "HLPL-AI4T-01") && r.type === "Project");
-                if (match) setSelectedId(match.id);
-                setView("project");
-              }}
-            />
+            {persona.id === "admin" && (
+              <button
+                type="button"
+                onClick={() => setLoginModalOpen(true)}
+                title="Department Lead Sign-In & Authentication Modal"
+                className="hidden items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 hover:border-primary shadow-sm sm:inline-flex"
+              >
+                <Key className="size-3.5 text-primary" />
+                <span>Lead Auth</span>
+              </button>
+            )}
+            {persona.id === "admin" && (
+              <HeaderAction label="PMSS" icon={ClipboardCheck} onClick={() => setView("pmss")} />
+            )}
+            {persona.id === "admin" && (
+              <HeaderAction
+                label="Project Analysis (Page 1)"
+                icon={Layers}
+                onClick={() => {
+                  setSelectedProjectId((prev) => prev || "HLPL-AI4T-01");
+                  const match = activeRecords.find((r) => (r.reference === selectedProjectId || r.reference === "HLPL-AI4T-01") && r.type === "Project");
+                  if (match) setSelectedId(match.id);
+                  setView("project");
+                }}
+              />
+            )}
             <HeaderAction
               label="Search"
               icon={Search}
@@ -2397,29 +2456,45 @@ function Portal() {
               }}
             />
             <HeaderAction label="Documents" icon={FileText} onClick={() => setModal("documents")} />
-            <HeaderAction label="Live Inventory" icon={PackageSearch} onClick={() => navigate("pur")} />
-            <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
+            {(persona.id === "admin" || persona.id === "pur") && (
+              <HeaderAction label="Live Inventory" icon={PackageSearch} onClick={() => navigate("pur")} />
+            )}
+            {persona.id === "admin" && (
+              <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
+            )}
             <HeaderAction label="Directory" icon={Users} onClick={() => setDirectoryOpen(true)} />
-            <HeaderAction label="Decision Log" icon={BookOpen} onClick={() => setDecisionLogOpen(true)} />
-            <HeaderAction label="Legal Hub" icon={Shield} onClick={() => setLegalHubOpen(true)} />
-            <HeaderAction label="Platform Asset Library" icon={Cpu} onClick={() => setAssetCatalogOpen(true)} />
-            <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
-            <HeaderAction
-              label="Administration"
-              icon={Settings2}
-              onClick={() => {
-                setAdminTab("company");
-                setModal("admin");
-              }}
-            />
-            <HeaderAction
-              label="Cloud & Supabase Sync"
-              icon={Cloud}
-              onClick={() => {
-                setAdminTab("cloud");
-                setModal("admin");
-              }}
-            />
+            {persona.id === "admin" && (
+              <HeaderAction label="Decision Log" icon={BookOpen} onClick={() => setDecisionLogOpen(true)} />
+            )}
+            {persona.id === "admin" && (
+              <HeaderAction label="Legal Hub" icon={Shield} onClick={() => setLegalHubOpen(true)} />
+            )}
+            {persona.id === "admin" && (
+              <HeaderAction label="Platform Asset Library" icon={Cpu} onClick={() => setAssetCatalogOpen(true)} />
+            )}
+            {persona.id === "admin" && (
+              <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
+            )}
+            {persona.id === "admin" && (
+              <HeaderAction
+                label="Administration"
+                icon={Settings2}
+                onClick={() => {
+                  setAdminTab("company");
+                  setModal("admin");
+                }}
+              />
+            )}
+            {persona.id === "admin" && (
+              <HeaderAction
+                label="Cloud & Supabase Sync"
+                icon={Cloud}
+                onClick={() => {
+                  setAdminTab("cloud");
+                  setModal("admin");
+                }}
+              />
+            )}
             <HeaderAction
               label={`Notifications (${portal.alerts.filter((alert) => !alert.resolved).length})`}
               icon={Bell}
@@ -2555,14 +2630,14 @@ function Portal() {
               onBack={() => setView("queue")}
               departmentRole={activeArea}
             />
-          ) : activeArea === "home" && view === "assignee" && selectedAssignee ? (
+          ) : effectiveArea === "home" && view === "assignee" && selectedAssignee ? (
             <AssigneeWorkload
               assignee={selectedAssignee}
               records={activeRecords}
               onBack={() => navigate("home")}
               onSelect={openRecord}
             />
-          ) : activeArea === "home" ? (
+          ) : effectiveArea === "home" ? (
             <CommandCenter
               portal={portal}
               departmentContext={departmentContext}
@@ -2708,23 +2783,65 @@ function Portal() {
         </div>
       </section>
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-background/95 px-1 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur lg:hidden">
-        {areas.slice(0, 4).map((area) => (
-          <button
-            key={area.id}
-            onClick={() => navigate(area.id)}
-            className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] ${activeArea === area.id && view !== "index" ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
-          >
-            <area.icon className="size-4" />
-            <span>{area.short}</span>
-          </button>
-        ))}
-        <button
-          onClick={() => setMobileMenu(true)}
-          className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] text-muted-foreground"
-        >
-          <Menu className="size-4" />
-          <span>More</span>
-        </button>
+        {persona.kind === "lead" && persona.departmentId ? (
+          <>
+            <button
+              onClick={() => navigate(persona.departmentId as AreaId)}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] bg-accent text-accent-foreground"
+            >
+              <active.icon className="size-4" />
+              <span>{active.short}</span>
+            </button>
+            <button
+              onClick={() => setModal("documents")}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] text-muted-foreground"
+            >
+              <FileText className="size-4" />
+              <span>Docs</span>
+            </button>
+            <button
+              onClick={() => setAlertsOpen(true)}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] text-muted-foreground"
+            >
+              <Bell className="size-4" />
+              <span>Alerts</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] text-destructive"
+            >
+              <LogOut className="size-4" />
+              <span>Sign Out</span>
+            </button>
+            <button
+              onClick={() => setMobileMenu(true)}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] text-muted-foreground"
+            >
+              <Menu className="size-4" />
+              <span>Menu</span>
+            </button>
+          </>
+        ) : (
+          <>
+            {areas.slice(0, 4).map((area) => (
+              <button
+                key={area.id}
+                onClick={() => navigate(area.id)}
+                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] ${activeArea === area.id && view !== "index" ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
+              >
+                <area.icon className="size-4" />
+                <span>{area.short}</span>
+              </button>
+            ))}
+            <button
+              onClick={() => setMobileMenu(true)}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] text-muted-foreground"
+            >
+              <Menu className="size-4" />
+              <span>More</span>
+            </button>
+          </>
+        )}
       </nav>
       {mobileMenu && (
         <MobileMenu
@@ -9917,11 +10034,44 @@ function PersonaSwitcher({
   persona,
   onSelect,
   onOpenAuth,
+  onLogout,
 }: {
   persona: Persona;
   onSelect: (persona: Persona) => void;
   onOpenAuth?: () => void;
+  onLogout?: () => void;
 }) {
+  const isLead = persona.id !== "admin";
+
+  if (isLead) {
+    return (
+      <div className="hidden items-center gap-2 md:flex">
+        <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs">
+          <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="rounded bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase text-primary border border-primary/20">
+            {persona.departmentId?.toUpperCase() || persona.id.toUpperCase()} LEAD
+          </span>
+          <span className="font-semibold text-foreground truncate max-w-44">
+            {persona.label}
+          </span>
+          <Lock className="size-3 text-muted-foreground ml-0.5" />
+        </div>
+        {onLogout && (
+          <button
+            type="button"
+            title="Sign Out of Department Lead Session"
+            aria-label="Sign Out"
+            onClick={onLogout}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs font-bold text-destructive hover:bg-destructive/20 transition-colors shadow-xs"
+          >
+            <LogOut className="size-3.5" />
+            <span>Sign Out</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="hidden items-center gap-1.5 md:flex">
       <label className="flex min-w-48 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-ring/50">
