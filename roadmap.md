@@ -52,3 +52,10 @@
 - [x] **Phase 3: Supabase Shared Persistence Migration**:
   - Authenticated PostgreSQL tables and Row-Level Security (RLS) policies paired with the verified offline prototype model in an enterprise dual-track persistence architecture.
   - Interactive Cloud & Supabase Sync panel with connection health diagnostics, real-time cluster pinging, telemetry counters, offline JSON snapshot export, and sync triggers.
+
+---
+
+## 5. Procurement-Led Live Inventory
+- [x] Compare the browser-local inventory workspace with the read-only SSM one phase 8 reference.
+- [x] Expand the local inventory register with the reference's searchable component fields, broader controlled categories, stock states, project links and research-team allocations.
+- [x] Derive the assigned department directly from the selected research owner; do not ask the allocator to choose it separately.
