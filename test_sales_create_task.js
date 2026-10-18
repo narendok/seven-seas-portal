@@ -155,7 +155,7 @@ async function run() {
   }
 
   // Take screenshot of the verified modal
-  await page.screenshot({ path: "c:\\Users\\Test\\Documents\\antigravity\\SSM1\\verification_sales_and_gate.png", fullPage: true });
+  await page.screenshot({ path: "c:\\Users\\Test\\Documents\\antigravity\\SSM-new\\verification_sales_and_gate.png", fullPage: true });
   console.log("   Screenshot saved to verification_sales_and_gate.png");
 
   // Close Feasibility Gate modal

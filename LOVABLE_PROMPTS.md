@@ -7,7 +7,7 @@ Use these structured prompts in Lovable to expand the existing project into the 
 
 ### Step 1: Update Lovable Project Knowledge
 1. Navigate to **Project Settings** (gear icon) -> **Knowledge** in Lovable.
-2. Open [LOVABLE_KNOWLEDGE.md](file:///c:/Users/Test/Documents/antigravity/SSM1/LOVABLE_KNOWLEDGE.md) and copy the entire text.
+2. Open [LOVABLE_KNOWLEDGE.md](file:///c:/Users/Test/Documents/antigravity/SSM-new/LOVABLE_KNOWLEDGE.md) and copy the entire text.
 3. Paste it into the Knowledge box and save.
 
 ---

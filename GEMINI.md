@@ -1,7 +1,7 @@
 # Project Rules: Hexense Labs Smart Company Management System (SCMS)
 
 ## Permissions & Autonomy Policy
-- **Blanket Authorization ("Allow All")**: The user has explicitly authorized full, autonomous execution for this project (`SSM1`).
+- **Blanket Authorization ("Allow All")**: The user has explicitly authorized full, autonomous execution for this project (`SSM-new`).
 - **Tool & Command Execution**: All command executions (`run_command`), file modifications, creation of scripts/artifacts, database migrations, and subagent invocations (including browser automation via `browser` subagent) are pre-approved and may proceed without interruption or redundant permission prompts.
 - **Data Safety Protocol**: Maintain project integrity, preserve existing working code and documentation, and ensure all changes conform to enterprise standards.
 

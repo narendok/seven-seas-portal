@@ -33,7 +33,7 @@
 
 ## Android Companion Handoff
 - For Android companion work, read `docs/ANDROID_ANTIGRAVITY_HANDOFF.md` and master plan §25 before changing app code.
-- The Android Studio project currently resides at `C:\Users\Test\AndroidStudioProjects\SSM-new-app`; it is a separate Git repository (`https://github.com/narendok/SSM-new-app.git`) and is not inside this SSM1 workspace. Do not assume Android source changes are synced with this folder's Git/Lovable project.
-- Treat SSM1's configured Supabase project `rzskhndweihuczbdhoxk` as the Android target. Android Gradle pins `SUPABASE_URL` to this endpoint and reads the publishable key from ignored `local.properties`. Never put that key or any privileged credential in tracked files.
+- The Android Studio project currently resides at `C:\Users\Test\AndroidStudioProjects\SSM-new-app`; it is a separate Git repository (`https://github.com/narendok/SSM-new-app.git`) and is not inside this SSM-new workspace. Do not assume Android source changes are synced with this folder's Git/Lovable project.
+- Treat SSM-new's configured Supabase project `rzskhndweihuczbdhoxk` as the Android target. Android Gradle pins `SUPABASE_URL` to this endpoint and reads the publishable key from ignored `local.properties`. Never put that key or any privileged credential in tracked files.
 - Keep safe-view reads, stock RPCs, local-role elevation, and private document links fail-closed until the schema, RLS permissions, and authenticated signed-URL path are verified. A local prototype mutation is not a portal sync.
 - After Android source changes, run `testDebugUnitTest assembleDebug` from the Android project using Android Studio's bundled JDK, then report the outcome and any remaining integration gates.
