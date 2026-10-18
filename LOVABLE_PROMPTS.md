@@ -1,4 +1,4 @@
-# Hexense Labs SCMS — Ready-to-Run Lovable Prompts
+# XYZ Pvt Ltd SCMS — Ready-to-Run Lovable Prompts
 ## Targeted for Project: "SSM New" (`a3399684-daab-4b38-8666-187b96b451af`)
 
 Use these structured prompts in Lovable to expand the existing project into the complete **11-Department Smart Company Management System**.
@@ -16,7 +16,7 @@ Use these structured prompts in Lovable to expand the existing project into the 
 Paste the following prompt in **Lovable Chat**:
 
 ```text
-Please apply the complete SCMS database schema for Hexense Labs to our Lovable Cloud Postgres database.
+Please apply the complete SCMS database schema for XYZ Pvt Ltd to our Lovable Cloud Postgres database.
 
 Key requirements:
 1. Create/extend the following core tables with proper relationships and foreign keys:

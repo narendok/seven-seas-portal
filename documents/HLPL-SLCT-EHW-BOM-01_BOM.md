@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Purchasing & Embedded HW     |
+| XYZ Pvt Ltd                              Department: Purchasing & Embedded HW     |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 / AEC-Q100 / RoHS   |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Production Bill of Materials (BOM) & Costed Assembly Sheet                        |
@@ -31,7 +31,7 @@
 | **08** | High-Side Power Switch (x2) | `VN7016AJTR` | STMicroelectronics | PowerSSO-16 | **AEC-Q100 Gr 1** | A | \$1.10 | Arrow Electronics |
 | **09** | Backup Battery Pack | `HLPL-LP-1000-01` | EVE Energy | 3.7V 1000mAh PCM | **UN 38.3 / IEC** | A | \$2.40 | EVE Direct |
 | **10** | Automotive Sealed Connector | `Molex 34791-0140` | Molex LLC | Mini50 14-Pin Sealed| **USCAR-2** | B | \$1.42 | Molex India |
-| **11** | Enclosure (ABS/PC Top & Bottom)| `HLPL-MCH-ENC-01` | Hexense Labs Tooling | Injection Molded PBT| **UL94-V0** | B | \$1.80 | In-House Tooling |
+| **11** | Enclosure (ABS/PC Top & Bottom)| `HLPL-MCH-ENC-01` | XYZ Pvt Ltd Tooling | Injection Molded PBT| **UL94-V0** | B | \$1.80 | In-House Tooling |
 | **12** | Bare PCB Fabrication (4-Layer) | `HLPL-SLCT-PCB-01` | AT&S / Genus PCB | FR4 TG170 ENIG | **IPC Class 3** | A | \$1.65 | Genus Electrotech |
 | **13** | Passives (Caps, Resistors, Ind) | Various SMD (0402/0603)| Murata / Yageo / TDK | SMD Passives | **AEC-Q200** | A | \$1.35 | Avnet / Arrow |
 | **--** | **TOTAL UNIT BOM COST** | | | | | | **\$35.42** | Target: \$38.50 (Pass) |

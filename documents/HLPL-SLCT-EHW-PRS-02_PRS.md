@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Embedded Hardware (EHW)      |
+| XYZ Pvt Ltd                              Department: Embedded Hardware (EHW)      |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 / AEC-Q100 / AIS-140|
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Product Requirement Specification (PRS)                                          |

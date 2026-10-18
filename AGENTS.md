@@ -1,4 +1,4 @@
-# Antigravity Agent Guidelines: Hexense Labs SCMS
+# Antigravity Agent Guidelines: XYZ Pvt Ltd SCMS
 
 ## Execution & Tool Permission Rules
 - **Allow All Operations**: The user has granted full blanket permission for this project. Execute all commands, file updates, and browser automation tasks autonomously without blocking for manual confirmations.

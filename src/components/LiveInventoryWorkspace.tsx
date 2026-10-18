@@ -210,24 +210,24 @@ export const projectTeamRoster: Record<
   Array<{ name: string; department: InventoryAssignment["department"]; role: string; email: string }>
 > = {
   "HLPL-AI4T-01": [
-    { name: "Avery Vale", department: "EHW", role: "Hardware Lead", email: "avery.vale@hexense.com" },
-    { name: "Devon Lane", department: "ESW", role: "Firmware Lead", email: "devon.lane@hexense.com" },
-    { name: "Samira Holt", department: "MECH", role: "Mechanical Lead", email: "samira.holt@hexense.com" },
-    { name: "Casey Rowan", department: "EMF", role: "SMT Production Lead", email: "casey.rowan@hexense.com" },
-    { name: "Jordan Blake", department: "QA", role: "Quality Assurance Lead", email: "jordan.blake@hexense.com" },
-    { name: "Mina Cross", department: "TST", role: "EOL Testing Lead", email: "mina.cross@hexense.com" },
+    { name: "Avery Vale", department: "EHW", role: "Hardware Lead", email: "avery.vale@Demo.com" },
+    { name: "Devon Lane", department: "ESW", role: "Firmware Lead", email: "devon.lane@Demo.com" },
+    { name: "Samira Holt", department: "MECH", role: "Mechanical Lead", email: "samira.holt@Demo.com" },
+    { name: "Casey Rowan", department: "EMF", role: "SMT Production Lead", email: "casey.rowan@Demo.com" },
+    { name: "Jordan Blake", department: "QA", role: "Quality Assurance Lead", email: "jordan.blake@Demo.com" },
+    { name: "Mina Cross", department: "TST", role: "EOL Testing Lead", email: "mina.cross@Demo.com" },
   ],
   "HLPL-SLCT-01": [
-    { name: "Avery Vale", department: "EHW", role: "Hardware Lead", email: "avery.vale@hexense.com" },
-    { name: "Samira Holt", department: "MECH", role: "Mechanical Lead", email: "samira.holt@hexense.com" },
-    { name: "Morgan Reed", department: "PUR", role: "SCM Procurement Lead", email: "morgan.reed@hexense.com" },
-    { name: "Jordan Blake", department: "QA", role: "Quality Assurance Lead", email: "jordan.blake@hexense.com" },
+    { name: "Avery Vale", department: "EHW", role: "Hardware Lead", email: "avery.vale@Demo.com" },
+    { name: "Samira Holt", department: "MECH", role: "Mechanical Lead", email: "samira.holt@Demo.com" },
+    { name: "Morgan Reed", department: "PUR", role: "SCM Procurement Lead", email: "morgan.reed@Demo.com" },
+    { name: "Jordan Blake", department: "QA", role: "Quality Assurance Lead", email: "jordan.blake@Demo.com" },
   ],
   "HLPL-XLINK-03": [
-    { name: "Devon Lane", department: "ESW", role: "Dual-CAN Firmware Lead", email: "devon.lane@hexense.com" },
-    { name: "Casey Rowan", department: "EMF", role: "Production Lead", email: "casey.rowan@hexense.com" },
-    { name: "Mina Cross", department: "TST", role: "Test Jig Lead", email: "mina.cross@hexense.com" },
-    { name: "Kai Morgan", department: "EHW", role: "Service & IT Infrastructure", email: "kai.morgan@hexense.com" },
+    { name: "Devon Lane", department: "ESW", role: "Dual-CAN Firmware Lead", email: "devon.lane@Demo.com" },
+    { name: "Casey Rowan", department: "EMF", role: "Production Lead", email: "casey.rowan@Demo.com" },
+    { name: "Mina Cross", department: "TST", role: "Test Jig Lead", email: "mina.cross@Demo.com" },
+    { name: "Kai Morgan", department: "EHW", role: "Service & IT Infrastructure", email: "kai.morgan@Demo.com" },
   ],
 };
 
@@ -496,7 +496,7 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     category: "Wire Harnesses",
     subcategory: "Vehicle Interface Harness",
     crossTags: ["Mechanical", "Electrical", "Automotive"],
-    manufacturer: "Hexense Cable Systems / Delphi Terminals",
+    manufacturer: "XYZ Pvt Ltd Cable Systems / Delphi Terminals",
     packageCase: "Molded Y-Cable Harness",
     specifications: {
       "Wire Type": "FLRY-B 0.50mm² thin-wall heat-resistant automotive wire (ISO 6722 Class B)",
@@ -521,7 +521,7 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     mouserPartNumber: "MSR-J1962-16P",
     mouserUrl: "https://www.mouser.in/c/?q=OBD+J1962",
     datasheetUrl: "https://www.sae.org/standards/content/j1962_201607/",
-    supplier: "Hexense Cable Systems / Mouser Terminals",
+    supplier: "XYZ Pvt Ltd Cable Systems / Mouser Terminals",
     tentativeUnitCostUsd: 4.90,
     tentativeUnitCostInr: 409.15,
     priceBreaks: [
@@ -550,7 +550,7 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     category: "Wire Harnesses",
     subcategory: "Sealed Heavy Duty Harness",
     crossTags: ["Mechanical", "Electrical", "Automotive", "Safety Critical"],
-    manufacturer: "Molex Automotive / Hexense Assembly Line",
+    manufacturer: "Molex Automotive / XYZ Pvt Ltd Assembly Line",
     packageCase: "IP67 Corrugated Nylon Loom",
     specifications: {
       "Wire Type": "TXL Automotive Cross-Linked Polyethylene 18 & 20 AWG (SAE J1128)",
@@ -760,7 +760,7 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     category: "Enclosures",
     subcategory: "Ingress Protected Telematics Casing",
     crossTags: ["Mechanical", "Automotive"],
-    manufacturer: "Hexense Mechanical Tooling",
+    manufacturer: "XYZ Pvt Ltd Mechanical Tooling",
     packageCase: "Precision Molded Case with Gasket",
     specifications: {
       "Material": "Sabic Cycoloy PC/ABS automotive resin",
@@ -783,7 +783,7 @@ const initialHarnessAndComponentSeeds: InventoryItem[] = [
     mouserPartNumber: "MSR-ENC-PCABS-01",
     mouserUrl: "https://www.mouser.in/c/?q=IP67+Enclosure",
     datasheetUrl: "https://www.hammfg.com/electronics/small-enclosures/plastic/1554",
-    supplier: "Hexense Mechanical Tooling",
+    supplier: "XYZ Pvt Ltd Mechanical Tooling",
     tentativeUnitCostUsd: 3.80,
     tentativeUnitCostInr: 317.30,
     priceBreaks: [

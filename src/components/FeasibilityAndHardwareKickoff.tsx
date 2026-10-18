@@ -414,7 +414,7 @@ export function FeasibilityAndHardwareKickoff({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">IP Ownership:</span>
-                  <span className="font-medium text-foreground">Hexense Labs Retains Firmware & Circuit IP</span>
+                  <span className="font-medium text-foreground">XYZ Pvt Ltd Retains Firmware & Circuit IP</span>
                 </div>
               </div>
 

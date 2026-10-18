@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Sales & Commercial           |
+| XYZ Pvt Ltd                              Department: Sales & Commercial           |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 / ISO 9001:2015     |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Commercial Proposal & Official Quotation                                          |
@@ -10,7 +10,7 @@
 +----------------------------------------------------------------------------------------------------+
 
 ## 1. Executive Summary & Program Scope
-Hexense Labs Private Limited (HLPL) submits this formal commercial proposal and technical quotation for the development, automotive qualification, and volume manufacturing of the **AIS-140 Compliant 4G Intelligent Vehicle Telematics Gateway (Model: HLPL-SLCT-01)**. 
+XYZ Pvt Ltd (HLPL) submits this formal commercial proposal and technical quotation for the development, automotive qualification, and volume manufacturing of the **AIS-140 Compliant 4G Intelligent Vehicle Telematics Gateway (Model: HLPL-SLCT-01)**. 
 
 Target Platform: Tata Ace EV & Ultra T.7 Commercial Delivery Fleet.  
 Estimated Annual Volume: **50,000 units / annum**.

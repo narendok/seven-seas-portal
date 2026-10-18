@@ -50,7 +50,7 @@ export function ClientOEMPortal({
       date: "2026-08-10",
       owner: "Legal & Executive Admin",
       description:
-        "Mutual proprietary data and automotive IP protection agreement executed between Tata Motors Ltd and Hexense Labs.",
+        "Mutual proprietary data and automotive IP protection agreement executed between Tata Motors Ltd and XYZ Pvt Ltd.",
     },
     {
       id: "HLPL-AI4T-SAL-QUO-01",

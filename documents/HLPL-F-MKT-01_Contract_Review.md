@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Cross-Functional R&D         |
+| XYZ Pvt Ltd                              Department: Cross-Functional R&D         |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 Cl 8.2.3 / ISO 9001 |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Contract Review & Cross-Functional Feasibility Record                             |

@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Production Testing & PDI     |
+| XYZ Pvt Ltd                              Department: Production Testing & PDI     |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 / AIS-140 TAC       |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Pre-Dispatch Inspection (PDI) & Serialized EOL Test Certificate                   |

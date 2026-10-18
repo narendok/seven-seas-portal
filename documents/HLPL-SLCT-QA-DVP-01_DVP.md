@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Quality Assurance (QA)       |
+| XYZ Pvt Ltd                              Department: Quality Assurance (QA)       |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 / ISO 16750 / AIS140|
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Design Verification Plan and Report (DVP&R)                                       |

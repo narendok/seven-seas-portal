@@ -79,7 +79,7 @@ import path from "path";
   await clientTab.click();
   await page.waitForTimeout(800);
 
-  await page.locator("text=HEXENSE LABS · OEM CUSTOMER PORTAL").waitFor({ state: "visible" });
+  await page.locator("text=XYZ Pvt Ltd · OEM CUSTOMER PORTAL").waitFor({ state: "visible" });
   await page.locator("text=Client-Safe Filter Active").waitFor({ state: "visible" });
   await page.locator("text=ARAI Type Approval compliance verified").waitFor({ state: "visible" });
 

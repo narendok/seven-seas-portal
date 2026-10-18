@@ -1,6 +1,6 @@
 /**
  * Mouser Electronics Component Intelligence & Auto-Fill Service
- * Hexense Labs SCMS - Automotive Telematics & Supply Chain
+ * XYZ Pvt Ltd SCMS - Automotive Telematics & Supply Chain
  *
  * Provides real-time component specification lookup, tentative pricing ($ and INR),
  * datasheets, packaging, manufacturer metadata, and auto-categorization matching
@@ -320,7 +320,7 @@ const automotiveCatalog: Record<string, MouserComponentResult> = {
   },
   "HLPL-HARN-OBD2-16P": {
     mpn: "HLPL-HARN-OBD2-16P",
-    manufacturer: "Hexense Cable Systems / Delphi Terminals",
+    manufacturer: "XYZ Pvt Ltd Cable Systems / Delphi Terminals",
     description: "SAE J1962 16-Pin Pass-Through OBD-II Automotive Wire Harness Assembly with Inline Mini-Blade Fuse",
     suggestedCategory: "Wire Harnesses",
     suggestedSubcategory: "Vehicle Interface Harness",
@@ -329,7 +329,7 @@ const automotiveCatalog: Record<string, MouserComponentResult> = {
     datasheetUrl: "https://www.mouser.in/c/?q=SAE+J1962+OBD-II",
     mouserPartNumber: "HLPL-HARN-OBD2-16P",
     mouserProductUrl: "https://www.mouser.in/c/?q=OBD-II+16+pin+harness",
-    supplier: "Hexense / Mouser SCM",
+    supplier: "XYZ Pvt Ltd / Mouser SCM",
     tentativeCostUsd: 6.80,
     tentativeCostInr: Math.round(6.80 * USD_TO_INR_RATE * 100) / 100,
     priceBreaks: [
@@ -579,7 +579,7 @@ export async function lookupMouserPart(query: string): Promise<MouserComponentRe
     dimensions = "35.0 × 25.0 × 20.0 mm";
     weight = 15.0;
   } else if (clean.startsWith("HARN") || clean.includes("HARNESS") || clean.startsWith("HLPL-HARN")) {
-    manufacturer = "Hexense Cable Systems / OEM";
+    manufacturer = "XYZ Pvt Ltd Cable Systems / OEM";
     category = "Wire Harnesses";
     subcategory = "Custom Automotive Wiring Assembly";
     crossTags = ["Mechanical", "Electrical", "Automotive"];
@@ -593,7 +593,7 @@ export async function lookupMouserPart(query: string): Promise<MouserComponentRe
     dimensions = "500mm length harness";
     weight = 120.0;
   } else if (clean.startsWith("ENC") || clean.includes("ENCLOSURE") || clean.startsWith("HLPL-ENC")) {
-    manufacturer = "Hexense Mechanical Tooling";
+    manufacturer = "XYZ Pvt Ltd Mechanical Tooling";
     category = "Enclosures";
     subcategory = "Automotive Ingress Protected Housing";
     crossTags = ["Mechanical", "Automotive"];

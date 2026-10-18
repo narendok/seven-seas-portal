@@ -98,7 +98,7 @@ const ROLES_TO_TEST = [
     }
 
     // Verify read-only message in footer
-    const readOnlyFooter = await page.$("text=Client Audit View · Lifecycle Progression Managed by Hexense Engineering");
+    const readOnlyFooter = await page.$("text=Client Audit View · Lifecycle Progression Managed by XYZ Pvt Ltd Engineering");
     if (readOnlyFooter) {
       console.log("✓ SUCCESS: Client read-only badge displayed in modal footer.");
     }

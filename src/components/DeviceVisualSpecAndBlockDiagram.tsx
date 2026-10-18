@@ -75,7 +75,7 @@ export function DeviceVisualSpecAndBlockDiagram({
   };
 
   const sampleSchematicText = `%PDF-1.4
-% Hexense Labs Automotive Schematic Package
+% XYZ Pvt Ltd Automotive Schematic Package
 % Doc ID: HLPL-OBD4-EHW-SCH-${rev} Rev ${rev}
 % Project: 4G OBD-II Smart Telematics Tracker
 % Microcontroller: STM32G0B1VET6 (Arm Cortex-M0+ 64MHz, 512KB Flash)
@@ -88,8 +88,8 @@ export function DeviceVisualSpecAndBlockDiagram({
 
   const sampleStepText = `ISO-10303-21;
 HEADER;
-FILE_DESCRIPTION(('Hexense Labs SCMS 3D STEP Model','J1962 Enclosure Model'),'2;1');
-FILE_NAME('HLPL-OBD4-MECH-3D.step','2026-10-17T00:00:00',('Samira Holt'),('Hexense Labs Mechanical Engineering'),'AutoCAD / FreeCAD STEP Export','Hexense SCMS','Authorized');
+FILE_DESCRIPTION(('XYZ Pvt Ltd SCMS 3D STEP Model','J1962 Enclosure Model'),'2;1');
+FILE_NAME('HLPL-OBD4-MECH-3D.step','2026-10-17T00:00:00',('Samira Holt'),('XYZ Pvt Ltd Mechanical Engineering'),'AutoCAD / FreeCAD STEP Export','XYZ Pvt Ltd SCMS','Authorized');
 FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));
 ENDSEC;
 DATA;
@@ -106,7 +106,7 @@ END-ISO-10303-21;`;
 4,CAN Transceiver,NXP Semiconductors,TJA1051T/3,High-Speed CAN Transceiver 500k,SOIC-8,$0.72,AEC-Q100 Grade 1,4,Active
 5,Protection TVS,Littelfuse,SMDJ36CA,3000W Bi-directional TVS 36V,DO-214AB,$0.38,AEC-Q101,2,Qualified
 6,Battery Backup,EVE Energy,PL-502535-450mAh,3.7V 450mAh LiPo Cell with NTC,Custom Pack,$1.65,UN 38.3 / UL 1642,6,Verified
-7,Chassis Enclosure,SABIC / Hexense Mold,HLPL-MECH-OBD4-HSG,Cycoloy PC/ABS Flame Retardant UL94-V0,Injection Molded,$1.40,Automotive Resin,4,Tooling Complete
+7,Chassis Enclosure,SABIC / XYZ Pvt Ltd Mold,HLPL-MECH-OBD4-HSG,Cycoloy PC/ABS Flame Retardant UL94-V0,Injection Molded,$1.40,Automotive Resin,4,Tooling Complete
 8,OBD Connector,Molex / JST,J1962-16P-M,SAE J1962 Male 16-Pin Gold-Plated,Right-Angle SMT,$0.85,USCAR-2 Footprint,3,Active`;
 
   return (
@@ -249,7 +249,7 @@ END-ISO-10303-21;`;
                   </div>
                   <div>
                     <p className="font-mono text-[11px] font-bold tracking-wider text-slate-200">
-                      HEXENSE LABS
+                      XYZ Pvt Ltd
                     </p>
                     <p className="font-mono text-[9px] text-slate-400">
                       MODEL: {modelCode} · AUTOMOTIVE TELEMATICS

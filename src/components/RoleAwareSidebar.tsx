@@ -1275,7 +1275,7 @@ export function RoleAwareSidebar({
             SS
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold leading-tight truncate">Six Sense Mobility</p>
+            <p className="text-xs font-bold leading-tight truncate">XYZ Pvt Ltd</p>
             <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground truncate">
               {isAdmin ? "Global Executive SCMS" : `${persona.label}`}
             </p>

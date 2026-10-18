@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================================================
-echo     HEXENSE LABS SCMS - MULTI-DEPARTMENT LEAD TABS & PROFILES LAUNCHER
+echo     XYZ Pvt Ltd SCMS - MULTI-DEPARTMENT LEAD TABS & PROFILES LAUNCHER
 echo ===============================================================================
 echo.
 echo Launching browser tabs with isolated department contexts on http://localhost:8080...

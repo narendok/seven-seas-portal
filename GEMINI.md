@@ -1,4 +1,4 @@
-# Project Rules: Hexense Labs Smart Company Management System (SCMS)
+# Project Rules: XYZ Pvt Ltd Smart Company Management System (SCMS)
 
 ## Permissions & Autonomy Policy
 - **Blanket Authorization ("Allow All")**: The user has explicitly authorized full, autonomous execution for this project (`SSM-new`).
@@ -10,7 +10,7 @@
 ## Domain & System Specifications
 
 ### 1. Enterprise Profile & Compliance
-- **Company**: Hexense Labs Private Limited (HLPL) / Six Sense Mobility.
+- **Company**: XYZ Pvt Ltd (HLPL) / XYZ Pvt Ltd.
 - **Governing Standards**:
   - Quality Management: **IATF 16949:2016** & **ISO 9001:2015**
   - Environmental Management: **ISO 14001:2015**

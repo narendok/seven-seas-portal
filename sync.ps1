@@ -1,4 +1,4 @@
-# Hexense Labs SCMS - Git and Lovable Two-Way Synchronization Script
+# XYZ Pvt Ltd SCMS - Git and Lovable Two-Way Synchronization Script
 param(
     [Parameter(Position=0)]
     [ValidateSet('status', 'pull', 'push', 'setup', 'help')]
@@ -12,7 +12,7 @@ $ErrorActionPreference = 'Stop'
 
 function Show-Header {
     Write-Host '==========================================================' -ForegroundColor Cyan
-    Write-Host '  Hexense Labs SCMS -- GitHub / Lovable Sync Manager      ' -ForegroundColor White
+    Write-Host '  XYZ Pvt Ltd SCMS -- GitHub / Lovable Sync Manager      ' -ForegroundColor White
     Write-Host '==========================================================' -ForegroundColor Cyan
 }
 
@@ -58,7 +58,7 @@ switch ($Action) {
     }
     'setup' {
         Write-Host "`n[First-Time Setup Helper]" -ForegroundColor Cyan
-        Write-Host 'Enter your GitHub repository URL (e.g. https://github.com/username/hexense-scms.git):' -ForegroundColor Yellow
+        Write-Host 'Enter your GitHub repository URL (e.g. https://github.com/username/XYZ Pvt Ltd-scms.git):' -ForegroundColor Yellow
         $repoUrl = Read-Host 'Repository URL'
         if (![string]::IsNullOrWhiteSpace($repoUrl)) {
             if (!(Test-Path '.git')) {

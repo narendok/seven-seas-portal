@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Sales & Order Management     |
+| XYZ Pvt Ltd                              Department: Sales & Order Management     |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 Cl 8.2 / ERP Core   |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Customer Purchase Order (PO) & Order Intake Synchronization                       |

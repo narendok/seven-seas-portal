@@ -1,5 +1,5 @@
 -- ==============================================================================
--- Hexense Labs Private Limited (HLPL) - Smart Company Management System (SCMS)
+-- XYZ Pvt Ltd (HLPL) - Smart Company Management System (SCMS)
 -- Database Migration: 20261003_scms_core_schema.sql
 -- Adheres to: IATF 16949:2016, ISO 9001:2015, ISO 14001, AIS-140, AEC-Q100/Q200
 -- ==============================================================================

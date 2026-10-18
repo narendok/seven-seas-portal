@@ -1,12 +1,12 @@
-# Hexense Labs SCMS - Engineering Roadmap
+# XYZ Pvt Ltd SCMS - Engineering Roadmap
 
 > [!NOTE]
-> This roadmap tracks milestones for the **Hexense Labs SCMS Web Portal**. The complete, detailed specification is documented in the authoritative [SSM_ONE_WEB_PORTAL_MASTER_PLAN.md](SSM_ONE_WEB_PORTAL_MASTER_PLAN.md).
+> This roadmap tracks milestones for the **XYZ Pvt Ltd SCMS Web Portal**. The complete, detailed specification is documented in the authoritative [SSM_ONE_WEB_PORTAL_MASTER_PLAN.md](SSM_ONE_WEB_PORTAL_MASTER_PLAN.md).
 
 ---
 
 ## 1. Core Framework & Multi-Department Architecture
-- [x] Make the Six Sense Mobility portal fully functional with browser-local records, master data, and verifiable create-to-detail workflows.
+- [x] Make the XYZ Pvt Ltd portal fully functional with browser-local records, master data, and verifiable create-to-detail workflows.
 - [x] Replace generic record creation with domain-specific forms, linked record selectors, and Administration master-data CRUD.
 - [x] Add department-scoped role management, granular permissions, admin context switching, all-department table controls, and delegated-action audit history.
 - [x] Expand the portal to the **11 SCMS automotive departments** (`SAL`, `EHW`, `ESW`, `MECH`, `PUR`, `QA`, `EMF`, `TST`, `FIN`, `SIT`, `HR/OPS`).

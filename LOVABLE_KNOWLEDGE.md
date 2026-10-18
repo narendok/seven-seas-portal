@@ -1,8 +1,8 @@
-# Hexense Labs — Smart Company Management System (SCMS)
+# XYZ Pvt Ltd — Smart Company Management System (SCMS)
 ## Enterprise Automotive Knowledge Base for Lovable
 
 ### 1. Enterprise Profile & Domain Context
-- **Company**: Hexense Labs Private Limited (HLPL) / Six Sense Mobility.
+- **Company**: XYZ Pvt Ltd (HLPL) / XYZ Pvt Ltd.
 - **Industry**: High-precision automotive electronics and commercial mobility solutions.
 - **Core Product Families**:
   1. `BCU`: Body Control Units (e.g., HLPL-BCU-02, HLPL-BCU-03)
@@ -41,7 +41,7 @@ The system digital backbone integrates 11 functional departments:
 ### 3. Automated Document Numbering Formula
 All documents generated across the enterprise strictly follow the standardized formula:
 $$\text{Document ID} = \mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$$
-- **Prefix**: `HLPL` (Hexense Labs Private Limited)
+- **Prefix**: `HLPL` (XYZ Pvt Ltd)
 - **Project ID**: `BCU`, `SLCT`, `XLINK`, `EFAN`, `PST`
 - **Department**: `SAL`, `EHW`, `ESW`, `SW`, `MECH`, `PUR`, `QA`, `EMF`, `FIN`, `SIT`, `HR`, `OPS`
 - **Doc Type**: `SOR`, `PRS`, `BLK`, `SCH`, `PCB`, `GER`, `BOM`, `DFMEA`, `PFMEA`, `PFD`, `CP`, `DVP`, `ECN`, `QUO`, `PPAP`

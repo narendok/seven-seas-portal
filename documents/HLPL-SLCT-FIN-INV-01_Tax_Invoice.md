@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Accounts & Finance (FIN)     |
+| XYZ Pvt Ltd                              Department: Accounts & Finance (FIN)     |
 | DOCUMENT CONTROL HEADER                                   Statutory: GST / e-Way Bill Standard     |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Commercial Tax Invoice & Dispatch Bill                                            |
@@ -12,10 +12,10 @@
 ## 1. Company & Consignee Details
 
 ### Supplier (Biller):
-**Hexense Labs Private Limited**  
+**XYZ Pvt Ltd**  
 Plot 42, Electronic City, Phase II, Noida, Uttar Pradesh – 201301  
 GSTIN: `09AABCH1234F1Z8` | PAN: `AABCH1234F`  
-Email: billing@hexenselabs.com | State Code: 09 (Uttar Pradesh)
+Email: billing@example.com | State Code: 09 (Uttar Pradesh)
 
 ### Buyer / Consignee:
 **Tata Motors Limited (EV Commercial Fleet Division)**  
@@ -50,7 +50,7 @@ GRN Ref: `GRN-PMP-2026-44102`
 
 ## 4. Banking & Remittance Instructions
 - **Bank Name**: HDFC Bank Limited
-- **Account Name**: Hexense Labs Private Limited
+- **Account Name**: XYZ Pvt Ltd
 - **Account Number**: `50200084729104`
 - **IFSC Code**: `HDFC0000128`
 - **Branch**: Sector 18, Noida, UP

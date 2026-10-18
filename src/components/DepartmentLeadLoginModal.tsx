@@ -33,8 +33,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "PUR",
     departmentName: "Purchasing & Supply Chain Management",
     leadName: "Morgan Reed",
-    email: "morgan.reed@hexenselabs.com",
-    password: "Hexense@PUR2026",
+    email: "morgan.reed@example.com",
+    password: "Demo@PUR2026",
     roleTitle: "Purchasing & SCM Lead",
     badgeTone: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
   },
@@ -43,8 +43,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "SAL",
     departmentName: "Sales & Business Development",
     leadName: "Priya Sharma",
-    email: "priya.sharma@hexenselabs.com",
-    password: "Hexense@SAL2026",
+    email: "priya.sharma@example.com",
+    password: "Demo@SAL2026",
     roleTitle: "Sales & BD Lead",
     badgeTone: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
   },
@@ -53,8 +53,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "FIN",
     departmentName: "Accounts & Finance",
     leadName: "Priya Voss",
-    email: "priya.voss@hexenselabs.com",
-    password: "Hexense@FIN2026",
+    email: "priya.voss@example.com",
+    password: "Demo@FIN2026",
     roleTitle: "Finance & Accounts Lead",
     badgeTone: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
   },
@@ -63,8 +63,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "EHW",
     departmentName: "Embedded Hardware Engineering",
     leadName: "Avery Vale",
-    email: "avery.vale@hexenselabs.com",
-    password: "Hexense@EHW2026",
+    email: "avery.vale@example.com",
+    password: "Demo@EHW2026",
     roleTitle: "Hardware Engineering Lead",
     badgeTone: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30",
   },
@@ -73,8 +73,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "QA",
     departmentName: "Quality Assurance & APQP",
     leadName: "Jordan Blake",
-    email: "jordan.blake@hexenselabs.com",
-    password: "Hexense@QA2026",
+    email: "jordan.blake@example.com",
+    password: "Demo@QA2026",
     roleTitle: "QA & APQP Lead",
     badgeTone: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30",
   },
@@ -83,8 +83,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "ESW",
     departmentName: "Firmware & Software",
     leadName: "Devon Lane",
-    email: "devon.lane@hexenselabs.com",
-    password: "Hexense@ESW2026",
+    email: "devon.lane@example.com",
+    password: "Demo@ESW2026",
     roleTitle: "Firmware & SW Lead",
     badgeTone: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
   },
@@ -93,8 +93,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "MECH",
     departmentName: "Mechanical Engineering",
     leadName: "Samira Holt",
-    email: "samira.holt@hexenselabs.com",
-    password: "Hexense@MECH2026",
+    email: "samira.holt@example.com",
+    password: "Demo@MECH2026",
     roleTitle: "Mechanical Engineering Lead",
     badgeTone: "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30",
   },
@@ -103,8 +103,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "EMF",
     departmentName: "Electronics & Mechanical Manufacturing",
     leadName: "Casey Rowan",
-    email: "casey.rowan@hexenselabs.com",
-    password: "Hexense@EMF2026",
+    email: "casey.rowan@example.com",
+    password: "Demo@EMF2026",
     roleTitle: "Manufacturing Lead",
     badgeTone: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
   },
@@ -113,8 +113,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "TST",
     departmentName: "Production & Automated EOL Testing",
     leadName: "Mina Cross",
-    email: "mina.cross@hexenselabs.com",
-    password: "Hexense@TST2026",
+    email: "mina.cross@example.com",
+    password: "Demo@TST2026",
     roleTitle: "Testing & EOL Lead",
     badgeTone: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30",
   },
@@ -123,8 +123,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "ADMIN",
     departmentName: "Executive Administration & MD",
     leadName: "Executive Admin",
-    email: "admin@hexenselabs.com",
-    password: "Admin@Hexense2026",
+    email: "admin@example.com",
+    password: "Admin@Demo2026",
     roleTitle: "Managing Director / Admin",
     badgeTone: "bg-primary/15 text-primary border-primary/30",
   },
@@ -363,7 +363,7 @@ export function DepartmentLeadLoginModal({
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="e.g. morgan.reed@hexenselabs.com"
+                      placeholder="e.g. morgan.reed@example.com"
                       className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
                     />
                   </div>
@@ -375,7 +375,7 @@ export function DepartmentLeadLoginModal({
                       Access Password
                     </label>
                     <span className="text-[10px] text-muted-foreground font-mono">
-                      Standard format: Hexense@[DEPT]2026
+                      Standard format: Demo@[DEPT]2026
                     </span>
                   </div>
                   <div className="relative">

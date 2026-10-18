@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================================================
-echo     HEXENSE LABS SCMS - LAUNCH SEPARATE CHROME PROFILES FOR LEADS
+echo     XYZ Pvt Ltd SCMS - LAUNCH SEPARATE CHROME PROFILES FOR LEADS
 echo ===============================================================================
 echo.
 echo Launching completely isolated Chrome profiles with dedicated user data directories...

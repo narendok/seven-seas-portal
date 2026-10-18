@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Sales & Commercial           |
+| XYZ Pvt Ltd                              Department: Sales & Commercial           |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 Cl 8.2 / AIS-140    |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Customer Statement of Requirements (SOR) - Inbound Intake                         |

@@ -48,7 +48,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Embedded Hardware Engineering",
     designation: "Lead Hardware Architect",
     reportingManager: "Executive Admin / MD",
-    workEmail: "avery.vale@hexenselabs.com",
+    workEmail: "avery.vale@example.com",
     deskExtension: "Ext. 201 (Hardware Lab)",
     facilityLocation: "Noida Tech Center · Building 4, Floor 2",
     primarySkills: ["STM32F4", "ISO 7637-2", "ECAD Altium", "AEC-Q100"],
@@ -61,7 +61,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Embedded Hardware Engineering",
     designation: "Senior RF & Power Electronics Engineer",
     reportingManager: "Avery Vale",
-    workEmail: "elena.rostova@hexenselabs.com",
+    workEmail: "elena.rostova@example.com",
     deskExtension: "Ext. 204 (RF Shielding Room)",
     facilityLocation: "Noida Tech Center · Building 4, Floor 2",
     primarySkills: ["4G LTE RF", "GNSS Antennas", "SMPS Layout", "EMC Mitigation"],
@@ -74,7 +74,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Firmware & Software Engineering",
     designation: "Firmware Engineering Lead",
     reportingManager: "Executive Admin / MD",
-    workEmail: "devon.lane@hexenselabs.com",
+    workEmail: "devon.lane@example.com",
     deskExtension: "Ext. 210 (Software Wing)",
     facilityLocation: "Noida Tech Center · Building 4, Floor 2",
     primarySkills: ["CAN J1939", "FreeRTOS", "OTA Bootloader", "C/C++ Bare-Metal"],
@@ -87,7 +87,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Sales & Business Development",
     designation: "VP · Sales & Automotive OEM Accounts",
     reportingManager: "Executive Admin / MD",
-    workEmail: "priya.sharma@hexenselabs.com",
+    workEmail: "priya.sharma@example.com",
     deskExtension: "Ext. 101 (Executive Suite)",
     facilityLocation: "Noida Tech Center · Building 4, Floor 3",
     primarySkills: ["OEM Account Mgmt", "Tata Motors / Ashok Leyland", "Commercial Quotation"],
@@ -100,7 +100,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Mechanical Engineering",
     designation: "Lead Mechanical & Enclosure Design Engineer",
     reportingManager: "Executive Admin / MD",
-    workEmail: "samira.holt@hexenselabs.com",
+    workEmail: "samira.holt@example.com",
     deskExtension: "Ext. 220 (CAD & Prototyping)",
     facilityLocation: "Noida Tech Center · Building 4, Floor 1",
     primarySkills: ["IP67 Ingress", "Flame Retardant PC/ABS", "Ultrasonic Welding", "Thermal FEA"],
@@ -113,7 +113,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Purchasing & Supply Chain Management",
     designation: "Head of Global Sourcing & Supplier Quality",
     reportingManager: "Executive Admin / MD",
-    workEmail: "morgan.reed@hexenselabs.com",
+    workEmail: "morgan.reed@example.com",
     deskExtension: "Ext. 150 (SCM Cell)",
     facilityLocation: "Greater Noida SMT Plant 2 · Admin Block",
     primarySkills: ["Tier-1 ASL", "PPAP Level 3", "BOM Costing", "Quectel / ST Direct"],
@@ -126,7 +126,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Quality Assurance & APQP",
     designation: "Quality Assurance Lead & IATF MR",
     reportingManager: "Executive Admin / MD",
-    workEmail: "jordan.blake@hexenselabs.com",
+    workEmail: "jordan.blake@example.com",
     deskExtension: "Ext. 301 (QMS Lab)",
     facilityLocation: "Noida Tech Center · Building 4, Floor 1",
     primarySkills: ["IATF 16949:2016", "DVP&R Plan", "AIAG-VDA DFMEA", "AIS-140 TAC"],
@@ -139,7 +139,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Manufacturing & SMT Operations",
     designation: "Plant Manager & SMT Operations Lead",
     reportingManager: "Executive Admin / MD",
-    workEmail: "casey.rowan@hexenselabs.com",
+    workEmail: "casey.rowan@example.com",
     deskExtension: "Ext. 401 (SMT Plant Floor)",
     facilityLocation: "Greater Noida SMT Plant 2 · Production Floor",
     primarySkills: ["10-Zone Reflow", "3D SPI & AOI", "IPC-A-610 Class 3", "Control Plans"],
@@ -152,7 +152,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Production & Automated EOL Testing",
     designation: "Automated Test Jigs & EOL Lead",
     reportingManager: "Casey Rowan",
-    workEmail: "mina.cross@hexenselabs.com",
+    workEmail: "mina.cross@example.com",
     deskExtension: "Ext. 415 (Test Engineering)",
     facilityLocation: "Greater Noida SMT Plant 2 · Testing Bay",
     primarySkills: ["Automated Jigs", "CAN Loopback", "Cellular RF Verification", "FPY 99%+"],
@@ -165,7 +165,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Accounts & Finance",
     designation: "Finance Controller & Commercial Billing Lead",
     reportingManager: "Executive Admin / MD",
-    workEmail: "priya.voss@hexenselabs.com",
+    workEmail: "priya.voss@example.com",
     deskExtension: "Ext. 108 (Finance Office)",
     facilityLocation: "Noida Tech Center · Building 4, Floor 3",
     primarySkills: ["Automotive Tax Invoice", "GST & HSN", "Cost Center P&L", "NRE Billing"],
@@ -178,7 +178,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "Service & IT Infrastructure",
     designation: "IT & Information Security Lead",
     reportingManager: "Executive Admin / MD",
-    workEmail: "kai.morgan@hexenselabs.com",
+    workEmail: "kai.morgan@example.com",
     deskExtension: "Ext. 119 (Server Ops)",
     facilityLocation: "Noida Tech Center · Building 4, Server Room B",
     primarySkills: ["ISO 27001 ISMS", "Encrypted Backups", "OTA Infrastructure", "Zero Trust"],
@@ -191,7 +191,7 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
     departmentName: "HR & Operations",
     designation: "Head of People & Operational Excellence",
     reportingManager: "Executive Admin / MD",
-    workEmail: "taylor.quinn@hexenselabs.com",
+    workEmail: "taylor.quinn@example.com",
     deskExtension: "Ext. 102 (HR Wing)",
     facilityLocation: "Noida Tech Center · Building 4, Floor 3",
     primarySkills: ["HLPL/F/HR/03 Matrix", "Six Sigma DMAIC", "IPC-A-610 Training", "Talent Ops"],
@@ -390,7 +390,7 @@ export function CompanyDirectoryModal({
         {/* Footer info */}
         <div className="flex items-center justify-between border-t border-border bg-muted/10 px-5 py-3 text-xs text-muted-foreground">
           <span>{filtered.length} employees displayed</span>
-          <span>Hexense Labs Private Limited · Six Sense Mobility</span>
+          <span>XYZ Pvt Ltd</span>
         </div>
       </div>
     </div>
@@ -776,7 +776,7 @@ export const defaultLegalDocuments: LegalDocument[] = [
     reference: "HLPL-CORP-MSA-01",
     title: "Master Automotive Engineering Services & Supply Agreement",
     category: "Master Service Agreement",
-    party: "Hexense Labs Standard Corporate Terms",
+    party: "XYZ Pvt Ltd Standard Corporate Terms",
     effectiveDate: "2026-01-01",
     status: "Approved & Executed",
     scope: "Standard enterprise terms for automotive hardware engineering, APQP milestone signoffs, warranties, and liability.",
@@ -787,7 +787,7 @@ export const defaultLegalDocuments: LegalDocument[] = [
     reference: "HLPL-IP-ESC-01",
     title: "Firmware Source Code Escrow & Intellectual Property Protocol",
     category: "IP Escrow",
-    party: "Escrow Associates India & Hexense Labs",
+    party: "Escrow Associates India & XYZ Pvt Ltd",
     effectiveDate: "2026-03-15",
     status: "Approved & Executed",
     scope: "Tripartite source code escrow protection for AIS-140 telematics cryptographic firmware and bootloader binaries.",
@@ -944,10 +944,10 @@ export function OperationsLegalAndLetterheadModal({
                   </div>
                   <div>
                     <h1 className="text-base font-bold tracking-tight text-slate-900">
-                      HEXENSE LABS PRIVATE LIMITED
+                      XYZ Pvt Ltd
                     </h1>
                     <p className="font-mono text-[10px] font-semibold text-slate-600">
-                      SIX SENSE MOBILITY · AUTOMOTIVE & TELEMATICS DIVISION
+                      XYZ Pvt Ltd · AUTOMOTIVE & TELEMATICS DIVISION
                     </p>
                     <p className="mt-1 text-[9px] text-slate-500">
                       CIN: U72900UP2021PTC148821 · GSTIN: 09AAACH8214M1Z2
@@ -1004,7 +1004,7 @@ export function OperationsLegalAndLetterheadModal({
               <div className="mt-10 flex justify-between items-end border-t border-slate-200 pt-6 text-xs text-slate-800">
                 <div>
                   <p className="font-bold">Authorized Signatory</p>
-                  <p className="mt-6 font-semibold">Hexense Labs Private Limited</p>
+                  <p className="mt-6 font-semibold">XYZ Pvt Ltd</p>
                   <p className="text-[10px] text-slate-500">Executive Operations & Legal Division</p>
                 </div>
 
@@ -1022,7 +1022,7 @@ export function OperationsLegalAndLetterheadModal({
 
               {/* Letterhead Footer */}
               <div className="mt-12 border-t border-slate-300 pt-3 text-center text-[9px] text-slate-500">
-                This document is issued on official Hexense Labs letterhead under ISO 9001:2015 and IATF 16949:2016 record controls.
+                This document is issued on official XYZ Pvt Ltd letterhead under ISO 9001:2015 and IATF 16949:2016 record controls.
                 Confidential · For intended recipient only.
               </div>
             </div>

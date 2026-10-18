@@ -1,4 +1,4 @@
-"""Browser regression coverage for the Six Sense Mobility demo workspace.
+"""Browser regression coverage for the XYZ Pvt Ltd demo workspace.
 
 Run while the local preview is available:
   python3 tests/demo-regression.py

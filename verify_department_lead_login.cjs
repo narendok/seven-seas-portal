@@ -34,12 +34,12 @@ async function run() {
   console.log(`Saved screenshot: ${modalOpenPath}`);
 
   // 3. Enter Purchasing Lead credentials
-  console.log("Filling Purchasing Lead credentials (morgan.reed@hexenselabs.com)...");
-  const emailInput = await page.waitForSelector('input[placeholder="e.g. morgan.reed@hexenselabs.com"]');
-  await emailInput.fill("morgan.reed@hexenselabs.com");
+  console.log("Filling Purchasing Lead credentials (morgan.reed@example.com)...");
+  const emailInput = await page.waitForSelector('input[placeholder="e.g. morgan.reed@example.com"]');
+  await emailInput.fill("morgan.reed@example.com");
 
   const passInput = await page.waitForSelector('input[placeholder="Enter password"]');
-  await passInput.fill("Hexense@PUR2026");
+  await passInput.fill("Demo@PUR2026");
 
   // Toggle password visibility eye icon
   const eyeBtn = await page.$('form button[type="button"]');

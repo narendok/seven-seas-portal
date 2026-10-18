@@ -910,7 +910,7 @@ const setupSteps = [
   "Notifications, escalations & review routines",
   "User acceptance, training & go-live",
 ];
-const storeKey = "six-sense-portal-v4";
+const storeKey = "XYZ Pvt Ltd-portal-v4";
 const blankSettings = (): DepartmentSettings => ({
   activityTypes: [],
   statuses: ["Draft", "Open", "In review", "Approved", "Released"],
@@ -928,7 +928,7 @@ const blankSettings = (): DepartmentSettings => ({
 const emptyPortal = (): PortalState => ({
   demoLoaded: false,
   setup: {
-    company: "Six Sense Mobility",
+    company: "XYZ Pvt Ltd",
     location: "Noida",
     workingDays: "Monday – Saturday",
     timezone: "Asia/Kolkata",
@@ -952,7 +952,7 @@ const emptyPortal = (): PortalState => ({
     products: ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03", "HLPL-BCU-02", "HLPL-EFAN-01", "HLPL-PST-01"],
     customers: defaultCustomers.map((c) => c.name),
     locations: [
-      "Hexense Labs — Noida Tech Center",
+      "XYZ Pvt Ltd — Noida Tech Center",
       "Greater Noida SMT Plant 2",
       "Pune Engineering Office",
       "Noida",
@@ -979,13 +979,13 @@ const emptyPortal = (): PortalState => ({
 
 function defaultTemplateSettings(): TemplateSettings {
   return {
-    companyName: "Hexense Labs Private Limited / Six Sense Mobility",
+    companyName: "XYZ Pvt Ltd / XYZ Pvt Ltd",
     techCenter: "B-12, Sector 63, Noida Tech Center, UP - 201301",
     plantLocation: "Plot 45, Ecotech III, Greater Noida SMT Plant 2, UP - 201306",
     accreditationMarks: "IATF 16949:2016 · ISO 9001:2015 · AIS-140 · CE / RoHS",
     prefix: "HLPL",
     logoBadge: "SS",
-    confidentialityNotice: "CONFIDENTIAL & PROPRIETARY — HEXENSE LABS PVT LTD. All rights reserved. Reproduction or distribution without written permission is strictly prohibited.",
+    confidentialityNotice: "CONFIDENTIAL & PROPRIETARY — XYZ Pvt Ltd All rights reserved. Reproduction or distribution without written permission is strictly prohibited.",
     complianceFooter: "IATF 16949:2016 & ISO 9001:2015 Certified Automotive Tier-1 Electronic Systems Facility | Doc Ref: Standard Format 4.2",
   };
 }
@@ -1900,8 +1900,8 @@ const readPortal = (): PortalState => {
   try {
     const raw =
       window.localStorage.getItem(storeKey) ??
-      window.localStorage.getItem("six-sense-portal-v3") ??
-      window.localStorage.getItem("six-sense-portal-v2");
+      window.localStorage.getItem("XYZ Pvt Ltd-portal-v3") ??
+      window.localStorage.getItem("XYZ Pvt Ltd-portal-v2");
     if (!raw) return base;
     const value = JSON.parse(raw) as Partial<PortalState>;
     const demoDocument = demoPortal().documents.find(
@@ -1999,12 +1999,12 @@ const readPortal = (): PortalState => {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SSM New — Six Sense Mobility" },
-      { name: "description", content: "Operational workspace for Six Sense Mobility in Noida." },
-      { property: "og:title", content: "SSM New — Six Sense Mobility" },
+      { title: "SSM New — XYZ Pvt Ltd" },
+      { name: "description", content: "Operational workspace for XYZ Pvt Ltd in Noida." },
+      { property: "og:title", content: "SSM New — XYZ Pvt Ltd" },
       {
         property: "og:description",
-        content: "Operational workspace and setup hub for Six Sense Mobility.",
+        content: "Operational workspace and setup hub for XYZ Pvt Ltd.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -2095,11 +2095,11 @@ function Portal() {
   >("company");
   useEffect(() => setPortal(readPortal()), []);
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("hexense-scms-theme");
+    const savedTheme = window.localStorage.getItem("XYZ Pvt Ltd-scms-theme");
     setDarkMode(savedTheme !== "light");
   }, []);
   useEffect(() => {
-    window.localStorage.setItem("hexense-scms-theme", darkMode ? "dark" : "light");
+    window.localStorage.setItem("XYZ Pvt Ltd-scms-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -4102,7 +4102,7 @@ function Ai4tLifecycleHub({
         {persona.kind === "client" ? (
           <div className="flex items-center gap-2 rounded-lg border border-steel/30 bg-muted/40 px-3.5 py-2 text-xs font-semibold text-muted-foreground">
             <Lock className="size-3.5 text-steel" />
-            Client Audit View · Lifecycle Progression Managed by Hexense Engineering
+            Client Audit View · Lifecycle Progression Managed by XYZ Pvt Ltd Engineering
           </div>
         ) : persona.kind === "admin" ? (
           <>
@@ -4624,7 +4624,7 @@ function ProjectDetail({
   const clientShareToken = `cl_${activeProjectKey.toLowerCase().replace(/[^a-z0-9]/g, "")}_auth8f9a2b`;
   const shareUrl = typeof window !== "undefined"
     ? `${window.location.origin}/client-preview/${activeProjectKey}?token=${clientShareToken}&view=client`
-    : `https://portal.hexense.com/shared/project/${activeProjectKey}?token=${clientShareToken}&view=client`;
+    : `https://portal.XYZ Pvt Ltd.com/shared/project/${activeProjectKey}?token=${clientShareToken}&view=client`;
 
   const copyShareLink = async () => {
     try {
@@ -5363,7 +5363,7 @@ function ProjectDetail({
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-foreground">
-                      HEXENSE LABS · OEM CUSTOMER PORTAL
+                      XYZ Pvt Ltd · OEM CUSTOMER PORTAL
                     </h3>
                     <p className="text-xs text-muted-foreground">
                       Program: {activeProjectKey} · {profile.name}
@@ -6899,7 +6899,7 @@ function RecordForm({
   const availableTypes = Array.from(new Set(["Task", ...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
   const [type, setType] = useState(initialType ?? spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>(() => ({
-    location: portal.masters.locations?.[0] || "Hexense Labs — Noida Tech Center",
+    location: portal.masters.locations?.[0] || "XYZ Pvt Ltd — Noida Tech Center",
     projectId: "HLPL-AI4T-01",
     hwStage: "HW_01",
     gate: "G0",
@@ -6915,7 +6915,7 @@ function RecordForm({
     if (initialType) setType(initialType);
     if (initialValues) {
       setValues((prev) => ({
-        location: portal.masters.locations?.[0] || "Hexense Labs — Noida Tech Center",
+        location: portal.masters.locations?.[0] || "XYZ Pvt Ltd — Noida Tech Center",
         projectId: "HLPL-AI4T-01",
         hwStage: "HW_01",
         gate: "G0",
@@ -9988,7 +9988,7 @@ function PrintableTemplateView({ document, settings, onClose, onOpenSettings }: 
       window.setTimeout(() => frame.remove(), 1000);
     }, 300);
   };
-  return <Modal title="Full Document Viewer & Print" onClose={onClose} wide><div className="no-print mb-4 flex flex-wrap justify-end gap-2"><Action label="Copy Full Markdown" onClick={copyText} /><Action label="Export Text" onClick={exportText} /><Action label="Customize Header & Footer" onClick={onOpenSettings} /><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div><article id="printable-document" className="print-document printable-document-content mx-auto max-w-[794px] border border-border bg-card p-5 text-foreground shadow-lg md:p-8"><header className="grid gap-px overflow-hidden border-2 border-foreground/50 bg-border sm:grid-cols-[1.15fr_1.7fr_1.15fr]"><div className="bg-card p-3"><div className="flex items-center gap-2"><span className="grid size-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">{settings.logoBadge}</span><div><p className="text-xs font-bold">{settings.companyName}</p><p className="text-[10px] text-muted-foreground">SIX SENSE MOBILITY</p></div></div><p className="mt-3 text-[9px] leading-4 text-muted-foreground">{settings.accreditationMarks}</p></div><div className="bg-card p-3 text-center"><p className="text-sm font-bold">{document.title}</p><p className="mt-1 text-[10px] font-medium">{document.stage} · {document.project} · {profile.name}</p></div><div className="bg-card p-3 text-[10px]"><p><strong>Document ID:</strong> {document.documentId}</p><p className="mt-1"><strong>Revision:</strong> {document.revision}</p><p className="mt-1"><strong>Effective date:</strong> {date}</p><p className="mt-1"><strong>Classification:</strong> Internal controlled DEMO draft</p><p className="mt-2"><Status status={document.status} /></p></div></header><section className="mt-5 border border-border"><div className="border-b border-border bg-panel px-3 py-2"><p className="text-xs font-bold">Organization & facility details</p></div><div className="grid gap-px bg-border sm:grid-cols-2"><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Tech Center</p><p className="mt-1 text-xs">{settings.techCenter}</p></div><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Manufacturing plant</p><p className="mt-1 text-xs">{settings.plantLocation}</p></div></div></section><DocumentBody document={document} profile={profile} stageContent={stageContent} signatories={signatories} date={date} /><footer className="mt-8 border-t-2 border-foreground/50 pt-3 text-center text-[9px] leading-4 text-muted-foreground"><p>{settings.confidentialityNotice}</p><p className="mt-2">{settings.complianceFooter}</p><p className="mt-2">Classification: Internal controlled DEMO draft · Printed {new Date().toLocaleString("en-IN")} · Page 1 of 1</p><div className="no-print mt-4"><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div></footer></article></Modal>;
+  return <Modal title="Full Document Viewer & Print" onClose={onClose} wide><div className="no-print mb-4 flex flex-wrap justify-end gap-2"><Action label="Copy Full Markdown" onClick={copyText} /><Action label="Export Text" onClick={exportText} /><Action label="Customize Header & Footer" onClick={onOpenSettings} /><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div><article id="printable-document" className="print-document printable-document-content mx-auto max-w-[794px] border border-border bg-card p-5 text-foreground shadow-lg md:p-8"><header className="grid gap-px overflow-hidden border-2 border-foreground/50 bg-border sm:grid-cols-[1.15fr_1.7fr_1.15fr]"><div className="bg-card p-3"><div className="flex items-center gap-2"><span className="grid size-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">{settings.logoBadge}</span><div><p className="text-xs font-bold">{settings.companyName}</p><p className="text-[10px] text-muted-foreground">XYZ Pvt Ltd</p></div></div><p className="mt-3 text-[9px] leading-4 text-muted-foreground">{settings.accreditationMarks}</p></div><div className="bg-card p-3 text-center"><p className="text-sm font-bold">{document.title}</p><p className="mt-1 text-[10px] font-medium">{document.stage} · {document.project} · {profile.name}</p></div><div className="bg-card p-3 text-[10px]"><p><strong>Document ID:</strong> {document.documentId}</p><p className="mt-1"><strong>Revision:</strong> {document.revision}</p><p className="mt-1"><strong>Effective date:</strong> {date}</p><p className="mt-1"><strong>Classification:</strong> Internal controlled DEMO draft</p><p className="mt-2"><Status status={document.status} /></p></div></header><section className="mt-5 border border-border"><div className="border-b border-border bg-panel px-3 py-2"><p className="text-xs font-bold">Organization & facility details</p></div><div className="grid gap-px bg-border sm:grid-cols-2"><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Tech Center</p><p className="mt-1 text-xs">{settings.techCenter}</p></div><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Manufacturing plant</p><p className="mt-1 text-xs">{settings.plantLocation}</p></div></div></section><DocumentBody document={document} profile={profile} stageContent={stageContent} signatories={signatories} date={date} /><footer className="mt-8 border-t-2 border-foreground/50 pt-3 text-center text-[9px] leading-4 text-muted-foreground"><p>{settings.confidentialityNotice}</p><p className="mt-2">{settings.complianceFooter}</p><p className="mt-2">Classification: Internal controlled DEMO draft · Printed {new Date().toLocaleString("en-IN")} · Page 1 of 1</p><div className="no-print mt-4"><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div></footer></article></Modal>;
 }
 
 function DocumentBody({ document, profile, stageContent, signatories, date }: { document: PrintableDocument; profile: ProjectDocumentProfile; stageContent: ReturnType<typeof stageDocumentContent>; signatories: { author: string; reviewer: string; approver: string }; date: string }) {
@@ -10437,7 +10437,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
         SS
       </div>
       {!compact && <div className="min-w-0">
-        <p className="text-sm font-semibold">Six Sense Mobility</p>
+        <p className="text-sm font-semibold">XYZ Pvt Ltd</p>
         <p className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
           Operations portal
         </p>

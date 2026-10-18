@@ -40,7 +40,7 @@ export const defaultDVPTestItems: DVPTestItem[] = [
     name: "Electrical Transient Immunity (Pulse 1, 2a, 3a, 3b)",
     originatingHardwareRequirement: "EHW §3.2: 12V/24V power input must withstand inductive disconnect transients without MCU reboot or lockup.",
     facilityType: "Internal Lab",
-    facilityName: "Hexense Noida R&D Electrical Rig",
+    facilityName: "XYZ Pvt Ltd Noida R&D Electrical Rig",
     sampleQuantity: 5,
     targetCompletionDate: "2026-11-10",
     certificationAuthority: "Internal QA Sign-off",
@@ -70,7 +70,7 @@ export const defaultDVPTestItems: DVPTestItem[] = [
     name: "Reverse Battery & Jump Start Overvoltage (28V DC)",
     originatingHardwareRequirement: "EHW §3.4: P-channel MOSFET reverse protection must sustain continuous -24V and +28V 5-min jump start without damage.",
     facilityType: "Internal Lab",
-    facilityName: "Hexense Noida R&D Bench",
+    facilityName: "XYZ Pvt Ltd Noida R&D Bench",
     sampleQuantity: 5,
     targetCompletionDate: "2026-11-08",
     certificationAuthority: "Internal QA Sign-off",
@@ -100,7 +100,7 @@ export const defaultDVPTestItems: DVPTestItem[] = [
     name: "Electrostatic Discharge (ESD: ±8kV Contact / ±15kV Air)",
     originatingHardwareRequirement: "EHW §4.3: Exposed OBD-II pins and enclosure joints must tolerate direct ±8kV discharge gun hits.",
     facilityType: "Internal Lab",
-    facilityName: "Hexense ESD Testing Bench",
+    facilityName: "XYZ Pvt Ltd ESD Testing Bench",
     sampleQuantity: 5,
     targetCompletionDate: "2026-11-12",
     certificationAuthority: "Internal QA Sign-off",
@@ -115,7 +115,7 @@ export const defaultDVPTestItems: DVPTestItem[] = [
     name: "Thermal Shock (-40°C to +85°C, 100 Cycles)",
     originatingHardwareRequirement: "MECH §2.1 & EHW §5.1: Device must operate reliably across extreme automotive cabin temperature swings.",
     facilityType: "Internal Lab",
-    facilityName: "Hexense Dual-Chamber Thermal Chamber",
+    facilityName: "XYZ Pvt Ltd Dual-Chamber Thermal Chamber",
     sampleQuantity: 8,
     targetCompletionDate: "2026-11-15",
     certificationAuthority: "Internal QA Sign-off",
@@ -160,7 +160,7 @@ export const defaultDVPTestItems: DVPTestItem[] = [
     name: "Emergency Panic Packet & GNSS Fix Accuracy",
     originatingHardwareRequirement: "ESW §2.4: Cold-start GNSS fix within 35 seconds; emergency panic button packets dispatched to state backend server.",
     facilityType: "Internal Lab",
-    facilityName: "Hexense Noida Telematics Field Rig",
+    facilityName: "XYZ Pvt Ltd Noida Telematics Field Rig",
     sampleQuantity: 10,
     targetCompletionDate: "2026-11-14",
     certificationAuthority: "ARAI TAC Witness Release",
@@ -175,7 +175,7 @@ export const defaultDVPTestItems: DVPTestItem[] = [
     name: "High Temperature Operational Life (HTOL / 500 Hours)",
     originatingHardwareRequirement: "EHW §6.2: Continuous 4G telemetry transmission at maximum ambient operating temperature (+85°C).",
     facilityType: "Internal Lab",
-    facilityName: "Hexense Reliability Oven Line 1",
+    facilityName: "XYZ Pvt Ltd Reliability Oven Line 1",
     sampleQuantity: 12,
     targetCompletionDate: "2026-11-28",
     certificationAuthority: "Internal QA Quality Release",
@@ -235,7 +235,7 @@ export function QualityAssuranceDVPReviewTable({
               facilityName:
                 i.facilityType === "Internal Lab"
                   ? "ARAI / ICAT Accredited Lab"
-                  : "Hexense In-House R&D Test Rig",
+                  : "XYZ Pvt Ltd In-House R&D Test Rig",
             }
           : i
       )
@@ -328,7 +328,7 @@ export function QualityAssuranceDVPReviewTable({
           <div className="rounded-lg border border-border/50 bg-secondary/30 p-2.5">
             <span className="font-mono text-[10px] uppercase text-muted-foreground">Internal Lab Tests</span>
             <p className="mt-0.5 text-lg font-bold text-foreground">{internalCount} Tests</p>
-            <span className="text-[10px] text-muted-foreground">Hexense In-House Chambers</span>
+            <span className="text-[10px] text-muted-foreground">XYZ Pvt Ltd In-House Chambers</span>
           </div>
           <div className="rounded-lg border border-border/50 bg-secondary/30 p-2.5">
             <span className="font-mono text-[10px] uppercase text-muted-foreground">Outsourced NABL / TAC</span>

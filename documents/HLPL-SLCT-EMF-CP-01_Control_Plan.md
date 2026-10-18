@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Manufacturing & SMT (EMF)    |
+| XYZ Pvt Ltd                              Department: Manufacturing & SMT (EMF)    |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 / IPC-A-610 Class 3 |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Manufacturing Quality Control Plan (CP)                                           |

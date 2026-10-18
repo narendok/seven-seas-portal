@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------------------+
-| HEXENSE LABS PRIVATE LIMITED                              Department: Human Resources (HR)         |
+| XYZ Pvt Ltd                              Department: Human Resources (HR)         |
 | DOCUMENT CONTROL HEADER                                   Standard: IATF 16949 Cl 7.2 / ISO 9001   |
 +----------------------------------------------------------------------------------------------------+
 | Document Title : Annual Departmental Skill Matrix & Competency Evaluation                          |
