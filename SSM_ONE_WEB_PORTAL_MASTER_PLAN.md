@@ -539,6 +539,12 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
 - [x] **SCMS Portal Features Knowledge Base (§17)**: Comprehensive living reference with step-by-step verified screenshots (`docs/SCMS_PORTAL_FEATURES_KNOWLEDGE_BASE.md`) and mandatory engineering agent update protocols.
 - [x] **Purchasing Command Center & Department-Specific Sidebar Navigation (§4.5, §18)**: Complete 4-module command center (`PurchasingCommandCenter.tsx`) integrating Recordage (stores & IQC), Quotations with volume pricing breaks (1k/10k/50k), Purchase Orders with 50,000 sales target alignment & 1-click GRN receiving, Approved Supplier List (ASL) with explicit warranty terms, validity (IATF 16949 & ISO 9001 expiry dates, VDA 6.3 score), verified documentation dossiers (PPAP L3, NDA, GST, RoHS), expanded sidebar department sub-navigation, and persistent Mouser Search API key configuration.
 - [x] **Role-Aware Sidebar Navigation & Favorites Engine (§19)**: Adaptive sidebar with persistent Favorites at top, accordion work groups with chevron indicators, Admin Overview auto-expansion with rest collapsed, all-expanded default for department leads, compact rail mode with tooltips, and responsive mobile drawer.
+- [x] **Dual-Lifecycle Smart BOM Architecture (§20)**: Explicit separation of exploratory Tentative BOMs (`v0.3-tentative` allowing provisional candidate MPNs and dynamic "What-If" stock simulations) from Governed Released Baselines (`Rev A ECO-2026-004` immutable, locked to PPAP L3). Dynamic shortage calculation, revision diff engine (+added, -removed, cost deltas), ECO promotion gate, and multi-format CSV exports (Indented, Flattened Production with ref des, Shortage Requisition).
+- [x] **Adaptive PO & Invoice Ingestion Engine (§21)**: Arbitrary layout ingestion parsing distributor spreadsheets (Mouser, Digi-Key, Arrow, local fabricator) via multi-alias fuzzy dictionary matcher (120% confidence score) with interactive dropdown override controls.
+- [x] **Governed Pre-Inventory Staging Gate (§22)**: 3-way reconciliation verifying Vendor ASL status, Component Catalog matching (`Exact`, `Substitute`, `Unmatched Candidate`), and PO line variance detection (ordered vs. billed quantity, unit price hikes).
+- [x] **Controlled Receiving & Strict Quality Release Boundary (§22)**: ZERO automatic stock posting. Inward deliveries generate pending Inwarding (GRN) drafts on 100% IQC Quarantine Hold (`quantityAccepted = 0`, `quantityHeld = 100%`, bin `IQC-HOLD-STAGE-01`). Stock is incremented only upon recorded IQC disposition release (`QA-IR-2026-088`).
+- [x] **Complete Asset Lifecycle & Machinery Fleet (§23)**: Bulk CSV asset register ingestion with serial number/tag deduplication, machine-to-component compatibility mappings (`compatiblePartNumbers`), full Asset Register export (.csv), and Calibration & Maintenance Due Schedule export (.csv).
+- [x] **Authentic Department Lead Authentication & Session Confinement (§24)**: IATF 16949 / ISO 27001 Security Gateway modal with real credentials directory for all 11 leads, eye password toggle, isolated session tokens, and strict role confinement (leads cannot switch to admin or other departments; sign-out returns to default gateway).
 
 ---
 
@@ -689,3 +695,81 @@ The Hexense Labs SCMS sidebar navigation adapts intelligently to the signed-in p
   - **Expanded View (`w-64`)**: Full company branding (`SS` monogram badge + Six Sense Mobility / Hexense Labs title), group headers, badges, open task counters, pin stars, and bottom setup wizard status.
   - **Compact Rail View (`w-16`)**: Icon-only navigation with tooltips on hover, active indicator badges, and one-click expand toggle (supporting `[` keyboard shortcut).
   - **Accessible Mobile Drawer**: Complete responsive drawer matching the exact desktop role-aware group structure.
+
+---
+
+## 20. Dual-Lifecycle Smart BOM Architecture (Tentative vs. Released Baseline)
+
+### 20.1 Dual-Lifecycle Separation
+The Smart BOM engine (`DualLifecycleSmartBOMWorkspace.tsx`) enforces strict separation between early engineering experimentation and committed production releases:
+1. **Tentative Engineering BOM (`v0.3-tentative`)**:
+   - Intended for rapid product exploration, prototype design, and preliminary procurement feasibility.
+   - Permits provisional candidate MPNs, unverified components, generic placeholders, and non-stocked alternates.
+   - Enables dynamic "What-If" stock simulations calculating live shortages and cost impacts without claiming physical stock locks.
+   - Iterated freely across Hardware, Firmware, and SCM without triggering formal change controls.
+2. **Governed Released Baseline (`Rev A ECO-2026-004`)**:
+   - Formally locked revision tied to committed customer requirements (`Tata Motors HLPL-AI4T-01`), PPAP Level 3, and AIS-140 TAC type approval.
+   - Strict validation: Every line item must map to an active, approved component in the component catalog with verified AEC-Q100/AEC-Q200 standards.
+   - Immutable once released: Any engineering modification requires an authorized Engineering Change Order (ECO number and rationale).
+   - Authoritative baseline for production kitting, formal Purchase Requisitions, and shop floor SMT execution.
+
+### 20.2 "What-If" Stock Availability Simulation & Revision Diff Engine
+- **Dynamic Simulation**: Engineers enter planned production build quantities (e.g. 1,000 to 50,000 units). The system dynamically evaluates live released stock, calculates line shortages, computes shortage costs, and flags long-lead components.
+- **Revision Diff Engine**: Side-by-side comparison between any two revisions (Tentative vs Released, or Rev A vs Rev B) displaying added lines, removed lines, quantity changes, and net board unit cost delta.
+- **Multi-Format Exports**:
+  - `Indented BOM (.csv)`: Complete hierarchical structure with AEC qualification standards, unit costs, and reference designators.
+  - `Flattened Production BOM (.csv)`: Aggregated quantities and comma-separated reference designators formatted for pick-and-place feeders.
+  - `Shortage Requisition Report (.csv)`: Filtered to shortage lines with lead times, suggested order quantities, and approved substitutes.
+
+---
+
+## 21. Adaptive Purchase Order & Invoice Ingestion ("Any-Style" Ingestion)
+
+### 21.1 Multi-Distributor Layout Ingestion
+The ingestion module (`AdaptiveIngestionAndStagingGate.tsx`) ingests arbitrary supplier spreadsheets and documents (CSV, Excel, invoice scans) from global distributors and local job shops:
+- **Built-in Presets**: Mouser Electronics Packing List, Digi-Key Billed Invoice, Precision Wiring Delivery Challan, and Arrow Electronics Commercial Billing.
+- **Multi-Alias Fuzzy Header Matcher**: Extensively maps 16 standard fields across document identifiers, vendor metadata, component specifications, and commercial pricing.
+- **Interactive Remapping UI**: Computes a live matching confidence score (e.g. 120% High Confidence match) with interactive dropdown override selectors for each field.
+
+---
+
+## 22. Governed Pre-Inventory Staging Gate & Zero Automatic Stock Posting Invariant
+
+### 22.1 3-Way Reconciliation Gate
+No imported file directly mutates active inventory. All imported rows pass through a Governed Review Staging Gate where automated 3-way reconciliation occurs:
+1. **Vendor Reconciliation**: Matches vendor name or GSTIN against the Approved Supplier List (`procurement.vendors`). Flags verified ASL vendors vs unregistered candidates.
+2. **Component Catalog Reconciliation**: Normalizes MPNs (stripping packaging suffixes `-ND`, `-REEL`, `/TR`) to classify parts:
+   - *Exact Catalog Match* (e.g. `STM32G0B1VCT6`)
+   - *Approved Substitute Match*
+   - *Unmatched Candidate Part* (surfacing option to request part onboarding)
+3. **PO Reconciliation**: Matches against active Purchase Order lines to detect quantity variance (over-billing / partial delivery) and unit price deviation.
+
+### 22.2 Strict Invariant: Zero Automatic Stock Posting
+Under no circumstance does an imported invoice, PO acknowledgment, or delivery challan increment available production stock:
+$$\text{Import Review Gate} \xrightarrow{\text{Accept}} \text{GRN Draft Generated} \xrightarrow{\text{100\% IQC Hold}} \text{Bin: IQC-HOLD-STAGE-01} \xrightarrow{\text{IQC Disposition}} \text{Active Stock}$$
+- Generated inward drafts default to `Pending IQC` status with `quantityAccepted = 0` and `quantityHeld = 100% of billed quantity`.
+- Active inventory balance is updated only when the Quality Inspection Lead executes a signed IQC Disposition Release (`QA-IR-2026-088`).
+
+---
+
+## 23. Complete Asset Lifecycle Management & Machine Compatibility Mapping
+
+### 23.1 Asset Taxonomy & Compatibility Linking
+The asset management surface (`LiveInventoryWorkspace.tsx`) governs production machinery, test fixtures, calibration instruments, and facility tooling:
+- **Machine-to-Component Compatibility**: Maps machinery directly to compatible parts via `compatiblePartNumbers` (e.g., Yamaha SMT Mounter linked to MCU and passives; Schleuniger CrimpCenter linked to battery wire harnesses and sealed headers; Chroma EOL Jig linked to main PCB).
+- **Bulk CSV Ingestion**: Imports asset registers with serial number and tag deduplication.
+- **Audit Schedule Exports**:
+  - `Asset Register Export (.csv)`: Complete fleet register with custodians, room/bench locations, operational states, and warranty terms.
+  - `Calibration Due Schedule (.csv)`: Filtered to IMTE instruments and test jigs with calibration or preventive maintenance due within 60 days.
+
+---
+
+## 24. Authentic Department Lead Authentication & Session Confinement
+
+### 24.1 Security Gateway & Real Credentials
+- **Authentication Gateway Modal**: Accessible via the header `[🔑 Lead Auth]` button or persona selector, conforming to IATF 16949 / ISO 27001 §A.9 identity standards.
+- **1-Click Credentials Directory**: Direct credential lookup and fill for all 11 Department Leads, Admin, and Client with eye toggle password visibility.
+- **Strict Department Lead Confinement**:
+  - When authenticated as a Department Lead (e.g. Morgan Reed · Purchasing Lead), the interface locks to that specific department workspace.
+  - The Persona Switcher dropdown is locked/hidden to prevent unauthorized administrative escalation or lateral department switching.
+  - An explicit `[Sign Out of Current Session]` button terminates the session and safely returns the user to the default gateway.

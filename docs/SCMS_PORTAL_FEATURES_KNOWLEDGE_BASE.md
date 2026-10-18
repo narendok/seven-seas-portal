@@ -21,7 +21,13 @@
 7. [Module 7: Executive Command Center, RACI Governance & Document Printing](#module-7-executive-command-center-raci-governance--document-printing)
 8. [Module 8: Dual-Track Persistence & Lovable Supabase Cloud Sync](#module-8-dual-track-persistence--lovable-supabase-cloud-sync)
 9. [Module 9: Purchasing Command Center & Department-Specific Sidebar Navigation](#module-9-purchasing-command-center--department-specific-sidebar-navigation)
-10. [Module 10: Living Update Protocol for Engineering Agents](#module-10-living-update-protocol-for-engineering-agents)
+10. [Module 10: Role-Aware Sidebar Navigation with Favorites & Accordion Work Groups](#module-10-role-aware-sidebar-navigation-with-favorites--accordion-work-groups)
+11. [Module 11: Dual-Lifecycle Smart BOM Architecture & 'What-If' Stock Simulation](#module-11-dual-lifecycle-smart-bom-architecture--what-if-stock-simulation)
+12. [Module 12: Adaptive Purchase Order & Invoice Ingestion Engine](#module-12-adaptive-purchase-order--invoice-ingestion-engine)
+13. [Module 13: Governed Pre-Inventory Staging Gate & Zero Automatic Stock Posting](#module-13-governed-pre-inventory-staging-gate--zero-automatic-stock-posting)
+14. [Module 14: Complete Plant Machinery & Asset Lifecycle Management](#module-14-complete-plant-machinery--asset-lifecycle-management)
+15. [Module 15: Department Lead Authentication & Strict Role Confinement](#module-15-department-lead-authentication--strict-role-confinement)
+16. [Module 16: Living Update Protocol for Engineering Agents](#module-16-living-update-protocol-for-engineering-agents)
 
 ---
 
@@ -310,7 +316,72 @@ Icon-only compact navigation with SS badge, tooltips, and fast collapse/expand t
 
 ---
 
-## Module 11: Living Update Protocol for Engineering Agents
+## Module 11: Dual-Lifecycle Smart BOM Architecture & 'What-If' Stock Simulation
+
+### 11.1 Architecture & Separation
+The Smart BOM workspace ([`DualLifecycleSmartBOMWorkspace.tsx`](file:///c:/Users/Test/Documents/antigravity/SSM1/src/components/DualLifecycleSmartBOMWorkspace.tsx)) explicitly decouples exploratory engineering drafts from governed production releases:
+- **Tentative Engineering Draft (`v0.3-tentative`)**: Permits provisional candidate MPNs, unverified components, generic placeholders, and dynamic "What-If" stock simulations.
+- **Governed Released Baseline (`Rev A ECO-2026-004`)**: Immutable baseline locked to PPAP Level 3 documentation, AIS-140 TAC type approval, and production kitting. Changes require an authorized Engineering Change Order (ECO number and rationale).
+- **Dynamic "What-If" Simulation**: Recalculates real-time shortages across active released stores for variable planned build quantities (e.g. 5,000 units: 5/7 shortage lines, deficit of $59,150.00).
+- **Revision Diff Engine**: Side-by-side comparison across revisions (Base `Rev A` vs Target `v0.3-tentative`: +1 added, -1 removed, -$0.020 net unit cost delta).
+- **Unified CSV Exports**: Indented Hierarchical BOM, Flattened Production BOM with comma-separated reference designators, and Shortage Requisition Report.
+
+### 11.2 Verified Screenshot Evidence
+![Smart BOM Dual-Lifecycle Workspace](images/scms_smart_bom_workspace.png)
+
+---
+
+## Module 12: Adaptive Purchase Order & Invoice Ingestion Engine
+
+### 12.1 Multi-Format Ingestion
+The ingestion engine ([`AdaptiveIngestionAndStagingGate.tsx`](file:///c:/Users/Test/Documents/antigravity/SSM1/src/components/AdaptiveIngestionAndStagingGate.tsx)) handles arbitrary supplier spreadsheets from Digi-Key, Mouser, Arrow, and local fabricators:
+- **Multi-Alias Dictionary Fuzzy Matcher**: Maps 16 standard fields with live matching confidence rating (120% High Confidence match) and dropdown column overrides.
+- **Distributor Presets**: Mouser Electronics Packing List, Digi-Key Billed Invoice, Precision Wiring Delivery Challan, and Arrow Electronics Commercial Billing.
+
+---
+
+## Module 13: Governed Pre-Inventory Staging Gate & Zero Automatic Stock Posting
+
+### 13.1 Pre-Inventory Staging Gate & 3-Way Reconciliation
+All imported rows pass through a pre-inventory review gate prior to creating purchasing drafts or inward records:
+- **Vendor Reconciliation**: Matches against Approved Supplier List (`procurement.vendors`).
+- **Component Catalog Reconciliation**: Normalizes MPNs (stripping packaging suffixes `-ND`, `-REEL`, `/TR`) into `Exact Catalog Match`, `Approved Substitute Match`, or `Unmatched Candidate`.
+- **PO Variance Detection**: Identifies billed vs. ordered quantity deviations and unauthorized unit price hikes.
+
+### 13.2 The Zero-Automatic-Stock-Posting Invariant
+Under no circumstances does an imported invoice or delivery challan increment active inventory balance.
+Generating an inward delivery creates a pending **Inwarding (GRN) Draft** on **100% IQC Quarantine Hold** (`quantityAccepted: 0`, `quantityHeld: 100%`, bin `IQC-HOLD-STAGE-01`).
+Active stock is only incremented when the Quality team executes an signed **IQC Disposition Release** (`QA-IR-2026-088`).
+
+### 13.3 Verified Screenshot Evidence
+#### Staging Table Review
+![Governed Staging Gate Reconciliation Table](images/scms_adaptive_ingestion_staging.png)
+
+#### Zero Automatic Stock Posting & IQC Quarantine Hold
+![Zero Automatic Stock Posting Confirmation](images/scms_ingestion_quarantine_hold.png)
+
+---
+
+## Module 14: Complete Plant Machinery & Asset Lifecycle Management
+
+### 14.1 Asset Fleet & Machine Compatibility Mapping
+The asset management surface ([`LiveInventoryWorkspace.tsx`](file:///c:/Users/Test/Documents/antigravity/SSM1/src/components/LiveInventoryWorkspace.tsx)) tracks production machinery, service test equipment, IMTE calibration instruments, and facility tooling:
+- **Machine-to-Component Compatibility**: Maps machines directly to compatible parts via `compatiblePartNumbers` (Yamaha SMT Mounter linked to MCUs/passives; Schleuniger CrimpCenter linked to battery harnesses; Chroma EOL Jig linked to main PCB).
+- **Bulk CSV Ingestion**: Imports asset registers with serial number and tag deduplication.
+- **Audit Schedule Exports**: 1-click downloads for `Asset Register Export (.csv)` and `Calibration & Maintenance Due Schedule (.csv)` (filtered to instruments due within 60 days).
+
+---
+
+## Module 15: Department Lead Authentication & Strict Role Confinement
+
+### 15.1 Real Authentication Gateway & Confinement
+- **IATF 16949 / ISO 27001 Security Gateway**: Accessible via `[🔑 Lead Auth]` in the header with credentials directory and eye toggle password visibility.
+- **Strict Role Confinement**: When signed in as a Department Lead (e.g. Morgan Reed · Purchasing Lead), the user is confined strictly to their department workspace. The Persona Switcher dropdown is locked/hidden, preventing lateral access or administrative escalation.
+- **Session Termination**: `[Sign Out of Current Session]` terminates the session and safely returns the user to the default gateway.
+
+---
+
+## Module 16: Living Update Protocol for Engineering Agents
 
 When adding, modifying, or refactoring portal features:
 1. **Pre-Check**: Read this Knowledge Base and [`SSM_ONE_WEB_PORTAL_MASTER_PLAN.md`](file:///c:/Users/Test/Documents/antigravity/SSM1/SSM_ONE_WEB_PORTAL_MASTER_PLAN.md) to understand existing data models and UI patterns.
