@@ -84,7 +84,7 @@ import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable"
 import { PurchasingCommandCenter, type PurchasingSubView } from "@/components/PurchasingCommandCenter";
 import { CustomerManagementFullPageView } from "@/components/CustomerManagementFullPageView";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
-import { ApprovalsFullPageView } from "@/components/ApprovalsFullPageView";
+import { ApprovalsFullPageView, type ApprovalRecord } from "@/components/ApprovalsFullPageView";
 import { DepartmentLeadCoordinationCenter } from "@/components/DepartmentLeadCoordinationCenter";
 import {
   LiveInventoryWorkspace,
@@ -1957,7 +1957,7 @@ const readPortal = (): PortalState => {
           }))
         : [],
       roles: Array.isArray(value.roles) ? value.roles : [],
-      approvals: Array.isArray(value.approvals) ? value.approvals : [],
+      approvals: Array.isArray(value.approvals) && value.approvals.length > 0 ? value.approvals : base.approvals,
       records:
         value.demoLoaded === true
           ? (() => {
@@ -1986,6 +1986,8 @@ const readPortal = (): PortalState => {
       const restored = demoPortal();
       return {
         ...restored,
+        approvals: hydrated.approvals.length ? hydrated.approvals : restored.approvals,
+        alerts: hydrated.alerts.length ? hydrated.alerts : restored.alerts,
         audit: [...hydrated.audit, ...restored.audit].slice(0, 100),
         notifications: [...hydrated.notifications, ...restored.notifications].slice(0, 100),
       };
@@ -2397,24 +2399,52 @@ function Portal() {
         return;
       }
     }
+
+    const reqDeptCode = (appr?.department || "ehw").toLowerCase();
+    const targetDeptId = portal.departments.find(
+      (d) => d.code.toLowerCase() === reqDeptCode || d.id === reqDeptCode
+    )?.id || "ehw";
+
+    const syncAlert: DemoAlert = {
+      id: `ALT-APPR-${Date.now().toString().slice(-6)}`,
+      severity: "Warning",
+      title: `✅ Approval Granted: ${appr?.title ?? id}`,
+      detail: `${persona.label} signed and endorsed this gate. Note: "${notes ?? "Approved under IATF 16949 / ISO 9001 governance."}". Traceable ref: ${appr?.recordId ?? id}.`,
+      departmentId: targetDeptId,
+      resolved: false,
+    };
+
     update((state) => ({
       ...state,
-      approvals: state.approvals.map((appr) =>
-        appr.id === id
+      approvals: state.approvals.map((a) =>
+        a.id === id
           ? {
-              ...appr,
+              ...a,
               outcome: "Approved" as const,
               updatedAt: now(),
               signedBy: persona.label,
               signedAt: now(),
               comments: notes,
             }
-          : appr
+          : a
+      ),
+      alerts: [syncAlert, ...state.alerts],
+      notifications: [`[APPROVED] ${appr?.title ?? id} signed by ${persona.label}`, ...state.notifications].slice(0, 50),
+      records: state.records.map((r) =>
+        r.reference === appr?.recordId || r.id === appr?.recordId
+          ? {
+              ...r,
+              status: "Approved" as const,
+              updatedAt: now(),
+              notes: `${r.notes ? r.notes + " · " : ""}Gate approved by ${persona.label} (${notes || "IATF 16949 cleared"})`,
+            }
+          : r
       ),
     }));
     log("Human Approval Signed", `Approved gate ${id} by ${persona.label}. Note: ${notes ?? "Signed under IATF 16949 / ISO 9001 governance."}`);
-    announce(`Approval ${id} signed and endorsed.`);
+    announce(`Approval ${id} signed and endorsed. Requester notified.`);
   };
+
   const handleRejectGate = (id: string, reason: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot reject gates.");
@@ -2430,22 +2460,49 @@ function Portal() {
         return;
       }
     }
+
+    const reqDeptCode = (appr?.department || "ehw").toLowerCase();
+    const targetDeptId = portal.departments.find(
+      (d) => d.code.toLowerCase() === reqDeptCode || d.id === reqDeptCode
+    )?.id || "ehw";
+
+    const syncAlert: DemoAlert = {
+      id: `ALT-REJ-${Date.now().toString().slice(-6)}`,
+      severity: "Critical",
+      title: `❌ Approval Rejected: ${appr?.title ?? id}`,
+      detail: `${persona.label} rejected this gate. Rationale: "${reason}". Corrective action review required for ${appr?.recordId ?? id}.`,
+      departmentId: targetDeptId,
+      resolved: false,
+    };
+
     update((state) => ({
       ...state,
-      approvals: state.approvals.map((appr) =>
-        appr.id === id
+      approvals: state.approvals.map((a) =>
+        a.id === id
           ? {
-              ...appr,
+              ...a,
               outcome: "Rejected" as const,
               updatedAt: now(),
               comments: reason,
             }
-          : appr
+          : a
+      ),
+      alerts: [syncAlert, ...state.alerts],
+      notifications: [`[REJECTED] ${appr?.title ?? id} rejected by ${persona.label}`, ...state.notifications].slice(0, 50),
+      records: state.records.map((r) =>
+        r.reference === appr?.recordId || r.id === appr?.recordId
+          ? {
+              ...r,
+              updatedAt: now(),
+              notes: `${r.notes ? r.notes + " · " : ""}Gate rejected by ${persona.label}: ${reason}`,
+            }
+          : r
       ),
     }));
     log("Approval Rejected", `Rejected gate ${id} by ${persona.label}. Reason: ${reason}`);
-    announce(`Approval ${id} rejected.`);
+    announce(`Approval ${id} rejected. Requester notified.`);
   };
+
   const handleReturnGate = (id: string, reworkNotes: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot return gates.");
@@ -2461,21 +2518,83 @@ function Portal() {
         return;
       }
     }
+
+    const reqDeptCode = (appr?.department || "ehw").toLowerCase();
+    const targetDeptId = portal.departments.find(
+      (d) => d.code.toLowerCase() === reqDeptCode || d.id === reqDeptCode
+    )?.id || "ehw";
+
+    const syncAlert: DemoAlert = {
+      id: `ALT-RET-${Date.now().toString().slice(-6)}`,
+      severity: "Warning",
+      title: `🔄 Approval Returned for Rework: ${appr?.title ?? id}`,
+      detail: `${persona.label} returned this gate for modification. Required rework: "${reworkNotes}". Ref: ${appr?.recordId ?? id}.`,
+      departmentId: targetDeptId,
+      resolved: false,
+    };
+
     update((state) => ({
       ...state,
-      approvals: state.approvals.map((appr) =>
-        appr.id === id
+      approvals: state.approvals.map((a) =>
+        a.id === id
           ? {
-              ...appr,
+              ...a,
               outcome: "Returned" as const,
               updatedAt: now(),
               comments: reworkNotes,
             }
-          : appr
+          : a
+      ),
+      alerts: [syncAlert, ...state.alerts],
+      notifications: [`[RETURNED] ${appr?.title ?? id} returned by ${persona.label} for rework`, ...state.notifications].slice(0, 50),
+      records: state.records.map((r) =>
+        r.reference === appr?.recordId || r.id === appr?.recordId
+          ? {
+              ...r,
+              status: "Open" as const,
+              updatedAt: now(),
+              notes: `${r.notes ? r.notes + " · " : ""}Rework requested by ${persona.label}: ${reworkNotes}`,
+            }
+          : r
       ),
     }));
     log("Approval Returned", `Returned gate ${id} by ${persona.label} for modifications: ${reworkNotes}`);
-    announce(`Approval ${id} returned for rework.`);
+    announce(`Approval ${id} returned for rework. Requester notified.`);
+  };
+
+  const handleCreateApprovalRequest = (newApprData: Omit<ApprovalRecord, "id" | "outcome" | "updatedAt">) => {
+    const newId = `appr-${Date.now().toString().slice(-6)}`;
+    const newRecord: ApprovalRecord = {
+      id: newId,
+      ...newApprData,
+      outcome: "Pending",
+      updatedAt: now(),
+    };
+    const targetApproverDept =
+      newApprData.approverAuthority
+        ? (portal.departments.find((d) => d.code.toUpperCase() === newApprData.approverAuthority?.toUpperCase())?.id || newApprData.approverAuthority.toLowerCase())
+        : (newApprData.riskLevel === "Critical"
+            ? (portal.departments.find((d) => d.code === "QA")?.id || "qa")
+            : (newApprData.department === "QA" ? "sales" : (portal.departments.find((d) => d.code === "QA")?.id || "qa")));
+
+    const alertId = `ALT-REQ-${Date.now().toString().slice(-6)}`;
+    const approverAlert: DemoAlert = {
+      id: alertId,
+      severity: newApprData.riskLevel === "Critical" ? "Critical" : "Warning",
+      title: `Pending Sign-off: ${newApprData.title}`,
+      detail: `Submitted by ${newApprData.requester} (${newApprData.department}) for ${newApprData.project}. Requires review under ${newApprData.iatfClause}.`,
+      departmentId: targetApproverDept,
+      resolved: false,
+    };
+
+    update((state) => ({
+      ...state,
+      approvals: [newRecord, ...state.approvals],
+      alerts: [approverAlert, ...state.alerts],
+      notifications: [`[PENDING APPROVAL] ${newApprData.title} submitted by ${newApprData.requester}`, ...state.notifications].slice(0, 50),
+    }));
+    log("Approval Requested", `Created approval request ${newId} for ${newApprData.title} by ${newApprData.requester}`);
+    announce(`Approval request ${newApprData.title} submitted and routed to designated authority.`);
   };
   const handleCreateCustomTask = (taskData: {
     title: string;
@@ -2908,6 +3027,7 @@ function Portal() {
               currentUser={persona.label}
               userRole={persona.kind === "admin" ? "Executive Admin" : persona.kind === "lead" ? "Department Lead" : "Client"}
               persona={persona}
+              onRequestApproval={handleCreateApprovalRequest}
             />
           ) : persona.kind === "client" ? (
             <ClientOEMPortal
@@ -8825,178 +8945,55 @@ function DocumentsPanel({
   onDocumentCreated?: ((document: ControlledDocument) => void) | undefined;
   onDocumentUpdated?: ((document: ControlledDocument, event: string) => void) | undefined;
 }) {
-  const [query, setQuery] = useState("");
-  const [group, setGroup] = useState("All groups");
-  const [phase, setPhase] = useState("All phases");
-  const [tab, setTab] = useState<"repository" | "drive">("repository");
-  const groups = [
-    "Governance/QMS",
-    "Product/Device Audit Packs",
-    "Supplier Quality/IQC",
-    "Calibration/Laboratory",
-    "01_Governance_and_QMS",
-    "02_Product_Platforms/Automotive_Devices",
-    "03_Supplier_Quality_and_PPAP",
-    "04_Equipment_and_Calibration",
-  ];
-  const phases = automotivePhases.map(([phaseName, codes]) => `${phaseName} · ${codes}`);
-  const visible = documents.filter(
-    (document) =>
-      canDepartmentAccessDocument(
-        document,
-        persona ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
-        departmentContext
-      ) &&
-      (group === "All groups" || document.group === group) &&
-      (phase === "All phases" || document.phase === phase) &&
-      `${document.title} ${document.type} ${document.device ?? ""} ${document.part ?? ""}`
-        .toLowerCase()
-        .includes(query.toLowerCase()),
-  );
+  const approvedCount = documents.filter((d) => d.lifecycle === "Approved").length;
+  const inReviewCount = documents.filter((d) => d.lifecycle === "In review").length;
+
   return (
-    <Modal title="Controlled document repository" onClose={onClose} wide>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="flex gap-2"><Action label="Document repository" primary={tab === "repository"} onClick={() => setTab("repository")} /><Action label="Drive & Cloud storage" primary={tab === "drive"} onClick={() => setTab("drive")} /></div><Action label="Auto-Draft Document Templates" primary onClick={onOpenDraftHub} /></div>
-      <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-moss/25 bg-accent px-4 py-3">
-        <div>
-          <p className="text-sm font-semibold text-accent-foreground">
-            Lovable Cloud storage active
-          </p>
-          <p className="mt-1 text-xs text-accent-foreground/80">
-            Private, department-authorized files use signed access. Google Drive is optional and not
-            connected.
-          </p>
+    <Modal title="Controlled Documents & Hardware Deliverables Register" onClose={onClose} wide>
+      {/* High-Information KPI Summary Strip (Modeled after Project Analysis) */}
+      <section className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-lg border border-border bg-card p-3">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Total Controlled Documents</p>
+          <p className="mt-1 text-xl font-bold text-foreground">{documents.length}</p>
+          <span className="text-[10px] text-muted-foreground">Traceable records</span>
         </div>
-        <span className="rounded-md border border-moss/25 bg-card px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-moss">
-          Private Cloud storage
-        </span>
-      </section>
-      {tab === "drive" && (
-        <HardwareDeliverablesDrive
-          documents={documents}
-          departments={departments}
-          departmentContext={departmentContext}
-          persona={persona}
-          onSelectDocument={onSelectDocument}
-          onOpenCustomerRegister={onOpenCustomerRegister}
-          portal={portal}
-          onDocumentCreated={onDocumentCreated}
-          onDocumentUpdated={onDocumentUpdated}
-        />
-      )}
-      {tab === "repository" && <><section className="ops-section mb-6 overflow-hidden bg-panel">
-        <div className="border-b border-border px-4 py-3">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
-            Canonical repository path
-          </p>
-          <p className="mt-1 font-mono text-xs text-foreground">{automotiveRepositoryRoot}</p>
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Approved / Released</p>
+          <p className="mt-1 text-xl font-bold text-foreground">{approvedCount}</p>
+          <span className="text-[10px] text-muted-foreground">Audit cleared & released</span>
         </div>
-        <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {automotiveRepositoryGroups.map((item) => (
-            <div key={item.path} className="p-3">
-              <p className="font-mono text-[10px] text-steel">{item.path}</p>
-              <p className="mt-1 text-sm font-semibold">{item.title}</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.artifacts}</p>
-            </div>
-          ))}
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400">In Gate Review</p>
+          <p className="mt-1 text-xl font-bold text-foreground">{inReviewCount}</p>
+          <span className="text-[10px] text-muted-foreground">Pending human sign-off</span>
         </div>
-        <div className="border-t border-border px-4 py-3">
-          <p className="font-mono text-[10px] text-steel">
-            02_Product_Platforms/Automotive_Devices
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            DEMO platform only · IATF is a record-control goal, not a certification claim.
-          </p>
+        <div className="rounded-lg border border-moss/25 bg-accent/60 p-3">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-moss">Private Cloud Storage</p>
+          <p className="mt-1 text-sm font-bold text-foreground">SHA-256 Verified</p>
+          <span className="text-[10px] text-muted-foreground">Department signed links</span>
         </div>
       </section>
-      <div className="grid gap-3 md:grid-cols-3">
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search document, device or part"
-          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-        />
-        <select
-          value={group}
-          onChange={(event) => setGroup(event.target.value)}
-          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-        >
-          <option>All groups</option>
-          {groups.map((item) => (
-            <option key={item}>{item}</option>
-          ))}
-        </select>
-        <select
-          value={phase}
-          onChange={(event) => setPhase(event.target.value)}
-          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-        >
-          <option>All phases</option>
-          {phases.map((item) => (
-            <option key={item}>{item}</option>
-          ))}
-        </select>
+
+      {/* Top Actions Bar */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+        <p className="text-xs text-muted-foreground">
+          Symmetrical multi-department repository. All deliverables are indexed by project, category, and SHA-256 checksum.
+        </p>
+        <Action label="Auto-Draft Document Templates" primary onClick={onOpenDraftHub} />
       </div>
-      <div className="ops-section mt-4 overflow-hidden">
-        {visible.length ? (
-          visible.map((document) => (
-            <div
-              key={document.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-border px-4 py-2.5 last:border-0"
-            >
-              <button onClick={() => onSelectDocument(document)} className="min-w-0 text-left">
-                <span>
-                  <strong className="block">{document.title}</strong>
-                  <small className="mt-1 block text-muted-foreground">
-                    {document.group ?? "Unclassified"} · {document.device ?? "No device"} ·{" "}
-                    {document.part ?? "No part"} · Rev {document.revision ?? "—"}
-                  </small>
-                  <small className="mt-1 block font-mono text-[10px] uppercase tracking-[.06em] text-steel">
-                    {document.cloudDocumentId
-                      ? "Private files enabled"
-                      : "Link to organization to enable files"}
-                  </small>
-                </span>
-              </button>
-              <div className="flex flex-col items-end gap-2">
-                <Status status={automotiveDocumentStatus(document.lifecycle)} />
-                <button
-                  aria-label={`Upload document for ${document.title}`}
-                  onClick={() => onUploadDocument(document)}
-                  className="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-card text-steel transition-colors hover:border-ring/50 hover:bg-secondary"
-                  title="Open file upload and revision history"
-                >
-                  <Upload className="size-4" />
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="p-8 text-center text-sm text-muted-foreground">
-            No controlled documents match this repository view.
-          </p>
-        )}
-      </div>
-      <section className="mt-5 overflow-hidden rounded-lg border border-border bg-panel">
-        <div className="border-b border-border px-4 py-3">
-          <p className="font-semibold">Platform phase mapping</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Path template for Automotive_Devices · DEMO only
-          </p>
-        </div>
-        <div className="divide-y divide-border">
-          {automotivePhases.map(([phaseName, codes, artifacts]) => (
-            <div
-              key={phaseName}
-              className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_minmax(15rem,1fr)] sm:items-center sm:gap-3"
-            >
-              <span className="font-mono text-xs text-foreground">{phaseName}</span>
-              <span className="font-mono text-xs text-steel">{codes}</span>
-              <span className="text-xs leading-5 text-muted-foreground">{artifacts}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-      </>}
+
+      {/* Symmetrical 4-Group Hardware Deliverables Drive */}
+      <HardwareDeliverablesDrive
+        documents={documents}
+        departments={departments}
+        departmentContext={departmentContext}
+        persona={persona}
+        onSelectDocument={onSelectDocument}
+        onOpenCustomerRegister={onOpenCustomerRegister}
+        portal={portal}
+        onDocumentCreated={onDocumentCreated}
+        onDocumentUpdated={onDocumentUpdated}
+      />
     </Modal>
   );
 }

@@ -15,6 +15,10 @@ import {
   ChevronRight,
   ExternalLink,
   Lock,
+  Plus,
+  Bell,
+  Send,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Persona } from "@/components/RoleAwareSidebar";
@@ -27,6 +31,7 @@ export interface ApprovalRecord {
   updatedAt: string;
   requester?: string | undefined;
   department?: string | undefined;
+  approverAuthority?: string | undefined;
   project?: string | undefined;
   description?: string | undefined;
   riskLevel?: "Low" | "Medium" | "High" | "Critical" | undefined;
@@ -45,6 +50,7 @@ interface ApprovalsFullPageViewProps {
   currentUser?: string | undefined;
   userRole?: string | undefined;
   persona?: Persona | undefined;
+  onRequestApproval?: ((newApproval: Omit<ApprovalRecord, "id" | "outcome" | "updatedAt">) => void) | undefined;
 }
 
 export function ApprovalsFullPageView({
@@ -56,13 +62,50 @@ export function ApprovalsFullPageView({
   currentUser = "Executive Admin / MD",
   userRole = "Admin",
   persona,
+  onRequestApproval,
 }: ApprovalsFullPageViewProps) {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "Pending" | "Approved" | "Rejected" | "Returned">("ALL");
   const [deptFilter, setDeptFilter] = useState<string>("ALL");
+  const [filterScope, setFilterScope] = useState<"ALL" | "PENDING_ME" | "MY_REQUESTS">("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedApproval, setSelectedApproval] = useState<ApprovalRecord | null>(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | "return" | null>(null);
   const [actionNotes, setActionNotes] = useState<string>("");
+
+  // Request new approval modal state
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [reqTitle, setReqTitle] = useState("");
+  const [reqRecordId, setReqRecordId] = useState("");
+  const [reqAuthority, setReqAuthority] = useState("QA");
+  const [reqProject, setReqProject] = useState("HLPL-AI4T-01 (Tata Ace EV 4G)");
+  const [reqRiskLevel, setReqRiskLevel] = useState<"Low" | "Medium" | "High" | "Critical">("High");
+  const [reqClause, setReqClause] = useState("IATF 16949 §8.3.4 (Engineering Change Control)");
+  const [reqDescription, setReqDescription] = useState("");
+
+  const canUserActOnApproval = (appr: ApprovalRecord): boolean => {
+    // Clients have zero approval authority
+    if (persona?.kind === "client") return false;
+    // Admins have universal authority
+    if (!persona || persona.kind === "admin") return true;
+
+    // For department leads: check department match
+    const userDept = (persona.departmentId ?? "").toUpperCase();
+    const apprDept = (appr.department ?? "").toUpperCase();
+    const targetAuth = (appr.approverAuthority ?? "").toUpperCase();
+
+    // If specific authority is designated:
+    if (targetAuth) {
+      if (userDept === targetAuth) return true;
+      if (userDept === "QA" && (appr.riskLevel === "Critical" || targetAuth === "QA")) return true;
+      return false;
+    }
+
+    if (userDept === apprDept) return true;
+    // QA Lead has oversight on critical release gates
+    if (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA")) return true;
+
+    return false;
+  };
 
   // Default enriched metadata if missing from raw seed
   const enrichedApprovals: ApprovalRecord[] = approvals.map((appr) => {
@@ -71,6 +114,7 @@ export function ApprovalsFullPageView({
         ...appr,
         requester: appr.requester ?? "Jordan Blake (Quality Assurance Head)",
         department: appr.department ?? "QA",
+        approverAuthority: appr.approverAuthority ?? "Admin",
         project: appr.project ?? "HLPL-AI4T-01 (Tata Ace EV 4G)",
         riskLevel: appr.riskLevel ?? "Critical",
         iatfClause: appr.iatfClause ?? "IATF 16949 §8.5.1 (Production Release Gate)",
@@ -84,6 +128,7 @@ export function ApprovalsFullPageView({
         ...appr,
         requester: appr.requester ?? "Avery Vale (Embedded Hardware Lead)",
         department: appr.department ?? "EHW",
+        approverAuthority: appr.approverAuthority ?? "QA",
         project: appr.project ?? "HLPL-SLCT-01 (AIS-140 Gateway)",
         riskLevel: appr.riskLevel ?? "High",
         iatfClause: appr.iatfClause ?? "IATF 16949 §8.3.4 (Engineering Change Control)",
@@ -97,6 +142,7 @@ export function ApprovalsFullPageView({
         ...appr,
         requester: appr.requester ?? "Priya Voss (Finance Controller)",
         department: appr.department ?? "FIN",
+        approverAuthority: appr.approverAuthority ?? "Admin",
         project: appr.project ?? "HLPL-AI4T-01 (Tata Ace EV 4G)",
         riskLevel: appr.riskLevel ?? "Medium",
         iatfClause: appr.iatfClause ?? "ISO 9001 §8.4 (Purchasing & Advance Authorizations)",
@@ -109,6 +155,7 @@ export function ApprovalsFullPageView({
       ...appr,
       requester: appr.requester ?? "Department Lead",
       department: appr.department ?? "ENG",
+      approverAuthority: appr.approverAuthority ?? "QA",
       project: appr.project ?? "HLPL-AI4T-01",
       riskLevel: appr.riskLevel ?? "Medium",
       iatfClause: appr.iatfClause ?? "IATF 16949 / ISO 9001",
@@ -116,6 +163,9 @@ export function ApprovalsFullPageView({
     };
   });
 
+  const myDept = (persona?.departmentId || "EHW").toUpperCase();
+  const myActionCount = enrichedApprovals.filter((a) => a.outcome === "Pending" && canUserActOnApproval(a)).length;
+  const myDeptCount = enrichedApprovals.filter((a) => (a.department || "").toUpperCase() === myDept).length;
   const pendingCount = enrichedApprovals.filter((a) => a.outcome === "Pending").length;
   const approvedCount = enrichedApprovals.filter((a) => a.outcome === "Approved").length;
   const rejectedCount = enrichedApprovals.filter((a) => a.outcome === "Rejected" || a.outcome === "Returned").length;
@@ -123,6 +173,8 @@ export function ApprovalsFullPageView({
   const filtered = enrichedApprovals.filter((appr) => {
     if (statusFilter !== "ALL" && appr.outcome !== statusFilter) return false;
     if (deptFilter !== "ALL" && appr.department !== deptFilter) return false;
+    if (filterScope === "PENDING_ME" && !(appr.outcome === "Pending" && canUserActOnApproval(appr))) return false;
+    if (filterScope === "MY_REQUESTS" && (appr.department || "").toUpperCase() !== myDept) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTitle = appr.title.toLowerCase().includes(q);
@@ -134,21 +186,27 @@ export function ApprovalsFullPageView({
     return true;
   });
 
-  const canUserActOnApproval = (appr: ApprovalRecord): boolean => {
-    // Clients have zero approval authority
-    if (persona?.kind === "client") return false;
-    // Admins have universal authority
-    if (!persona || persona.kind === "admin") return true;
-
-    // For department leads: check department match
-    const userDept = (persona.departmentId ?? "").toUpperCase();
-    const apprDept = (appr.department ?? "").toUpperCase();
-
-    if (userDept === apprDept) return true;
-    // QA Lead has oversight on critical release gates
-    if (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA")) return true;
-
-    return false;
+  const handleCreateApproval = () => {
+    if (!reqTitle.trim()) {
+      alert("Please enter an approval title.");
+      return;
+    }
+    onRequestApproval?.({
+      title: reqTitle.trim(),
+      recordId: reqRecordId.trim() || `GATE-${myDept}-${Date.now().toString().slice(-4)}`,
+      requester: `${currentUser} (${userRole})`,
+      department: myDept,
+      approverAuthority: reqAuthority,
+      project: reqProject,
+      riskLevel: reqRiskLevel,
+      iatfClause: reqClause,
+      description: reqDescription.trim() || "Controlled gate review submitted for designated human sign-off.",
+    });
+    setIsRequestModalOpen(false);
+    setReqTitle("");
+    setReqRecordId("");
+    setReqAuthority("QA");
+    setReqDescription("");
   };
 
   const handleOpenAction = (appr: ApprovalRecord, type: "approve" | "reject" | "return") => {
@@ -202,7 +260,20 @@ export function ApprovalsFullPageView({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {persona?.kind !== "client" && onRequestApproval && (
+            <Button
+              onClick={() => {
+                setReqRecordId(`GATE-${myDept}-${Date.now().toString().slice(-4)}`);
+                setIsRequestModalOpen(true);
+              }}
+              className="h-9 gap-1.5 px-3.5 text-xs font-semibold bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+            >
+              <Plus className="size-3.5" />
+              Request Gate Approval
+            </Button>
+          )}
+
           <div className="rounded-xl border border-border/60 bg-card px-4 py-2 text-right">
             <span className="block font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
               Signer Context
@@ -275,29 +346,67 @@ export function ApprovalsFullPageView({
       {/* Filter and Search Bar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* Scope toggles */}
+          <div className="flex items-center gap-1 border-r border-border/60 pr-2 mr-1">
+            <button
+              onClick={() => setFilterScope("ALL")}
+              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
+                filterScope === "ALL"
+                  ? "bg-secondary text-foreground shadow-xs"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              All Records
+            </button>
+            <button
+              onClick={() => setFilterScope("PENDING_ME")}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
+                filterScope === "PENDING_ME"
+                  ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+              title="Approvals requiring sign-off by your logged-in role"
+            >
+              <UserCheck className="size-3" />
+              Awaiting My Sign-Off ({myActionCount})
+            </button>
+            <button
+              onClick={() => setFilterScope("MY_REQUESTS")}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
+                filterScope === "MY_REQUESTS"
+                  ? "bg-primary/20 text-primary border border-primary/40"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+              title="Approvals requested by your department"
+            >
+              <Send className="size-3" />
+              My Dept Requests ({myDeptCount})
+            </button>
+          </div>
+
           <button
             onClick={() => setStatusFilter("ALL")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
               statusFilter === "ALL"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-muted"
             }`}
           >
-            All Decisions ({enrichedApprovals.length})
+            All Status
           </button>
           <button
             onClick={() => setStatusFilter("Pending")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
               statusFilter === "Pending"
                 ? "bg-amber-500 text-white shadow-sm"
                 : "text-muted-foreground hover:bg-muted"
             }`}
           >
-            Pending Action ({pendingCount})
+            Pending ({pendingCount})
           </button>
           <button
             onClick={() => setStatusFilter("Approved")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
               statusFilter === "Approved"
                 ? "bg-emerald-600 text-white shadow-sm"
                 : "text-muted-foreground hover:bg-muted"
@@ -307,7 +416,7 @@ export function ApprovalsFullPageView({
           </button>
           <button
             onClick={() => setStatusFilter("Rejected")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
               statusFilter === "Rejected"
                 ? "bg-rose-600 text-white shadow-sm"
                 : "text-muted-foreground hover:bg-muted"
@@ -405,7 +514,10 @@ export function ApprovalsFullPageView({
                         {appr.recordId}
                       </span>
                       <span className="rounded border px-2 py-0.5 font-mono text-[11px] font-semibold uppercase bg-secondary text-secondary-foreground">
-                        {appr.department}
+                        Req: {appr.department}
+                      </span>
+                      <span className="rounded border border-primary/30 px-2 py-0.5 font-mono text-[11px] font-semibold uppercase bg-primary/5 text-primary">
+                        Signer: {appr.approverAuthority || (appr.riskLevel === "Critical" ? "QA" : appr.department)}
                       </span>
                       <span className={`rounded border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase ${riskTone}`}>
                         Risk: {appr.riskLevel}
@@ -457,6 +569,28 @@ export function ApprovalsFullPageView({
                         </span>
                       </div>
                     )}
+
+                    {/* Synchronized Notification Indicator */}
+                    <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-mono">
+                      <Bell className="size-3 text-primary shrink-0" />
+                      {isApproved ? (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                          ✓ Sync: Requester ({appr.department}) notified of governance sign-off
+                        </span>
+                      ) : isReturned ? (
+                        <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                          ↻ Sync: Rework modification alert dispatched to {appr.requester}
+                        </span>
+                      ) : isRejected ? (
+                        <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                          ✕ Sync: Rejection notice dispatched to {appr.department}
+                        </span>
+                      ) : (
+                        <span className="text-amber-500 font-medium">
+                          🔔 Sync: Pending sign-off · Approvers ({appr.approverAuthority || (appr.riskLevel === "Critical" ? "QA" : appr.department)}) notified
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Actions Column */}
@@ -521,7 +655,7 @@ export function ApprovalsFullPageView({
                             <Lock className="size-3 text-steel" />
                             {persona?.kind === "client"
                               ? "Client Audit View · Sign-off Restricted"
-                              : `Awaiting ${appr.department ?? "Designated"} Lead / Admin Sign-off`}
+                              : `Awaiting ${appr.approverAuthority ?? (appr.riskLevel === "Critical" ? "QA" : appr.department ?? "Designated")} Authority Sign-off`}
                           </span>
                         </div>
                       )
@@ -628,6 +762,168 @@ export function ApprovalsFullPageView({
                   : actionType === "reject"
                   ? "Confirm Rejection"
                   : "Confirm Return for Rework"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request New Approval Modal */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in-50 zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="rounded-lg bg-primary/10 p-2 text-primary border border-primary/20">
+                  <ShieldAlert className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Request Governance Gate Approval</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Submit a deliverable or engineering change for human sign-off
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRequestModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-semibold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3.5 text-xs">
+              <div>
+                <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  Approval Title & Scope *
+                </label>
+                <input
+                  type="text"
+                  value={reqTitle}
+                  onChange={(e) => setReqTitle(e.target.value)}
+                  placeholder="e.g. Stage 5 SMT Pilot Thermal Profile Approval"
+                  className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Deliverable / Task Ref ID
+                  </label>
+                  <input
+                    type="text"
+                    value={reqRecordId}
+                    onChange={(e) => setReqRecordId(e.target.value)}
+                    placeholder="e.g. TASK-EHW-005"
+                    className="h-9 w-full rounded-lg border border-border bg-background px-3 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Risk Classification
+                  </label>
+                  <select
+                    value={reqRiskLevel}
+                    onChange={(e) => setReqRiskLevel(e.target.value as any)}
+                    className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="Critical">Critical (Executive / QA Sign-off)</option>
+                    <option value="High">High (Department Lead Sign-off)</option>
+                    <option value="Medium">Medium (Standard Gate)</option>
+                    <option value="Low">Low (Informational)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  Designated Approver Authority *
+                </label>
+                <select
+                  value={reqAuthority}
+                  onChange={(e) => setReqAuthority(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="QA">QA (Quality Assurance Lead · ISO/IATF Compliance)</option>
+                  <option value="Admin">Admin (Executive Director / Plant Management)</option>
+                  <option value="PUR">PUR (Purchasing & Supply Chain Head)</option>
+                  <option value="FIN">FIN (Finance Controller)</option>
+                  <option value="EHW">EHW (Hardware Engineering Lead)</option>
+                  <option value="ESW">ESW (Firmware & Software Lead)</option>
+                  <option value="EMF">EMF (Electronic Manufacturing Facility Lead)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  Target Program / Vehicle
+                </label>
+                <select
+                  value={reqProject}
+                  onChange={(e) => setReqProject(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="HLPL-AI4T-01 (Tata Ace EV 4G)">HLPL-AI4T-01 · Tata Ace EV 4G AIS-140 Gateway</option>
+                  <option value="HLPL-SLCT-01 (AIS-140 Gateway)">HLPL-SLCT-01 · Select Motors AIS-140 GPS</option>
+                  <option value="HLPL-XLINK-03 (CV Gateway)">HLPL-XLINK-03 · Commercial CV Fleet Gateway</option>
+                  <option value="HLPL-OBD4-01 (Ashok Leyland OBD-II)">HLPL-OBD4-01 · Ashok Leyland OBD-II Tracker</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  Governing Automotive Clause
+                </label>
+                <select
+                  value={reqClause}
+                  onChange={(e) => setReqClause(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="IATF 16949 §8.3.4 (Engineering Change Control)">IATF 16949 §8.3.4 (Engineering Change Control)</option>
+                  <option value="IATF 16949 §8.5.1 (Production Release Gate)">IATF 16949 §8.5.1 (Production Release Gate)</option>
+                  <option value="ISO 9001 §8.4 (Purchasing & Advance Authorizations)">ISO 9001 §8.4 (Purchasing & Advance Authorizations)</option>
+                  <option value="IATF 16949 §8.6 (Release of Products & Services)">IATF 16949 §8.6 (Release of Products & Services)</option>
+                  <option value="AIS-140 TAC (Type Approval Certification)">AIS-140 TAC (Type Approval Certification)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  Detailed Engineering Rationale & Evidence Summary
+                </label>
+                <textarea
+                  value={reqDescription}
+                  onChange={(e) => setReqDescription(e.target.value)}
+                  placeholder="Summarize the verification results, lab test reports, or commercial justification for requesting sign-off..."
+                  className="h-20 w-full rounded-lg border border-border bg-background p-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-[11px] text-muted-foreground flex items-center gap-2">
+                <Send className="size-3.5 text-primary shrink-0" />
+                <span>
+                  Submitted as <strong>{currentUser}</strong> ({myDept} Department). Immediate alert notification will be dispatched to <strong>{reqAuthority}</strong> Approver Authority.
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2 border-t border-border/40 pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsRequestModalOpen(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleCreateApproval}
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Submit Approval Request
               </Button>
             </div>
           </div>
