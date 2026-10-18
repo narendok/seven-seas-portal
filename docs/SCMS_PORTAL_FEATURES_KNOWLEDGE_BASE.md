@@ -27,7 +27,8 @@
 13. [Module 13: Governed Pre-Inventory Staging Gate & Zero Automatic Stock Posting](#module-13-governed-pre-inventory-staging-gate--zero-automatic-stock-posting)
 14. [Module 14: Complete Plant Machinery & Asset Lifecycle Management](#module-14-complete-plant-machinery--asset-lifecycle-management)
 15. [Module 15: Department Lead Authentication & Strict Role Confinement](#module-15-department-lead-authentication--strict-role-confinement)
-16. [Module 16: Living Update Protocol for Engineering Agents](#module-16-living-update-protocol-for-engineering-agents)
+16. [Module 16: Department Lead Coordination Center, Team & Task Management, and Full-Page Approvals](#module-16-department-lead-coordination-center-team--task-management-and-full-page-approvals)
+17. [Module 17: Living Update Protocol for Engineering Agents](#module-17-living-update-protocol-for-engineering-agents)
 
 ---
 
@@ -381,7 +382,38 @@ The asset management surface ([`LiveInventoryWorkspace.tsx`](file:///c:/Users/Te
 
 ---
 
-## Module 16: Living Update Protocol for Engineering Agents
+## Module 16: Department Lead Coordination Center, Team & Task Management, and Full-Page Approvals
+
+### 16.1 Overview & Architecture
+To eliminate cluttered tables and fragmented modals, the portal integrates the **Department Lead Coordination Center** ([`DepartmentLeadCoordinationCenter.tsx`](file:///c:/Users/Test/Documents/antigravity/SSM1/src/components/DepartmentLeadCoordinationCenter.tsx)) into all 11 department hubs, accompanied by a dedicated, full-page approvals surface:
+
+- **1-Click Instant Assignee Switcher**: Every task card in Kanban and row in Table view features an inline assignee dropdown. Department Leads can instantly reallocate tasks across their team in zero clicks/dialogs.
+- **Teams Tasks Hub**: Switchable between an interactive Kanban board and dense tabular view, complete with real-time project scoping, priority filtering, and status progression.
+- **Department Projects Hub**: Tracks deliverables, APQP lifecycle stages, target delivery dates, and progress percentages (e.g. `HLPL-AI4T-01` Tata Ace EV 4G at 92%) with 1-click drill-downs into project-specific tasks.
+- **Department Teams & Capacity Matrix**: Visualizes active workloads (e.g. `1 Tasks · 25% Capacity`), competency tiers (`Level 2` to `Level 4 - Advanced Specialist`), and core technical skill tags.
+- **Full-Page Approvals View ([`ApprovalsFullPageView.tsx`](file:///c:/Users/Test/Documents/antigravity/SSM1/src/components/ApprovalsFullPageView.tsx))**: Replaces pop-up dialogs with a full-viewport governance center displaying digital signer authority, risk-classified decision cards (`CRITICAL`, `HIGH`, `MEDIUM`), IATF 16949 §8.3.4 regulatory clauses, and 1-click human sign-offs (`[Approve Gate]`, `[Return for Rework]`, `[Reject]`).
+- **Sidebar Notification Cleanup**: Notification links have been removed from the sidebar. The interactive notification bell on the top header serves as the sole, non-cluttered alert center.
+
+### 16.2 Verified Visual Evidence
+
+#### Full-Page Approvals View (No Pop-up Modals)
+![Full Page Approvals View](images/scms_full_page_approvals_verified.png)
+
+#### Teams Tasks Hub (Kanban View with 1-Click Assignee Reallocation)
+![Teams Tasks Kanban](images/scms_dept_lead_tasks_kanban.png)
+
+#### Department Projects View (Milestone Deliverables & Progress)
+![Department Projects View](images/scms_dept_lead_projects_tab.png)
+
+#### Department Teams & Capacity Roster (Workload Balancing & Skills)
+![Department Teams and Capacity](images/scms_dept_lead_teams_tab.png)
+
+#### Purchasing Coordination Hub
+![Purchasing Department Coordination](images/scms_dept_lead_pur_coordination.png)
+
+---
+
+## Module 17: Living Update Protocol for Engineering Agents
 
 When adding, modifying, or refactoring portal features:
 1. **Pre-Check**: Read this Knowledge Base and [`SSM_ONE_WEB_PORTAL_MASTER_PLAN.md`](file:///c:/Users/Test/Documents/antigravity/SSM1/SSM_ONE_WEB_PORTAL_MASTER_PLAN.md) to understand existing data models and UI patterns.
@@ -394,3 +426,4 @@ When adding, modifying, or refactoring portal features:
    - Add new feature descriptions, parameters, and screenshots to this Knowledge Base.
    - Update [`SSM_ONE_WEB_PORTAL_MASTER_PLAN.md`](file:///c:/Users/Test/Documents/antigravity/SSM1/SSM_ONE_WEB_PORTAL_MASTER_PLAN.md) completed milestones and relevant sections.
 6. **Git Sync**: Commit and push to `origin/main` without rewriting history to maintain Lovable synchronization.
+

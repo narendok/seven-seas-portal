@@ -84,6 +84,8 @@ import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable"
 import { PurchasingCommandCenter, type PurchasingSubView } from "@/components/PurchasingCommandCenter";
 import { CustomerManagementFullPageView } from "@/components/CustomerManagementFullPageView";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
+import { ApprovalsFullPageView } from "@/components/ApprovalsFullPageView";
+import { DepartmentLeadCoordinationCenter } from "@/components/DepartmentLeadCoordinationCenter";
 import {
   LiveInventoryWorkspace,
   type InventoryAssignment,
@@ -291,17 +293,68 @@ type TeamMember = {
   skills: string[];
 };
 const demoTeam: TeamMember[] = [
-  { name: "Riley Stone", area: "sales", role: "Sales Lead", score: "3.85/4", level: "Level 4", skills: ["RFQ intake", "Commercial review", "Client communications", "Contract controls"] },
-  { name: "Avery Vale", area: "ehw", role: "Hardware Lead", score: "3.90/4", level: "Level 4", skills: ["Architecture", "Schematics", "PCB release", "DFMEA"] },
-  { name: "Devon Lane", area: "esw", role: "Firmware Lead", score: "3.75/4", level: "Level 4", skills: ["CAN/J1939", "Secure telemetry", "CI/CD", "Release governance"] },
-  { name: "Samira Holt", area: "mech", role: "Mechanical Lead", score: "3.60/4", level: "Level 4", skills: ["STEP model", "Tolerance stack", "Tooling", "Sealing review"] },
-  { name: "Morgan Reed", area: "pur", role: "Purchasing Lead", score: "3.70/4", level: "Level 4", skills: ["Supplier qualification", "PPAP", "Cost controls", "Capacity planning"] },
-  { name: "Jordan Blake", area: "qa", role: "Quality Head", score: "3.95/4", level: "Level 4", skills: ["APQP", "DVP&R", "CAPA", "Release approval"] },
-  { name: "Casey Rowan", area: "emf", role: "Manufacturing Lead", score: "3.65/4", level: "Level 4", skills: ["PFD", "PFMEA", "Line startup", "Control plan"] },
-  { name: "Mina Cross", area: "tst", role: "EOL Test Technician", score: "3.40/4", level: "Level 3", skills: ["Pre-flash", "CAN loopback", "QR labels", "Yield analysis"] },
-  { name: "Priya Voss", area: "fin", role: "Finance Controller", score: "3.80/4", level: "Level 4", skills: ["Invoice control", "GRN validation", "Receivables", "Tax close"] },
-  { name: "Kai Morgan", area: "sit", role: "IT Administrator", score: "3.50/4", level: "Level 3", skills: ["Telemetry", "Backup assurance", "Support", "ISMS"] },
+  // SAL - Sales & BD
+  { name: "Priya Sharma", area: "sales", role: "Sales & BD Lead", score: "3.85/4", level: "Level 4", skills: ["RFQ intake", "Commercial review", "Client communications", "Contract controls"] },
+  { name: "Rohan Mehta", area: "sales", role: "Senior Key Account Manager", score: "3.80/4", level: "Level 4", skills: ["Fleet accounts", "Commercial negotiations", "OEM pipeline", "CRM"] },
+  { name: "Tanya Sen", area: "sales", role: "OEM Proposals Specialist", score: "3.65/4", level: "Level 3", skills: ["SOR analysis", "Cost breakdown", "Quotation drafting", "Tender submissions"] },
+  { name: "Amit Deshmukh", area: "sales", role: "Client Relationship Executive", score: "3.40/4", level: "Level 2", skills: ["Lead tracking", "MOM documentation", "Order confirmations", "Customer follow-ups"] },
+
+  // EHW - Embedded Hardware
+  { name: "Avery Vale", area: "ehw", role: "Hardware Engineering Lead", score: "3.90/4", level: "Level 4", skills: ["Architecture", "Schematics", "PCB release", "DFMEA"] },
+  { name: "Maya Lin", area: "ehw", role: "Senior PCB Layout Engineer", score: "3.85/4", level: "Level 4", skills: ["Altium Designer", "High-Speed Routing", "Stackup design", "DFM verification"] },
+  { name: "Alex Chen", area: "ehw", role: "Hardware Validation Engineer", score: "3.70/4", level: "Level 3", skills: ["Power supplies", "ISO 7637-2 Clamping", "Thermal relief", "Bench bring-up"] },
+  { name: "Raghav Joshi", area: "ehw", role: "Component Qualification Specialist", score: "3.65/4", level: "Level 3", skills: ["AEC-Q100", "AEC-Q200", "Second sourcing", "EOL replacement"] },
+
+  // ESW - Firmware & Software
+  { name: "Devon Lane", area: "esw", role: "Firmware & Software Lead", score: "3.75/4", level: "Level 4", skills: ["CAN/J1939", "Secure telemetry", "CI/CD", "Release governance"] },
+  { name: "Siddharth Roy", area: "esw", role: "Senior RTOS & Linux Driver Engineer", score: "3.85/4", level: "Level 4", skills: ["FreeRTOS", "Device Drivers", "UART/SPI/I2C", "Power optimization"] },
+  { name: "Sneha Patel", area: "esw", role: "CAN Protocol & Telematics Engineer", score: "3.70/4", level: "Level 3", skills: ["J1939 PGNs", "OBD-II PIDs", "Cellular telemetry", "TLS encryption"] },
+  { name: "Nathan Cole", area: "esw", role: "Cloud Telemetry & OTA Specialist", score: "3.60/4", level: "Level 3", skills: ["FOTA bootloaders", "MQTT brokers", "Firmware signing", "Crash dumps"] },
+
+  // MECH - Mechanical Engineering
+  { name: "Samira Holt", area: "mech", role: "Mechanical Engineering Lead", score: "3.60/4", level: "Level 4", skills: ["STEP model", "Tolerance stack", "Tooling", "Sealing review"] },
+  { name: "Vikram Kapoor", area: "mech", role: "Senior CAD & Mold Specialist", score: "3.75/4", level: "Level 4", skills: ["SolidWorks", "Injection mold tooling", "Draft angles", "Enclosure design"] },
+  { name: "Deepak Nair", area: "mech", role: "Thermal & Ingress Protection Engineer", score: "3.65/4", level: "Level 3", skills: ["IP67 gaskets", "CFD thermal modeling", "Vibration mounts", "Shock absorption"] },
+  { name: "Pooja Verma", area: "mech", role: "Rapid Prototyping Technician", score: "3.40/4", level: "Level 2", skills: ["3D printing SLA/SLS", "CMM measurement", "Harness routing", "BOM verification"] },
+
+  // PUR - Purchasing & SCM
+  { name: "Morgan Reed", area: "pur", role: "Purchasing & SCM Lead", score: "3.70/4", level: "Level 4", skills: ["Supplier qualification", "PPAP", "Cost controls", "Capacity planning"] },
+  { name: "Anita Desai", area: "pur", role: "Strategic Sourcing Specialist", score: "3.80/4", level: "Level 4", skills: ["Distributor agreements", "Volume pricing breaks", "Contractual terms", "Lead-time buffering"] },
+  { name: "Vikram Malhotra", area: "pur", role: "Vendor Quality & ASL Coordinator", score: "3.65/4", level: "Level 3", skills: ["ASL audits", "IATF/ISO certificate validation", "VDA 6.3 scoring", "PPAP dossier review"] },
+  { name: "Kavita Rao", area: "pur", role: "Inward Stores & Inventory Coordinator", score: "3.55/4", level: "Level 3", skills: ["IQC quarantine control", "Bin management", "FIFO stock tracking", "GRN issuance"] },
+
+  // QA - Quality Assurance & APQP
+  { name: "Jordan Blake", area: "qa", role: "Quality Assurance & APQP Head", score: "3.95/4", level: "Level 4", skills: ["APQP", "DVP&R", "CAPA", "Release approval"] },
+  { name: "Sneha Kulkarni", area: "qa", role: "Senior DVP&R Compliance Lead", score: "3.90/4", level: "Level 4", skills: ["AIS-140 verification", "ISO 7637-2 transients", "Environmental chambers", "Lab coordination"] },
+  { name: "Harish Menon", area: "qa", role: "IQC & Supplier PPAP Auditor", score: "3.70/4", level: "Level 3", skills: ["First article inspection", "Incoming lot sampling", "Defect containment", "Material certifications"] },
+  { name: "Neha Singhania", area: "qa", role: "QMS & Compliance Internal Auditor", score: "3.65/4", level: "Level 3", skills: ["IATF 16949 audit checklists", "ISO 9001 compliance", "Document change control", "CAPA 8D"] },
+
+  // EMF - Electronics & Mechanical Manufacturing
+  { name: "Casey Rowan", area: "emf", role: "Electronics Manufacturing Lead", score: "3.65/4", level: "Level 4", skills: ["PFD", "PFMEA", "Line startup", "Control plan"] },
+  { name: "Rajesh Gokhale", area: "emf", role: "SMT Line Supervisor & Reflow Specialist", score: "3.75/4", level: "Level 4", skills: ["10-zone reflow profile", "3D SPI setup", "First-off sign-off", "Feeder calibration"] },
+  { name: "Ankit Sharma", area: "emf", role: "Process Quality Technician", score: "3.50/4", level: "Level 3", skills: ["AOI inspection", "Solder paste height analysis", "SMT rework", "Line defect logging"] },
+  { name: "Sunita Das", area: "emf", role: "SMT Feeder & Stencil Technician", score: "3.35/4", level: "Level 2", skills: ["Stencil cleaning", "Reel changeover", "ESD verification", "Visual inspection"] },
+
+  // TST - Production & EOL Testing Jigs
+  { name: "Mina Cross", area: "tst", role: "Automated EOL Test Jig Lead", score: "3.65/4", level: "Level 4", skills: ["Pre-flash", "CAN loopback", "QR labels", "Yield analysis"] },
+  { name: "Rohit Pillai", area: "tst", role: "Automated Test Firmware Engineer", score: "3.60/4", level: "Level 3", skills: ["National Instruments", "CANoe automation", "Automated flashing", "Log parsing"] },
+  { name: "Suresh Yadav", area: "tst", role: "EOL PDI Inspection Technician", score: "3.45/4", level: "Level 3", skills: ["100% PDI release", "Golden unit calibration", "Pass/fail tagging", "Test reports"] },
+  { name: "Divya Nair", area: "tst", role: "Pre-flash & Label Verification Technician", score: "3.30/4", level: "Level 2", skills: ["QR code scanning", "IMEI registration", "Flash verification", "Packaging inspection"] },
+
+  // FIN - Finance & Accounts
+  { name: "Priya Voss", area: "fin", role: "Finance & Accounts Controller", score: "3.80/4", level: "Level 4", skills: ["Invoice control", "GRN validation", "Receivables", "Tax close"] },
+  { name: "Arun Chawla", area: "fin", role: "Commercial Invoicing Manager", score: "3.70/4", level: "Level 3", skills: ["GST / HSN compliance", "e-Way billing", "Dispatch reconciliation", "Credit notes"] },
+  { name: "Meenakshi S", area: "fin", role: "Vendor Payables Specialist", score: "3.55/4", level: "Level 3", skills: ["3-way PO matching", "Advance adjustment", "Vendor ledger reconciliation", "Audit schedules"] },
+
+  // SIT - Service & IT Infrastructure
+  { name: "Kai Morgan", area: "sit", role: "Service & IT Infrastructure Lead", score: "3.50/4", level: "Level 3", skills: ["Telemetry", "Backup assurance", "Support", "ISMS"] },
+  { name: "Sameer Khan", area: "sit", role: "Cloud Server & Gateway Admin", score: "3.65/4", level: "Level 3", skills: ["Kubernetes", "PostgreSQL tuning", "VPN tunnels", "ISMS 27001 hardening"] },
+  { name: "Preeti Joshi", area: "sit", role: "Field RMA & Diagnostic Specialist", score: "3.35/4", level: "Level 2", skills: ["Field log diagnostics", "RMA device intake", "Firmware reflashing", "Ticket resolution"] },
+
+  // HR/OPS - HR & Operations
   { name: "Taylor Quinn", area: "hrops", role: "HR & Operations Manager", score: "3.65/4", level: "Level 4", skills: ["Skill matrix", "TNI", "Compliance calendar", "DMAIC"] },
+  { name: "Shalini Rao", area: "hrops", role: "Technical Training & Competency Coordinator", score: "3.60/4", level: "Level 3", skills: ["HLPL/F/HR/03 evaluation", "Onboarding roadmaps", "Competency testing", "HR records"] },
+  { name: "Kunal Varma", area: "hrops", role: "Facility & EHS Officer", score: "3.40/4", level: "Level 2", skills: ["ISO 45001 safety", "ESD audit inspection", "PPE compliance", "Incident reporting"] },
 ];
 const rfqStages = [
   ["Stage 1", "RFQ logged & mNDA signed", "RFQ-2026-TATA-EV-042 · DEMO Tata Ace EV 4G Telematics Gateway · 50,000 units/year"],
@@ -1986,8 +2039,11 @@ function Portal() {
     | "customers"
     | "smart_bom"
     | "ingestion_gate"
+    | "approvals"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+  const [customTeamMembers, setCustomTeamMembers] = useState<TeamMember[]>([]);
+  const allTeamMembers = useMemo(() => [...demoTeam, ...customTeamMembers], [customTeamMembers]);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [queueStage, setQueueStage] = useState<string | null>(null);
   const [modal, setModal] = useState<
@@ -2306,6 +2362,99 @@ function Portal() {
     log(action, `${task.reference} · ${task.title}`);
     announce(`${task.title} updated.`);
   };
+  const handleApproveGate = (id: string, notes?: string) => {
+    update((state) => ({
+      ...state,
+      approvals: state.approvals.map((appr) =>
+        appr.id === id
+          ? {
+              ...appr,
+              outcome: "Approved" as const,
+              updatedAt: now(),
+              signedBy: persona.label,
+              signedAt: now(),
+              comments: notes,
+            }
+          : appr
+      ),
+    }));
+    log("Human Approval Signed", `Approved gate ${id} by ${persona.label}. Note: ${notes ?? "Signed under IATF 16949 / ISO 9001 governance."}`);
+    announce(`Approval ${id} signed and endorsed.`);
+  };
+  const handleRejectGate = (id: string, reason: string) => {
+    update((state) => ({
+      ...state,
+      approvals: state.approvals.map((appr) =>
+        appr.id === id
+          ? {
+              ...appr,
+              outcome: "Rejected" as const,
+              updatedAt: now(),
+              comments: reason,
+            }
+          : appr
+      ),
+    }));
+    log("Approval Rejected", `Rejected gate ${id} by ${persona.label}. Reason: ${reason}`);
+    announce(`Approval ${id} rejected.`);
+  };
+  const handleReturnGate = (id: string, reworkNotes: string) => {
+    update((state) => ({
+      ...state,
+      approvals: state.approvals.map((appr) =>
+        appr.id === id
+          ? {
+              ...appr,
+              outcome: "Returned" as const,
+              updatedAt: now(),
+              comments: reworkNotes,
+            }
+          : appr
+      ),
+    }));
+    log("Approval Returned", `Returned gate ${id} by ${persona.label} for modifications: ${reworkNotes}`);
+    announce(`Approval ${id} returned for rework.`);
+  };
+  const handleCreateCustomTask = (taskData: {
+    title: string;
+    priority: "Low" | "Normal" | "High" | "Critical";
+    assignee: string;
+    projectId: string;
+    dueDate: string;
+    notes: string;
+  }) => {
+    const nextRef = `TASK-${activeArea.toUpperCase()}-${String(portal.records.filter((r) => r.type === "Task").length + 1).padStart(3, "0")}`;
+    const newTask: RecordItem = {
+      id: createId(),
+      area: activeArea,
+      type: "Task",
+      title: taskData.title,
+      status: "Open",
+      priority: taskData.priority,
+      reference: nextRef,
+      createdAt: now(),
+      updatedAt: now(),
+      notes: taskData.notes,
+      fields: {
+        assignee: taskData.assignee,
+        projectId: taskData.projectId,
+        projectCode: taskData.projectId,
+        dueDate: taskData.dueDate,
+        scope: taskData.notes,
+      },
+    };
+    update((state) => ({
+      ...state,
+      records: [newTask, ...state.records],
+    }));
+    log("Task Created", `Created task ${newTask.reference}: ${newTask.title} assigned to ${taskData.assignee}`);
+    announce(`${newTask.reference} created and assigned.`);
+  };
+  const handleAddTeamMember = (member: TeamMember) => {
+    setCustomTeamMembers((prev) => [...prev, member]);
+    log("Team Member Added", `Added ${member.name} (${member.role}, ${member.level}) to ${member.area.toUpperCase()} department roster.`);
+    announce(`${member.name} added to ${member.area.toUpperCase()} roster.`);
+  };
   const moveInventory = (itemId: string, change: number, reason: InventoryMovement["reason"]) => {
     const item = portal.inventory?.find((entry) => entry.id === itemId);
     if (!item || (change < 0 && item.onHand - item.allocated < Math.abs(change))) return;
@@ -2407,7 +2556,7 @@ function Portal() {
           onOpenAdminSettings={() => setModal("admin")}
           onOpenWizard={() => setModal("wizard")}
           onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
-          onOpenApprovals={() => setModal("approvals")}
+          onOpenApprovals={() => setView("approvals")}
           onOpenAlerts={() => setAlertsOpen(true)}
           onOpenHistory={() => setModal("history")}
           setupStep={portal.setupStep}
@@ -2687,6 +2836,16 @@ function Portal() {
               onBack={() => setView("queue")}
               departmentRole={activeArea}
             />
+          ) : view === "approvals" ? (
+            <ApprovalsFullPageView
+              approvals={portal.approvals}
+              onApprove={handleApproveGate}
+              onReject={handleRejectGate}
+              onReturn={handleReturnGate}
+              onBack={() => setView("queue")}
+              currentUser={persona.label}
+              userRole={persona.kind === "admin" ? "Executive Admin" : persona.kind === "lead" ? "Department Lead" : "Client"}
+            />
           ) : persona.kind === "client" ? (
             <ClientOEMPortal
               onOpenDocument={(docId) => {
@@ -2848,6 +3007,10 @@ function Portal() {
               onAssignInventory={assignInventory}
               purchasingSubView={purchasingSubView}
               onSelectPurchasingSubView={setPurchasingSubView}
+              onUpdateTask={updateTask}
+              onCreateCustomTask={handleCreateCustomTask}
+              onAddTeamMember={handleAddTeamMember}
+              allTeamMembers={allTeamMembers}
             />
           )}
         </div>
@@ -2944,7 +3107,7 @@ function Portal() {
           onOpenAdminSettings={() => setModal("admin")}
           onOpenWizard={() => setModal("wizard")}
           onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
-          onOpenApprovals={() => setModal("approvals")}
+          onOpenApprovals={() => setView("approvals")}
           onOpenAlerts={() => setAlertsOpen(true)}
           onOpenHistory={() => setModal("history")}
           setupStep={portal.setupStep}
@@ -2984,9 +3147,7 @@ function Portal() {
         />
       )}{" "}
       {modal === "history" && <HistoryPanel audit={portal.audit} onClose={() => setModal(null)} />}{" "}
-      {modal === "approvals" && (
-        <ApprovalsPanel approvals={portal.approvals} onClose={() => setModal(null)} />
-      )}{" "}
+      {modal === "approvals" && (() => { setView("approvals"); setModal(null); return null; })()}{" "}
       {modal === "documents" && (
         <DocumentsPanel
           documents={portal.documents}
@@ -5560,6 +5721,10 @@ function DepartmentWorkspace({
   onAssignInventory,
   purchasingSubView,
   onSelectPurchasingSubView,
+  onUpdateTask,
+  onCreateCustomTask,
+  onAddTeamMember,
+  allTeamMembers,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -5591,9 +5756,15 @@ function DepartmentWorkspace({
   onAssignInventory: (itemId: string, assignee: string, department: InventoryAssignment["department"], project: string, quantity: number, note: string) => void;
   purchasingSubView?: PurchasingSubView;
   onSelectPurchasingSubView?: (view: PurchasingSubView) => void;
+  onUpdateTask?: ((taskId: string, patch: Partial<RecordItem>, action: string) => void) | undefined;
+  onCreateCustomTask?: ((task: { title: string; priority: Priority; assignee: string; projectId: string; dueDate: string; notes: string }) => void) | undefined;
+  onAddTeamMember?: ((member: TeamMember) => void) | undefined;
+  allTeamMembers?: TeamMember[] | undefined;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
-  const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
+  const teamForThisDept = (allTeamMembers ?? demoTeam).filter((member) => member.area === area.id);
+  const deptLeadName = department?.lead ?? teamForThisDept[0]?.name ?? "Department Lead";
+  const departmentMembers = teamForThisDept.length;
   const today = new Date().toISOString().slice(0, 10);
   const open = scopedRecords.filter((record) => record.status === "Draft" || record.status === "Open");
   const blocked = scopedRecords.filter((record) => record.fields["blocker"]);
@@ -5606,6 +5777,38 @@ function DepartmentWorkspace({
     .sort((a, b) => (a.fields["targetDate"] ?? "").localeCompare(b.fields["targetDate"] ?? ""))
     .slice(0, 3);
   const flow = departmentFlow(area.id, scopedRecords);
+  const renderCoordinationCenter = () => (
+    <DepartmentLeadCoordinationCenter
+      departmentCode={area.short}
+      departmentName={area.name}
+      departmentLead={deptLeadName}
+      records={scopedRecords}
+      teamMembers={teamForThisDept}
+      projectScope={projectScope}
+      onProjectScopeChange={(scope) => onProjectScopeChange(scope as ProjectScope)}
+      onUpdateTaskAssignee={(taskId, newAssignee) => {
+        onUpdateTask?.(
+          taskId,
+          { fields: { assignee: newAssignee } },
+          `Task reallocated to ${newAssignee}`
+        );
+      }}
+      onUpdateTaskStatus={(taskId, newStatus) => {
+        onUpdateTask?.(
+          taskId,
+          { status: newStatus },
+          `Task status marked ${newStatus}`
+        );
+      }}
+      onCreateTask={(task) => {
+        onCreateCustomTask?.(task);
+      }}
+      onAddTeamMember={(member) => {
+        onAddTeamMember?.(member as unknown as TeamMember);
+      }}
+      readOnly={persona.kind === "client"}
+    />
+  );
   return (
     <>
       {records.some((record) => record.fields["demoMarker"]) && <DemoMarker />}
@@ -5685,7 +5888,7 @@ function DepartmentWorkspace({
         <TeamCompetencyPanel members={demoTeam.filter((member) => member.area === "hrops")} />
       )}
       {area.id === "sales" ? (
-        <section className="mt-8">
+        <section className="mt-8 space-y-8">
           <SalesEnquiriesAndOpportunities
             customers={portal?.customersRegistry ?? defaultCustomers}
             enquiries={portal?.enquiriesOpportunities ?? defaultEnquiriesOpportunities}
@@ -5697,9 +5900,10 @@ function DepartmentWorkspace({
             onOpenAssetCatalog={() => onOpenAssetCatalog?.()}
             onConfigureModularAssets={(projectCode) => onConfigureModularAssets?.(projectCode)}
           />
+          {renderCoordinationCenter()}
         </section>
       ) : area.id === "pur" ? (
-        <section className="mt-8">
+        <section className="mt-8 space-y-8">
           <PurchasingCommandCenter
             items={inventory}
             movements={inventoryMovements}
@@ -5733,6 +5937,7 @@ function DepartmentWorkspace({
               });
             }}
           />
+          {renderCoordinationCenter()}
         </section>
       ) : area.id === "ehw" ? (
         <section className="mt-8 space-y-8">
@@ -5754,65 +5959,7 @@ function DepartmentWorkspace({
             onAssign={onAssignInventory}
             activeDepartment="EHW"
           />
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-            <div className="ops-section overflow-hidden">
-              {view === "summary" ? (
-                <AreaSummary records={scopedRecords} />
-              ) : scopedRecords.length ? (
-                <div>
-                  {scopedRecords.map((record) => (
-                    <button
-                      key={record.id}
-                      onClick={() => onSelect(record.id)}
-                      className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
-                    >
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {record.reference}
-                      </span>
-                      <span>
-                        <strong className="block">{record.title}</strong>
-                        <small className="mt-1 block text-muted-foreground">
-                          {record.type} · {record.updatedAt}
-                        </small>
-                      </span>
-                      <Status status={record.status} />
-                      <span className="font-mono text-[10px] uppercase text-muted-foreground">
-                        {record.priority}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
-              )}
-            </div>
-            <aside className="ops-section bg-panel p-4">
-              <p className="text-sm font-semibold">Lead view</p>
-              <dl className="mt-4 space-y-3 text-sm">
-                <div>
-                  <dt className="font-mono text-[10px] uppercase text-muted-foreground">
-                    Overdue / blockers
-                  </dt>
-                  <dd className="mt-1">
-                    {blocked.length} blocked record{blocked.length === 1 ? "" : "s"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-[10px] uppercase text-muted-foreground">
-                    Upcoming milestones
-                  </dt>
-                  <dd className="mt-1">
-                    {upcoming.length
-                      ? upcoming.map((record) => <p key={record.id}>{record.title}</p>)
-                      : "No upcoming milestones."}
-                  </dd>
-                </div>
-              </dl>
-              <div className="mt-5">
-                <Action onClick={onAdmin} label="Department settings" />
-              </div>
-            </aside>
-          </div>
+          {renderCoordinationCenter()}
         </section>
       ) : area.id === "mech" ? (
         <section className="mt-8 space-y-8">
@@ -5833,134 +5980,21 @@ function DepartmentWorkspace({
             onAssign={onAssignInventory}
             activeDepartment="MECH"
           />
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-            <div className="ops-section overflow-hidden">
-              {view === "summary" ? (
-                <AreaSummary records={scopedRecords} />
-              ) : scopedRecords.length ? (
-                <div>
-                  {scopedRecords.map((record) => (
-                    <button
-                      key={record.id}
-                      onClick={() => onSelect(record.id)}
-                      className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
-                    >
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {record.reference}
-                      </span>
-                      <span>
-                        <strong className="block">{record.title}</strong>
-                        <small className="mt-1 block text-muted-foreground">
-                          {record.type} · {record.updatedAt}
-                        </small>
-                      </span>
-                      <Status status={record.status} />
-                      <span className="font-mono text-[10px] uppercase text-muted-foreground">
-                        {record.priority}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
-              )}
-            </div>
-            <aside className="ops-section bg-panel p-4">
-              <p className="text-sm font-semibold">Lead view</p>
-              <dl className="mt-4 space-y-3 text-sm">
-                <div>
-                  <dt className="font-mono text-[10px] uppercase text-muted-foreground">
-                    Overdue / blockers
-                  </dt>
-                  <dd className="mt-1">
-                    {blocked.length} blocked record{blocked.length === 1 ? "" : "s"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-[10px] uppercase text-muted-foreground">
-                    Upcoming milestones
-                  </dt>
-                  <dd className="mt-1">
-                    {upcoming.length
-                      ? upcoming.map((record) => <p key={record.id}>{record.title}</p>)
-                      : "No upcoming milestones."}
-                  </dd>
-                </div>
-              </dl>
-              <div className="mt-5">
-                <Action onClick={onAdmin} label="Department settings" />
-              </div>
-            </aside>
-          </div>
+          {renderCoordinationCenter()}
         </section>
       ) : area.id === "qa" ? (
-        <section className="mt-8">
+        <section className="mt-8 space-y-8">
           <QualityAssuranceDVPReviewTable
             projectId={projectScope === "all" ? "HLPL-OBD4-01" : projectScope}
             onSignOffGate={() => {
               onOpenFeasibilityGate?.(projectScope === "all" ? "HLPL-OBD4-01" : projectScope);
             }}
           />
+          {renderCoordinationCenter()}
         </section>
       ) : (
-        <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="ops-section overflow-hidden">
-            {view === "summary" ? (
-              <AreaSummary records={scopedRecords} />
-            ) : scopedRecords.length ? (
-              <div>
-                {scopedRecords.map((record) => (
-                  <button
-                    key={record.id}
-                    onClick={() => onSelect(record.id)}
-                    className="grid w-full gap-3 border-b border-border px-4 py-2.5 text-left transition-colors hover:bg-accent/45 last:border-0 md:grid-cols-[8rem_minmax(0,1fr)_7rem_6rem]"
-                  >
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {record.reference}
-                    </span>
-                    <span>
-                      <strong className="block">{record.title}</strong>
-                      <small className="mt-1 block text-muted-foreground">
-                        {record.type} · {record.updatedAt}
-                      </small>
-                    </span>
-                    <Status status={record.status} />
-                    <span className="font-mono text-[10px] uppercase text-muted-foreground">
-                      {record.priority}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <Empty onCreate={onCreate} label={`Create ${area.recordType}`} />
-            )}
-          </div>
-          <aside className="ops-section bg-panel p-4">
-            <p className="text-sm font-semibold">Lead view</p>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div>
-                <dt className="font-mono text-[10px] uppercase text-muted-foreground">
-                  Overdue / blockers
-                </dt>
-                <dd className="mt-1">
-                  {blocked.length} blocked record{blocked.length === 1 ? "" : "s"}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-mono text-[10px] uppercase text-muted-foreground">
-                  Upcoming milestones
-                </dt>
-                <dd className="mt-1">
-                  {upcoming.length
-                    ? upcoming.map((record) => <p key={record.id}>{record.title}</p>)
-                    : "No upcoming milestones."}
-                </dd>
-              </div>
-            </dl>
-            <div className="mt-5">
-              <Action onClick={onAdmin} label="Department settings" />
-            </div>
-          </aside>
+        <section className="mt-8">
+          {renderCoordinationCenter()}
         </section>
       )}
     </>

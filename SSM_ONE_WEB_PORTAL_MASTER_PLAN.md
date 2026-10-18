@@ -773,3 +773,76 @@ The asset management surface (`LiveInventoryWorkspace.tsx`) governs production m
   - When authenticated as a Department Lead (e.g. Morgan Reed · Purchasing Lead), the interface locks to that specific department workspace.
   - The Persona Switcher dropdown is locked/hidden to prevent unauthorized administrative escalation or lateral department switching.
   - An explicit `[Sign Out of Current Session]` button terminates the session and safely returns the user to the default gateway.
+
+---
+
+## 25. Android Companion Handoff: Contract and Release Gates
+
+### 25.1 Current observed integration state (2026-10-18)
+
+This section records a supervisor review of the SSM1 web portal and the Android project currently available at `C:\Users\Test\AndroidStudioProjects\MyApplication`. The Android project is outside this SSM1 folder; no Android source tree is present under the SSM1 workspace at the time of review. Treat Android screens that use the local `ScmsRepository` as prototype behavior until they are explicitly connected to the approved shared backend.
+
+- **Backend authority is unresolved across clients.** The web portal defaults to Supabase project `rzskhndweihuczbdhoxk` (`supabase/config.toml`, `src/routes/index.tsx`, and generated web types). The Android handoff configuration and source have referenced `yyrvduosyyaluifqvwkr`. These project IDs must not be treated as aliases. Confirm the intended authority with the project owner and align both clients before claiming portal-to-mobile synchronization. Do not silently add Dev/UAT projects.
+- **No verified schema handover yet.** The web-generated types reviewed do not define the Android contract’s `operational_receiving_purchase_orders` projection or `create_grn` RPC. Android safe-view fetches and stock RPCs currently fail closed pending exact schema/signature verification. Keep them disabled until the canonical schema and role permissions are evidenced.
+- **Local mutations are not portal synchronization.** Android inventory and shopfloor screens call in-memory `ScmsRepository` methods for receipt staging, issue/return, and routing sign-off. These can update the app’s local prototype state and local audit list but do not establish a shared server record or durable audit trail. Clearly mark such data and interactions as DEMO/prototype and prevent them from being presented as completed operational transactions.
+- **Authorization must be server-backed.** Android currently exposes local persona/role switching. It is suitable only for a clearly marked prototype; remove it from operational builds. Production permissions must come from authenticated server responses, RLS, and verified permission helpers, never cached or locally selected roles.
+- **Private document URLs must be genuine and authorized.** The Android project contains an authenticated Supabase Storage signed-URL request path, but also retains a mock repository path that constructs a URL and token locally. Route document actions only through the authorized Supabase/server signed-link implementation; never display or open locally fabricated tokens or public object URLs. Mobile document metadata and audit history are read-only; document transitions remain web-only until separately accepted.
+- **Credentials boundary.** Android build configuration may contain only the approved `SUPABASE_URL` and anon/publishable key. Source inspection is not APK verification; inspect the release artifact and build inputs before release. Never include service-role keys, database credentials, signing secrets, or third-party tokens in client code or artifacts.
+
+### 25.2 Required handover gates
+
+1. Record the owner-approved Supabase project ID and exact URL; reconcile web, Android, and this plan. Verify the live project identity from authoritative project configuration before connecting clients.
+2. Generate or validate Android models against the same canonical live schema as `src/integrations/supabase/types.ts`. Check every projection, column, RPC parameter/result, RLS policy, helper permission, and private bucket authorization. Do not invent schema from handoff prose or stale generated contracts.
+3. Implement mobile operational screens as read-only projections first. Strip commercial/finance fields from mobile response models and verify field omission at the server response boundary. Cache read-only data only with a visible last-sync timestamp; disable server-dependent actions offline.
+4. Use authenticated, server-authorized short-lived signed URLs for private files. Remove or make unreachable mock URL construction. Keep document-control state transitions web-only.
+5. Keep all stock mutations disabled until each exact RPC contract and authorization rule is verified. Then use online-only RPC execution, stable client idempotency UUIDs, and an outcome-reconciliation path; never optimistically mutate client stock as if the server committed it.
+6. Release acceptance must cover SSO/session handling, server-side role denial, projection field stripping, private-file access/expiry, offline behavior, idempotent retry/reconciliation, and schema drift. Use only approved non-stock fixtures for mutation tests; never create live stock-affecting test records without explicit fixture approval.
+
+The related department-owned document lifecycle and audit design is tracked in `docs/HLPL-AI4T-QA-DOCCTRL-00.md`. Its lifecycle events, department ownership, review assignments, and audit timeline are intended portal behavior; mobile may read verified projections but must not imply that local Android events have been written to that portal audit record.
+
+---
+
+## 26. Department Lead Coordination Hub, Task Management Architecture, and Full-Page Approvals
+
+### 26.1 Executive Summary & Problem Resolution
+To address usability feedback regarding cluttered department views, awkward approval pop-ups, and sidebar redundancy, the portal architecture has been refined with three major operational pillars:
+1. **Full-Page Approvals View**: Replaced legacy pop-up modals (`modal === "approvals"`) with a first-class, dedicated full-page governance surface (`view === "approvals"`), matching the design language of Orders, Quotations, and Customers, complete with IATF 16949:2016 §8.3.4 and ISO 9001:2015 governance gates.
+2. **Sidebar Notification Cleanup**: Removed redundant notification links (`dept-alerts`) from the sidebar navigation. The interactive notification bell on the top header serves as the sole, authoritative alert center.
+3. **Department Lead Coordination Center (`DepartmentLeadCoordinationCenter.tsx`)**: Created a streamlined, uncluttered management hub embedded across all 11 department workspaces, providing dedicated surfaces for **Department Tasks**, **Projects**, and **Department Teams**.
+
+### 26.2 Department Lead Coordination Center Architecture
+Embedded into all department hubs (`src/routes/index.tsx`), the Coordination Center organizes department operations into three distinct tabs:
+
+#### 1. Teams Tasks Tab (Kanban & Table Views)
+- **Dual Presentation**:
+  - **Kanban Board**: Drag/status-aware columns (`To Do / Open`, `In Progress`, `Under Review / Gate`, `Completed & Released`).
+  - **Dense Table View**: High-information-density tabular view with sortable columns for fast enterprise scanning.
+- **Multi-Axis Filtering**: Instant filtering by Project Scope (`All Projects` vs specific projects), Task Status, Assignee, and real-time text query.
+- **1-Click Instant Assignee Switcher**: Every task card and table row features an inline dropdown allowing Department Leads to reassign any task to any engineer in their roster in 1 click, eliminating nested dialogs.
+- **Quick Status Progression**: Direct action buttons (`Start Progress`, `Submit for Review`, `Approve / Complete`) allow rapid workflow movement.
+- **+ Assign New Task Modal**: Rapid task creation with automatic project linkage, priority assignment, due date picker, and pre-filled assignees.
+
+#### 2. Department Projects Tab
+- **Project Cards**: Summarizes department-linked deliverables across active programs (`HLPL-AI4T-01` Tata Ace EV 4G, `HLPL-SLCT-01` AIS-140 Gateway, `HLPL-XLINK-03` CV Gateway, `HLPL-OBD4-01`).
+- **Milestone Progress Tracking**: Displays active APQP lifecycle stage, target delivery dates, annual production volume targets, and department-specific progress bars.
+- **1-Click Task Drill-Down**: `[View Project Tasks ->]` button automatically scopes the Teams Tasks tab to that specific project.
+
+#### 3. Department Teams & Capacity Tab
+- **Engineering Roster**: Displays all department personnel with avatars, assigned roles, and official IATF competency levels (`Level 2`, `Level 3`, `Level 4 - Advanced Specialist`).
+- **Visual Workload Capacity Meters**: Real-time progress bars indicating current task load against capacity thresholds (e.g. `1 Tasks · 25% Capacity`) to balance team workload and prevent bottlenecks.
+- **Skill Matrix Badges**: Directly showcases verified technical competencies (e.g. `Altium Designer`, `High-Speed Routing`, `SI/PI Simulation`, `DFMEA`, `ISO 7637-2`).
+- **Direct Task Allocation**: `[+ Assign Task]` button on each engineer's card opens the assignment modal with that engineer pre-selected.
+- **+ Add Team Member Modal**: Enables dynamic expansion of department engineering rosters.
+
+### 26.3 Full-Page Approvals Architecture (`ApprovalsFullPageView.tsx`)
+- **First-Class View**: Triggered via `view === "approvals"`, rendering an authentic governance view inside the main content viewport.
+- **Signer Context Badge**: Prominently shows active authority (e.g. `Executive Admin / MD`, `Jordan Blake · QA Lead`), enforcing non-repudiation.
+- **Summary Metrics Strip**: Real-time KPI counters for `Pending Decisions`, `Approved & Endorsed`, `Rejected / Returned`, and governing quality clause.
+- **Governed Decision Cards**: Features risk level classification (`CRITICAL`, `HIGH`, `MEDIUM`), project tags, requesting authority, IATF/ISO clause, detailed rationale, and 1-click decision controls:
+  - `[Approve Gate]`: Endorses the gate and updates the audit log.
+  - `[Return for Rework]`: Sends the package back with required modification notes.
+  - `[Reject]`: Formally rejects with mandatory root cause justification.
+
+### 26.4 Expanded Multi-Department Engineering Roster
+The underlying enterprise roster (`demoTeam`) has been expanded from 11 isolated leads to a comprehensive 36-member engineering team across all 11 functional departments, ensuring realistic capacity balancing and multi-user delegation across Embedded Hardware (`EHW`), Firmware (`ESW`), Mechanical (`MECH`), Purchasing (`PUR`), Quality (`QA`), Manufacturing (`EMF`), Testing (`TST`), Finance (`FIN`), IT (`SIT`), and HR (`HR/OPS`).
+
