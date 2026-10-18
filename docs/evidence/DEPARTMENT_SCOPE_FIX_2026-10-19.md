@@ -1,6 +1,6 @@
 # Department scope and document draft correction checkpoint
 
-19 October 2026. Local source changes; not published to Lovable. Android source and managed database were not changed.
+19 October 2026. Source and browser checks completed; connected preview sync tracked below. Android source and managed database were not changed.
 
 ## Implemented locally
 
@@ -46,4 +46,7 @@ The full standardization inventory remains planned. Twelve draft field schemas a
 - Live Lovable Database UI showed zero rows in organizations, organization_members, departments, department roles/assignments, operational_records, tasks, approvals, documents, controlled_document_files, client_shares, record_links and audit_events. Users UI states **No sign-in methods are enabled yet**. [Live auth evidence](live-auth-not-enabled-2026-10-19.png). No provider was enabled, users created, or database rows/policies changed.
 
 Production acceptance is blocked on the real organization, administrator identity and authentication provisioning, then a full authenticated shared persistence implementation and private file/RLS tests. The browser prototype cannot be called a completed production portal. The real organization name and initial administrator work email have been requested; no password is required in chat.
-`nFinal verification: 14 tests, TypeScript and full Vite client/SSR/Nitro build passed. [Approved task browser evidence](approved-task-roundtrip-2026-10-19.png).
+
+Final verification: 14 tests, TypeScript and full Vite client/SSR/Nitro build passed. [Approved task browser evidence](approved-task-roundtrip-2026-10-19.png).
+
+Tested source checkpoint: e2c1b84 (preserves upstream customer-document work and local fixes). Production publishing, authentication provisioning, migrations and Android changes were not performed.
