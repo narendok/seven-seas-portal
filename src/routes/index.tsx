@@ -3040,7 +3040,6 @@ function Portal() {
                   setModal("documents");
                 }
               }}
-              onOpenLifecycleModal={() => setAi4tOpen(true)}
             />
           ) : effectiveArea === "home" && view === "assignee" && selectedAssignee ? (
             <AssigneeWorkload
