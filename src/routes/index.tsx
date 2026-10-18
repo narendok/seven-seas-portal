@@ -81,7 +81,7 @@ import {
   type EnquiryOpportunity,
 } from "@/components/SalesWorkspaceAndCustomerRegister";
 import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable";
-import { PurchasingCommandCenter } from "@/components/PurchasingCommandCenter";
+import { PurchasingCommandCenter, type PurchasingSubView } from "@/components/PurchasingCommandCenter";
 import { CustomerManagementFullPageView } from "@/components/CustomerManagementFullPageView";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
 import {
@@ -1984,6 +1984,8 @@ function Portal() {
     | "quotations"
     | "suppliers"
     | "customers"
+    | "smart_bom"
+    | "ingestion_gate"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
@@ -2019,7 +2021,7 @@ function Portal() {
   const [legalHubOpen, setLegalHubOpen] = useState(false);
   const [assetCatalogOpen, setAssetCatalogOpen] = useState(false);
   const [assetLinkerProjectId, setAssetLinkerProjectId] = useState<string | null>(null);
-  const [purchasingSubView, setPurchasingSubView] = useState<"recordage" | "quotations" | "orders" | "suppliers">("recordage");
+  const [purchasingSubView, setPurchasingSubView] = useState<PurchasingSubView>("recordage");
   const [adminTab, setAdminTab] = useState<
     "company" | "templates" | "raci" | "departments" | "roles" | "masters" | "settings" | "cloud" | "team" | "demo"
   >("company");
@@ -2077,7 +2079,9 @@ function Portal() {
       | "orders"
       | "quotations"
       | "suppliers"
-      | "customers" = "queue",
+      | "customers"
+      | "smart_bom"
+      | "ingestion_gate" = "queue",
   ) => {
     if (persona.kind === "client") {
       if (area !== "home") {
@@ -2637,7 +2641,7 @@ function Portal() {
               isFullPage={true}
               onBack={() => setView("queue")}
             />
-          ) : view === "orders" || view === "quotations" || view === "suppliers" ? (
+          ) : view === "orders" || view === "quotations" || view === "suppliers" || view === "smart_bom" || view === "ingestion_gate" ? (
             <PurchasingCommandCenter
               items={portal.inventory ?? []}
               movements={portal.inventoryMovements ?? []}
@@ -2662,7 +2666,7 @@ function Portal() {
               onMove={moveInventory}
               onAssign={assignInventory}
               projectScope={projectScopes[activeArea] === "all" ? "HLPL-AI4T-01" : (projectScopes[activeArea] ?? "HLPL-AI4T-01")}
-              activeSubView={view as "orders" | "quotations" | "suppliers"}
+              activeSubView={view as PurchasingSubView}
               onSelectSubView={(sub) => {
                 setPurchasingSubView(sub);
                 setView(sub === "recordage" ? "inventory" : sub);
@@ -5585,8 +5589,8 @@ function DepartmentWorkspace({
   persona: Persona;
   onMoveInventory: (itemId: string, change: number, reason: InventoryMovement["reason"]) => void;
   onAssignInventory: (itemId: string, assignee: string, department: InventoryAssignment["department"], project: string, quantity: number, note: string) => void;
-  purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers";
-  onSelectPurchasingSubView?: (view: "recordage" | "quotations" | "orders" | "suppliers") => void;
+  purchasingSubView?: PurchasingSubView;
+  onSelectPurchasingSubView?: (view: PurchasingSubView) => void;
 }) {
   const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
   const departmentMembers = demoTeam.filter((member) => member.area === area.id).length;
@@ -10336,11 +10340,13 @@ function MobileMenu({
       | "quotations"
       | "suppliers"
       | "customers"
+      | "smart_bom"
+      | "ingestion_gate"
   ) => void;
   darkMode: boolean;
   onToggleTheme: () => void;
-  purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers" | undefined;
-  onSelectPurchasingSubView?: ((view: "recordage" | "quotations" | "orders" | "suppliers") => void) | undefined;
+  purchasingSubView?: PurchasingSubView | undefined;
+  onSelectPurchasingSubView?: ((view: PurchasingSubView) => void) | undefined;
   persona: Persona;
   activeArea: AreaId;
   view: string;

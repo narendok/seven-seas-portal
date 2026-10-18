@@ -39,6 +39,8 @@ import {
   Check,
   Key,
   ArrowLeft,
+  FileSpreadsheet,
+  Calendar,
 } from "lucide-react";
 import {
   lookupMouserPart,
@@ -1098,6 +1100,19 @@ export function LiveInventoryWorkspace({
   const [issueModalItem, setIssueModalItem] = useState<InventoryItem | null>(null);
   const [returnModalAssignment, setReturnModalAssignment] = useState<InventoryAssignment | null>(null);
 
+  // IQC Disposition Gate state
+  const [iqcModalGrn, setIqcModalGrn] = useState<GoodsReceivedNote | null>(null);
+  const [iqcAcceptedQty, setIqcAcceptedQty] = useState<number>(0);
+  const [iqcInspector, setIqcInspector] = useState<string>("Jordan Blake (QA Lead)");
+  const [iqcReportRef, setIqcReportRef] = useState<string>("HLPL-IQC-2026-088");
+  const [iqcNote, setIqcNote] = useState<string>("100% AOI optical inspection, pin coplanarity, and lot sample ESD check passed.");
+
+  // Bulk Asset Import & Compatibility state
+  const [bulkAssetModalOpen, setBulkAssetModalOpen] = useState(false);
+  const [rawAssetCsvText, setRawAssetCsvText] = useState("");
+  const [stagedBulkAssets, setStagedBulkAssets] = useState<Array<AssetRecord & { duplicate?: boolean }>>([]);
+  const [compatModalAsset, setCompatModalAsset] = useState<AssetRecord | null>(null);
+
   // Issue modal fields
   const [issueProject, setIssueProject] = useState<string>("HLPL-AI4T-01");
   const [issueRecipient, setIssueRecipient] = useState<string>("");
@@ -1440,6 +1455,202 @@ export function LiveInventoryWorkspace({
     setLocalMovements([newMovement, ...localMovements]);
 
     setGrnModalOpen(false);
+  };
+
+  // IQC Disposition Gate Handler (ISO 9001 §8.4 / IATF 16949 §8.6)
+  const handleExecuteIQCDisposition = () => {
+    if (!iqcModalGrn) return;
+    const grn = iqcModalGrn;
+    const accepted = Math.min(grn.quantityReceived, iqcAcceptedQty);
+    const heldRemaining = Math.max(0, grn.quantityReceived - accepted);
+    const newStatus: GoodsReceivedNote["inspectionStatus"] = heldRemaining === 0 ? "Accepted & Released" : "Rejected";
+
+    // 1. Update GRN List
+    setGrnList((prev) =>
+      prev.map((g) =>
+        g.id === grn.id
+          ? {
+              ...g,
+              quantityAccepted: accepted,
+              quantityHeld: heldRemaining,
+              inspectionStatus: newStatus,
+              inspectionReportId: iqcReportRef,
+              dispositionNote: `${iqcNote} (Inspected by ${iqcInspector})`,
+            }
+          : g
+      )
+    );
+
+    // 2. Update localItems (release held stock into active stock)
+    setLocalItems((prev) =>
+      prev.map((item) => {
+        if (item.partNumber.trim().toUpperCase() === grn.partNumber.trim().toUpperCase() || item.id === grn.inventoryItemId) {
+          const currentHeld = item.held ?? 0;
+          const currentReleased = item.released ?? item.onHand;
+          return {
+            ...item,
+            held: Math.max(0, currentHeld - accepted),
+            released: currentReleased + accepted,
+          };
+        }
+        return item;
+      })
+    );
+
+    // 3. Append Audit Movement
+    const releaseMovement: InventoryMovement = {
+      id: `mov-iqc-${Date.now()}`,
+      inventoryItemId: grn.inventoryItemId,
+      partNumber: grn.partNumber,
+      change: accepted,
+      reason: "QualityRelease",
+      lotNumber: grn.lotNumber,
+      at: new Date().toISOString().replace("T", " ").substring(0, 16),
+      actor: iqcInspector,
+      note: `IQC Quality Release passed for lot ${grn.lotNumber}. Report: ${iqcReportRef}. ${accepted} units released to available project stock.`,
+    };
+    setLocalMovements((prev) => [releaseMovement, ...prev]);
+
+    setIqcModalGrn(null);
+  };
+
+  // Helper for downloading CSV
+  const downloadCsvBlob = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.setAttribute("href", url);
+    a.setAttribute("download", filename);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Export Full Asset Register
+  const exportAssetRegisterCsv = () => {
+    const headers = [
+      "Asset Tag",
+      "Asset Name",
+      "Class",
+      "Subclass",
+      "Serial Number",
+      "Facility Location",
+      "Custodian",
+      "Department",
+      "Status",
+      "Compatible Parts",
+      "Next Calibration Due",
+      "Last Maintenance",
+    ];
+    const rows = assetList.map((a) => [
+      `"${a.assetTag}"`,
+      `"${a.name}"`,
+      `"${a.assetClass}"`,
+      `"${a.subclass}"`,
+      `"${a.serialNumber}"`,
+      `"${a.facilityLocation}"`,
+      `"${a.custodian}"`,
+      `"${a.department}"`,
+      `"${a.status}"`,
+      `"${a.compatiblePartNumbers.join("; ")}"`,
+      `"${a.nextCalibrationDue}"`,
+      `"${a.lastMaintenance}"`,
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    downloadCsvBlob(csv, `HLPL_Asset_Register_${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+  // Export Calibration & Maintenance Due Schedule
+  const exportCalibrationScheduleCsv = () => {
+    const headers = [
+      "Asset Tag",
+      "Asset Name",
+      "Class",
+      "Facility / Room",
+      "Serial Number",
+      "Custodian",
+      "Next Calibration Due Date",
+      "Operating Status",
+      "Audit Standard",
+    ];
+    const rows = assetList
+      .filter((a) => a.nextCalibrationDue && a.nextCalibrationDue !== "N/A")
+      .map((a) => [
+        `"${a.assetTag}"`,
+        `"${a.name}"`,
+        `"${a.assetClass}"`,
+        `"${a.facilityLocation}"`,
+        `"${a.serialNumber}"`,
+        `"${a.custodian} (${a.department})"`,
+        `"${a.nextCalibrationDue}"`,
+        `"${a.status}"`,
+        `"IATF 16949:2016 §7.1.5 Traceable"`,
+      ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    downloadCsvBlob(csv, `HLPL_Calibration_Schedule_${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+  // Parse Bulk Asset CSV
+  const handleParseBulkAssetCsv = (csvText: string) => {
+    const lines = csvText.trim().split("\n");
+    if (lines.length < 2) return;
+
+    const existingSerials = new Set(assetList.map((a) => a.serialNumber.trim().toUpperCase()));
+    const existingTags = new Set(assetList.map((a) => a.assetTag.trim().toUpperCase()));
+
+    const parsed: Array<AssetRecord & { duplicate?: boolean }> = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i]?.trim();
+      if (!line) continue;
+      const cols = line.split(",").map((c) => c.replace(/^"|"$/g, "").trim());
+
+      const tag = cols[0] || `HLPL-AST-GEN-${Date.now().toString().slice(-4)}`;
+      const name = cols[1] || "Production / Test Tool";
+      const assetClass = (cols[2] as AssetClass) || "Production Machinery";
+      const subclass = cols[3] || "General";
+      const serialNumber = cols[4] || `SN-${Date.now()}-${i}`;
+      const facilityLocation = cols[5] || "Greater Noida SMT Plant 2";
+      const custodian = cols[6] || "Casey Rowan";
+      const department = cols[7] || "EMF";
+      const nextCalibrationDue = cols[8] || "2027-04-15";
+      const status = "In Service";
+
+      const isDup = existingSerials.has(serialNumber.toUpperCase()) || existingTags.has(tag.toUpperCase());
+
+      parsed.push({
+        id: `ast-bulk-${Date.now()}-${i}`,
+        assetTag: tag,
+        name,
+        assetClass,
+        subclass,
+        serialNumber,
+        facilityLocation,
+        custodian,
+        department,
+        calibrationDate: "2026-04-15",
+        nextCalibrationDue,
+        status,
+        compatiblePartNumbers: ["STM32G0B1VCT6", "HLPL-HARN-AI4T-PWR-01"],
+        lastMaintenance: "2026-09-10",
+        duplicate: isDup,
+      });
+    }
+
+    setStagedBulkAssets(parsed);
+  };
+
+  // Commit Bulk Assets to State
+  const handleCommitBulkAssets = () => {
+    const validAssets = stagedBulkAssets.filter((a) => !a.duplicate);
+    if (validAssets.length === 0) {
+      alert("No valid non-duplicate assets to import.");
+      return;
+    }
+    setAssetList((prev) => [...prev, ...validAssets]);
+    setBulkAssetModalOpen(false);
+    setStagedBulkAssets([]);
+    setRawAssetCsvText("");
   };
 
   // Mouser Auto-Fetch Specification Handler
@@ -2615,6 +2826,7 @@ export function LiveInventoryWorkspace({
                   <th className="px-3 py-2.5 text-right">Accepted / Released</th>
                   <th className="px-3 py-2.5 text-right">Quality Held</th>
                   <th className="px-3 py-2.5">Inspection Status</th>
+                  <th className="px-3 py-2.5 text-right">IQC Quality Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-mono text-[11px]">
@@ -2653,6 +2865,21 @@ export function LiveInventoryWorkspace({
                         {grn.inspectionStatus}
                       </span>
                     </td>
+                    <td className="px-3 py-2.5 text-right">
+                      {grn.inspectionStatus === "Pending IQC" && !readOnly ? (
+                        <button
+                          onClick={() => {
+                            setIqcModalGrn(grn);
+                            setIqcAcceptedQty(grn.quantityHeld > 0 ? grn.quantityHeld : grn.quantityReceived);
+                          }}
+                          className="rounded bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white shadow hover:bg-emerald-700"
+                        >
+                          IQC Release
+                        </button>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Released ✓</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -2672,6 +2899,31 @@ export function LiveInventoryWorkspace({
               <p className="text-xs text-muted-foreground">
                 Serialized production machinery, wire crimpers, ultrasonic welders, and EOL test fixtures with calibration traceability.
               </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {!readOnly && (
+                <button
+                  onClick={() => setBulkAssetModalOpen(true)}
+                  className="flex h-8 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/20"
+                >
+                  <FileSpreadsheet className="size-3.5" />
+                  <span>+ Bulk Import Assets (.csv)</span>
+                </button>
+              )}
+              <button
+                onClick={exportAssetRegisterCsv}
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                <Download className="size-3.5" />
+                <span>Export Asset Register</span>
+              </button>
+              <button
+                onClick={exportCalibrationScheduleCsv}
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
+              >
+                <Calendar className="size-3.5" />
+                <span>Calibration Schedule</span>
+              </button>
             </div>
           </div>
 
@@ -3990,6 +4242,227 @@ export function LiveInventoryWorkspace({
                 className="h-8 rounded bg-primary px-4 text-xs font-bold text-primary-foreground shadow"
               >
                 Save API Key
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IQC Quality Release & Lot Disposition Modal */}
+      {iqcModalGrn && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm font-sans"
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="size-5 text-emerald-600" />
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">Execute IQC Quality Disposition & Lot Release</h3>
+                  <p className="text-[11px] text-muted-foreground">IATF 16949 §8.6 & ISO 9001 §8.4 Receiving Inspection Release Gate</p>
+                </div>
+              </div>
+              <button onClick={() => setIqcModalGrn(null)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+
+            <div className="mt-4 space-y-3 text-xs font-mono">
+              <div className="rounded-lg bg-secondary/50 p-3 space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Part Number:</span>
+                  <strong className="text-foreground">{iqcModalGrn.partNumber}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">GRN / PO Ref:</span>
+                  <span className="text-foreground">{iqcModalGrn.grnNumber} ({iqcModalGrn.poNumber})</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Supplier:</span>
+                  <span className="font-sans text-foreground">{iqcModalGrn.supplier}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Lot / Date Code:</span>
+                  <span className="text-foreground">{iqcModalGrn.lotNumber} (DC: {iqcModalGrn.dateCode})</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Inward Qty:</span>
+                  <strong className="text-primary">{iqcModalGrn.quantityReceived.toLocaleString()} pcs</strong>
+                </div>
+              </div>
+
+              <div className="space-y-3 font-sans pt-1">
+                <div>
+                  <label className="font-semibold text-foreground">Quantity to Accept & Release to Active Stock</label>
+                  <input
+                    type="number"
+                    value={iqcAcceptedQty}
+                    max={iqcModalGrn.quantityReceived}
+                    onChange={(e) => setIqcAcceptedQty(parseInt(e.target.value) || 0)}
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-xs font-bold text-foreground"
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Remaining {Math.max(0, iqcModalGrn.quantityReceived - iqcAcceptedQty)} pcs will stay quarantined in IQC hold.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-foreground">Inspection Report Reference ID</label>
+                  <input
+                    type="text"
+                    value={iqcReportRef}
+                    onChange={(e) => setIqcReportRef(e.target.value)}
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-xs text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-foreground">Authorized Quality Inspector</label>
+                  <input
+                    type="text"
+                    value={iqcInspector}
+                    onChange={(e) => setIqcInspector(e.target.value)}
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-foreground">Inspection Finding & Disposition Note</label>
+                  <textarea
+                    rows={2}
+                    value={iqcNote}
+                    onChange={(e) => setIqcNote(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-input bg-background p-2 text-xs text-foreground"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
+              <button onClick={() => setIqcModalGrn(null)} className="h-8 rounded border border-border px-3 text-xs font-semibold">
+                Cancel
+              </button>
+              <button
+                onClick={handleExecuteIQCDisposition}
+                className="h-8 rounded bg-emerald-600 px-4 text-xs font-bold text-white shadow hover:bg-emerald-700"
+              >
+                Confirm Quality Release & Update Stock
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Asset CSV Import Modal */}
+      {bulkAssetModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm font-sans"
+        >
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="size-5 text-primary" />
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">Bulk Asset Register Ingestion (CSV / Excel)</h3>
+                  <p className="text-[11px] text-muted-foreground">Production Machinery, IMTE Calibration Jigs & Service Fixtures</p>
+                </div>
+              </div>
+              <button onClick={() => setBulkAssetModalOpen(false)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+
+            <div className="mt-4 space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-muted-foreground">CSV Text or Paste:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sample = `Asset Tag,Name,Class,Subclass,Serial Number,Facility Location,Custodian,Department,Next Calibration Due
+HLPL-AST-SMT-004,Nordson Dage Quadra 5 3D X-Ray Inspection Machine,Production Machinery,SMT Surface Mount Line 2,XRAY-DAGE-9018,Greater Noida SMT Plant 2 · Bay 2,Casey Rowan,EMF,2027-02-15
+HLPL-AST-JIG-003,AIS-140 Automated End-of-Line Verification Jig,Testing & Calibration Jigs,EOL Production Jigs,EOL-JIG-140-03,Noida Tech Center · Testing Bay,Mina Cross,TST,2026-12-10
+HLPL-AST-IMTE-002,Mitutoyo 500-196-30 Digital Vernier Caliper 150mm,Tools & Instruments,Mechanical QA Inspection,MIT-VC-88412,Noida Tech Center · QA Lab,Samira Holt,MECH,2026-11-20
+HLPL-AST-SMT-005,Heller 1809 MK5 10-Zone Forced Air Convection Reflow Oven,Production Machinery,SMT Surface Mount Line 2,HLR-1809-5512,Greater Noida SMT Plant 2 · Bay 2,Casey Rowan,EMF,2027-05-30`;
+                    setRawAssetCsvText(sample);
+                    handleParseBulkAssetCsv(sample);
+                  }}
+                  className="rounded border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary hover:bg-primary/20"
+                >
+                  📋 Load Sample Machinery & Jigs
+                </button>
+              </div>
+
+              <textarea
+                rows={5}
+                value={rawAssetCsvText}
+                onChange={(e) => {
+                  setRawAssetCsvText(e.target.value);
+                  handleParseBulkAssetCsv(e.target.value);
+                }}
+                placeholder="Asset Tag,Name,Class,Subclass,Serial Number,Facility Location,Custodian,Department,Next Calibration Due..."
+                className="w-full rounded-md border border-input bg-secondary/40 p-2.5 font-mono text-xs text-foreground focus:outline-none"
+              />
+
+              {/* Staged Review Preview Table */}
+              {stagedBulkAssets.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between font-mono text-[11px]">
+                    <span className="font-bold text-foreground">
+                      Staged for Ingestion: {stagedBulkAssets.filter((a) => !a.duplicate).length} valid assets
+                    </span>
+                    {stagedBulkAssets.some((a) => a.duplicate) && (
+                      <span className="font-bold text-rose-500">
+                        {stagedBulkAssets.filter((a) => a.duplicate).length} duplicate(s) flagged
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto rounded-lg border border-border">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="border-b border-border bg-secondary/50 text-[10px] uppercase text-muted-foreground sticky top-0">
+                        <tr>
+                          <th className="px-2 py-1.5">Tag</th>
+                          <th className="px-2 py-1.5">Name</th>
+                          <th className="px-2 py-1.5">Class</th>
+                          <th className="px-2 py-1.5">Serial</th>
+                          <th className="px-2 py-1.5">Custodian</th>
+                          <th className="px-2 py-1.5">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60 text-[11px]">
+                        {stagedBulkAssets.map((asset, idx) => (
+                          <tr key={idx} className={asset.duplicate ? "bg-rose-500/10 text-rose-600" : "hover:bg-secondary/30"}>
+                            <td className="px-2 py-1 font-bold">{asset.assetTag}</td>
+                            <td className="px-2 py-1 font-sans line-clamp-1">{asset.name}</td>
+                            <td className="px-2 py-1">{asset.assetClass}</td>
+                            <td className="px-2 py-1">{asset.serialNumber}</td>
+                            <td className="px-2 py-1 font-sans">{asset.custodian}</td>
+                            <td className="px-2 py-1">
+                              {asset.duplicate ? (
+                                <span className="font-bold text-rose-600">DUPLICATE</span>
+                              ) : (
+                                <span className="font-bold text-emerald-600">VALID ✓</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
+              <button onClick={() => setBulkAssetModalOpen(false)} className="h-8 rounded border border-border px-3 text-xs font-semibold">
+                Cancel
+              </button>
+              <button
+                onClick={handleCommitBulkAssets}
+                disabled={stagedBulkAssets.filter((a) => !a.duplicate).length === 0}
+                className="h-8 rounded bg-primary px-4 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-50"
+              >
+                Commit Staged Assets to Register
               </button>
             </div>
           </div>

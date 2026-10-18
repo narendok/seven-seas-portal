@@ -39,6 +39,8 @@ import {
   type InventoryCategory,
 } from "./LiveInventoryWorkspace";
 import { PurchasingBOMReviewTable } from "./PurchasingBOMReviewTable";
+import { DualLifecycleSmartBOMWorkspace } from "./DualLifecycleSmartBOMWorkspace";
+import { AdaptiveIngestionAndStagingGate } from "./AdaptiveIngestionAndStagingGate";
 
 // =============================================================================
 // TYPES & DATA CONTRACTS
@@ -441,11 +443,19 @@ export type PurchasingCommandCenterProps = {
   ) => void;
   projectScope: string;
   onReleaseToManufacturing?: (() => void) | undefined;
-  activeSubView?: ("recordage" | "quotations" | "orders" | "suppliers") | undefined;
-  onSelectSubView?: ((view: "recordage" | "quotations" | "orders" | "suppliers") => void) | undefined;
+  activeSubView?: PurchasingSubView | undefined;
+  onSelectSubView?: ((view: PurchasingSubView) => void) | undefined;
   isFullPage?: boolean | undefined;
   onBack?: (() => void) | undefined;
 };
+
+export type PurchasingSubView =
+  | "recordage"
+  | "smart_bom"
+  | "ingestion_gate"
+  | "quotations"
+  | "orders"
+  | "suppliers";
 
 export function PurchasingCommandCenter({
   items,
@@ -463,7 +473,7 @@ export function PurchasingCommandCenter({
   onBack,
 }: PurchasingCommandCenterProps) {
   // Navigation sub-tab state (synced with sidebar)
-  const [currentTab, setCurrentTab] = useState<"recordage" | "quotations" | "orders" | "suppliers">(activeSubView);
+  const [currentTab, setCurrentTab] = useState<PurchasingSubView>(activeSubView);
   const [showMorePoDetails, setShowMorePoDetails] = useState(false);
 
   // Sync external sub-view change
@@ -473,7 +483,7 @@ export function PurchasingCommandCenter({
     }
   }, [activeSubView]);
 
-  const handleTabChange = (tab: "recordage" | "quotations" | "orders" | "suppliers") => {
+  const handleTabChange = (tab: PurchasingSubView) => {
     setCurrentTab(tab);
     onSelectSubView?.(tab);
   };
@@ -609,22 +619,34 @@ export function PurchasingCommandCenter({
               </span>
             </div>
             <h1 className="mt-1 font-mono text-xl font-bold text-foreground flex items-center gap-2.5">
-              {currentTab === "orders" && (
-                <>
-                  <ShoppingCart className="size-5 text-primary" />
-                  <span>Purchase Orders (POs) & Volume Alignment</span>
-                </>
-              )}
               {currentTab === "recordage" && (
                 <>
                   <Package className="size-5 text-primary" />
                   <span>Recordage & Governed Stock Master</span>
                 </>
               )}
+              {currentTab === "smart_bom" && (
+                <>
+                  <Layers className="size-5 text-primary" />
+                  <span>Dual-Lifecycle Smart BOM (Tentative vs Released Baseline)</span>
+                </>
+              )}
+              {currentTab === "ingestion_gate" && (
+                <>
+                  <Truck className="size-5 text-primary" />
+                  <span>Adaptive PO & Invoice Ingestion (Pre-Inventory Review Gate)</span>
+                </>
+              )}
               {currentTab === "quotations" && (
                 <>
                   <FileText className="size-5 text-primary" />
                   <span>Commercial Vendor Quotations & Pricing Breaks</span>
+                </>
+              )}
+              {currentTab === "orders" && (
+                <>
+                  <ShoppingCart className="size-5 text-primary" />
+                  <span>Purchase Orders (POs) & Volume Alignment</span>
                 </>
               )}
               {currentTab === "suppliers" && (
@@ -656,6 +678,36 @@ export function PurchasingCommandCenter({
           </button>
 
           <button
+            onClick={() => handleTabChange("smart_bom")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
+              currentTab === "smart_bom"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Layers className="size-3.5" />
+            <span>2. Smart BOM (Dual-Lifecycle)</span>
+            <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 font-mono text-[9px]">
+              v0.3 / Rev A
+            </span>
+          </button>
+
+          <button
+            onClick={() => handleTabChange("ingestion_gate")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
+              currentTab === "ingestion_gate"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Truck className="size-3.5" />
+            <span>3. Adaptive Ingestion & Gate</span>
+            <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 font-mono text-[9px] text-amber-500 font-bold">
+              Fuzzy Match
+            </span>
+          </button>
+
+          <button
             onClick={() => handleTabChange("quotations")}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
               currentTab === "quotations"
@@ -664,7 +716,7 @@ export function PurchasingCommandCenter({
             }`}
           >
             <FileText className="size-3.5" />
-            <span>2. Quotations & Vendor Pricing</span>
+            <span>4. Quotations & Vendor Pricing</span>
           </button>
 
           <button
@@ -676,7 +728,7 @@ export function PurchasingCommandCenter({
             }`}
           >
             <ShoppingCart className="size-3.5" />
-            <span>3. Purchase Orders (POs)</span>
+            <span>5. Purchase Orders (POs)</span>
             <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 font-mono text-[9px]">
               {purchaseOrders.length}
             </span>
@@ -691,7 +743,7 @@ export function PurchasingCommandCenter({
             }`}
           >
             <Building className="size-3.5" />
-            <span>4. Supplier Management (ASL)</span>
+            <span>6. Supplier Management (ASL)</span>
             <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 font-mono text-[9px] text-emerald-500 font-bold">
               {suppliers.length} Approved
             </span>
@@ -750,7 +802,67 @@ export function PurchasingCommandCenter({
       )}
 
       {/* =========================================================================
-          TAB 2: QUOTATIONS & VENDOR PRICE COMPARISONS
+          TAB 2: SMART BOM (DUAL-LIFECYCLE: TENTATIVE VS RELEASED BASELINE)
+         ========================================================================= */}
+      {currentTab === "smart_bom" && (
+        <div className="space-y-6">
+          <DualLifecycleSmartBOMWorkspace
+            projectId={projectScope === "all" ? "HLPL-AI4T-01" : projectScope}
+            inventoryItems={items}
+            readOnly={readOnly}
+            onReleaseBOM={(releasedRev) => {
+              onReleaseToManufacturing?.();
+            }}
+          />
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 3: ADAPTIVE PO & INVOICE INGESTION (PRE-INVENTORY REVIEW GATE)
+         ========================================================================= */}
+      {currentTab === "ingestion_gate" && (
+        <div className="space-y-6">
+          <AdaptiveIngestionAndStagingGate
+            inventoryCatalog={items}
+            vendorCatalog={suppliers}
+            activePurchaseOrders={purchaseOrders}
+            readOnly={readOnly}
+            onGeneratePurchaseDrafts={(drafts) => {
+              if (drafts && drafts.length > 0) {
+                const newOrders: PurchaseOrderRecord[] = drafts.map((d: any, idx: number) => ({
+                  id: `PO-IMP-${Date.now()}-${idx}`,
+                  poNumber: d.poNumber || `HLPL-PO-IMP-${Date.now().toString().slice(-4)}`,
+                  supplierId: d.supplierId || "sup-mouser",
+                  supplierName: d.supplierName || "Mouser Electronics India",
+                  projectId: projectScope === "all" ? "HLPL-AI4T-01" : projectScope,
+                  componentMpn: d.mpn || "UNKNOWN",
+                  description: d.description || "Imported purchase requisition line",
+                  estimatedQuantity: d.quantity || 1000,
+                  annualSalesTarget: 50000,
+                  coveragePercent: Math.round(((d.quantity || 1000) / 50000) * 100),
+                  batchSchedule: "Imported from Adaptive Ingestion Staging Gate",
+                  unitCostUsd: d.unitPrice || 1.0,
+                  unitCostInr: Math.round((d.unitPrice || 1.0) * 83.5 * 100) / 100,
+                  totalAmountUsd: (d.quantity || 1000) * (d.unitPrice || 1.0),
+                  totalAmountInr: (d.quantity || 1000) * (d.unitPrice || 1.0) * 83.5,
+                  warrantyInherited: "24 Months Automotive Replacement (Standard ASL)",
+                  supplierValidityStatus: "Active",
+                  status: "Draft",
+                  orderDate: new Date().toISOString().split("T")[0]!,
+                  deliveryEta: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split("T")[0]!,
+                  receivedQuantity: 0,
+                  notes: "Generated from Governed Ingestion Staging Gate",
+                }));
+                setPurchaseOrders((prev) => [...newOrders, ...prev]);
+                handleTabChange("orders");
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 4: QUOTATIONS & VENDOR PRICE COMPARISONS
          ========================================================================= */}
       {currentTab === "quotations" && (
         <div className="space-y-6">

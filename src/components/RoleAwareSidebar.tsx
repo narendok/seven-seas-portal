@@ -39,6 +39,7 @@ import {
   BookOpen,
   PanelLeftClose,
   PanelLeftOpen,
+  Truck,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -96,8 +97,8 @@ export type RoleAwareSidebarProps = {
   view: string;
   sidebarExpanded: boolean;
   onToggleExpanded: () => void;
-  purchasingSubView?: "recordage" | "quotations" | "orders" | "suppliers" | undefined;
-  onSelectPurchasingSubView?: ((subView: "recordage" | "quotations" | "orders" | "suppliers") => void) | undefined;
+  purchasingSubView?: "recordage" | "smart_bom" | "ingestion_gate" | "quotations" | "orders" | "suppliers" | undefined;
+  onSelectPurchasingSubView?: ((subView: "recordage" | "smart_bom" | "ingestion_gate" | "quotations" | "orders" | "suppliers") => void) | undefined;
   onNavigate: (
     area: AreaId,
     view?:
@@ -113,6 +114,8 @@ export type RoleAwareSidebarProps = {
       | "quotations"
       | "suppliers"
       | "customers"
+      | "smart_bom"
+      | "ingestion_gate"
   ) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   onOpenAi4tLifecycle?: (() => void) | undefined;
@@ -467,6 +470,30 @@ export function RoleAwareSidebar({
               }),
           },
           {
+            id: "adm-smart-bom",
+            label: "Smart BOM (Dual-Lifecycle)",
+            shortLabel: "Smart BOM",
+            icon: Layers,
+            isActive: activeArea === "pur" && (view === "smart_bom" || (view === "queue" && purchasingSubView === "smart_bom")),
+            onClick: () =>
+              handleItemClick(() => {
+                onSelectPurchasingSubView?.("smart_bom");
+                onNavigate("pur", "smart_bom");
+              }),
+          },
+          {
+            id: "adm-ingestion-gate",
+            label: "Adaptive Ingestion & Gate",
+            shortLabel: "Ingestion",
+            icon: Truck,
+            isActive: activeArea === "pur" && (view === "ingestion_gate" || (view === "queue" && purchasingSubView === "ingestion_gate")),
+            onClick: () =>
+              handleItemClick(() => {
+                onSelectPurchasingSubView?.("ingestion_gate");
+                onNavigate("pur", "ingestion_gate");
+              }),
+          },
+          {
             id: "adm-procurement",
             label: "Purchase Orders (POs)",
             shortLabel: "POs",
@@ -723,6 +750,30 @@ export function RoleAwareSidebar({
                 handleItemClick(() => {
                   onSelectPurchasingSubView?.("recordage");
                   onNavigate("pur", "inventory");
+                }),
+            },
+            {
+              id: "pur-smart-bom",
+              label: "Smart BOM (Dual-Lifecycle)",
+              shortLabel: "Smart BOM",
+              icon: Layers,
+              isActive: activeArea === "pur" && (view === "smart_bom" || (view === "queue" && purchasingSubView === "smart_bom")),
+              onClick: () =>
+                handleItemClick(() => {
+                  onSelectPurchasingSubView?.("smart_bom");
+                  onNavigate("pur", "smart_bom");
+                }),
+            },
+            {
+              id: "pur-ingestion-gate",
+              label: "Adaptive Ingestion & Gate",
+              shortLabel: "Ingestion",
+              icon: Truck,
+              isActive: activeArea === "pur" && (view === "ingestion_gate" || (view === "queue" && purchasingSubView === "ingestion_gate")),
+              onClick: () =>
+                handleItemClick(() => {
+                  onSelectPurchasingSubView?.("ingestion_gate");
+                  onNavigate("pur", "ingestion_gate");
                 }),
             },
             {
