@@ -2836,11 +2836,22 @@ function Portal() {
                 }}
               />
             )}
-            <HeaderAction
-              label={persona.kind === "client" ? "Released Deliverables" : "Documents"}
-              icon={persona.kind === "client" ? Award : FileText}
-              onClick={() => setModal("documents")}
-            />
+            {persona.kind === "client" ? (
+              <HeaderAction
+                label="Released Deliverables"
+                icon={Award}
+                onClick={() => {
+                  setView("index");
+                  setModal(null);
+                }}
+              />
+            ) : (
+              <HeaderAction
+                label="Documents"
+                icon={FileText}
+                onClick={() => setModal("documents")}
+              />
+            )}
             {(persona.id === "admin" || persona.id === "pur") && (
               <HeaderAction label="Live Inventory" icon={PackageSearch} onClick={() => navigate("pur")} />
             )}
@@ -3030,17 +3041,7 @@ function Portal() {
               onRequestApproval={handleCreateApprovalRequest}
             />
           ) : persona.kind === "client" ? (
-            <ClientOEMPortal
-              onOpenDocument={(docId) => {
-                const match = portal.documents.find((d) => d.id === docId || d.url.includes(docId));
-                if (match) {
-                  setSelectedDocumentId(match.id);
-                  setModal("document");
-                } else {
-                  setModal("documents");
-                }
-              }}
-            />
+            <ClientOEMPortal />
           ) : effectiveArea === "home" && view === "assignee" && selectedAssignee ? (
             <AssigneeWorkload
               assignee={selectedAssignee}
@@ -3330,7 +3331,7 @@ function Portal() {
       )}{" "}
       {modal === "history" && <HistoryPanel audit={portal.audit} onClose={() => setModal(null)} />}{" "}
       {modal === "approvals" && (() => { setView("approvals"); setModal(null); return null; })()}{" "}
-      {modal === "documents" && (
+      {modal === "documents" && persona.kind !== "client" && (
         <DocumentsPanel
           documents={portal.documents}
           departments={portal.departments}

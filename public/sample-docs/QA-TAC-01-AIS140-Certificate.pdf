@@ -1,0 +1,54 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 759 >>
+stream
+BT
+/F1 18 Tf
+50 750 Td
+(AUTOMOTIVE RESEARCH ASSOCIATION OF INDIA \(ARAI\)) Tj
+/F1 12 Tf
+0 -25 Td
+(Type Approval Certificate \(TAC\) under AIS-140 Annexure 3 & 8) Tj
+/F1 10 Tf
+0 -18 Td
+(Certificate Number: ARAI/TAC/2026/842 | Date of Issue: 05 Oct 2026) Tj
+0 -18 Td
+(Manufacturer: Hexense Labs Private Limited \(Plant 2 Greater Noida\)) Tj
+0 -18 Td
+(Device: 4G Intelligent Telematics Gateway Model HLPL-AI4T-01) Tj
+0 -18 Td
+(Vehicle Fitment Category: M & N Commercial Vehicles \(Tata Ace EV\)) Tj
+0 -18 Td
+(Standards Verified: AIS-140:2018 \(NavIC/GPS, Emergency SOS, Dual IP\)) Tj
+0 -18 Td
+(Environmental Compliance: IP67 \(ISO 20653\) & ISO 7637-2 Electrical Pulses) Tj
+0 -18 Td
+(Result: TYPE APPROVED FOR MASS SERIAL PRODUCTION & VEHICLE REGISTRATION) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000244 00000 n 
+00000001059 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1129
+%%EOF
