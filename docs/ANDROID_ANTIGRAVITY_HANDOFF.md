@@ -10,9 +10,9 @@ Read this file when working on the Android companion from the SSM-new Antigravit
 
 The Android Studio project currently resides at:
 
-`C:\Users\Test\AndroidStudioProjects\SSM-new-app`
+`C:\Users\Test\Documents\SSM-new\SSM-new-app`
 
-It is outside the SSM-new folder and is maintained in its own Git repository at `https://github.com/narendok/SSM-new-app.git` on `main`. Android commits do not automatically land in the portal repository or Lovable sync. Work directly in the Android project; do not create a second Android source copy under SSM-new.
+It is maintained in its own Git repository at `https://github.com/narendok/SSM-new-app.git` on `main`. Android commits do not automatically land in the portal repository or Lovable sync. Work directly in the Android project; do not create a second Android source copy under SSM-new-web.
 
 ## Corrected backend configuration
 
