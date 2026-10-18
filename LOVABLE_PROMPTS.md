@@ -1,5 +1,5 @@
 # Hexense Labs SCMS — Ready-to-Run Lovable Prompts
-## Targeted for Project: "Portal & Wizard" (`a3399684-daab-4b38-8666-187b96b451af`)
+## Targeted for Project: "SSM New" (`a3399684-daab-4b38-8666-187b96b451af`)
 
 Use these structured prompts in Lovable to expand the existing project into the complete **11-Department Smart Company Management System**.
 

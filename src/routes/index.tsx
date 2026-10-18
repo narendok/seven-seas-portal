@@ -1990,9 +1990,9 @@ const readPortal = (): PortalState => {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Command Center — Six Sense Mobility" },
+      { title: "SSM New — Six Sense Mobility" },
       { name: "description", content: "Operational workspace for Six Sense Mobility in Noida." },
-      { property: "og:title", content: "Command Center — Six Sense Mobility" },
+      { property: "og:title", content: "SSM New — Six Sense Mobility" },
       {
         property: "og:description",
         content: "Operational workspace and setup hub for Six Sense Mobility.",

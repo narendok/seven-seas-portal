@@ -1,10 +1,10 @@
-# Portal & Wizard
+# SSM New
 
 Build the operational portal described in the attached specification. Start with the seven-area responsive interface and setup wizard.
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://seven-seas-portal.lovable.app
+**Live app**: https://seven-seas-portal.lovable.app (current published URL; Lovable project rename is pending access)
 
 ## Build with Lovable
 

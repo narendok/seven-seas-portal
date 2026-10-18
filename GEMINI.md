@@ -41,6 +41,6 @@ The system digital backbone integrates:
 11. `HR/OPS`: HR & Operations (Skill Matrix `HLPL/F/HR/03`, Six Sigma DMAIC)
 
 ### 4. Lovable Integration
-- **Active Project**: "Portal & Wizard" (`a3399684-daab-4b38-8666-187b96b451af`)
+- **Active Project**: "SSM New" (`a3399684-daab-4b38-8666-187b96b451af`)
 - **Backend**: Lovable Cloud (managed Supabase Postgres + private S3 storage with signed tokens)
 - **Repository Structure**: `00_Automotive_Hardware_Audit_Repository` covering phases `HW_01` to `HW_37`.
