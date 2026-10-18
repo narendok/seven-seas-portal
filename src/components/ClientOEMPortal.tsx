@@ -20,12 +20,10 @@ import {
 
 export interface ClientOEMPortalProps {
   onOpenDocument?: (docId: string) => void;
-  onOpenLifecycleModal?: () => void;
 }
 
 export function ClientOEMPortal({
   onOpenDocument,
-  onOpenLifecycleModal,
 }: ClientOEMPortalProps) {
   const deliverables = [
     {
@@ -152,16 +150,6 @@ export function ClientOEMPortal({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {onOpenLifecycleModal && (
-              <button
-                type="button"
-                onClick={onOpenLifecycleModal}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 shadow-xs"
-              >
-                <Layers className="size-3.5" />
-                <span>Delivery Lifecycle Stepper</span>
-              </button>
-            )}
             <div className="rounded-xl border border-border/70 bg-card/80 px-3.5 py-1.5 text-right">
               <p className="text-[10px] uppercase font-mono text-muted-foreground">Lead OEM Contact</p>
               <p className="text-xs font-bold text-foreground">Mr. Rohan Verma (Fleet Manager)</p>

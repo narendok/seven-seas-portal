@@ -161,7 +161,7 @@ const DEFAULT_FAVORITES_BY_ROLE: Record<string, string[]> = {
   fin: ["dept-mywork", "fin-hub", "fin-customers", "dept-projects"],
   sit: ["dept-mywork", "sit-hub", "dept-projects"],
   hrops: ["dept-mywork", "hrops-hub", "dept-projects"],
-  client: ["client-milestones", "client-lifecycle", "client-documents"],
+  client: ["client-milestones", "client-documents"],
 };
 
 export function RoleAwareSidebar({
@@ -712,19 +712,11 @@ export function RoleAwareSidebar({
         return [
           {
             id: "client-milestones",
-            label: "Project Milestone Tracker",
-            shortLabel: "Milestones",
+            label: "OEM Delivery Dashboard",
+            shortLabel: "Dashboard",
             icon: CheckCircle2,
             isActive: activeArea === "home",
             onClick: () => handleItemClick(() => onNavigate("home")),
-          },
-          {
-            id: "client-lifecycle",
-            label: "Stage-by-Stage Lifecycle Hub",
-            shortLabel: "Lifecycle",
-            icon: PlayCircle,
-            isActive: false,
-            onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
           },
           {
             id: "client-documents",
@@ -976,14 +968,6 @@ export function RoleAwareSidebar({
               icon: CheckCircle2,
               isActive: activeArea === "home",
               onClick: () => handleItemClick(() => onNavigate("home")),
-            },
-            {
-              id: "client-lifecycle",
-              label: "Stage-by-Stage Lifecycle Hub",
-              shortLabel: "Lifecycle",
-              icon: PlayCircle,
-              isActive: false,
-              onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
             },
           ],
         },
