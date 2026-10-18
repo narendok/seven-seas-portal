@@ -1,3 +1,4 @@
+import { departmentCode } from "@/lib/department-scope";
 import { useState, useId } from "react";
 import {
   Users,
@@ -202,9 +203,13 @@ export const defaultCompanyDirectory: DirectoryContact[] = [
 export function CompanyDirectoryModal({
   onClose,
   initialDepartment,
+  lockedDepartment,
+  contacts,
 }: {
   onClose: () => void;
   initialDepartment?: string | undefined;
+  lockedDepartment?: string | undefined;
+  contacts?: DirectoryContact[] | undefined;
 }) {
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState<string>(initialDepartment ?? "ALL");
@@ -225,8 +230,9 @@ export function CompanyDirectoryModal({
     { code: "HROPS", name: "HR & Operations" },
   ];
 
-  const filtered = defaultCompanyDirectory.filter((emp) => {
-    const matchesDept = selectedDept === "ALL" || emp.departmentCode === selectedDept;
+  const filtered = (contacts ?? defaultCompanyDirectory).filter((emp) => {
+    if (lockedDepartment && departmentCode(emp.departmentCode) !== departmentCode(lockedDepartment)) return false;
+    const matchesDept = Boolean(lockedDepartment) || selectedDept === "ALL" || departmentCode(emp.departmentCode) === departmentCode(selectedDept);
     const q = search.toLowerCase();
     const matchesSearch =
       emp.name.toLowerCase().includes(q) ||
@@ -255,7 +261,7 @@ export function CompanyDirectoryModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-foreground">Signed-In Company Directory</h2>
+                <h2 className="text-base font-bold text-foreground">{lockedDepartment ? `${lockedDepartment} Team Directory` : "Signed-In Company Directory"}</h2>
                 <span className="rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 font-mono text-[10px] font-semibold text-primary">
                   Work-Contact Projection (Master Plan §9)
                 </span>
@@ -290,7 +296,7 @@ export function CompanyDirectoryModal({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            {departments.slice(0, 7).map((dept) => (
+            {departments.filter(dept => !lockedDepartment || departmentCode(dept.code) === departmentCode(lockedDepartment)).slice(0, 7).map((dept) => (
               <button
                 key={dept.code}
                 onClick={() => setSelectedDept(dept.code)}
@@ -304,6 +310,8 @@ export function CompanyDirectoryModal({
               </button>
             ))}
             <select
+              hidden={Boolean(lockedDepartment)}
+              disabled={Boolean(lockedDepartment)}
               aria-label="Filter other departments"
               value={departments.slice(0, 7).some((d) => d.code === selectedDept) ? "" : selectedDept}
               onChange={(e) => {
@@ -377,6 +385,7 @@ export function CompanyDirectoryModal({
                 </span>
                 <button
                   type="button"
+                  disabled={!emp.workEmail}
                   onClick={() => handleCopyEmail(emp.workEmail, emp.id)}
                   className="rounded-md border border-border bg-secondary px-2 py-1 text-[10px] font-semibold text-foreground transition hover:bg-muted"
                 >

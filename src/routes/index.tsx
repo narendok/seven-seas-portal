@@ -84,6 +84,11 @@ import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable"
 import { PurchasingCommandCenter, type PurchasingSubView } from "@/components/PurchasingCommandCenter";
 import { CustomerManagementFullPageView } from "@/components/CustomerManagementFullPageView";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
+import { buildDocumentDraft, type DraftSource } from "@/lib/document-draft";
+import { assertApprovalDecision } from "@/lib/approval-workflow";
+import { commitLatestState, patchRecord } from "@/lib/portal-store";
+import { repairDemoState } from "@/lib/portal-hydration";
+import { approvalInDepartment, approvalScope, canDepartmentSign, departmentCode, projectReferences } from "@/lib/department-scope";
 import { ApprovalsFullPageView, type ApprovalRecord } from "@/components/ApprovalsFullPageView";
 import { DepartmentLeadCoordinationCenter } from "@/components/DepartmentLeadCoordinationCenter";
 import {
@@ -434,7 +439,7 @@ type Persona = {
   kind: "admin" | "lead" | "client";
 };
 type Ai4tSimulation = { stage: number; history: string[] };
-type ProjectScope = "all" | "HLPL-AI4T-01" | "HLPL-SLCT-01" | "HLPL-XLINK-03";
+type ProjectScope = string;
 
 export type DepartmentAnalysisEntry = {
   departmentCode: string;
@@ -626,16 +631,11 @@ type PortalState = {
   setup: SetupState;
   setupStep: number;
   records: RecordItem[];
+  teamMembers?: TeamMember[] | undefined;
   masters: MasterData;
   departments: Department[];
   roles: DepartmentRole[];
-  approvals: {
-    id: string;
-    title: string;
-    recordId: string;
-    outcome: "Pending" | "Approved" | "Rejected" | "Returned";
-    updatedAt: string;
-  }[];
+  approvals: ApprovalRecord[];
   documents: ControlledDocument[];
   audit: AuditEvent[];
   notifications: string[];
@@ -894,7 +894,7 @@ const mergeAutomotiveDemoDocuments = (documents: ControlledDocument[]) => {
   return [...documents, ...seed.filter((document) => !existing.has(document.id))];
 };
 const hasCompleteDemoDocumentSet = (documents: ControlledDocument[]) =>
-  ["demo-doc-pmss", "demo-doc-prs", "demo-doc-bom", "demo-doc-datasheet"].every((id) =>
+  ["demo-doc-pmss", "demo-doc-prs", "demo-doc-bom"].every((id) =>
     documents.some((document) => document.id === id),
   );
 const setupSteps = [
@@ -995,21 +995,8 @@ function defaultTemplateBodies() {
 }
 
 function templateBlueprint(title: string) {
-  const templates: Record<string, string> = {
-    "Customer SOR": "OEM requirements, fleet connectivity, CAN telemetry scope, rollout schedule, commercial SLA, warranty and delivery terms.",
-    "Mutual NDA": "Confidential information definitions, non-disclosure obligations, intellectual property protections and governing law.",
-    "Commercial Quotation": "Tiered volume pricing, NRE engineering costs, tooling charges, payment milestones and delivery lead-time.",
-    "Contract Review Record": "Cross-department feasibility matrix for SAL, EHW, ESW, MECH, PUR, QA, EMF and FIN with risk score and human gate approval.",
-    "Product Requirement Spec": "STM32/ESP32, 4G LTE Cat-1, GNSS, 9–36V ISO 7637-2 power topology, CAN J1939, IP67 enclosure and pinout definitions.",
-    "Production BOM Cost Tracker": "Item number, MPN, manufacturer, description, package, sourcing lead time, unit cost and AEC-Q grade.",
-    "Hardware DFMEA": "Severity, occurrence, detection, RPN scoring, potential failure causes, design controls and corrective actions.",
-    "Manufacturing Process Flow & Control Plan": "SMT process flow, stencil thickness, 10-zone reflow profile, 3D AOI inspection, ICT fixtures and packaging controls.",
-    "DVP&R Verification Plan": "Thermal shock, ISO 7637-2 pulses, ISO 16750-3 vibration, IP67 submersion and CISPR 25 EMC/EMI test cases.",
-    "Pre-Dispatch Inspection Certificate": "Serialized IMEI/MAC list, cellular RF test, GPS TTFF, flashing checksum and QA sign-off stamp.",
-    "Commercial Tax Invoice": "GST/HSN table, invoice and e-Way bill details, buyer/consignee addresses, tax calculations and bank remittance instructions.",
-    "Annual Skill Matrix": "Operator competency scores, IPC-A-610 certifications, ESD safety training and audit validity dates.",
-  };
-  return templates[title] ?? "Controlled project-specific requirement baseline requiring human review before release.";
+  const draft = buildDocumentDraft(title, "");
+  return draft.supported ? draft.sections.map(section => section.title + ": " + section.rows.map(row => row[0]).join(", ")).join("\n") : "Controlled source information and an approved document-specific format are required. No specifications or approvals are inferred.";
 }
 
 const templateProjects = ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03", "VCU", "BMS"];
@@ -1836,39 +1823,15 @@ export function canDepartmentAccessDocument(
     );
   }
 
-  const deptId = (departmentContext || persona.departmentId || "home") as AreaId;
-  if (!deptId || deptId === "home") return true;
+  const deptId = (persona.departmentId || "home") as AreaId;
+  if (!deptId || deptId === "home") return false;
 
   const deptCode = (areaById(deptId)?.short || "").toUpperCase();
 
-  // 1. Prepared / controlled by this department
-  const isAuthor =
-    document.departmentId === deptId ||
-    document.title.toUpperCase().includes(`[${deptCode}]`) ||
-    document.title.toUpperCase().includes(`-${deptCode}-`) ||
-    document.url.toUpperCase().includes(`-${deptCode}-`) ||
-    (Boolean(document.part) && (document.part ?? "").toUpperCase().includes(deptCode));
-
-  // 2. Explicitly reviewed or designed/approved by this department
-  const isReviewerOrApprover =
-    Boolean(document.approver && document.approver.toUpperCase().includes(deptCode)) ||
-    Boolean(document.designer && document.designer.toUpperCase().includes(deptCode));
-
-  // 3. Multi-department mandatory review gates (IATF 16949 §8.2.3 / §8.3)
-  const docLower = `${document.title} ${document.type} ${document.url}`.toLowerCase();
-  const isMandatoryStakeholder =
-    (/contract review|feasibility|mkt\/01/.test(docLower) &&
-      ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "FIN"].includes(deptCode)) ||
-    (/dvp&r|compliance|test plan/.test(docLower) &&
-      ["QA", "EHW", "MECH", "ESW"].includes(deptCode)) ||
-    (/prs|product requirement/.test(docLower) &&
-      ["EHW", "ESW", "QA", "SAL"].includes(deptCode)) ||
-    (/control plan|pfd|pfmea/.test(docLower) &&
-      ["EMF", "TST", "QA", "EHW"].includes(deptCode)) ||
-    (/mounting|field installation|service/.test(docLower) &&
-      ["SIT", "MECH", "SAL"].includes(deptCode));
-
-  return Boolean(isAuthor || isReviewerOrApprover || isMandatoryStakeholder);
+  // Ownership and explicit department-code assignments only. A title or filename is not an access grant.
+  const isOwner = Boolean(document.departmentId && (document.departmentId === deptId || document.departmentId === departmentContext || departmentCode(document.departmentId) === departmentCode(deptCode)));
+  const assignedCodes = [document.approver, document.designer].flatMap(value => (value ?? "").split(/[,;·/]/).map(part => departmentCode(part)));
+  return isOwner || assignedCodes.includes(departmentCode(deptCode));
 }
 const areaDepartmentType: Partial<Record<AreaId, string>> = {
   sales: "Sales & Business Development",
@@ -1984,13 +1947,7 @@ const readPortal = (): PortalState => {
       (!hasCompleteDemoDocumentSet(hydrated.documents) || !hydrated.departments.length || !hydrated.records.length)
     ) {
       const restored = demoPortal();
-      return {
-        ...restored,
-        approvals: hydrated.approvals.length ? hydrated.approvals : restored.approvals,
-        alerts: hydrated.alerts.length ? hydrated.alerts : restored.alerts,
-        audit: [...hydrated.audit, ...restored.audit].slice(0, 100),
-        notifications: [...hydrated.notifications, ...restored.notifications].slice(0, 100),
-      };
+      return repairDemoState(hydrated, restored);
     }
     return hydrated;
   } catch {
@@ -2056,8 +2013,7 @@ function Portal() {
     | "approvals"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
-  const [customTeamMembers, setCustomTeamMembers] = useState<TeamMember[]>([]);
-  const allTeamMembers = useMemo(() => [...demoTeam, ...customTeamMembers], [customTeamMembers]);
+  const allTeamMembers = useMemo(() => [...(portal?.demoLoaded ? demoTeam : []), ...(portal?.teamMembers ?? [])], [portal?.demoLoaded, portal?.teamMembers]);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [queueStage, setQueueStage] = useState<string | null>(null);
   const [modal, setModal] = useState<
@@ -2095,7 +2051,13 @@ function Portal() {
   const [adminTab, setAdminTab] = useState<
     "company" | "templates" | "raci" | "departments" | "roles" | "masters" | "settings" | "cloud" | "team" | "demo"
   >("company");
-  useEffect(() => setPortal(readPortal()), []);
+  useEffect(() => {
+    setPortal(readPortal());
+    const refresh = (event: StorageEvent) => { if (event.key === storeKey) setPortal(readPortal()); };
+    window.addEventListener("storage", refresh);
+    return () => window.removeEventListener("storage", refresh);
+  }, []);
+  useEffect(() => { setDirectoryOpen(false); setDraftHubOpen(false); setModal(null); setPrintTemplate(null); setAi4tOpen(false); setCustomerRegisterOpen(false); }, [persona.id]);
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("XYZ Pvt Ltd-scms-theme");
     setDarkMode(savedTheme !== "light");
@@ -2114,17 +2076,23 @@ function Portal() {
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
   }, []);
-  useEffect(() => {
-    if (portal) window.localStorage.setItem(storeKey, JSON.stringify(portal));
-  }, [portal]);
+
   if (!portal)
     return (
       <main className="grid min-h-screen place-items-center bg-background text-muted-foreground">
         Opening your portal…
       </main>
     );
-  const update = (recipe: (state: PortalState) => PortalState) =>
-    setPortal((state) => (state ? recipe(state) : state));
+  const update = async (recipe: (state: PortalState) => PortalState): Promise<boolean> => {
+    try {
+      const next = await commitLatestState(readPortal, state => window.localStorage.setItem(storeKey, JSON.stringify(state)), recipe, commit => navigator.locks ? navigator.locks.request(storeKey, commit) : Promise.resolve(commit()));
+      setPortal(next);
+      return true;
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "The change could not be saved. Please retry.");
+      return false;
+    }
+  };
   const log = (action: string, detail: string) =>
     update((state) => ({
       ...state,
@@ -2219,16 +2187,16 @@ function Portal() {
     announce(`${next.label} context active.`);
   };
   const loadDemo = () => {
-    setPortal(demoPortal());
+    void update(state => ({ ...demoPortal(), demoSnapshot: state.demoLoaded ? state.demoSnapshot : state }));
     setDepartmentContext(null);
     setModal(null);
-    announce("Enterprise operational lifecycle records loaded and synchronized.");
+    announce("Demo records loaded in this browser. They are not production records.");
   };
   const resetDemo = () => {
-    setPortal(emptyPortal());
+    void update(state => state.demoSnapshot ?? emptyPortal());
     setDepartmentContext(null);
     setModal(null);
-    announce("Demo lifecycle removed. Your portal is empty again.");
+    announce("Demo removed; the saved setup has been restored.");
   };
   const handleCustomerCreated = (customer: CustomerRecord) => {
     update((state) => {
@@ -2364,57 +2332,62 @@ function Portal() {
     setModal(null);
     announce(`${record.reference} created.`);
   };
-  const updateTask = (taskId: string, patch: Partial<RecordItem>, action: string) => {
+  const updateTask = async (taskId: string, patch: Partial<RecordItem>, action: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot modify engineering tasks.");
       return;
     }
     const task = portal.records.find((record) => record.id === taskId);
     if (!task) return;
-    if (persona.kind === "lead" && persona.departmentId && task.departmentId !== persona.departmentId) {
+    if (persona.kind === "lead" && persona.departmentId && task.area !== persona.departmentId) {
       announce("Department leads can only modify tasks in their own department.");
       return;
     }
-    update((state) => ({
+    const committed = await update((state) => {
+      const current = state.records.find(record => record.id === taskId);
+      if (!current || (persona.kind === "lead" && current.area !== persona.departmentId)) throw new Error("This task is outside your department.");
+      if ((patch.status === "Approved" || patch.status === "Released") && state.approvals.some(approval => approval.outcome === "Pending" && [current.id, current.reference].includes(approval.recordId))) throw new Error("Wait for the designated approval before completing this task.");
+      return ({
       ...state,
       records: state.records.map((record) =>
-        record.id === taskId ? { ...record, ...patch, updatedAt: now() } : record,
+        record.id === taskId ? { ...patchRecord(record, patch), updatedAt: now() } : record,
       ),
-    }));
+    });
+    });
+    if (!committed) return;
     log(action, `${task.reference} · ${task.title}`);
     announce(`${task.title} updated.`);
   };
-  const handleApproveGate = (id: string, notes?: string) => {
+  const handleApproveGate = async (id: string, notes?: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot approve gates.");
       return;
     }
-    const appr = portal.approvals.find((a) => a.id === id) as any;
+    const rawApproval = portal.approvals.find((a) => a.id === id);
+    if (!rawApproval) return;
+    const appr = approvalScope(rawApproval);
     if (persona.kind === "lead" && appr) {
-      const userDept = (persona.departmentId ?? "").toUpperCase();
-      const apprDept = (appr.department ?? "").toUpperCase();
-      const isAuthorized = userDept === apprDept || (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA"));
+      const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
         return;
       }
     }
 
-    const reqDeptCode = (appr?.department || "ehw").toLowerCase();
-    const targetDeptId = portal.departments.find(
-      (d) => d.code.toLowerCase() === reqDeptCode || d.id === reqDeptCode
-    )?.id || "ehw";
+    const targetDeptId = portal.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === departmentCode(appr.department))?.id ?? areas.find(area => departmentCode(area.short) === departmentCode(appr.department))?.id ?? "admin";
 
     const syncAlert: DemoAlert = {
       id: `ALT-APPR-${Date.now().toString().slice(-6)}`,
       severity: "Warning",
       title: `✅ Approval Granted: ${appr?.title ?? id}`,
-      detail: `${persona.label} signed and endorsed this gate. Note: "${notes ?? "Approved under IATF 16949 / ISO 9001 governance."}". Traceable ref: ${appr?.recordId ?? id}.`,
+      detail: `${persona.label} signed and endorsed this gate. Note: "${notes ?? "Designated review complete."}". Traceable ref: ${appr?.recordId ?? id}.`,
       departmentId: targetDeptId,
       resolved: false,
     };
 
-    update((state) => ({
+    const committed = await update((state) => {
+      assertApprovalDecision(state.approvals.find(approval => approval.id === id), persona);
+      return ({
       ...state,
       approvals: state.approvals.map((a) =>
         a.id === id
@@ -2436,35 +2409,34 @@ function Portal() {
               ...r,
               status: "Approved" as const,
               updatedAt: now(),
-              notes: `${r.notes ? r.notes + " · " : ""}Gate approved by ${persona.label} (${notes || "IATF 16949 cleared"})`,
+              notes: `${r.notes ? r.notes + " · " : ""}Gate approved by ${persona.label} (${notes || "Designated review complete"})`,
             }
           : r
       ),
-    }));
-    log("Human Approval Signed", `Approved gate ${id} by ${persona.label}. Note: ${notes ?? "Signed under IATF 16949 / ISO 9001 governance."}`);
+    });
+    });
+    if (!committed) return;
+    log("Human Approval Signed", `Approved gate ${id} by ${persona.label}. Note: ${notes ?? "Designated reviewer decision recorded."}`);
     announce(`Approval ${id} signed and endorsed. Requester notified.`);
   };
 
-  const handleRejectGate = (id: string, reason: string) => {
+  const handleRejectGate = async (id: string, reason: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot reject gates.");
       return;
     }
-    const appr = portal.approvals.find((a) => a.id === id) as any;
+    const rawApproval = portal.approvals.find((a) => a.id === id);
+    if (!rawApproval) return;
+    const appr = approvalScope(rawApproval);
     if (persona.kind === "lead" && appr) {
-      const userDept = (persona.departmentId ?? "").toUpperCase();
-      const apprDept = (appr.department ?? "").toUpperCase();
-      const isAuthorized = userDept === apprDept || (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA"));
+      const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
         return;
       }
     }
 
-    const reqDeptCode = (appr?.department || "ehw").toLowerCase();
-    const targetDeptId = portal.departments.find(
-      (d) => d.code.toLowerCase() === reqDeptCode || d.id === reqDeptCode
-    )?.id || "ehw";
+    const targetDeptId = portal.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === departmentCode(appr.department))?.id ?? areas.find(area => departmentCode(area.short) === departmentCode(appr.department))?.id ?? "admin";
 
     const syncAlert: DemoAlert = {
       id: `ALT-REJ-${Date.now().toString().slice(-6)}`,
@@ -2475,7 +2447,9 @@ function Portal() {
       resolved: false,
     };
 
-    update((state) => ({
+    const committed = await update((state) => {
+      assertApprovalDecision(state.approvals.find(approval => approval.id === id), persona);
+      return ({
       ...state,
       approvals: state.approvals.map((a) =>
         a.id === id
@@ -2483,6 +2457,8 @@ function Portal() {
               ...a,
               outcome: "Rejected" as const,
               updatedAt: now(),
+              signedBy: persona.label,
+              signedAt: now(),
               comments: reason,
             }
           : a
@@ -2498,31 +2474,30 @@ function Portal() {
             }
           : r
       ),
-    }));
+    });
+    });
+    if (!committed) return;
     log("Approval Rejected", `Rejected gate ${id} by ${persona.label}. Reason: ${reason}`);
     announce(`Approval ${id} rejected. Requester notified.`);
   };
 
-  const handleReturnGate = (id: string, reworkNotes: string) => {
+  const handleReturnGate = async (id: string, reworkNotes: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot return gates.");
       return;
     }
-    const appr = portal.approvals.find((a) => a.id === id) as any;
+    const rawApproval = portal.approvals.find((a) => a.id === id);
+    if (!rawApproval) return;
+    const appr = approvalScope(rawApproval);
     if (persona.kind === "lead" && appr) {
-      const userDept = (persona.departmentId ?? "").toUpperCase();
-      const apprDept = (appr.department ?? "").toUpperCase();
-      const isAuthorized = userDept === apprDept || (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA"));
+      const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
         return;
       }
     }
 
-    const reqDeptCode = (appr?.department || "ehw").toLowerCase();
-    const targetDeptId = portal.departments.find(
-      (d) => d.code.toLowerCase() === reqDeptCode || d.id === reqDeptCode
-    )?.id || "ehw";
+    const targetDeptId = portal.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === departmentCode(appr.department))?.id ?? areas.find(area => departmentCode(area.short) === departmentCode(appr.department))?.id ?? "admin";
 
     const syncAlert: DemoAlert = {
       id: `ALT-RET-${Date.now().toString().slice(-6)}`,
@@ -2533,7 +2508,9 @@ function Portal() {
       resolved: false,
     };
 
-    update((state) => ({
+    const committed = await update((state) => {
+      assertApprovalDecision(state.approvals.find(approval => approval.id === id), persona);
+      return ({
       ...state,
       approvals: state.approvals.map((a) =>
         a.id === id
@@ -2541,6 +2518,8 @@ function Portal() {
               ...a,
               outcome: "Returned" as const,
               updatedAt: now(),
+              signedBy: persona.label,
+              signedAt: now(),
               comments: reworkNotes,
             }
           : a
@@ -2557,57 +2536,48 @@ function Portal() {
             }
           : r
       ),
-    }));
+    });
+    });
+    if (!committed) return;
     log("Approval Returned", `Returned gate ${id} by ${persona.label} for modifications: ${reworkNotes}`);
     announce(`Approval ${id} returned for rework. Requester notified.`);
   };
 
-  const handleCreateApprovalRequest = (newApprData: Omit<ApprovalRecord, "id" | "outcome" | "updatedAt">) => {
-    const newId = `appr-${Date.now().toString().slice(-6)}`;
-    const newRecord: ApprovalRecord = {
-      id: newId,
-      ...newApprData,
-      outcome: "Pending",
-      updatedAt: now(),
-    };
-    const targetApproverDept =
-      newApprData.approverAuthority
-        ? (portal.departments.find((d) => d.code.toUpperCase() === newApprData.approverAuthority?.toUpperCase())?.id || newApprData.approverAuthority.toLowerCase())
-        : (newApprData.riskLevel === "Critical"
-            ? (portal.departments.find((d) => d.code === "QA")?.id || "qa")
-            : (newApprData.department === "QA" ? "sales" : (portal.departments.find((d) => d.code === "QA")?.id || "qa")));
-
-    const alertId = `ALT-REQ-${Date.now().toString().slice(-6)}`;
-    const approverAlert: DemoAlert = {
-      id: alertId,
-      severity: newApprData.riskLevel === "Critical" ? "Critical" : "Warning",
-      title: `Pending Sign-off: ${newApprData.title}`,
-      detail: `Submitted by ${newApprData.requester} (${newApprData.department}) for ${newApprData.project}. Requires review under ${newApprData.iatfClause}.`,
-      departmentId: targetApproverDept,
-      resolved: false,
-    };
-
-    update((state) => ({
-      ...state,
-      approvals: [newRecord, ...state.approvals],
-      alerts: [approverAlert, ...state.alerts],
-      notifications: [`[PENDING APPROVAL] ${newApprData.title} submitted by ${newApprData.requester}`, ...state.notifications].slice(0, 50),
-    }));
-    log("Approval Requested", `Created approval request ${newId} for ${newApprData.title} by ${newApprData.requester}`);
-    announce(`Approval request ${newApprData.title} submitted and routed to designated authority.`);
+  const handleCreateApprovalRequest = async (input: Omit<ApprovalRecord, "id" | "outcome" | "updatedAt">): Promise<boolean> => {
+    if (persona.kind === "client") return false;
+    const authority = departmentCode(input.approverAuthority);
+    if (!["ADMIN", ...personas.filter(item => item.kind === "lead").map(item => departmentCode(item.departmentId))].includes(authority)) { announce("Choose a valid designated approver."); return false; }
+    const newId = createId();
+    const committed = await update(state => {
+      const source = state.records.find(record => !record.archived && (record.id === input.recordId || record.reference === input.recordId));
+      if (!source || (persona.kind === "lead" && source.area !== persona.departmentId)) throw new Error("Choose an existing source record in your department.");
+      const project = state.records.find(record => record.type === "Project" && record.reference === input.project);
+      const refs = projectReferences(source);
+      if (input.project && !refs.includes(input.project) && !(project && refs.includes(project.id))) throw new Error("The selected project is not linked to this source record.");
+      if (state.approvals.some(approval => approval.outcome === "Pending" && [source.id, source.reference].includes(approval.recordId) && departmentCode(approvalScope(approval).approverAuthority) === authority)) throw new Error("An approval for this record is already pending with that authority.");
+      const request: ApprovalRecord = { ...input, id: newId, department: departmentCode(source.area), requester: persona.label, recordId: source.reference, approverAuthority: input.approverAuthority, outcome: "Pending", updatedAt: now() };
+      const target = state.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === authority)?.id ?? areas.find(area => departmentCode(area.short) === authority)?.id ?? "admin";
+      return { ...state, approvals: [request, ...state.approvals], alerts: [{ id: createId(), severity: input.riskLevel === "Critical" ? "Critical" as const : "Warning" as const, title: "Pending Sign-off: " + input.title, detail: "Review requested by " + persona.label + " for " + source.reference, departmentId: target, resolved: false }, ...state.alerts] };
+    });
+    if (!committed) return false;
+    log("Approval Requested", input.title + " · " + input.recordId + " · assigned to " + authority);
+    announce("Approval request saved and routed to its designated reviewer.");
+    return true;
   };
-  const handleCreateCustomTask = (taskData: {
+  const handleCreateCustomTask = async (taskData: {
     title: string;
     priority: "Low" | "Normal" | "High" | "Critical";
     assignee: string;
     projectId: string;
     dueDate: string;
     notes: string;
-  }) => {
-    const nextRef = `TASK-${activeArea.toUpperCase()}-${String(portal.records.filter((r) => r.type === "Task").length + 1).padStart(3, "0")}`;
+  }): Promise<boolean> => {
+    if (persona.kind === "client") return false;
+    const nextRef = `LOCAL-TASK-${activeArea.toUpperCase()}-${createId().slice(0,8).toUpperCase()}`;
     const newTask: RecordItem = {
       id: createId(),
       area: activeArea,
+      departmentId: departmentContext ?? findAreaDepartment(portal.departments, activeArea)?.id,
       type: "Task",
       title: taskData.title,
       status: "Open",
@@ -2624,15 +2594,23 @@ function Portal() {
         scope: taskData.notes,
       },
     };
-    update((state) => ({
+    const saved = await update((state) => {
+      const members = [...(state.demoLoaded ? demoTeam : []), ...(state.teamMembers ?? [])];
+      if (!taskData.title.trim() || !members.some(member => member.area === activeArea && member.name === taskData.assignee)) throw new Error("Choose an assignee from this department team.");
+      if (taskData.projectId && !state.records.some(record => record.type === "Project" && [record.id, record.reference].includes(taskData.projectId))) throw new Error("Choose an existing project.");
+      return ({
       ...state,
       records: [newTask, ...state.records],
-    }));
+    });
+    });
+    if (!saved) return false;
     log("Task Created", `Created task ${newTask.reference}: ${newTask.title} assigned to ${taskData.assignee}`);
     announce(`${newTask.reference} created and assigned.`);
+    return true;
   };
   const handleAddTeamMember = (member: TeamMember) => {
-    setCustomTeamMembers((prev) => [...prev, member]);
+    if (persona.kind === "lead" && member.area !== persona.departmentId) { announce("Team members must belong to your department."); return; }
+    update(state => ({ ...state, teamMembers: [...(state.teamMembers ?? []), member] }));
     log("Team Member Added", `Added ${member.name} (${member.role}, ${member.level}) to ${member.area.toUpperCase()} department roster.`);
     announce(`${member.name} added to ${member.area.toUpperCase()} roster.`);
   };
@@ -2661,6 +2639,16 @@ function Portal() {
     announce(`${item.partNumber}: ${quantity} ${item.unit} allocated to ${assignee}.`);
   };
   const activeRecords = portal.records.filter((record) => !record.archived);
+  const leadRecords = activeRecords.filter(record => record.area === persona.departmentId);
+  const leadTasks = leadRecords.filter(record => record.type === "Task");
+  const leadName = persona.person.split(" · ")[0] ?? "";
+  const taskAssignee = selectedAssignee ?? leadName;
+  const personalTasks = leadTasks.filter(record => taskAssignee === "ALL" || record.fields["assignee"] === taskAssignee);
+  const leadProjectCodes = new Set(leadRecords.flatMap(projectReferences));
+  const leadProjects = activeRecords.filter(record => record.type === "Project" && (leadProjectCodes.has(record.reference) || leadProjectCodes.has(record.id)));
+  const scopedAlerts = portal.alerts.filter(alert => persona.kind === "admin" || (persona.kind === "lead" && [persona.departmentId, departmentContext].includes(alert.departmentId)));
+  const scopedDocuments = portal.documents.filter(document => canDepartmentAccessDocument(document, persona, departmentContext));
+  const scopedApprovalCounts = Object.fromEntries(areas.map(area => [area.id, portal.approvals.map(approvalScope).filter(approval => approval.outcome === "Pending" && approvalInDepartment(approval, area.id)).length]));
   const selected = activeRecords.find((record) => record.id === selectedId);
   const selectedDocument = portal.documents.find((document) => document.id === selectedDocumentId);
   const selectedProjectProfile = activeRecords.find(
@@ -2693,6 +2681,7 @@ function Portal() {
     setView("detail");
   };
   const openDocument = (document: ControlledDocument) => {
+    if (!canDepartmentAccessDocument(document, persona, departmentContext)) { announce("This document is outside your department scope."); return; }
     if (persona.kind === "client") {
       const isAllowed = /sor|nda|quotation|quo|invoice|inv|pdi|tac|milestone/i.test(
         `${document.type} ${document.title} ${document.url}`
@@ -2742,11 +2731,12 @@ function Portal() {
           onOpenHistory={() => setModal("history")}
           setupStep={portal.setupStep}
           totalSetupSteps={setupSteps.length}
+          approvalCounts={scopedApprovalCounts}
           openTaskCounts={Object.fromEntries(
             areas.map((area) => [
               area.id,
               portal.records.filter(
-                (r) => r.area === area.id && !r.archived && !["Approved", "Released", "Archived"].includes(r.status)
+                (r) => r.area === area.id && r.type === "Task" && r.fields["assignee"] === personas.find(persona => persona.departmentId === area.id)?.person.split(" · ")[0] && !r.archived && !["Approved", "Released", "Archived"].includes(r.status)
               ).length,
             ])
           )}
@@ -2883,16 +2873,32 @@ function Portal() {
               />
             )}
             <HeaderAction
-              label={`Notifications (${portal.alerts.filter((alert) => !alert.resolved).length})`}
+              label={`Notifications (${scopedAlerts.filter((alert) => !alert.resolved).length})`}
               icon={Bell}
-              badge={portal.alerts.filter((alert) => !alert.resolved).length}
+              badge={scopedAlerts.filter((alert) => !alert.resolved).length}
               onClick={() => setAlertsOpen(true)}
             />
             <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} />
           </div>
         </header>
         <div className="mx-auto max-w-[1600px] space-y-6 px-6 py-6 pb-28 lg:pb-10">
-          {view === "pmss" ? (
+          {persona.kind === "lead" && view === "assignee" ? (
+            <section className="ops-section p-5 space-y-4">
+              <h1 className="text-xl font-semibold">{active.name} — My Tasks & Action Queue</h1>
+              <p className="text-sm text-muted-foreground">Assigned task queue · {personalTasks.length} tasks.</p>
+              {/* Team filters remain within the authenticated department. */}
+              <select aria-label="Task assignee" value={taskAssignee} onChange={event => setSelectedAssignee(event.target.value)} className="rounded border border-input bg-background p-2 text-sm"><option value={leadName}>My tasks — {leadName}</option><option value="ALL">All department tasks</option>{allTeamMembers.filter(member => member.area === persona.departmentId && member.name !== leadName).map(member => <option key={member.name} value={member.name}>{member.name}</option>)}</select>
+              {personalTasks.length === 0 && <p>No tasks assigned in this view.</p>}
+              {personalTasks.map(task => <button key={task.id} onClick={() => openRecord(task)} className="block w-full rounded-lg border border-border p-4 text-left hover:bg-secondary"><strong className="block">{task.title}</strong><span className="text-xs text-muted-foreground">{task.status} · {task.fields["assignee"] || "Unassigned"} · {task.fields["projectId"] || task.fields["projectCode"] || "No project linked"}</span></button>)}
+            </section>
+          ) : persona.kind === "lead" && view === "project" ? (
+            <section className="ops-section p-5 space-y-4">
+              <h1 className="text-xl font-semibold">{active.name} — Active Project Workspaces</h1>
+              <p className="text-sm text-muted-foreground">Projects linked to this department's work. Select a project to open its department contribution.</p>
+              {leadProjects.length === 0 && <p>No projects linked to this department's records.</p>}
+              {leadProjects.map(project => <button key={project.id} onClick={() => { setProjectScopes(current => ({ ...current, [active.id]: project.reference as ProjectScope })); navigate(active.id, "queue"); }} className="block w-full rounded-lg border border-border p-4 text-left hover:bg-secondary"><strong className="block">{project.title}</strong><span className="text-xs text-muted-foreground">{project.reference} · {project.status}</span></button>)}
+            </section>
+          ) : view === "pmss" ? (
               <PMSSWorkspace
               portal={portal}
               project={selectedProjectProfile}
@@ -3018,8 +3024,10 @@ function Portal() {
               departmentRole={activeArea}
             />
           ) : view === "approvals" ? (
-            <ApprovalsFullPageView
+            <ApprovalsFullPageView key={persona.id}
               approvals={portal.approvals}
+              projects={persona.kind === "lead" ? leadProjects : activeRecords.filter(record => record.type === "Project")}
+              records={persona.kind === "lead" ? leadRecords : activeRecords}
               onApprove={handleApproveGate}
               onReject={handleRejectGate}
               onReturn={handleReturnGate}
@@ -3110,6 +3118,7 @@ function Portal() {
               record={selected}
               onBack={() => setView("queue")}
               onSave={(patch) => {
+                if (selected.type === "Task") { void updateTask(selected.id, patch, "Task updated"); return; }
                 update((state) => ({
                   ...state,
                   records: state.records.map((record) =>
@@ -3152,7 +3161,7 @@ function Portal() {
                 findAreaDepartment(portal.departments, activeArea)
               }
               approvals={portal.approvals}
-              contextName={departmentContext ? "Administrator" : "Workspace"}
+              contextName={persona.kind === "lead" ? "Department Lead" : departmentContext ? "Administrator" : "Workspace"}
               view={view === "summary" ? "summary" : "queue"}
               onView={setView}
               onCreate={handleOpenCreate}
@@ -3294,11 +3303,12 @@ function Portal() {
           onOpenHistory={() => setModal("history")}
           setupStep={portal.setupStep}
           totalSetupSteps={setupSteps.length}
+          approvalCounts={scopedApprovalCounts}
           openTaskCounts={Object.fromEntries(
             areas.map((area) => [
               area.id,
               portal.records.filter(
-                (r) => r.area === area.id && !r.archived && !["Approved", "Released", "Archived"].includes(r.status)
+                (r) => r.area === area.id && r.type === "Task" && r.fields["assignee"] === personas.find(persona => persona.departmentId === area.id)?.person.split(" · ")[0] && !r.archived && !["Approved", "Released", "Archived"].includes(r.status)
               ).length,
             ])
           )}
@@ -3320,7 +3330,7 @@ function Portal() {
           portal={portal}
           onClose={() => setModal(null)}
           onSave={(next) => {
-            setPortal(next);
+            void update(current => ({ ...current, setup: next.setup, setupStep: next.setupStep }));
             log("Setup saved", "Portal setup progress saved");
           }}
           onOpenAdministration={() => setModal("admin")}
@@ -3332,7 +3342,7 @@ function Portal() {
       {modal === "approvals" && (() => { setView("approvals"); setModal(null); return null; })()}{" "}
       {modal === "documents" && (
         <DocumentsPanel
-          documents={portal.documents}
+          documents={scopedDocuments}
           departments={portal.departments}
           departmentContext={departmentContext}
           persona={persona}
@@ -3465,7 +3475,7 @@ function Portal() {
       )}{" "}
       {alertsOpen && (
         <NotificationCenter
-          alerts={portal.alerts}
+          alerts={scopedAlerts}
           departments={portal.departments}
           onClose={() => setAlertsOpen(false)}
           onResolve={(id) => {
@@ -3497,6 +3507,16 @@ function Portal() {
       {draftHubOpen && persona.kind !== "client" && (
         <AutoDraftHub
           onClose={() => setDraftHubOpen(false)}
+          departmentScope={persona.kind === "lead" ? departmentCode(persona.departmentId) : undefined}
+          projects={persona.kind === "lead" ? leadProjects : activeRecords.filter(record => record.type === "Project")}
+          onSaveDraft={(draft, body) => {
+            update(state => {
+              const draftOwner = persona.kind === "lead" ? departmentContext || persona.departmentId || "" : state.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === departmentCode(draft.department))?.id || "";
+              const existing = state.documents.find(document => document.part === draft.documentId && document.lifecycle === "Draft" && document.departmentId === draftOwner);
+              const saved: ControlledDocument = { ...(existing ?? {}), id: existing?.id ?? createId(), title: draft.title, type: draft.title, url: existing?.url ?? "", part: draft.documentId, revision: "00", departmentId: draftOwner, lifecycle: "Draft", classification: "Internal", linkedRecordRefs: draft.project ? [draft.project] : [], releaseNotes: body, history: [...(existing?.history ?? []), now() + " · Browser-local draft saved by " + persona.label] };
+              return { ...state, documents: existing ? state.documents.map(document => document.id === existing.id ? saved : document) : [saved, ...state.documents] };
+            });
+          }}
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onOpenPrintable={setPrintTemplate}
           onOpenSettings={() => setTemplateSettingsOpen(true)}
@@ -3516,6 +3536,7 @@ function Portal() {
       {printTemplate && (
         <PrintableTemplateView
           document={printTemplate}
+          records={persona.kind === "lead" ? [...leadRecords, ...leadProjects] : activeRecords}
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onClose={() => setPrintTemplate(null)}
           onOpenSettings={() => setTemplateSettingsOpen(true)}
@@ -3529,6 +3550,7 @@ function Portal() {
           projectId={selectedProjectId}
           modularConfig={(portal?.modularConfigs ?? defaultProjectModularConfigs)[selectedProjectId || "HLPL-AI4T-01"]}
           onKickoffComplete={(path, deliverables) => {
+            if (!portal.demoLoaded) { announce("Lifecycle walkthrough is available only in DEMO. Production gate progression requires the verified authenticated workflow contract."); return; }
             const today = new Date().toISOString().slice(0, 10);
             const kickoffTasks: RecordItem[] = path === "poc" ? [
               {
@@ -3660,6 +3682,7 @@ function Portal() {
           }}
           onClose={() => setAi4tOpen(false)}
           onAdvance={() => {
+            if (!portal.demoLoaded) { announce("Lifecycle walkthrough is available only in DEMO. Production gate progression requires the verified authenticated workflow contract."); return; }
             setAi4tSimulation((state) => {
               const stage = Math.min(state.stage + 1, ai4tStages.length - 1);
               const entry = ai4tStages[stage] ?? ai4tStages[0];
@@ -3672,14 +3695,16 @@ function Portal() {
             });
           }}
           onJump={(stage) => {
+            if (!portal.demoLoaded) { announce("Lifecycle walkthrough is available only in DEMO. Production gate progression requires the verified authenticated workflow contract."); return; }
             const entry = ai4tStages[stage] ?? ai4tStages[0];
             if (!entry) return;
             setAi4tSimulation((state) => ({ stage, history: [`${now()} · Jumped to ${entry[0]}`, ...state.history] }));
             log("AI4T lifecycle simulation jumped", entry[0]);
           }}
           onRun={() => {
+            if (!portal.demoLoaded) { announce("Lifecycle walkthrough is available only in DEMO. Production gate progression requires the verified authenticated workflow contract."); return; }
             setAi4tSimulation({ stage: ai4tStages.length - 1, history: [`${now()} · Full DEMO lifecycle run completed`, ...ai4tStages.map(([stage, title]) => `${stage} · ${title}`)] });
-            log("AI4T lifecycle simulation completed", "All nine project stages verified and synchronized.");
+            log("AI4T lifecycle simulation completed", "DEMO walkthrough reached its final screen; production gates and backend synchronization were not verified.");
           }}
           onReset={() => {
             setAi4tSimulation({ stage: 0, history: [] });
@@ -3705,7 +3730,7 @@ function Portal() {
         />
       )}
       {directoryOpen && persona.kind !== "client" && (
-        <CompanyDirectoryModal onClose={() => setDirectoryOpen(false)} />
+        <CompanyDirectoryModal key={persona.id} onClose={() => setDirectoryOpen(false)} initialDepartment={persona.kind === "lead" ? departmentCode(persona.departmentId) : undefined} lockedDepartment={persona.kind === "lead" ? departmentCode(persona.departmentId) : undefined} contacts={persona.kind === "lead" ? allTeamMembers.filter(member => member.area === persona.departmentId).map((member, index) => ({ id: String(index), name: member.name, departmentCode: departmentCode(member.area), departmentName: areaById(member.area).name, designation: member.role, reportingManager: "Department lead", workEmail: "", deskExtension: "Not provided", facilityLocation: "Not provided", primarySkills: member.skills, avatarInitial: member.name.split(" ").map(part => part[0]).join("").slice(0,2) })) : undefined} />
       )}
       {decisionLogOpen && persona.kind === "admin" && (
         <OfficialDecisionLogModal
@@ -4342,6 +4367,9 @@ const autoDraftTemplates = [
 
 function AutoDraftHub({
   onClose,
+  departmentScope,
+  projects,
+  onSaveDraft,
   settings = defaultTemplateSettings(),
   onOpenPrintable,
   onOpenSettings,
@@ -4349,23 +4377,30 @@ function AutoDraftHub({
   onTemplateBodiesChange,
 }: {
   onClose: () => void;
+  departmentScope?: string | undefined;
+  projects: RecordItem[];
+  onSaveDraft: (draft: PrintableDocument, body: string) => void;
   settings?: TemplateSettings;
   onOpenPrintable?: (document: PrintableDocument) => void;
   onOpenSettings?: () => void;
   templateBodies: Record<string, string>;
   onTemplateBodiesChange: (templates: Record<string, string>) => void;
 }) {
+  const [savedDraft, setSavedDraft] = useState<string | null>(null);
+  const scopedTemplates = autoDraftTemplates.filter(template => !departmentScope || departmentCode(template[2].split("/")[0]) === departmentScope);
   const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
-  const [project, setProject] = useState("HLPL-AI4T-01");
-  const profile = projectDocumentProfiles[project] ?? projectDocumentProfiles["HLPL-AI4T-01"] ?? { name: "Project baseline", customer: "Customer details pending", contact: "Contact pending", quantity: "Quantity pending", techSpec: "Technical baseline pending", commercialValue: "Commercial value pending", environmental: "Environmental baseline pending", compliance: "Compliance baseline pending" };
+  const [project, setProject] = useState(projects[0]?.reference ?? "");
+  const projectRecord = projects.find(record => record.reference === project);
+  const profile = { customer: projectRecord?.fields["customer"] || "Customer not provided", quantity: projectRecord?.fields["quantity"] || "Quantity not provided", techSpec: projectRecord?.fields["scope"] || "Requirements not provided", commercialValue: projectRecord?.fields["commercialValue"] || "Commercial baseline not provided" };
   return (
     <Modal title="Auto-Draft Document Templates" onClose={onClose} wide>
       <div className="rounded-lg border border-warning/35 bg-accent p-4 text-sm">
-        <strong>DEMO DRAFTING WORKSPACE</strong>
-        <p className="mt-1 text-muted-foreground">Pre-filled SLCT templates are illustrative drafts only. They are not signed, approved, issued, or externally shared.</p>
+        <strong>UNISSUED DOCUMENT DRAFTS</strong>
+        <p className="mt-1 text-muted-foreground">Templates use the selected project record where information exists. Missing fields require owner confirmation. Drafts are not signed, approved or issued.</p>
       </div>
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        {autoDraftTemplates.map((template) => (
+        {scopedTemplates.length === 0 && <p className="text-sm text-muted-foreground">No controlled templates configured for this department. Contact the template owner to add approved formats.</p>}
+        {scopedTemplates.map((template) => (
           <button key={template[1]} onClick={() => setSelected(template)} className="flex items-center gap-3 border border-border bg-card px-3 py-3 text-left transition-colors hover:border-steel/50 hover:bg-secondary">
             <FileText className="size-4 shrink-0 text-steel" />
             <span className="min-w-0 flex-1"><strong className="block text-sm">{template[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{template[1]} · {template[2]}</small></span>
@@ -4373,7 +4408,8 @@ function AutoDraftHub({
           </button>
         ))}
       </div>
-      <div className="mt-5 max-w-md"><SelectField label="Project document baseline" value={project} onChange={setProject} options={Object.keys(projectDocumentProfiles)} /></div>
+      <div className="mt-5 max-w-md"><SelectField label="Project document baseline" value={project} onChange={setProject} options={projects.map(record => record.reference)} /></div>
+      {savedDraft && <p role="status" className="mt-4 text-sm">Local draft saved: {savedDraft}. Available in department documents after refresh; not issued or cloud-synced.</p>}
       {selected && (
         <section className="mt-5 border border-steel/35 bg-panel p-5">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
@@ -4386,7 +4422,7 @@ function AutoDraftHub({
           </div>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">{profile.customer} · {profile.quantity} · {profile.techSpec} · {profile.commercialValue}. Validate all technical and commercial information before any controlled release.</p>
           <label className="mt-4 block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Editable template content<textarea value={templateBodies[selected[0]] ?? templateBlueprint(selected[0])} onChange={(event) => onTemplateBodiesChange({ ...templateBodies, [selected[0]]: event.target.value })} className="mt-2 min-h-28 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label>
-          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save draft" primary onClick={() => onTemplateBodiesChange({ ...templateBodies })} /><Action label="Full Document Viewer & Print" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save local draft" primary onClick={() => { const draft = createPrintableDocument(selected, settings, project); onSaveDraft(draft, templateBodies[selected[0]] ?? templateBlueprint(selected[0])); setSavedDraft(draft.documentId); }} /><Action label="Full Document Viewer & Print" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
         </section>
       )}
     </Modal>
@@ -6029,13 +6065,15 @@ function DepartmentWorkspace({
   purchasingSubView?: PurchasingSubView;
   onSelectPurchasingSubView?: (view: PurchasingSubView) => void;
   onUpdateTask?: ((taskId: string, patch: Partial<RecordItem>, action: string) => void) | undefined;
-  onCreateCustomTask?: ((task: { title: string; priority: Priority; assignee: string; projectId: string; dueDate: string; notes: string }) => void) | undefined;
+  onCreateCustomTask?: ((task: { title: string; priority: Priority; assignee: string; projectId: string; dueDate: string; notes: string }) => boolean | void | Promise<boolean | void>) | undefined;
   onAddTeamMember?: ((member: TeamMember) => void) | undefined;
   allTeamMembers?: TeamMember[] | undefined;
 }) {
-  const scopedRecords = projectScope === "all" ? records : records.filter((record) => record.reference === projectScope || record.fields["projectCode"] === projectScope || record.fields["projectId"] === projectScope || record.fields["project"]?.includes(projectScope));
+  const departmentProjects = allRecords.filter(record => record.type === "Project" && records.some(work => projectReferences(work).includes(record.reference) || projectReferences(work).includes(record.id)));
+  const selectedProject = departmentProjects.find(record => record.reference === projectScope);
+  const scopedRecords = projectScope === "all" ? records : records.filter(record => projectReferences(record).includes(projectScope) || Boolean(selectedProject && projectReferences(record).includes(selectedProject.id)));
   const teamForThisDept = (allTeamMembers ?? demoTeam).filter((member) => member.area === area.id);
-  const deptLeadName = department?.lead ?? teamForThisDept[0]?.name ?? "Department Lead";
+  const deptLeadName = persona.kind === "lead" && persona.departmentId === area.id ? persona.person.split(" · ")[0] || "Department Lead" : department?.lead ?? teamForThisDept[0]?.name ?? "Department Lead";
   const departmentMembers = teamForThisDept.length;
   const today = new Date().toISOString().slice(0, 10);
   const open = scopedRecords.filter((record) => record.status === "Draft" || record.status === "Open");
@@ -6055,6 +6093,7 @@ function DepartmentWorkspace({
       departmentName={area.name}
       departmentLead={deptLeadName}
       records={scopedRecords}
+      projects={departmentProjects.map(record => ({ id: record.reference, name: record.title, customer: record.fields["customer"] || "Not provided", currentStage: record.fields["lifecycleStage"] || "Not provided", targetDate: record.fields["targetDate"] || "Not provided", volume: record.fields["quantity"] || "Not provided" }))}
       teamMembers={teamForThisDept}
       projectScope={projectScope}
       onProjectScopeChange={(scope) => onProjectScopeChange(scope as ProjectScope)}
@@ -6072,9 +6111,7 @@ function DepartmentWorkspace({
           `Task status marked ${newStatus}`
         );
       }}
-      onCreateTask={(task) => {
-        onCreateCustomTask?.(task);
-      }}
+      onCreateTask={task => onCreateCustomTask?.(task)}
       onAddTeamMember={(member) => {
         onAddTeamMember?.(member as unknown as TeamMember);
       }}
@@ -6115,7 +6152,7 @@ function DepartmentWorkspace({
       <section className="ops-section flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Project scope</p><p className="mt-1 text-xs text-muted-foreground">{projectScope === "all" ? `Department rollup · ${records.length} records · ${departmentMembers} team member${departmentMembers === 1 ? "" : "s"}` : "Selected-project tasks, stage evidence, team and deliverables only"}</p></div>
         <select aria-label="Project scope" value={projectScope} onChange={(event) => onProjectScopeChange(event.target.value as ProjectScope)} className="h-9 min-w-64 rounded-lg border border-border bg-card px-3 text-sm font-medium">
-          <option value="all">All Projects (Department Rollup)</option><option value="HLPL-AI4T-01">HLPL-AI4T-01 · Tata Ace EV</option><option value="HLPL-SLCT-01">HLPL-SLCT-01 · AIS-140 Gateway</option><option value="HLPL-XLINK-03">HLPL-XLINK-03 · CV Gateway</option>
+          <option value="all">All Projects (Department Rollup)</option>{departmentProjects.map(project => <option key={project.id} value={project.reference}>{project.reference} · {project.title}</option>)}
         </select>
       </section>
       <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
@@ -8948,7 +8985,7 @@ function DocumentsPanel({
   const inReviewCount = documents.filter((d) => d.lifecycle === "In review").length;
 
   return (
-    <Modal title="Controlled Documents & Hardware Deliverables Register" onClose={onClose} wide>
+    <Modal title="Department Documents & Deliverables" onClose={onClose} wide>
       {/* High-Information KPI Summary Strip (Modeled after Project Analysis) */}
       <section className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-lg border border-border bg-card p-3">
@@ -8968,7 +9005,7 @@ function DocumentsPanel({
         </div>
         <div className="rounded-lg border border-moss/25 bg-accent/60 p-3">
           <p className="font-mono text-[10px] uppercase tracking-wider text-moss">Private Cloud Storage</p>
-          <p className="mt-1 text-sm font-bold text-foreground">SHA-256 Verified</p>
+          <p className="mt-1 text-sm font-bold text-foreground">Authorization required</p>
           <span className="text-[10px] text-muted-foreground">Department signed links</span>
         </div>
       </section>
@@ -9250,7 +9287,7 @@ function HardwareDeliverablesDrive({
 
         {/* Technical Folder Grid */}
         <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-          {driveFolders.map(([name, detail]) => {
+          {driveFolders.filter(([name]) => name === "00_Root_Audit_Repository" || persona?.kind === "admin" || countByFolder(name) > 0).map(([name, detail]) => {
             const folderCount = countByFolder(name);
             const active = folder === name;
             return (
@@ -9372,7 +9409,7 @@ function HardwareDeliverablesDrive({
           {/* Customer Register.xlsx Special Row */}
           {(folder === "01_Governance_and_QMS" || folder === "00_Root_Audit_Repository") &&
             (driveGroup === "All Deliverables" || driveGroup === "01 Common documents") &&
-            onOpenCustomerRegister && (
+            onOpenCustomerRegister && (persona?.kind === "admin" || persona?.departmentId === "sales" || persona?.departmentId === "fin") && (
               <div
                 onClick={onOpenCustomerRegister}
                 className="grid w-full cursor-pointer gap-3 border-b border-border bg-emerald-500/[0.04] px-4 py-3 text-left transition hover:bg-emerald-500/[0.09] sm:grid-cols-[minmax(0,1fr)_auto]"
@@ -9885,6 +9922,7 @@ function FilePreview({ file, formatLabel, onClose }: { file: LocalControlledFile
 type PrintableDocument = {
   title: string;
   documentId: string;
+  source?: DraftSource | undefined;
   department: string;
   revision: string;
   status: RecordStatus;
@@ -9896,19 +9934,19 @@ function createPrintableDocument(template: readonly [string, string, string], se
   const type = template[0].includes("SOR") ? "SOR" : template[0].includes("Requirement") ? "PRS" : template[0].includes("DVP") ? "DVP" : template[1].split("-").at(-2) ?? "DOC";
   const department = template[2] === "HR/OPS" ? "HR" : template[2];
   const stage = autoDraftStage(template[0]);
-  return { title: template[0].toUpperCase(), documentId: documentNumber(project, department, type, "01", settings.prefix), department, revision: "Rev 01", status: "Draft", project, stage };
+  return { title: template[0].toUpperCase(), documentId: template[1].startsWith("HLPL/") ? template[1] : `DRAFT-${project || "UNLINKED"}-${department}-${type}`, department, revision: "Rev 00 · unissued", status: "Draft", project, stage };
 }
 
 function controlledDocumentPrintable(document: ControlledDocument, department: string): PrintableDocument {
-  const inferredProject = document.type.includes("SLCT") || document.title.includes("SLCT") ? "HLPL-SLCT-01" : document.type.includes("XLINK") || document.title.includes("XLINK") ? "HLPL-XLINK-03" : "HLPL-AI4T-01";
-  return { title: document.title.toUpperCase(), documentId: document.type || document.title, department, revision: `Rev ${document.revision ?? "01"}`, status: document.lifecycle === "Approved" ? "Approved" : document.lifecycle === "In review" ? "In review" : "Draft", project: inferredProject, stage: autoDraftStage(`${document.title} ${document.type}`) };
+  const inferredProject = document.linkedRecordRefs?.find(reference => /^HLPL-[A-Z0-9]+-\d+$/.test(reference)) || "Unlinked";
+  return { title: document.title.toUpperCase(), documentId: document.part || document.id, source: { reference: document.part || document.id, fields: {}, notes: document.releaseNotes }, department, revision: `Rev ${document.revision ?? "01"}`, status: document.lifecycle === "Approved" ? "Approved" : document.lifecycle === "In review" ? "In review" : "Draft", project: inferredProject, stage: autoDraftStage(`${document.title} ${document.type}`) };
 }
 
 function recordPrintable(record: RecordItem): PrintableDocument {
   const documentId = record.reference || record.fields["controlledNumber"] || `HLPL-AI4T-${record.area.toUpperCase()}-DOC-01`;
-  const project = documentId.includes("SLCT") ? "HLPL-SLCT-01" : documentId.includes("XLINK") ? "HLPL-XLINK-03" : "HLPL-AI4T-01";
+  const project = projectReferences(record)[0] || "Unlinked";
   const department = record.area === "ehw" ? "EHW" : record.area === "esw" ? "ESW" : record.area === "mech" ? "MECH" : record.area === "pur" ? "PUR" : record.area === "quality" ? "QA" : record.area === "emf" ? "EMF" : record.area === "tst" || record.area === "production" ? "TST" : record.area === "fin" ? "FIN" : record.area === "sit" ? "SIT" : record.area === "hrops" || record.area === "people" ? "HR" : "SAL";
-  return { title: record.title.toUpperCase(), documentId, department, revision: "Rev 01", status: record.status, project, stage: autoDraftStage(`${record.type} ${record.title} ${documentId}`) };
+  return { title: record.title.toUpperCase(), documentId, source: { reference: record.reference, fields: record.fields, notes: record.notes }, department, revision: "Rev 01", status: record.status, project, stage: autoDraftStage(`${record.type} ${record.title} ${documentId}`) };
 }
 
 function autoDraftStage(title: string) {
@@ -9922,25 +9960,6 @@ function autoDraftStage(title: string) {
   return "Stage 9";
 }
 
-function stageDocumentContent(stage: string, title: string, profile: ProjectDocumentProfile) {
-  const base = {
-    intent: `Controlled ${title.toLowerCase()} baseline for ${profile.name}.`,
-    rows: [["Programme baseline", profile.name, "Controlled review"], ["Commercial quantity", profile.quantity, "Approved business case"], ["Environmental envelope", profile.environmental, "Evidence required"]],
-    approvals: ["SAL", "EHW", "QA"],
-  };
-  const content: Record<string, typeof base> = {
-    "Stage 1": { intent: "Customer requirement capture and confidential information controls under IATF 16949 §8.2 and ISO 27001.", rows: [["Requirements matrix", profile.techSpec, "Customer SOR traceability"], ["Commercial programme", profile.commercialValue, "Sales review required"], ["Confidentiality", "Bilateral mNDA controls", "Authorized disclosure only"]], approvals: ["SAL", "SIT", "QA"] },
-    "Stage 2": { intent: "Cross-functional feasibility decision and Contract Review gate with five technical HOD sign-offs.", rows: [["Hardware feasibility", "Power, RF and PCB capability", "EHW sign-off"], ["Firmware feasibility", "CAN J1939 and 4G integration", "ESW sign-off"], ["Quality feasibility", profile.compliance, "QA sign-off"]], approvals: ["EHW", "ESW", "MECH", "PUR", "QA"] },
-    "Stage 3": { intent: "Frozen product requirement and volume-tier commercial baseline for controlled release.", rows: [["Architecture", profile.techSpec, "PRS freeze"], ["Operating envelope", profile.environmental, "Design input approved"], ["Volume tier", profile.quantity, "Quotation review"]], approvals: ["SAL", "EHW", "QA"] },
-    "Stage 4": { intent: "Design PoC evidence: schematic release, component breakdown and project-specific communications firmware integration.", rows: [["Schematic architecture", `Power, controller, RF and vehicle interfaces · ${profile.techSpec}`, "Peer review complete"], ["BOM controls", "Manufacturer part numbers and alternates", "AVL review"], ["Firmware PoC", profile.techSpec, "Bench evidence"]], approvals: ["EHW", "ESW", "PUR"] },
-    "Stage 5": { intent: "Pilot manufacturing control plan for SMT setup and validated process parameters.", rows: [["Reflow profile", "10-zone thermal profile", "Profile approved"], ["Solder inspection", "3D SPI and AOI coverage", "First-off verification"], ["Process control", "EMF-CP-01 control points", "Line readiness"]], approvals: ["EMF", "QA", "PUR"] },
-    "Stage 6": { intent: "DVP&R plan for 18 AIS-140, ISO 7637-2, electrical and environmental verification tests.", rows: [["Electrical immunity", "ISO 7637-2 transient pulses", "Pass/fail test evidence"], ["Environmental", profile.environmental, "Chamber evidence"], ["Regulatory", "AIS-140 functional verification", "QA release review"]], approvals: ["QA", "EHW", "ESW"] },
-    "Stage 7": { intent: "Production design release including AIAG-VDA DFMEA and Gerber Rev B controls.", rows: [["DFMEA analysis", "AIAG-VDA failure modes and actions", "RPN/action review"], ["PCB release", "Gerber Rev B and fabrication notes", "Configuration release"], ["Supplier quality", "PPAP Level 3 evidence", "Quality approval"]], approvals: ["EHW", "QA", "PUR"] },
-    "Stage 8": { intent: "Type approval and controlled mass-production authorization. Certificate evidence remains subject to human approval.", rows: [["Type approval", "AIS-140 TAC evidence", "ARAI / ICAT review"], ["Production authorization", profile.quantity, "Release gate"], ["Compliance pack", profile.compliance, "Controlled dossier"]], approvals: ["QA", "SAL", "EMF"] },
-    "Stage 9": { intent: "Final PDI, tax documentation and competency evidence for the controlled commercial release record.", rows: [["PDI result", "0-defect inspection release", "TST certificate"], ["Commercial invoice", profile.commercialValue, "GST / HSN review"], ["Competency", "HLPL/F/HR/03 skill matrix", "HR approval"]], approvals: ["TST", "FIN", "HR"] },
-  };
-  return content[stage] ?? base;
-}
 
 function TemplateSettingsPanel({ settings, onChange, onClose, templateBodies, onTemplateBodiesChange }: { settings: TemplateSettings; onChange: (settings: TemplateSettings) => void; onClose: () => void; templateBodies: Record<string, string>; onTemplateBodiesChange: (templates: Record<string, string>) => void }) {
   const [template, setTemplate] = useState<string>(autoDraftTemplates[0]?.[0] ?? "Customer SOR");
@@ -9956,13 +9975,13 @@ function RaciMatrixEditor({ matrix, onChange, onSave }: { matrix: RaciMatrix; on
   return <div className="space-y-5"><section className="ops-section overflow-hidden"><div className="ops-section-header"><p className="text-sm font-semibold">Responsibility Matrix (RACI)</p><p className="mt-1 text-xs text-muted-foreground">Saved assignments route simulated lifecycle handoffs to Responsible, Accountable and Consulted departments.</p></div><div className="overflow-auto"><table className="w-full min-w-[940px] text-left text-xs"><thead className="bg-panel"><tr><th className="p-3">Lifecycle stage</th>{raciDepartments.map((department) => <th key={department} className="p-2 text-center font-mono">{department}</th>)}</tr></thead><tbody>{ai4tStages.map(([stage, title]) => <tr key={stage} className="border-t border-border"><td className="min-w-52 p-3"><strong>{stage}</strong><span className="mt-1 block text-muted-foreground">{title}</span></td>{raciDepartments.map((department) => <td key={department} className="p-1 text-center"><select aria-label={`${stage} ${department} responsibility`} value={matrix[stage]?.[department] ?? ""} onChange={(event) => update(stage, department, event.target.value as RaciRole)} className="h-8 rounded border border-input bg-background px-1 text-xs font-semibold"><option value="">—</option><option value="R">R</option><option value="A">A</option><option value="C">C</option><option value="I">I</option></select></td>)}</tr>)}</tbody></table></div></section><div className="flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground"><strong>R</strong> Responsible · <strong>A</strong> Accountable · <strong>C</strong> Consulted · <strong>I</strong> Informed</p><Action label="Save responsibility matrix" primary onClick={onSave} /></div></div>;
 }
 
-function PrintableTemplateView({ document, settings, onClose, onOpenSettings }: { document: PrintableDocument; settings: TemplateSettings; onClose: () => void; onOpenSettings: () => void }) {
-  const signatories = departmentSignatories[document.department] ?? departmentSignatories["EHW"];
-  if (!signatories) return null;
-  const profile = projectDocumentProfiles[document.project] ?? projectDocumentProfiles["HLPL-AI4T-01"] ?? { name: "Project baseline", customer: "Customer details pending", contact: "Contact pending", quantity: "Quantity pending", techSpec: "Technical baseline pending", commercialValue: "Commercial value pending", environmental: "Environmental baseline pending", compliance: "Compliance baseline pending" };
-  const stageContent = stageDocumentContent(document.stage, document.title, profile);
-  const date = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date());
-  const markdown = documentMarkdown(document, profile, stageContent, signatories, date);
+function PrintableTemplateView({ document, settings, records, onClose, onOpenSettings }: { document: PrintableDocument; settings: TemplateSettings; records: RecordItem[]; onClose: () => void; onOpenSettings: () => void }) {
+  const projectSource = records.find(record => record.type === "Project" && record.reference === document.project);
+  const source = document.source ?? records.find(record => record.reference === document.documentId);
+  const draft = buildDocumentDraft(document.title, document.documentId, source, projectSource);
+  const profile = { name: projectSource?.title || "Project baseline not provided" };
+  const date = "Not issued — draft preview";
+  const markdown = documentMarkdown(document, draft, source);
   const copyText = () => void navigator.clipboard?.writeText(markdown);
   const exportText = () => { const url = URL.createObjectURL(new Blob([markdown], { type: "text/plain" })); const link = window.document.createElement("a"); link.href = url; link.download = `${document.documentId}.txt`; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 0); };
   const printDocument = () => {
@@ -9974,7 +9993,7 @@ function PrintableTemplateView({ document, settings, onClose, onOpenSettings }: 
     window.document.body.appendChild(frame);
     const printable = frame.contentWindow;
     if (!printable) { frame.remove(); return; }
-    const style = `@page{size:A4 portrait;margin:15mm}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff!important;color:#0f172a!important}body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:1.45}article{width:100%;margin:0;background:#fff;color:#0f172a}header,section,footer,table{break-inside:avoid;page-break-inside:avoid}header{display:grid;grid-template-columns:1.15fr 1.7fr 1.15fr;border:2px solid #0f172a}header>div{padding:10px;border-right:1px solid #0f172a}header>div:last-child{border-right:0}section{margin-top:16px}h3{margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid #334155;font-size:11pt}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #334155;padding:6px;vertical-align:top;text-align:left}th{background:#e2e8f0}.no-print{display:none!important}[class*="bg-"],[class*="text-"]{background:transparent!important;color:#0f172a!important}.rounded-lg,.rounded-md{border-radius:0!important}.shadow-lg{box-shadow:none!important}`;
+    const style = `@page{size:A4 portrait;margin:15mm}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff!important;color:#0f172a!important}body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:1.45}article{width:100%;margin:0;background:#fff;color:#0f172a}header,footer,tr{break-inside:avoid;page-break-inside:avoid}thead{display:table-header-group}td{overflow-wrap:anywhere}header{display:grid;grid-template-columns:1.15fr 1.7fr 1.15fr;border:2px solid #0f172a}header>div{padding:10px;border-right:1px solid #0f172a}header>div:last-child{border-right:0}section{margin-top:16px}h3{margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid #334155;font-size:11pt}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #334155;padding:6px;vertical-align:top;text-align:left}th{background:#e2e8f0}.no-print{display:none!important}[class*="bg-"],[class*="text-"]{background:transparent!important;color:#0f172a!important}.rounded-lg,.rounded-md{border-radius:0!important}.shadow-lg{box-shadow:none!important}`;
     printable.document.open();
     printable.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${document.documentId}</title><style>${style}</style></head><body>${source.outerHTML}</body></html>`);
     printable.document.close();
@@ -9984,18 +10003,24 @@ function PrintableTemplateView({ document, settings, onClose, onOpenSettings }: 
       window.setTimeout(() => frame.remove(), 1000);
     }, 300);
   };
-  return <Modal title="Full Document Viewer & Print" onClose={onClose} wide><div className="no-print mb-4 flex flex-wrap justify-end gap-2"><Action label="Copy Full Markdown" onClick={copyText} /><Action label="Export Text" onClick={exportText} /><Action label="Customize Header & Footer" onClick={onOpenSettings} /><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div><article id="printable-document" className="print-document printable-document-content mx-auto max-w-[794px] border border-border bg-card p-5 text-foreground shadow-lg md:p-8"><header className="grid gap-px overflow-hidden border-2 border-foreground/50 bg-border sm:grid-cols-[1.15fr_1.7fr_1.15fr]"><div className="bg-card p-3"><div className="flex items-center gap-2"><span className="grid size-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">{settings.logoBadge}</span><div><p className="text-xs font-bold">{settings.companyName}</p><p className="text-[10px] text-muted-foreground">XYZ Pvt Ltd</p></div></div><p className="mt-3 text-[9px] leading-4 text-muted-foreground">{settings.accreditationMarks}</p></div><div className="bg-card p-3 text-center"><p className="text-sm font-bold">{document.title}</p><p className="mt-1 text-[10px] font-medium">{document.stage} · {document.project} · {profile.name}</p></div><div className="bg-card p-3 text-[10px]"><p><strong>Document ID:</strong> {document.documentId}</p><p className="mt-1"><strong>Revision:</strong> {document.revision}</p><p className="mt-1"><strong>Effective date:</strong> {date}</p><p className="mt-1"><strong>Classification:</strong> Internal controlled DEMO draft</p><p className="mt-2"><Status status={document.status} /></p></div></header><section className="mt-5 border border-border"><div className="border-b border-border bg-panel px-3 py-2"><p className="text-xs font-bold">Organization & facility details</p></div><div className="grid gap-px bg-border sm:grid-cols-2"><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Tech Center</p><p className="mt-1 text-xs">{settings.techCenter}</p></div><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Manufacturing plant</p><p className="mt-1 text-xs">{settings.plantLocation}</p></div></div></section><DocumentBody document={document} profile={profile} stageContent={stageContent} signatories={signatories} date={date} /><footer className="mt-8 border-t-2 border-foreground/50 pt-3 text-center text-[9px] leading-4 text-muted-foreground"><p>{settings.confidentialityNotice}</p><p className="mt-2">{settings.complianceFooter}</p><p className="mt-2">Classification: Internal controlled DEMO draft · Printed {new Date().toLocaleString("en-IN")} · Page 1 of 1</p><div className="no-print mt-4"><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div></footer></article></Modal>;
+  return <Modal title="Full Document Viewer & Print" onClose={onClose} wide><div className="no-print mb-4 flex flex-wrap justify-end gap-2"><Action label="Copy Full Markdown" onClick={copyText} /><Action label="Export Text" onClick={exportText} /><Action label="Customize Header & Footer" onClick={onOpenSettings} /><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div><article id="printable-document" className="print-document printable-document-content mx-auto max-w-[794px] border border-border bg-card p-5 text-foreground shadow-lg md:p-8"><header className="grid gap-px overflow-hidden border-2 border-foreground/50 bg-border sm:grid-cols-[1.15fr_1.7fr_1.15fr]"><div className="bg-card p-3"><div className="flex items-center gap-2"><span className="grid size-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">{settings.logoBadge}</span><div><p className="text-xs font-bold">{settings.companyName}</p><p className="text-[10px] text-muted-foreground">XYZ Pvt Ltd</p></div></div><p className="mt-3 text-[9px] leading-4 text-muted-foreground">{settings.accreditationMarks}</p></div><div className="bg-card p-3 text-center"><p className="text-sm font-bold">{document.title}</p><p className="mt-1 text-[10px] font-medium">{document.stage} · {document.project} · {profile.name}</p></div><div className="bg-card p-3 text-[10px]"><p><strong>Document ID:</strong> {document.documentId}</p><p className="mt-1"><strong>Revision:</strong> {document.revision}</p><p className="mt-1"><strong>Effective date:</strong> {date}</p><p className="mt-1"><strong>Classification:</strong> Internal draft — source verification required</p><p className="mt-2"><Status status="Draft" /></p></div></header><section className="mt-5 border border-border"><div className="border-b border-border bg-panel px-3 py-2"><p className="text-xs font-bold">Organization & facility details</p></div><div className="grid gap-px bg-border sm:grid-cols-2"><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Tech Center</p><p className="mt-1 text-xs">{settings.techCenter}</p></div><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Manufacturing plant</p><p className="mt-1 text-xs">{settings.plantLocation}</p></div></div></section><DocumentBody draft={draft} source={source} /><footer className="mt-8 border-t-2 border-foreground/50 pt-3 text-center text-[9px] leading-4 text-muted-foreground"><p>{settings.confidentialityNotice}</p><p className="mt-2">{settings.complianceFooter}</p><p className="mt-2">Classification: Internal draft · Printed {new Date().toLocaleString("en-IN")} · Use print preview for page count</p><div className="no-print mt-4"><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div></footer></article></Modal>;
 }
 
-function DocumentBody({ document, profile, stageContent, signatories, date }: { document: PrintableDocument; profile: ProjectDocumentProfile; stageContent: ReturnType<typeof stageDocumentContent>; signatories: { author: string; reviewer: string; approver: string }; date: string }) {
-  const specs = [["Microcontroller", "STM32 / ESP32 automotive-grade controller", "AEC-Q100 grade selection and controlled firmware release"], ["Cellular modem", "4G LTE Cat-1 eSIM with 2G fallback", "Network registration and field diagnostics"], ["Power supply", "9V–36V with ISO 7637-2 pulse protection", "Transient, reverse polarity and load-dump evidence"], ["GNSS", "L1/L5 GNSS receiver with assisted position data", "AIS-140 location evidence"], ["Vehicle I/O", "CAN 2.0B, CAN J1939 and RS485 interface", "Bus load, termination and interoperability checks"], ["Enclosure", "IP67 UV-stabilized polycarbonate enclosure", "Ingress, vibration and temperature evidence"]];
-  const matrix = document.title.includes("DVP") ? [["ISO 7637-2 pulse immunity", "Electrical transient pulses", "No reset, loss of data or permanent damage"], ["AIS-140 functional check", "GNSS, cellular and SOS function", "Traceable simulated evidence"], ["Environmental chamber", profile.environmental, "Functional verification after exposure"], ["CAN J1939 interoperability", "Message timing and diagnostics", "No critical communication fault"]] : document.title.includes("BOM") ? [["STM32 controller", "STM32 automotive MCU", "STMicroelectronics", "LQFP", "12 weeks", "Controlled estimate"], ["4G Cat-1 modem", "eSIM-capable cellular module", "Approved source required", "LGA", "16 weeks", "Controlled estimate"], ["GNSS receiver", "L1/L5 receiver", "Approved source required", "QFN", "14 weeks", "Controlled estimate"], ["Power front end", "TVS, buck regulator and reverse protection", "Approved source required", "Mixed", "10 weeks", "Controlled estimate"]] : stageContent.rows;
-  return <><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">1.0 Executive Summary & Project Identification</h3><p className="mt-3 text-xs leading-5">{stageContent.intent} This controlled DEMO draft defines the intended scope and traceability baseline for {profile.name}. It must be reviewed and approved by accountable owners before any operational use.</p><div className="mt-3 grid gap-3 text-xs sm:grid-cols-2"><DocumentField label="Client / stakeholder" value={profile.customer} /><DocumentField label="Customer contact" value={profile.contact} /><DocumentField label="Programme volume" value={profile.quantity} /><DocumentField label="Commercial baseline" value={profile.commercialValue} /></div></section><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">2.0 System Architecture & Block Diagram</h3><p className="mt-3 text-xs leading-5">The device architecture routes protected vehicle power through transient suppression and regulated rails to the controller, modem and GNSS subsystem. CAN 2.0B / J1939 and RS485 interfaces are galvanically and diagnostically managed; firmware coordinates telemetry, positioning, secure communications and controlled update states.</p><div className="mt-3 grid gap-2 border border-border bg-panel p-3 text-[11px] sm:grid-cols-5"><span>Vehicle 9–36V</span><span>→ Protection & DC/DC</span><span>→ MCU / Firmware</span><span>→ 4G + GNSS</span><span>→ CAN / RS485</span></div></section><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">3.0 Hardware & Technical Specifications</h3><DocumentTable headers={["Subsystem", "Controlled specification", "Verification expectation"]} rows={specs} /></section><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">4.0 Automotive Compliance & Standards Matrix</h3><DocumentTable headers={["Standard / requirement", "Applicability", "Controlled evidence"]} rows={[["AIS-140 Amendments 1 & 2", "Telematics and positioning functions", "Functional traceability and human review"], ["IATF 16949:2016", "Automotive quality process controls", "Controlled document and approval history"], ["ISO 7637-2 / ISO 16750", "Electrical transients and environmental loads", "DVP&R and laboratory evidence"], ["IP67 ingress protection", "Enclosure protection", "Environmental verification evidence"], ["ARAI / ICAT", "Type-approval evidence where applicable", "Certificate reviewed by authorized quality owner"]]} /></section><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">5.0 {document.title.includes("DVP") ? "Test Plan" : document.title.includes("BOM") ? "Bill of Materials" : "Process Matrix"}</h3><DocumentTable headers={document.title.includes("BOM") ? ["MPN / item", "Description", "Manufacturer", "Package", "Lead time", "Unit cost"] : ["Control parameter", "Requirement / test", "Pass / fail criterion"]} rows={matrix} /></section><section className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">6.0 Multi-Department RACI Sign-off Matrix</h3><DocumentTable headers={["Department", "Role", "Lead name", "Approval status", "Timestamp", "Digital signature hash"]} rows={stageContent.approvals.map((department, index) => [department, index === 0 ? "Responsible" : index === 1 ? "Accountable" : "Consulted", department === document.department ? signatories.author : department === "QA" ? "Jordan Blake" : department === "SAL" ? "Priya Sharma" : "Department lead", "APPROVED · DEMO", `${date} · controlled review`, `SHA-256 · DEMO-${document.documentId.slice(-8)}-${department}`])} /></section></>;
+function DocumentBody({ draft, source }: { draft: ReturnType<typeof buildDocumentDraft>; source?: DraftSource | undefined }) {
+  return <>
+    <section className="mt-5 rounded-lg border border-warning/40 p-3 text-xs"><strong>Unissued draft · human review required</strong><p>Values below are copied from identified browser-local records. A source reference does not establish approval or certification. Missing information remains TBD.</p>{!draft.supported && <p>No approved format is configured for this document type. Attach the controlled original or configure its format before release.</p>}</section>
+    {source?.notes && <section className="mt-5"><h3 className="text-xs font-bold">Source notes — {source.reference}</h3><p className="mt-2 whitespace-pre-wrap text-xs">{source.notes}</p></section>}
+    {draft.sections.map((section, index) => <section key={section.title} className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">{index + 1}.0 {section.title}</h3><DocumentTable headers={["Field", "Available information", "Source reference"]} rows={section.rows} /></section>)}
+    <section className="mt-5"><h3 className="text-xs font-bold">Review and release</h3><DocumentTable headers={["Prepared", "Reviewed", "Approved", "Release evidence"]} rows={[["Not recorded", "Not recorded", "Not recorded", "Required before issue"]]} /></section>
+  </>;
 }
 
 function DocumentTable({ headers, rows }: { headers: string[]; rows: string[][] }) { return <div className="mt-3 overflow-x-auto border border-border"><table className="w-full min-w-[620px] text-left text-xs"><thead className="bg-panel"><tr>{headers.map((header) => <th key={header} className="p-2 font-semibold">{header}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={`${row[0]}-${index}`} className="border-t border-border">{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className="p-2 align-top">{cell}</td>)}</tr>)}</tbody></table></div>; }
 
-function documentMarkdown(document: PrintableDocument, profile: ProjectDocumentProfile, stageContent: ReturnType<typeof stageDocumentContent>, signatories: { author: string; reviewer: string; approver: string }, date: string) { return `# ${document.title}\n\n**Document ID:** ${document.documentId}  \n**Project:** ${document.project} · ${profile.name}  \n**Revision:** ${document.revision}  \n**Effective date:** ${date}\n\n## 1.0 Executive Summary & Project Identification\n${stageContent.intent}\n\nClient: ${profile.customer}\nProgramme: ${profile.quantity}\nTechnical baseline: ${profile.techSpec}\n\n## 2.0 System Architecture & Block Diagram\nProtected vehicle power → DC/DC → MCU/firmware → 4G/GNSS → CAN 2.0B/J1939 and RS485.\n\n## 3.0 Hardware & Technical Specifications\nSTM32/ESP32 controller; 4G LTE Cat-1 eSIM with 2G fallback; 9V–36V ISO 7637-2 protected supply; L1/L5 GNSS; CAN 2.0B/RS485; IP67 UV-stabilized polycarbonate enclosure.\n\n## 4.0 Automotive Compliance & Standards Matrix\nAIS-140 Amendments 1 & 2; IATF 16949:2016; ISO 7637-2 / ISO 16750; IP67; ARAI / ICAT review where applicable.\n\n## 5.0 Controlled Matrix\n${stageContent.rows.map((row) => `- ${row.join(" — ")}`).join("\n")}\n\n## 6.0 Multi-Department RACI Sign-off Matrix\n${stageContent.approvals.map((department, index) => `- ${department}: ${index === 0 ? "Responsible" : index === 1 ? "Accountable" : "Consulted"} · APPROVED DEMO · ${date} · SHA-256 DEMO signature`).join("\n")}\n\nPrepared by: ${signatories.author}\nReviewed by: ${signatories.reviewer}\nApproved by: ${signatories.approver}\n`; }
+function documentMarkdown(document: PrintableDocument, draft: ReturnType<typeof buildDocumentDraft>, source?: DraftSource) {
+  return [`# ${document.title}`, `Document ID: ${document.documentId}`, `Project: ${document.project}`, `Revision: ${document.revision}`, "UNISSUED DRAFT — source verification and human approval required", !draft.supported ? "No approved format configured for this document type." : "", source?.notes || "", ...draft.sections.map(section => [`## ${section.title}`, ...section.rows.map(row => row.join(" | "))].join("\n")), "Prepared: Not recorded | Reviewed: Not recorded | Approved: Not recorded"].join("\n\n");
+}
+
 function DocumentField({ label, value }: { label: string; value: string }) {
   return (
     <div className="border-b border-border pb-3">
@@ -10506,6 +10531,7 @@ function MobileMenu({
   setupStep,
   totalSetupSteps,
   openTaskCounts,
+  approvalCounts,
 }: {
   onClose: () => void;
   onNavigate: (
@@ -10550,6 +10576,7 @@ function MobileMenu({
   setupStep?: number | undefined;
   totalSetupSteps?: number | undefined;
   openTaskCounts?: Record<string, number> | undefined;
+  approvalCounts?: Record<string, number> | undefined;
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-ink/30 backdrop-blur-[2px] lg:hidden">
@@ -10582,6 +10609,7 @@ function MobileMenu({
           setupStep={setupStep}
           totalSetupSteps={totalSetupSteps}
           openTaskCounts={openTaskCounts}
+          approvalCounts={approvalCounts}
         />
         <div className="mt-2 pt-2 border-t border-sidebar-border/60">
           <ThemeToggle darkMode={darkMode} onToggle={onToggleTheme} expanded />

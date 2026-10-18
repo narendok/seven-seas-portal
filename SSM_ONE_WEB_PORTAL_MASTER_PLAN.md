@@ -415,6 +415,8 @@ Extends the governed inventory experience into an enterprise inventory-and-asset
 
 ## 8. Controlled Document Engine & Native Print/PDF Output
 
+Document standardization execution detail: [Project document standardization plan](docs/DOCUMENT_STANDARDIZATION_PLAN.md) (2026-10-18). It defines document-specific formats, project-source provenance, inventory coverage, delivery order and acceptance evidence. This is planned work; existing generic previews and sample release claims are not verification of completion.
+
 ### 8.1 Automatic Document Numbering Formula
 All documents generated across the enterprise strictly follow:
 $$\mathbf{HLPL-[\text{PROJ\_ID}]-[\text{DEPT}]-[\text{DOC\_TYPE}]-[\text{REV}]}$$

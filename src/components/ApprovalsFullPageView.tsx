@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Persona } from "@/components/RoleAwareSidebar";
+import { approvalInDepartment, canDepartmentSign, departmentCode } from "@/lib/department-scope";
 
 export interface ApprovalRecord {
   id: string;
@@ -43,6 +44,8 @@ export interface ApprovalRecord {
 
 interface ApprovalsFullPageViewProps {
   approvals: ApprovalRecord[];
+  projects?: { id?: string; reference: string; title: string }[] | undefined;
+  records?: { id: string; reference: string; title: string; fields: Record<string, string> }[] | undefined;
   onApprove: (id: string, notes?: string) => void;
   onReject: (id: string, reason: string) => void;
   onReturn: (id: string, reworkNotes: string) => void;
@@ -50,11 +53,13 @@ interface ApprovalsFullPageViewProps {
   currentUser?: string | undefined;
   userRole?: string | undefined;
   persona?: Persona | undefined;
-  onRequestApproval?: ((newApproval: Omit<ApprovalRecord, "id" | "outcome" | "updatedAt">) => void) | undefined;
+  onRequestApproval?: ((newApproval: Omit<ApprovalRecord, "id" | "outcome" | "updatedAt">) => boolean | void | Promise<boolean | void>) | undefined;
 }
 
 export function ApprovalsFullPageView({
   approvals,
+  projects = [],
+  records = [],
   onApprove,
   onReject,
   onReturn,
@@ -76,10 +81,10 @@ export function ApprovalsFullPageView({
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [reqTitle, setReqTitle] = useState("");
   const [reqRecordId, setReqRecordId] = useState("");
-  const [reqAuthority, setReqAuthority] = useState("QA");
-  const [reqProject, setReqProject] = useState("HLPL-AI4T-01 (Tata Ace EV 4G)");
+  const [reqAuthority, setReqAuthority] = useState("");
+  const [reqProject, setReqProject] = useState("");
   const [reqRiskLevel, setReqRiskLevel] = useState<"Low" | "Medium" | "High" | "Critical">("High");
-  const [reqClause, setReqClause] = useState("IATF 16949 §8.3.4 (Engineering Change Control)");
+  const [reqClause, setReqClause] = useState("");
   const [reqDescription, setReqDescription] = useState("");
 
   const canUserActOnApproval = (appr: ApprovalRecord): boolean => {
@@ -88,23 +93,7 @@ export function ApprovalsFullPageView({
     // Admins have universal authority
     if (!persona || persona.kind === "admin") return true;
 
-    // For department leads: check department match
-    const userDept = (persona.departmentId ?? "").toUpperCase();
-    const apprDept = (appr.department ?? "").toUpperCase();
-    const targetAuth = (appr.approverAuthority ?? "").toUpperCase();
-
-    // If specific authority is designated:
-    if (targetAuth) {
-      if (userDept === targetAuth) return true;
-      if (userDept === "QA" && (appr.riskLevel === "Critical" || targetAuth === "QA")) return true;
-      return false;
-    }
-
-    if (userDept === apprDept) return true;
-    // QA Lead has oversight on critical release gates
-    if (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA")) return true;
-
-    return false;
+    return canDepartmentSign(appr, persona.departmentId);
   };
 
   // Default enriched metadata if missing from raw seed
@@ -154,8 +143,8 @@ export function ApprovalsFullPageView({
     return {
       ...appr,
       requester: appr.requester ?? "Department Lead",
-      department: appr.department ?? "ENG",
-      approverAuthority: appr.approverAuthority ?? "QA",
+      department: appr.department,
+      approverAuthority: appr.approverAuthority,
       project: appr.project ?? "HLPL-AI4T-01",
       riskLevel: appr.riskLevel ?? "Medium",
       iatfClause: appr.iatfClause ?? "IATF 16949 / ISO 9001",
@@ -163,18 +152,19 @@ export function ApprovalsFullPageView({
     };
   });
 
-  const myDept = (persona?.departmentId || "EHW").toUpperCase();
-  const myActionCount = enrichedApprovals.filter((a) => a.outcome === "Pending" && canUserActOnApproval(a)).length;
-  const myDeptCount = enrichedApprovals.filter((a) => (a.department || "").toUpperCase() === myDept).length;
-  const pendingCount = enrichedApprovals.filter((a) => a.outcome === "Pending").length;
-  const approvedCount = enrichedApprovals.filter((a) => a.outcome === "Approved").length;
-  const rejectedCount = enrichedApprovals.filter((a) => a.outcome === "Rejected" || a.outcome === "Returned").length;
+  const myDept = departmentCode(persona?.departmentId);
+  const scopedApprovals = enrichedApprovals.filter((approval) => persona?.kind === "admin" || (persona?.kind === "lead" && approvalInDepartment(approval, persona.departmentId)));
+  const myActionCount = scopedApprovals.filter((a) => a.outcome === "Pending" && canUserActOnApproval(a)).length;
+  const myDeptCount = scopedApprovals.filter((a) => departmentCode(a.department) === myDept).length;
+  const pendingCount = scopedApprovals.filter((a) => a.outcome === "Pending").length;
+  const approvedCount = scopedApprovals.filter((a) => a.outcome === "Approved").length;
+  const rejectedCount = scopedApprovals.filter((a) => a.outcome === "Rejected" || a.outcome === "Returned").length;
 
-  const filtered = enrichedApprovals.filter((appr) => {
+  const filtered = scopedApprovals.filter((appr) => {
     if (statusFilter !== "ALL" && appr.outcome !== statusFilter) return false;
     if (deptFilter !== "ALL" && appr.department !== deptFilter) return false;
     if (filterScope === "PENDING_ME" && !(appr.outcome === "Pending" && canUserActOnApproval(appr))) return false;
-    if (filterScope === "MY_REQUESTS" && (appr.department || "").toUpperCase() !== myDept) return false;
+    if (filterScope === "MY_REQUESTS" && departmentCode(appr.department) !== myDept) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTitle = appr.title.toLowerCase().includes(q);
@@ -186,12 +176,12 @@ export function ApprovalsFullPageView({
     return true;
   });
 
-  const handleCreateApproval = () => {
-    if (!reqTitle.trim()) {
-      alert("Please enter an approval title.");
+  const handleCreateApproval = async () => {
+    if (!reqTitle.trim() || !reqAuthority || !reqRecordId.trim()) {
+      alert("Enter a title, source record reference and designated approver.");
       return;
     }
-    onRequestApproval?.({
+    const saved = await onRequestApproval?.({
       title: reqTitle.trim(),
       recordId: reqRecordId.trim() || `GATE-${myDept}-${Date.now().toString().slice(-4)}`,
       requester: `${currentUser} (${userRole})`,
@@ -202,10 +192,11 @@ export function ApprovalsFullPageView({
       iatfClause: reqClause,
       description: reqDescription.trim() || "Controlled gate review submitted for designated human sign-off.",
     });
+    if (saved === false) return;
     setIsRequestModalOpen(false);
     setReqTitle("");
     setReqRecordId("");
-    setReqAuthority("QA");
+    setReqAuthority("");
     setReqDescription("");
   };
 
@@ -217,9 +208,9 @@ export function ApprovalsFullPageView({
   };
 
   const handleConfirmAction = () => {
-    if (!selectedApproval || !actionType) return;
+    if (!selectedApproval || !actionType || !canUserActOnApproval(selectedApproval)) return;
     if (actionType === "approve") {
-      onApprove(selectedApproval.id, actionNotes || "Sign-off verified and approved under ISO/IATF compliance.");
+      onApprove(selectedApproval.id, actionNotes || "Approved by designated reviewer.");
     } else if (actionType === "reject") {
       onReject(selectedApproval.id, actionNotes || "Rejected due to non-conformance with requirements.");
     } else if (actionType === "return") {
@@ -434,15 +425,8 @@ export function ApprovalsFullPageView({
               onChange={(e) => setDeptFilter(e.target.value)}
               className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary"
             >
-              <option value="ALL">All Departments</option>
-              <option value="EHW">EHW · Embedded Hardware</option>
-              <option value="ESW">ESW · Firmware & Software</option>
-              <option value="MECH">MECH · Mechanical</option>
-              <option value="PUR">PUR · Purchasing</option>
-              <option value="QA">QA · Quality Assurance</option>
-              <option value="EMF">EMF · Manufacturing</option>
-              <option value="TST">TST · EOL Testing</option>
-              <option value="FIN">FIN · Finance & Accounts</option>
+              <option value="ALL">All authorized requests</option>
+              {Array.from(new Set(scopedApprovals.map(approval => approval.department).filter((value): value is string => Boolean(value)))).map(department => <option key={department} value={department}>{department}</option>)}
             </select>
           </div>
 
@@ -799,6 +783,7 @@ export function ApprovalsFullPageView({
                 </label>
                 <input
                   type="text"
+                  aria-label="Approval title"
                   value={reqTitle}
                   onChange={(e) => setReqTitle(e.target.value)}
                   placeholder="e.g. Stage 5 SMT Pilot Thermal Profile Approval"
@@ -811,13 +796,7 @@ export function ApprovalsFullPageView({
                   <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                     Deliverable / Task Ref ID
                   </label>
-                  <input
-                    type="text"
-                    value={reqRecordId}
-                    onChange={(e) => setReqRecordId(e.target.value)}
-                    placeholder="e.g. TASK-EHW-005"
-                    className="h-9 w-full rounded-lg border border-border bg-background px-3 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-1 focus:ring-primary"
-                  />
+                  <select aria-label="Source record" value={reqRecordId} onChange={event => { setReqRecordId(event.target.value); const source = records.find(record => record.reference === event.target.value); const code = source?.fields["projectId"] || source?.fields["projectCode"] || ""; setReqProject(projects.find(project => project.reference === code || project.id === code)?.reference || ""); }} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs"><option value="">Select a source record</option>{records.map(record => <option key={record.id} value={record.reference}>{record.reference} · {record.title}</option>)}</select>
                 </div>
 
                 <div>
@@ -842,17 +821,24 @@ export function ApprovalsFullPageView({
                   Designated Approver Authority *
                 </label>
                 <select
+                  aria-label="Approver authority"
                   value={reqAuthority}
                   onChange={(e) => setReqAuthority(e.target.value)}
                   className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <option value="QA">QA (Quality Assurance Lead · ISO/IATF Compliance)</option>
+                  <option value="">Select approver authority</option>
+                  <option value="QA">QA (Quality Assurance Lead)</option>
                   <option value="Admin">Admin (Executive Director / Plant Management)</option>
                   <option value="PUR">PUR (Purchasing & Supply Chain Head)</option>
                   <option value="FIN">FIN (Finance Controller)</option>
                   <option value="EHW">EHW (Hardware Engineering Lead)</option>
                   <option value="ESW">ESW (Firmware & Software Lead)</option>
-                  <option value="EMF">EMF (Electronic Manufacturing Facility Lead)</option>
+                  <option value="EMF">EMF (Manufacturing Lead)</option>
+                  <option value="SAL">SAL (Sales Lead)</option>
+                  <option value="MECH">MECH (Mechanical Lead)</option>
+                  <option value="TST">TST (Production Test Lead)</option>
+                  <option value="SIT">SIT (Service & IT Lead)</option>
+                  <option value="HR">HR (HR & Operations Lead)</option>
                 </select>
               </div>
 
@@ -861,14 +847,13 @@ export function ApprovalsFullPageView({
                   Target Program / Vehicle
                 </label>
                 <select
+                  aria-label="Approval project"
                   value={reqProject}
                   onChange={(e) => setReqProject(e.target.value)}
                   className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <option value="HLPL-AI4T-01 (Tata Ace EV 4G)">HLPL-AI4T-01 · Tata Ace EV 4G AIS-140 Gateway</option>
-                  <option value="HLPL-SLCT-01 (AIS-140 Gateway)">HLPL-SLCT-01 · Select Motors AIS-140 GPS</option>
-                  <option value="HLPL-XLINK-03 (CV Gateway)">HLPL-XLINK-03 · Commercial CV Fleet Gateway</option>
-                  <option value="HLPL-OBD4-01 (Ashok Leyland OBD-II)">HLPL-OBD4-01 · Ashok Leyland OBD-II Tracker</option>
+                  <option value="">No project selected</option>
+                  {projects.map(project => <option key={project.reference} value={project.reference}>{project.reference} · {project.title}</option>)}
                 </select>
               </div>
 

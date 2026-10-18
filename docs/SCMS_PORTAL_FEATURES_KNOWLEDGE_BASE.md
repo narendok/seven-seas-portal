@@ -11,6 +11,10 @@
 
 ---
 
+### Local correction checkpoint — 19 October 2026
+
+[Department scope and document draft correction](evidence/DEPARTMENT_SCOPE_FIX_2026-10-19.md) records local fixes for lead navigation, approval scope/authority, department rosters, document relevance and source-backed draft fields. It includes the distinction between browser-local prototype behavior and unverified production lifecycle/backend contracts. These changes have not been published; historical module completion labels do not certify production acceptance. The full document format inventory remains in [the standardization plan](DOCUMENT_STANDARDIZATION_PLAN.md).
+
 ## Table of Contents
 1. [Module 1: Governed Inventory & Asset Management Architecture](#module-1-governed-inventory--asset-management-architecture)
 2. [Module 2: Mouser Electronics Component Intelligence & Auto-Fill](#module-2-mouser-electronics-component-intelligence--auto-fill)

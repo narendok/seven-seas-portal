@@ -134,6 +134,7 @@ export type RoleAwareSidebarProps = {
   setupStep?: number | undefined;
   totalSetupSteps?: number | undefined;
   openTaskCounts?: Record<string, number> | undefined;
+  approvalCounts?: Record<string, number> | undefined;
   isMobile?: boolean | undefined;
   onCloseMobile?: (() => void) | undefined;
 };
@@ -190,6 +191,7 @@ export function RoleAwareSidebar({
   setupStep = 0,
   totalSetupSteps = 6,
   openTaskCounts = {},
+  approvalCounts = {},
   isMobile = false,
   onCloseMobile,
 }: RoleAwareSidebarProps) {
@@ -680,6 +682,7 @@ export function RoleAwareSidebar({
     activeArea,
     view,
     openTaskCounts,
+    approvalCounts,
     purchasingSubView,
     onNavigate,
     onOpenApprovals,
@@ -1000,16 +1003,16 @@ export function RoleAwareSidebar({
             label: "My Tasks & Action Queue",
             shortLabel: "My Work",
             icon: CheckSquare,
-            badge: openTaskCounts[deptId] ?? 4,
-            isActive: activeArea === deptId && view === "queue",
-            onClick: () => handleItemClick(() => onNavigate(deptId as AreaId, "queue")),
+            badge: openTaskCounts[deptId] ?? 0,
+            isActive: activeArea === deptId && view === "assignee",
+            onClick: () => handleItemClick(() => onNavigate(deptId as AreaId, "assignee")),
           },
           {
             id: "dept-approvals",
             label: "Department Approvals & Reviews",
             shortLabel: "Approvals",
             icon: ShieldAlert,
-            badge: 2,
+            badge: approvalCounts[deptId] ?? 0,
             isActive: view === "approvals",
             onClick: () => handleItemClick(() => onOpenApprovals?.()),
           },
@@ -1026,16 +1029,16 @@ export function RoleAwareSidebar({
             shortLabel: "Projects",
             icon: Briefcase,
             isActive: view === "project",
-            onClick: () => handleItemClick(() => onOpenProjectAnalysis?.()),
+            onClick: () => handleItemClick(() => onNavigate(deptId as AreaId, "project")),
           },
-          {
+          ...(deptId === "sit" ? [] : [{
             id: "dept-lifecycle",
-            label: "Project Lifecycle Hub (AI4T-01)",
+            label: "Demo Lifecycle Walkthrough (AI4T-01)",
             shortLabel: "Lifecycle",
             icon: PlayCircle,
             isActive: false,
             onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
-          },
+          }]),
           {
             id: "dept-drive",
             label: "Project Documents & Vault",
@@ -1083,7 +1086,7 @@ export function RoleAwareSidebar({
           },
           {
             id: "dept-ref-directory",
-            label: "Organization & Team Directory",
+            label: "Department Team Directory",
             shortLabel: "Directory",
             icon: Users,
             isActive: false,
@@ -1097,6 +1100,7 @@ export function RoleAwareSidebar({
     activeArea,
     view,
     openTaskCounts,
+    approvalCounts,
     purchasingSubView,
     onNavigate,
     onOpenApprovals,

@@ -78,7 +78,7 @@ interface DepartmentLeadCoordinationCenterProps {
     projectId: string;
     dueDate: string;
     notes: string;
-  }) => void;
+  }) => boolean | void | Promise<boolean | void>;
   onAddTeamMember?: ((member: TeamMember) => void) | undefined;
   readOnly?: boolean | undefined;
 }
@@ -155,7 +155,7 @@ export function DepartmentLeadCoordinationCenter({
   // New task form state
   const [newTaskTitle, setNewTaskTitle] = useState<string>("");
   const [newTaskProject, setNewTaskProject] = useState<string>(
-    projectScope !== "all" ? projectScope : "HLPL-AI4T-01"
+    projectScope !== "all" ? projectScope : ""
   );
   const [newTaskAssignee, setNewTaskAssignee] = useState<string>(departmentLead);
   const [newTaskPriority, setNewTaskPriority] = useState<"Low" | "Normal" | "High" | "Critical">("Normal");
@@ -228,7 +228,7 @@ export function DepartmentLeadCoordinationCenter({
 
   const handleOpenCreateTask = (assignee?: string) => {
     setNewTaskAssignee(assignee ?? departmentLead);
-    setNewTaskProject(projectScope !== "all" ? projectScope : "HLPL-AI4T-01");
+    setNewTaskProject(projectScope !== "all" ? projectScope : "");
     setNewTaskTitle("");
     setNewTaskPriority("Normal");
     setNewTaskDueDate(new Date().toISOString().slice(0, 10));
@@ -236,10 +236,10 @@ export function DepartmentLeadCoordinationCenter({
     setIsCreateTaskOpen(true);
   };
 
-  const handleSaveNewTask = (e: React.FormEvent) => {
+  const handleSaveNewTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
-    onCreateTask({
+    if (!newTaskTitle.trim() || !newTaskAssignee) return;
+    const saved = await onCreateTask({
       title: newTaskTitle.trim(),
       priority: newTaskPriority,
       assignee: newTaskAssignee,
@@ -247,6 +247,7 @@ export function DepartmentLeadCoordinationCenter({
       dueDate: newTaskDueDate,
       notes: newTaskNotes.trim(),
     });
+    if (saved === false) return;
     setIsCreateTaskOpen(false);
   };
 
@@ -909,6 +910,7 @@ export function DepartmentLeadCoordinationCenter({
                   type="text"
                   required
                   placeholder="e.g. Schematics SCH-01 draft & MCU bring-up"
+                  aria-label="Task title"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   className="mt-1 h-9 w-full rounded-xl border border-border bg-background px-3 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
@@ -918,13 +920,15 @@ export function DepartmentLeadCoordinationCenter({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Project *
+                    Project
                   </label>
                   <select
+                    aria-label="Task project"
                     value={newTaskProject}
                     onChange={(e) => setNewTaskProject(e.target.value)}
                     className="mt-1 h-9 w-full rounded-xl border border-border bg-background px-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                   >
+                    <option value="">Department task — no project</option>
                     {projects.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.id} · {p.name.split(" ")[0]}
@@ -938,6 +942,7 @@ export function DepartmentLeadCoordinationCenter({
                     Assignee Team Member *
                   </label>
                   <select
+                    aria-label="Task assignee"
                     value={newTaskAssignee}
                     onChange={(e) => setNewTaskAssignee(e.target.value)}
                     className="mt-1 h-9 w-full rounded-xl border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
@@ -990,6 +995,7 @@ export function DepartmentLeadCoordinationCenter({
                 <textarea
                   rows={3}
                   placeholder="Detail technical deliverables, compliance references, or handover gates..."
+                  aria-label="Task scope"
                   value={newTaskNotes}
                   onChange={(e) => setNewTaskNotes(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-border bg-background p-3 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
