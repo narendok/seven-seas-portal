@@ -1251,14 +1251,16 @@ export function RoleAwareSidebar({
           })}
         </div>
 
-        {/* Bottom: Setup Wizard Button */}
-        <button
-          title="Portal setup wizard"
-          onClick={() => onOpenWizard?.()}
-          className="grid size-9 place-items-center rounded-lg border border-sidebar-border bg-card text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-        >
-          <Settings2 className="size-4" />
-        </button>
+        {/* Bottom: Setup Wizard Button (Admin only) */}
+        {persona.kind === "admin" && (
+          <button
+            title="Portal setup wizard"
+            onClick={() => onOpenWizard?.()}
+            className="grid size-9 place-items-center rounded-lg border border-sidebar-border bg-card text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+          >
+            <Settings2 className="size-4" />
+          </button>
+        )}
       </div>
     );
   }
@@ -1464,20 +1466,22 @@ export function RoleAwareSidebar({
         </div>
       </nav>
 
-      {/* Sidebar Footer: Portal Setup Wizard */}
-      <div className="pt-2 border-t border-sidebar-border/60">
-        <button
-          title="Portal setup wizard"
-          onClick={() => handleItemClick(() => onOpenWizard?.())}
-          className="flex h-9 w-full items-center gap-2.5 rounded-lg border border-sidebar-border bg-card px-2.5 text-left text-xs font-semibold text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-        >
-          <Settings2 className="size-3.5 text-steel shrink-0" />
-          <span className="truncate flex-1">Portal setup</span>
-          <span className="font-mono text-[10px] text-muted-foreground shrink-0">
-            {setupStep + 1}/{totalSetupSteps}
-          </span>
-        </button>
-      </div>
+      {/* Sidebar Footer: Portal Setup Wizard (Admin only) */}
+      {persona.kind === "admin" && (
+        <div className="pt-2 border-t border-sidebar-border/60">
+          <button
+            title="Portal setup wizard"
+            onClick={() => handleItemClick(() => onOpenWizard?.())}
+            className="flex h-9 w-full items-center gap-2.5 rounded-lg border border-sidebar-border bg-card px-2.5 text-left text-xs font-semibold text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+          >
+            <Settings2 className="size-3.5 text-steel shrink-0" />
+            <span className="truncate flex-1">Portal setup</span>
+            <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+              {setupStep + 1}/{totalSetupSteps}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

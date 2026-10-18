@@ -523,10 +523,10 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
   - Clicking any process shortcut immediately opens `RecordForm` pre-filled with the exact canonical record type, specific title, pre-filled scope linking to the target Cloud Drive folder, project ID, location, and priority.
 - [x] **Clean Compilation & Automated Tests**: 0 TypeScript errors (`npx tsc --noEmit`), production build passing, Playwright regression suite passing with 100% success across all phases.
 
-- [x] **Phase 3: Supabase Shared Persistence Migration**:
+- [ ] **Phase 3: Supabase Shared Persistence Migration (cloud acceptance pending)**:
   - Dual-track persistence architecture pairing high-speed offline browser-local storage with Lovable Cloud Supabase Postgres (`rzskhndweihuczbdhoxk.supabase.co`).
   - Interactive Cloud & Supabase Sync panel in Administration command center with real-time cluster health pinging, latency diagnostics, telemetry counters, offline JSON snapshot backups, and cloud synchronization controls.
-  - Fully verified and tested with automated Playwright suite (`test_phase3_verification.js`).
+  - A prior automated UI verification exists (`test_phase3_verification.js`), but it does not establish real Supabase Auth, production-safe RLS, or durable end-to-end persistence; complete §27 acceptance before marking this phase done.
 - [x] **Purchasing Context (PUR) R&D BOM Review Table (§4.5)**: Interactive table reviewing tentative R&D parts, real-time variance costing, 10-week long-lead buffer PO alerts, and SCM CSV export (`PurchasingBOMReviewTable`).
 - [x] **Quality Assurance (QA) DVP&R Certification Matrix (§4.6)**: 10 automotive tests with Internal Lab vs. Outsourced Accredited Lab (ARAI / ICAT) classification and zero-deviation release (`QualityAssuranceDVPReviewTable`).
 - [x] **Automated Stage Gate & Manufacturing Interlock (§6.5)**: Hardware Schematics (`EHW-SCH-01`) critical gate enforcing locked states for Stage 5 SMT Pilot and Stage 7 PPAP.
@@ -544,7 +544,7 @@ A unified modal tab allows viewing and downloading all 12 automotive deliverable
 - [x] **Governed Pre-Inventory Staging Gate (§22)**: 3-way reconciliation verifying Vendor ASL status, Component Catalog matching (`Exact`, `Substitute`, `Unmatched Candidate`), and PO line variance detection (ordered vs. billed quantity, unit price hikes).
 - [x] **Controlled Receiving & Strict Quality Release Boundary (§22)**: ZERO automatic stock posting. Inward deliveries generate pending Inwarding (GRN) drafts on 100% IQC Quarantine Hold (`quantityAccepted = 0`, `quantityHeld = 100%`, bin `IQC-HOLD-STAGE-01`). Stock is incremented only upon recorded IQC disposition release (`QA-IR-2026-088`).
 - [x] **Complete Asset Lifecycle & Machinery Fleet (§23)**: Bulk CSV asset register ingestion with serial number/tag deduplication, machine-to-component compatibility mappings (`compatiblePartNumbers`), full Asset Register export (.csv), and Calibration & Maintenance Due Schedule export (.csv).
-- [x] **Authentic Department Lead Authentication & Session Confinement (§24)**: IATF 16949 / ISO 27001 Security Gateway modal with real credentials directory for all 11 leads, eye password toggle, isolated session tokens, and strict role confinement (leads cannot switch to admin or other departments; sign-out returns to default gateway).
+- [ ] **Supabase-backed Sample User Authentication & Session Confinement (§24, §27)**: INCOMPLETE. The current gateway compares credentials against a client-side hard-coded roster and simulates authentication; it does not call Supabase Auth. The current roster also lacks SIT and HR/OPS lead accounts. Do not describe these credentials as real authentication until verified against provisioned Supabase Auth users and server-derived role assignments.
 
 ---
 
@@ -764,15 +764,15 @@ The asset management surface (`LiveInventoryWorkspace.tsx`) governs production m
 
 ---
 
-## 24. Authentic Department Lead Authentication & Session Confinement
+## 24. Department Lead Authentication Prototype (Supabase integration pending)
 
-### 24.1 Security Gateway & Real Credentials
-- **Authentication Gateway Modal**: Accessible via the header `[🔑 Lead Auth]` button or persona selector, conforming to IATF 16949 / ISO 27001 §A.9 identity standards.
-- **1-Click Credentials Directory**: Direct credential lookup and fill for all 11 Department Leads, Admin, and Client with eye toggle password visibility.
-- **Strict Department Lead Confinement**:
-  - When authenticated as a Department Lead (e.g. Morgan Reed · Purchasing Lead), the interface locks to that specific department workspace.
-  - The Persona Switcher dropdown is locked/hidden to prevent unauthorized administrative escalation or lateral department switching.
-  - An explicit `[Sign Out of Current Session]` button terminates the session and safely returns the user to the default gateway.
+### 24.1 Current Prototype and Required Replacement
+- **Current state**: The gateway in `DepartmentLeadLoginModal.tsx` is a frontend-only credential matcher and persona switch, not authentication. Its hard-coded passwords are exposed to every browser user. Treat it only as an insecure prototype and remove the password roster before any shared or public deployment.
+- **Required target**: Use Supabase Auth sign-in with individual disposable demo users and protected server-backed organization/department membership. Do not expose credential autofill or passwords in client code.
+- **Strict Department Lead Confinement (target behavior)**:
+  - After a valid Auth session, resolve the user's active organization membership, role, and department from trusted server-backed records.
+  - Derive permissions through RLS and verified permission helpers; the UI's locked persona state is convenience only and never an authorization boundary.
+  - Sign-out clears the Supabase session and returns to the authentication gateway; session expiry and token refresh are handled by Supabase Auth.
 
 ---
 
@@ -846,3 +846,56 @@ Embedded into all department hubs (`src/routes/index.tsx`), the Coordination Cen
 ### 26.4 Expanded Multi-Department Engineering Roster
 The underlying enterprise roster (`demoTeam`) has been expanded from 11 isolated leads to a comprehensive 36-member engineering team across all 11 functional departments, ensuring realistic capacity balancing and multi-user delegation across Embedded Hardware (`EHW`), Firmware (`ESW`), Mechanical (`MECH`), Purchasing (`PUR`), Quality (`QA`), Manufacturing (`EMF`), Testing (`TST`), Finance (`FIN`), IT (`SIT`), and HR (`HR/OPS`).
 
+
+---
+
+## 27. Runnable Department Lead Demo & Supabase Readiness (Current Priority)
+
+### 27.1 Goal and Demo Boundary
+Provide a repeatable, safe demonstration for every department lead using named sample users and realistic seeded operational records. The demo must exercise the same Supabase Auth, database, storage, and row-level authorization paths intended for operational use. Sample identities and records are clearly labeled as demo fixtures; they are not real employees, customer commitments, approvals, inventory movements, or production transactions. Use a dedicated approved Supabase demo project or isolated demo organization/schema. Never point fixture seeding at production data.
+
+### 27.2 Current Verified Gaps
+- `DepartmentLeadLoginModal.tsx` holds email/password pairs in browser source and locally matches credentials. The roster exposes those passwords in the UI. This is not Supabase authentication, does not create a trusted server session, and must not be used as an operational security boundary.
+- The UI roster currently has sample identities for nine of the eleven departments (SAL, EHW, ESW, MECH, PUR, QA, EMF, TST, FIN), plus Admin and Client. SIT and HR/OPS are absent despite plan text claiming all eleven.
+- `src/integrations/supabase/client.ts` requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (or server equivalents). A local `.env` file exists, but presence alone does not verify correct values, reachable project, applied migrations, Auth configuration, or access policies.
+- `20261003_scms_core_schema.sql` creates broad `USING (true)` / `WITH CHECK (true)` policies for anonymous/public read and write on operational tables. These policies are incompatible with department lead confinement and must be replaced or explicitly isolated before real-user demo access.
+- Existing Supabase migrations define organization/department membership and RLS concepts separately from the legacy core schema. The canonical source of truth, migration order, ownership model, and actual web data paths need reconciliation before claims of end-to-end persistence.
+- The plan's Phase 3 Supabase milestone and §24 authentication completion statements overstate readiness until sign-in, database persistence, and cross-role denial are demonstrated against the configured project.
+
+### 27.3 Department-Lead Demo Coverage
+Use these as acceptance journeys, not just dashboard screenshots. Each journey must display seeded context, support at least one safe persisted action, show its cross-department handoff, and enforce the user's access boundary.
+
+| Department | Sample lead | Demo journey and success evidence |
+|---|---|---|
+| SAL | Priya Sharma | Review an OEM enquiry, complete feasibility intake, and hand off an approved opportunity to engineering. |
+| EHW | Avery Vale | Review project requirements and tentative BOM, submit a schematic/design gate package, and see manufacturing remain blocked until approval. |
+| ESW | Devon Lane | Review firmware requirements, attach a release candidate record, and track QA verification status. |
+| MECH | Samira Holt | Review enclosure/harness deliverable and link its controlled revision to the project. |
+| PUR | Morgan Reed | Review supplier quote/PO sample, reconcile a receiving draft, and leave stock quarantined pending QA disposition. |
+| QA | Jordan Blake | Review DVP&R evidence, return one incomplete item, then approve only a complete fixture package with audit attribution. |
+| EMF | Casey Rowan | Review a controlled work instruction and demonstrate the release prerequisite for a pilot build. |
+| TST | Mina Cross | Review EOL test results, record a safe sample disposition, and link failures to a traceable issue. |
+| FIN | Priya Voss | Review a sample project budget/quotation with financial details hidden from unauthorized departments and the client. |
+| SIT | Kai Morgan | Review access/storage health and demonstrate a denied unauthorized access attempt plus authorized document access. |
+| HR/OPS | Taylor Quinn | Review a skill/training record and a QMS/legal document workflow with confidential fields restricted. |
+
+### 27.4 Required Implementation Sequence
+1. **Choose and verify the target**: confirm the exact Supabase project/organization dedicated to this demo, its URL and publishable key, and that no service-role or third-party secrets enter browser code. Verify connectivity and report project identity without printing secrets.
+2. **Reconcile schema and migrations**: identify the canonical operational schema, migration history, migration application state, and which client/service paths read and write each module. Resolve duplicate/conflicting tables and the legacy open policies. Define required role/department/project ownership columns and indexes.
+3. **Provision sample Auth users safely**: create one disposable sample account per each of the eleven departments, plus separate admin and client accounts only if those journeys are in scope. Use a server-side admin utility or Supabase Auth dashboard/CLI; never ship passwords or service-role keys to the client. Use unique temporary passwords, require reset where feasible, and document expiry/rotation. Do not reuse credentials embedded in source.
+4. **Bind authorization to trusted identity**: after `supabase.auth.signInWithPassword`, resolve active organization membership, department, and role from protected database records (or verified claims). Derive permissions server-side/RLS. Remove local persona/credential matching as an auth mechanism; persona preview may remain only as an explicitly marked, read-only design preview that cannot mutate data.
+5. **Enforce and verify RLS**: anonymous users cannot read or write protected records; each lead sees only authorized department/project data; mutations require the correct permission; admin access is explicitly scoped; client users see only approved shared fields and published documents. Include storage bucket policies and signed-file access checks.
+6. **Seed a coherent end-to-end sample program**: create a small linked project scenario with one actionable item for every department, realistic dates/statuses/owners, cross-department handoffs, at least one pending approval, safe inventory fixture data, and client-visible published status. Seed idempotently with a clear `demo` namespace/marker and reset procedure. Avoid fake production stock, financial postings, or customer notifications.
+7. **Connect demo screens to cloud records**: identify each page that still reads/writes browser state or constants; wire its intended reads and mutations to the approved Supabase schema, show loading/empty/error/offline states, and make success contingent on the server response. Provide a visible connectivity/sync state and last successful sync time.
+8. **Acceptance walkthrough for all leads**: sign in separately as each of the eleven leads; verify correct home/workspace, assigned queue, list/detail visibility, one safe create/update action persisted after refresh, audit event attribution, denial of another department's protected record, sign-out and session expiry. Verify admin cross-department view and client sanitization separately if included.
+9. **Evidence and operating guide**: capture per-role screenshots or a short walkthrough, record tested project/migration version and date, list demo-only data and account reset/expiry steps, and update this plan only when checks pass. Never include passwords in screenshots or committed source.
+
+### 27.5 Definition of Done
+- All eleven department lead users authenticate through Supabase Auth; credentials are not present in shipped frontend source or visible in the credential roster.
+- Role and department come from verified server-backed membership/claims, and database plus storage RLS deny unauthorized cross-department/client access.
+- A coherent, resettable demo dataset supports at least one representative journey for every department lead and can be explored after a fresh login or page refresh.
+- Successful writes persist in Supabase and have an attributable audit trail; failed/offline writes are shown as failed and never presented as completed.
+- Migration state, project identity, RLS checks, all eleven role walkthroughs, admin/client boundaries, and evidence are recorded here before this milestone is marked complete.
+
+### 27.6 Remaining Plan Quality Work
+Before treating this document as the final department-lead delivery plan, reconcile all milestone checkboxes with current code and cloud evidence; add an owner, dependency, acceptance evidence, and target sequence to each remaining phase; validate that the eleven department names, lead roster, permissions, sample journeys, and terminology match; and distinguish implemented UI from cloud-backed functionality throughout. Keep the Android handoff gates in §25 tracked separately from web demo readiness.

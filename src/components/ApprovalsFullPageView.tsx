@@ -17,6 +17,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { Persona } from "@/components/RoleAwareSidebar";
 
 export interface ApprovalRecord {
   id: string;
@@ -43,6 +44,7 @@ interface ApprovalsFullPageViewProps {
   onBack: () => void;
   currentUser?: string | undefined;
   userRole?: string | undefined;
+  persona?: Persona | undefined;
 }
 
 export function ApprovalsFullPageView({
@@ -53,6 +55,7 @@ export function ApprovalsFullPageView({
   onBack,
   currentUser = "Executive Admin / MD",
   userRole = "Admin",
+  persona,
 }: ApprovalsFullPageViewProps) {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "Pending" | "Approved" | "Rejected" | "Returned">("ALL");
   const [deptFilter, setDeptFilter] = useState<string>("ALL");
@@ -131,7 +134,25 @@ export function ApprovalsFullPageView({
     return true;
   });
 
+  const canUserActOnApproval = (appr: ApprovalRecord): boolean => {
+    // Clients have zero approval authority
+    if (persona?.kind === "client") return false;
+    // Admins have universal authority
+    if (!persona || persona.kind === "admin") return true;
+
+    // For department leads: check department match
+    const userDept = (persona.departmentId ?? "").toUpperCase();
+    const apprDept = (appr.department ?? "").toUpperCase();
+
+    if (userDept === apprDept) return true;
+    // QA Lead has oversight on critical release gates
+    if (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA")) return true;
+
+    return false;
+  };
+
   const handleOpenAction = (appr: ApprovalRecord, type: "approve" | "reject" | "return") => {
+    if (!canUserActOnApproval(appr)) return;
     setSelectedApproval(appr);
     setActionType(type);
     setActionNotes("");
@@ -465,37 +486,48 @@ export function ApprovalsFullPageView({
                     </div>
 
                     {isPending && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleOpenAction(appr, "approve")}
-                          className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3 shadow-sm"
-                        >
-                          <CheckCircle2 className="size-3.5" />
-                          Approve Gate
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenAction(appr, "return")}
-                          className="h-8 gap-1.5 text-xs px-2.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border-amber-500/30"
-                        >
-                          <RotateCcw className="size-3.5" />
-                          Return
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenAction(appr, "reject")}
-                          className="h-8 gap-1.5 text-xs px-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border-rose-500/30"
-                        >
-                          <XCircle className="size-3.5" />
-                          Reject
-                        </Button>
-                      </div>
+                      canUserActOnApproval(appr) ? (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenAction(appr, "approve")}
+                            className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3 shadow-sm"
+                          >
+                            <CheckCircle2 className="size-3.5" />
+                            Approve Gate
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenAction(appr, "return")}
+                            className="h-8 gap-1.5 text-xs px-2.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border-amber-500/30"
+                          >
+                            <RotateCcw className="size-3.5" />
+                            Return
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenAction(appr, "reject")}
+                            className="h-8 gap-1.5 text-xs px-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border-rose-500/30"
+                          >
+                            <XCircle className="size-3.5" />
+                            Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-steel/20 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                            <Lock className="size-3 text-steel" />
+                            {persona?.kind === "client"
+                              ? "Client Audit View · Sign-off Restricted"
+                              : `Awaiting ${appr.department ?? "Designated"} Lead / Admin Sign-off`}
+                          </span>
+                        </div>
+                      )
                     )}
 
-                    {!isPending && (
+                    {!isPending && canUserActOnApproval(appr) && (
                       <Button
                         variant="ghost"
                         size="sm"

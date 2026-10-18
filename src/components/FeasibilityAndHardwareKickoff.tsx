@@ -58,6 +58,7 @@ export interface FeasibilityAndHardwareKickoffProps {
   projectId?: string | undefined;
   modularConfig?: ProjectModularConfiguration | undefined;
   onKickoffComplete?: ((path: "poc" | "pilot", deliverables: string[]) => void) | undefined;
+  readOnly?: boolean | undefined;
 }
 
 export function FeasibilityAndHardwareKickoff({
@@ -67,6 +68,7 @@ export function FeasibilityAndHardwareKickoff({
   projectId = "HLPL-AI4T-01",
   modularConfig,
   onKickoffComplete,
+  readOnly = false,
 }: FeasibilityAndHardwareKickoffProps) {
   // Gate selection: 1 (Intake), 2 (Feasibility), 3 (Req Lock), 4 (Hardware PoC/Pilot)
   const initialGate = (): 1 | 2 | 3 | 4 => {
@@ -434,15 +436,21 @@ export function FeasibilityAndHardwareKickoff({
                 Advancing will dispatch this requirement to Hardware (EHW), Firmware (ESW), Mechanical (MECH), Purchase (PUR), Quality (QA), and Finance (FIN).
               </p>
             </div>
-            <button
-              onClick={() => {
-                onAdvanceToStage(1);
-                setSelectedGate(2);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
-            >
-              Dispatch for Feasibility Review <ArrowRight className="size-3.5" />
-            </button>
+            {!readOnly ? (
+              <button
+                onClick={() => {
+                  onAdvanceToStage(1);
+                  setSelectedGate(2);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+              >
+                Dispatch for Feasibility Review <ArrowRight className="size-3.5" />
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-steel/30 bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+                <Lock className="size-3.5" /> Read-Only Gate · Sales / Admin Authorization Required
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -616,15 +624,21 @@ export function FeasibilityAndHardwareKickoff({
               >
                 <FileText className="size-3.5" /> View HLPL/F/MKT/01
               </button>
-              <button
-                onClick={() => {
-                  onAdvanceToStage(2);
-                  setSelectedGate(3);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
-              >
-                <Lock className="size-3.5" /> Lock Feasibility & Advance to Stage 3 <ArrowRight className="size-3.5" />
-              </button>
+              {!readOnly ? (
+                <button
+                  onClick={() => {
+                    onAdvanceToStage(2);
+                    setSelectedGate(3);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+                >
+                  <Lock className="size-3.5" /> Lock Feasibility & Advance to Stage 3 <ArrowRight className="size-3.5" />
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-steel/30 bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+                  <Lock className="size-3.5" /> Read-Only Gate · HOD Authorization Required
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -789,16 +803,22 @@ export function FeasibilityAndHardwareKickoff({
 
           {/* Gate Action */}
           <div className="mt-6 flex justify-end gap-3">
-            <button
-              onClick={() => {
-                onAdvanceToStage(3);
-                setSelectedGate(4);
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
-            >
-              <Lock className="size-4" /> Confirm Final Requirement Lock & Authorize Hardware Team Kick-Off{" "}
-              <ArrowRight className="size-4" />
-            </button>
+            {!readOnly ? (
+              <button
+                onClick={() => {
+                  onAdvanceToStage(3);
+                  setSelectedGate(4);
+                }}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+              >
+                <Lock className="size-4" /> Confirm Final Requirement Lock & Authorize Hardware Team Kick-Off{" "}
+                <ArrowRight className="size-4" />
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-2 rounded-lg border border-steel/30 bg-muted/50 px-4 py-2.5 text-xs font-medium text-muted-foreground">
+                <Lock className="size-4" /> Read-Only Gate · Engineering / Sales Authorization Required
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -1053,22 +1073,28 @@ export function FeasibilityAndHardwareKickoff({
                 : "Authorizing Direct Pilot will advance the project directly to Stage 5 SMT Line 2 Setup with recorded justification."}
             </p>
 
-            <button
-              onClick={() => {
-                setHardwareKickoffLaunched(true);
-                const nextStageIndex = hardwarePath === "poc" ? 3 : 4;
-                onAdvanceToStage(nextStageIndex);
-                const deliverables = hardwarePath === "poc"
-                  ? ["HLPL-AI4T-EHW-SCH-01", "HLPL-AI4T-EHW-BOM-00", "CAN-J1939-PoC"]
-                  : ["HLPL-AI4T-EMF-CP-01", "SMT-LINE2-PROFILE", "PUR-TOOLING-PO"];
-                onKickoffComplete?.(hardwarePath, deliverables);
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow hover:bg-emerald-700"
-            >
-              <Zap className="size-4" /> Authorize Hardware Team Kick-Off & Launch{" "}
-              {hardwarePath === "poc" ? "PoC Track (Stage 4)" : "Direct Pilot (Stage 5)"}{" "}
-              <ArrowRight className="size-4" />
-            </button>
+            {!readOnly ? (
+              <button
+                onClick={() => {
+                  setHardwareKickoffLaunched(true);
+                  const nextStageIndex = hardwarePath === "poc" ? 3 : 4;
+                  onAdvanceToStage(nextStageIndex);
+                  const deliverables = hardwarePath === "poc"
+                    ? ["HLPL-AI4T-EHW-SCH-01", "HLPL-AI4T-EHW-BOM-00", "CAN-J1939-PoC"]
+                    : ["HLPL-AI4T-EMF-CP-01", "SMT-LINE2-PROFILE", "PUR-TOOLING-PO"];
+                  onKickoffComplete?.(hardwarePath, deliverables);
+                }}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow hover:bg-emerald-700"
+              >
+                <Zap className="size-4" /> Authorize Hardware Team Kick-Off & Launch{" "}
+                {hardwarePath === "poc" ? "PoC Track (Stage 4)" : "Direct Pilot (Stage 5)"}{" "}
+                <ArrowRight className="size-4" />
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-2 rounded-lg border border-steel/30 bg-muted/50 px-4 py-2.5 text-xs font-medium text-muted-foreground">
+                <Lock className="size-4" /> Read-Only Gate · Hardware HOD Authorization Required
+              </span>
+            )}
           </div>
         </div>
       )}

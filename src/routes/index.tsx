@@ -382,6 +382,15 @@ const personas: Persona[] = [
   { id: "hrops", label: "HR Lead", person: "Taylor Quinn · HR & Operations", departmentId: "hrops", kind: "lead" },
   { id: "client", label: "Client Portal", person: "Rohan Verma · Tata Motors Fleet Manager", kind: "client" },
 ];
+
+export function normalizePersonaId(role: string | null | undefined): string {
+  if (!role) return "admin";
+  const r = role.toLowerCase().trim();
+  if (r === "sal" || r === "sales") return "sales";
+  if (r === "hr" || r === "hrops") return "hrops";
+  return r;
+}
+
 const ai4tStages = [
   ["Stage 1", "Client & Sales Intake", "SOR HLPL-AI4T-SAL-SOR-01 and Mutual NDA HLPL-AI4T-SAL-mNDA-01 are recorded."],
   ["Stage 2", "Feasibility & Contract Review", "EHW, ESW, MECH, PUR and QA feasibility inputs compile Contract Review HLPL/F/MKT/01."],
@@ -2009,19 +2018,22 @@ function Portal() {
   const initialRole =
     typeof window !== "undefined"
       ? (() => {
+          const urlRole = new URLSearchParams(window.location.search).get("role");
+          if (urlRole) return normalizePersonaId(urlRole);
           try {
             const stored = window.localStorage.getItem("scms_auth_session");
             if (stored) {
               const parsed = JSON.parse(stored);
               if (parsed && typeof parsed.personaId === "string" && parsed.personaId !== "admin") {
-                return parsed.personaId;
+                return normalizePersonaId(parsed.personaId);
               }
             }
           } catch (_) {}
-          return new URLSearchParams(window.location.search).get("role");
+          return null;
         })()
       : null;
-  const initialPersona = personas.find((p) => p.id === initialRole) ?? (personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
+  const normalizedInitialRole = normalizePersonaId(initialRole);
+  const initialPersona = personas.find((p) => p.id === normalizedInitialRole) ?? (personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
   const [activeArea, setActiveArea] = useState<AreaId>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? initialPersona.departmentId : "home"));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<
@@ -2351,8 +2363,16 @@ function Portal() {
     announce(`${record.reference} created.`);
   };
   const updateTask = (taskId: string, patch: Partial<RecordItem>, action: string) => {
+    if (persona.kind === "client") {
+      announce("Clients have read-only access and cannot modify engineering tasks.");
+      return;
+    }
     const task = portal.records.find((record) => record.id === taskId);
     if (!task) return;
+    if (persona.kind === "lead" && persona.departmentId && task.departmentId !== persona.departmentId) {
+      announce("Department leads can only modify tasks in their own department.");
+      return;
+    }
     update((state) => ({
       ...state,
       records: state.records.map((record) =>
@@ -2363,6 +2383,20 @@ function Portal() {
     announce(`${task.title} updated.`);
   };
   const handleApproveGate = (id: string, notes?: string) => {
+    if (persona.kind === "client") {
+      announce("Clients have read-only access and cannot approve gates.");
+      return;
+    }
+    const appr = portal.approvals.find((a) => a.id === id) as any;
+    if (persona.kind === "lead" && appr) {
+      const userDept = (persona.departmentId ?? "").toUpperCase();
+      const apprDept = (appr.department ?? "").toUpperCase();
+      const isAuthorized = userDept === apprDept || (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA"));
+      if (!isAuthorized) {
+        announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
+        return;
+      }
+    }
     update((state) => ({
       ...state,
       approvals: state.approvals.map((appr) =>
@@ -2382,6 +2416,20 @@ function Portal() {
     announce(`Approval ${id} signed and endorsed.`);
   };
   const handleRejectGate = (id: string, reason: string) => {
+    if (persona.kind === "client") {
+      announce("Clients have read-only access and cannot reject gates.");
+      return;
+    }
+    const appr = portal.approvals.find((a) => a.id === id) as any;
+    if (persona.kind === "lead" && appr) {
+      const userDept = (persona.departmentId ?? "").toUpperCase();
+      const apprDept = (appr.department ?? "").toUpperCase();
+      const isAuthorized = userDept === apprDept || (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA"));
+      if (!isAuthorized) {
+        announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
+        return;
+      }
+    }
     update((state) => ({
       ...state,
       approvals: state.approvals.map((appr) =>
@@ -2399,6 +2447,20 @@ function Portal() {
     announce(`Approval ${id} rejected.`);
   };
   const handleReturnGate = (id: string, reworkNotes: string) => {
+    if (persona.kind === "client") {
+      announce("Clients have read-only access and cannot return gates.");
+      return;
+    }
+    const appr = portal.approvals.find((a) => a.id === id) as any;
+    if (persona.kind === "lead" && appr) {
+      const userDept = (persona.departmentId ?? "").toUpperCase();
+      const apprDept = (appr.department ?? "").toUpperCase();
+      const isAuthorized = userDept === apprDept || (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA"));
+      if (!isAuthorized) {
+        announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
+        return;
+      }
+    }
     update((state) => ({
       ...state,
       approvals: state.approvals.map((appr) =>
@@ -2845,6 +2907,7 @@ function Portal() {
               onBack={() => setView("queue")}
               currentUser={persona.label}
               userRole={persona.kind === "admin" ? "Executive Admin" : persona.kind === "lead" ? "Department Lead" : "Client"}
+              persona={persona}
             />
           ) : persona.kind === "client" ? (
             <ClientOEMPortal
@@ -3922,11 +3985,15 @@ function Ai4tLifecycleHub({
         {ai4tStages.map(([stage, title], index) => {
           const isSchematicPrereqMet = simulation.stage >= 3;
           const isBlocked = (index === 4 || index === 6 || index === 7 || index === 8) && !isSchematicPrereqMet;
+          const canJumpToStage = persona.kind === "admin";
 
           return (
-            <button
+            <div
               key={stage}
+              role={canJumpToStage ? "button" : undefined}
+              tabIndex={canJumpToStage ? 0 : undefined}
               onClick={() => {
+                if (!canJumpToStage) return;
                 if (isBlocked) {
                   alert(`AUTOMOTIVE GATE INTERLOCK ACTIVE:\n\nCannot advance to ${stage}: ${title}.\n\nMandatory Prerequisite "Stage 4 Hardware Schematics (EHW-SCH-01)" must be completed and signed off by the Embedded Hardware Lead before SMT Pilot or Production Release can proceed.`);
                   return;
@@ -3934,6 +4001,8 @@ function Ai4tLifecycleHub({
                 onJump(index);
               }}
               className={`relative rounded-lg border p-3 text-left transition-colors ${
+                !canJumpToStage ? "cursor-default" : "cursor-pointer"
+              } ${
                 isBlocked
                   ? "border-amber-500/40 bg-amber-500/5 opacity-80 cursor-not-allowed"
                   : index === simulation.stage
@@ -3967,7 +4036,7 @@ function Ai4tLifecycleHub({
                   <span>Prereq: Stage {Math.max(1, index)}</span>
                 )}
               </div>
-            </button>
+            </div>
           );
         })}
       </section>
@@ -3978,6 +4047,7 @@ function Ai4tLifecycleHub({
           projectId={projectId}
           modularConfig={modularConfig}
           onKickoffComplete={onKickoffComplete}
+          readOnly={persona.kind === "client"}
           onOpenDocumentView={(docId, title, dept) =>
             onOpenPrintable({
               title: title.toUpperCase(),
@@ -4006,6 +4076,7 @@ function Ai4tLifecycleHub({
             projectId={projectId}
             modularConfig={modularConfig}
             onKickoffComplete={onKickoffComplete}
+            readOnly={persona.kind === "client"}
             onOpenDocumentView={(docId, title, dept) =>
               onOpenPrintable({
                 title: title.toUpperCase(),
@@ -4027,7 +4098,60 @@ function Ai4tLifecycleHub({
       </section>}
       {dossier && <section className="mt-5 rounded-lg border border-steel/35 bg-panel p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Controlled Document Preview</p><h4 className="mt-1 text-sm font-semibold">{dossier[0]}</h4></div><Status status="Draft" /></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><DocumentField label="Document ID" value={dossier[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · Operational Baseline" /><DocumentField label="Stage" value={dossier[3]} /><DocumentField label="Owner" value={`${dossier[2]} · department-owned`} /><DocumentField label="Revision" value="Rev 01 · Controlled Release" /><DocumentField label="Approval" value="Human approval required" /></div><div className="mt-4"><Action label="Open complete document" primary onClick={() => onOpenPrintable({ title: dossier[0].toUpperCase(), documentId: dossier[1], department: dossier[2], revision: "Rev 01", status: "Draft", project: "HLPL-AI4T-01", stage: dossier[3] })} /></div></section>}
       <section className="mt-5 rounded-lg border border-border bg-panel p-4"><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Stage Gate Audit Trail</p>{simulation.history.length ? <ol className="mt-2 space-y-1 text-xs text-muted-foreground">{simulation.history.slice(0, 8).map((entry, index) => <li key={`${entry}-${index}`}>{entry}</li>)}</ol> : <p className="mt-2 text-xs text-muted-foreground">No gate transitions recorded.</p>}</section>
-      <div className="mt-5 flex flex-wrap justify-between gap-2"><div className="flex flex-wrap gap-2"><Action label="Reset Gate Workflow" onClick={onReset} /><Action label="Run Automated Gate Verification" onClick={onRun} /></div><Action label={simulation.stage === ai4tStages.length - 1 ? "Lifecycle Complete" : "Advance to Next Stage"} primary onClick={onAdvance} /></div>
+      <div className="mt-5 flex flex-wrap justify-between gap-2">
+        {persona.kind === "client" ? (
+          <div className="flex items-center gap-2 rounded-lg border border-steel/30 bg-muted/40 px-3.5 py-2 text-xs font-semibold text-muted-foreground">
+            <Lock className="size-3.5 text-steel" />
+            Client Audit View · Lifecycle Progression Managed by Hexense Engineering
+          </div>
+        ) : persona.kind === "admin" ? (
+          <>
+            <div className="flex flex-wrap gap-2">
+              <Action label="Reset Gate Workflow" onClick={onReset} />
+              <Action label="Run Automated Gate Verification" onClick={onRun} />
+            </div>
+            <Action
+              label={simulation.stage === ai4tStages.length - 1 ? "Lifecycle Complete" : "Advance to Next Stage"}
+              primary
+              onClick={onAdvance}
+            />
+          </>
+        ) : (
+          (() => {
+            const stageOwnerMap: Record<number, string[]> = {
+              0: ["sales"],
+              1: ["sales", "ehw", "esw", "mech", "pur", "qa"],
+              2: ["ehw", "sales"],
+              3: ["ehw"],
+              4: ["emf"],
+              5: ["qa"],
+              6: ["ehw", "qa"],
+              7: ["qa"],
+              8: ["tst", "fin"],
+            };
+            const canAdvance = persona.departmentId && stageOwnerMap[simulation.stage]?.includes(persona.departmentId);
+            return (
+              <div className="flex w-full items-center justify-between gap-2">
+                <span className="text-[11px] font-mono text-muted-foreground">
+                  Active Department: {persona.label}
+                </span>
+                {canAdvance ? (
+                  <Action
+                    label={simulation.stage === ai4tStages.length - 1 ? "Lifecycle Complete" : "Advance to Next Stage"}
+                    primary
+                    onClick={onAdvance}
+                  />
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-steel/20 bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground">
+                    <Lock className="size-3.5 text-steel" />
+                    Awaiting {current[1]} Sign-off
+                  </span>
+                )}
+              </div>
+            );
+          })()
+        )}
+      </div>
     </Modal>
   );
 }
@@ -4461,7 +4585,21 @@ function ProjectDetail({
     }
   }, [selectedDeptCode, analysisMap]);
 
+  const canEditSelectedDept = useMemo(() => {
+    if (persona.kind === "client") return false;
+    if (persona.kind === "admin") return true;
+    if (persona.kind === "lead" && persona.departmentId) {
+      const d = portal.departments.find((dep) => dep.id === persona.departmentId);
+      return d?.code === selectedDeptCode;
+    }
+    return false;
+  }, [persona, selectedDeptCode, portal.departments]);
+
   const saveDeptAnalysis = () => {
+    if (!canEditSelectedDept) {
+      alert(`Unauthorized: Remarks for ${selectedDeptCode} can only be saved by the ${selectedDeptCode} Department Lead or Executive Admin.`);
+      return;
+    }
     onUpdate((state) => ({
       ...state,
       projectAnalysis: {
@@ -4637,17 +4775,19 @@ function ProjectDetail({
             All-in-One Shared Analysis (Page 1)
           </button>
 
-          <button
-            onClick={() => setTab("dept")}
-            className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors ${
-              tab === "dept"
-                ? "bg-primary text-primary-foreground shadow"
-                : "border border-border bg-panel text-muted-foreground hover:bg-secondary hover:text-foreground"
-            }`}
-          >
-            <Sliders className="size-4" />
-            Department Focus & Documentation
-          </button>
+          {persona.kind !== "client" && (
+            <button
+              onClick={() => setTab("dept")}
+              className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors ${
+                tab === "dept"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "border border-border bg-panel text-muted-foreground hover:bg-secondary hover:text-foreground"
+              }`}
+            >
+              <Sliders className="size-4" />
+              Department Focus & Documentation
+            </button>
+          )}
 
           <button
             onClick={() => setTab("client")}
@@ -5035,9 +5175,10 @@ function ProjectDetail({
                     type="range"
                     min="0"
                     max="100"
+                    disabled={!canEditSelectedDept}
                     value={deptDraft.progress}
                     onChange={(e) => setDeptDraft({ ...deptDraft, progress: Number(e.target.value) })}
-                    className="w-full accent-primary"
+                    className="w-full accent-primary disabled:opacity-50"
                   />
                 </div>
 
@@ -5045,6 +5186,7 @@ function ProjectDetail({
                 <div className="space-y-1.5 rounded-lg border border-border bg-panel p-3">
                   <label className="text-xs font-bold text-foreground">Department Status</label>
                   <select
+                    disabled={!canEditSelectedDept}
                     value={deptDraft.status}
                     onChange={(e) =>
                       setDeptDraft({
@@ -5052,7 +5194,7 @@ function ProjectDetail({
                         status: e.target.value as DepartmentAnalysisEntry["status"],
                       })
                     }
-                    className="w-full h-8 rounded border border-border bg-background px-2 text-xs font-semibold"
+                    className="w-full h-8 rounded border border-border bg-background px-2 text-xs font-semibold disabled:opacity-50"
                   >
                     <option value="On Track">On Track</option>
                     <option value="Needs Attention">Needs Attention</option>
@@ -5067,9 +5209,10 @@ function ProjectDetail({
                   <label className="text-xs font-semibold text-foreground">Current Deliverable</label>
                   <input
                     type="text"
+                    disabled={!canEditSelectedDept}
                     value={deptDraft.currentDeliverable}
                     onChange={(e) => setDeptDraft({ ...deptDraft, currentDeliverable: e.target.value })}
-                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs"
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs disabled:opacity-50"
                   />
                 </div>
 
@@ -5077,9 +5220,10 @@ function ProjectDetail({
                   <label className="text-xs font-semibold text-foreground">Target Completion Date</label>
                   <input
                     type="text"
+                    disabled={!canEditSelectedDept}
                     value={deptDraft.targetDate}
                     onChange={(e) => setDeptDraft({ ...deptDraft, targetDate: e.target.value })}
-                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs font-mono"
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs font-mono disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -5098,9 +5242,10 @@ function ProjectDetail({
                 </p>
                 <textarea
                   rows={3}
+                  readOnly={!canEditSelectedDept}
                   value={deptDraft.internalRemarks}
                   onChange={(e) => setDeptDraft({ ...deptDraft, internalRemarks: e.target.value })}
-                  className="w-full rounded-lg border border-amber-500/30 bg-background p-2.5 text-xs leading-relaxed text-foreground"
+                  className="w-full rounded-lg border border-amber-500/30 bg-background p-2.5 text-xs leading-relaxed text-foreground read-only:opacity-80"
                 />
               </div>
 
@@ -5118,9 +5263,10 @@ function ProjectDetail({
                 </p>
                 <textarea
                   rows={3}
+                  readOnly={!canEditSelectedDept}
                   value={deptDraft.clientRemarks}
                   onChange={(e) => setDeptDraft({ ...deptDraft, clientRemarks: e.target.value })}
-                  className="w-full rounded-lg border border-emerald-500/30 bg-background p-2.5 text-xs leading-relaxed text-foreground"
+                  className="w-full rounded-lg border border-emerald-500/30 bg-background p-2.5 text-xs leading-relaxed text-foreground read-only:opacity-80"
                 />
               </div>
 
@@ -5129,13 +5275,20 @@ function ProjectDetail({
                 <span className="text-[11px] text-muted-foreground">
                   Pressing save synchronizes both remarks across the entire portal.
                 </span>
-                <button
-                  onClick={saveDeptAnalysis}
-                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 shadow"
-                >
-                  <Check className="size-4" />
-                  Save Department Analysis & Remarks
-                </button>
+                {canEditSelectedDept ? (
+                  <button
+                    onClick={saveDeptAnalysis}
+                    className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 shadow"
+                  >
+                    <Check className="size-4" />
+                    Save Department Analysis & Remarks
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-steel/20 bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
+                    <Lock className="size-3.5 text-steel" />
+                    Read-Only View · Editing Restricted to {selectedDeptCode} Lead / Admin
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -5806,7 +5959,7 @@ function DepartmentWorkspace({
       onAddTeamMember={(member) => {
         onAddTeamMember?.(member as unknown as TeamMember);
       }}
-      readOnly={persona.kind === "client"}
+      readOnly={persona.kind === "client" || (persona.kind === "lead" && persona.departmentId !== area.id)}
     />
   );
   return (

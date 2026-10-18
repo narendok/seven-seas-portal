@@ -1257,35 +1257,37 @@ function KanbanTaskCard({
       </div>
 
       {/* Quick Move Button */}
-      <div className="flex items-center justify-between pt-1 text-[10px]">
-        <span className="text-muted-foreground font-mono">Move:</span>
-        <div className="flex items-center gap-1">
-          {task.status !== "Open" && (
-            <button
-              onClick={() => onUpdateStatus(task.id, "Open")}
-              className="rounded px-1.5 py-0.5 font-semibold text-muted-foreground hover:bg-muted"
-            >
-              Open
-            </button>
-          )}
-          {task.status !== "In review" && (
-            <button
-              onClick={() => onUpdateStatus(task.id, "In review")}
-              className="rounded px-1.5 py-0.5 font-semibold text-amber-600 hover:bg-amber-500/10"
-            >
-              Review
-            </button>
-          )}
-          {task.status !== "Approved" && (
-            <button
-              onClick={() => onUpdateStatus(task.id, "Approved")}
-              className="rounded px-1.5 py-0.5 font-semibold text-emerald-600 hover:bg-emerald-500/10"
-            >
-              Done ✓
-            </button>
-          )}
+      {!readOnly && (
+        <div className="flex items-center justify-between pt-1 text-[10px]">
+          <span className="text-muted-foreground font-mono">Move:</span>
+          <div className="flex items-center gap-1">
+            {task.status !== "Open" && (
+              <button
+                onClick={() => onUpdateStatus(task.id, "Open")}
+                className="rounded px-1.5 py-0.5 font-semibold text-muted-foreground hover:bg-muted"
+              >
+                Open
+              </button>
+            )}
+            {task.status !== "In review" && (
+              <button
+                onClick={() => onUpdateStatus(task.id, "In review")}
+                className="rounded px-1.5 py-0.5 font-semibold text-amber-600 hover:bg-amber-500/10"
+              >
+                Review
+              </button>
+            )}
+            {task.status !== "Approved" && (
+              <button
+                onClick={() => onUpdateStatus(task.id, "Approved")}
+                className="rounded px-1.5 py-0.5 font-semibold text-emerald-600 hover:bg-emerald-500/10"
+              >
+                Done ✓
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
