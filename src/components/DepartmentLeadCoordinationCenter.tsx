@@ -1,3 +1,4 @@
+import { businessDate } from "@/lib/business-date";
 import React, { useState, useMemo } from "react";
 import {
   CheckSquare,
@@ -159,7 +160,7 @@ export function DepartmentLeadCoordinationCenter({
   );
   const [newTaskAssignee, setNewTaskAssignee] = useState<string>(departmentLead);
   const [newTaskPriority, setNewTaskPriority] = useState<"Low" | "Normal" | "High" | "Critical">("Normal");
-  const [newTaskDueDate, setNewTaskDueDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [newTaskDueDate, setNewTaskDueDate] = useState<string>(businessDate());
   const [newTaskNotes, setNewTaskNotes] = useState<string>("");
 
   // New team member form state
@@ -231,7 +232,7 @@ export function DepartmentLeadCoordinationCenter({
     setNewTaskProject(projectScope !== "all" ? projectScope : "");
     setNewTaskTitle("");
     setNewTaskPriority("Normal");
-    setNewTaskDueDate(new Date().toISOString().slice(0, 10));
+    setNewTaskDueDate(businessDate());
     setNewTaskNotes("");
     setIsCreateTaskOpen(true);
   };

@@ -46,9 +46,9 @@ interface ApprovalsFullPageViewProps {
   approvals: ApprovalRecord[];
   projects?: { id?: string; reference: string; title: string }[] | undefined;
   records?: { id: string; reference: string; title: string; fields: Record<string, string> }[] | undefined;
-  onApprove: (id: string, notes?: string) => void;
-  onReject: (id: string, reason: string) => void;
-  onReturn: (id: string, reworkNotes: string) => void;
+  onApprove: (id: string, notes?: string) => boolean | void | Promise<boolean | void>;
+  onReject: (id: string, reason: string) => boolean | void | Promise<boolean | void>;
+  onReturn: (id: string, reworkNotes: string) => boolean | void | Promise<boolean | void>;
   onBack: () => void;
   currentUser?: string | undefined;
   userRole?: string | undefined;
@@ -76,6 +76,7 @@ export function ApprovalsFullPageView({
   const [selectedApproval, setSelectedApproval] = useState<ApprovalRecord | null>(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | "return" | null>(null);
   const [actionNotes, setActionNotes] = useState<string>("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Request new approval modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -202,23 +203,24 @@ export function ApprovalsFullPageView({
 
   const handleOpenAction = (appr: ApprovalRecord, type: "approve" | "reject" | "return") => {
     if (!canUserActOnApproval(appr)) return;
+    setActionError(null);
     setSelectedApproval(appr);
     setActionType(type);
     setActionNotes("");
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     if (!selectedApproval || !actionType || !canUserActOnApproval(selectedApproval)) return;
-    if (actionType === "approve") {
-      onApprove(selectedApproval.id, actionNotes || "Approved by designated reviewer.");
-    } else if (actionType === "reject") {
-      onReject(selectedApproval.id, actionNotes || "Rejected due to non-conformance with requirements.");
-    } else if (actionType === "return") {
-      onReturn(selectedApproval.id, actionNotes || "Returned to requesting lead for revisions.");
-    }
+    if (actionType !== "approve" && !actionNotes.trim()) { setActionError("Enter the reason for rejection or rework."); return; }
+    let accepted: boolean | void;
+    if (actionType === "approve") accepted = await onApprove(selectedApproval.id, actionNotes.trim() || "Approved by designated reviewer.");
+    else if (actionType === "reject") accepted = await onReject(selectedApproval.id, actionNotes.trim());
+    else accepted = await onReturn(selectedApproval.id, actionNotes.trim());
+    if (accepted === false) { setActionError("The decision could not be saved. Review the latest record before retrying."); return; }
     setSelectedApproval(null);
     setActionType(null);
     setActionNotes("");
+    setActionError(null);
   };
 
   return (
@@ -707,6 +709,7 @@ export function ApprovalsFullPageView({
                   : "Non-Conformance / Modification Rationale (Required)"}
               </label>
               <textarea
+                aria-label="Decision notes"
                 value={actionNotes}
                 onChange={(e) => setActionNotes(e.target.value)}
                 placeholder={
@@ -718,6 +721,7 @@ export function ApprovalsFullPageView({
               />
             </div>
 
+            {actionError && <p role="alert" className="mt-3 text-xs text-destructive">{actionError}</p>}
             <div className="mt-6 flex items-center justify-end gap-2 border-t border-border/40 pt-4">
               <Button
                 variant="ghost"

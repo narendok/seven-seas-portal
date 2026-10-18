@@ -1,3 +1,4 @@
+import { businessDate } from "@/lib/business-date";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -1195,7 +1196,7 @@ const demoPortal = (): PortalState => {
       approval: approval ? "Human approval required" : "Not required",
       progress: "0%",
     });
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDate();
   const tomorrow = nextWorkingDay(today);
   const records: RecordItem[] = [
     make(
@@ -1818,9 +1819,8 @@ export function canDepartmentAccessDocument(
   if (persona.kind === "admin") return true;
 
   if (persona.kind === "client") {
-    return /sor|nda|quotation|quo|invoice|inv|pdi|tac|milestone/i.test(
-      `${document.type} ${document.title} ${document.url}`
-    );
+    // Internal document names are not recipient grants. Customer releases use a separate verified contract.
+    return false;
   }
 
   const deptId = (persona.departmentId || "home") as AreaId;
@@ -1994,6 +1994,9 @@ function Portal() {
   const normalizedInitialRole = normalizePersonaId(initialRole);
   const initialPersona = personas.find((p) => p.id === normalizedInitialRole) ?? (personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
   const [activeArea, setActiveArea] = useState<AreaId>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? initialPersona.departmentId : "home"));
+  const [clientDeliverablesFocus, setClientDeliverablesFocus] = useState(0);
+  const openDocuments = () => { setModal(null); if (persona.kind === "client") { setView("queue"); setClientDeliverablesFocus(value => value + 1); } else setModal("documents"); };
+  const [signedOut, setSignedOut] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("signedout") === "1");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<
     | "queue"
@@ -2153,14 +2156,20 @@ function Portal() {
     setMobileMenu(false);
   };
   const handleLogout = () => {
-    const adminPersona = personas.find((p) => p.id === "admin") ?? personas[0];
-    if (adminPersona) {
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem("scms_auth_session");
-      }
-      switchPersona(adminPersona);
-      announce("Signed out of department lead session. Returned to default gateway.");
-    }
+    window.localStorage.removeItem("scms_auth_session");
+    const url = new URL(window.location.href);
+    url.searchParams.delete("role");
+    url.searchParams.set("signedout", "1");
+    window.history.replaceState({}, "", url.toString());
+    setSignedOut(true);
+    setLoginModalOpen(false);
+  };
+  const handleDemoLogin = (personaId: string, leadInfo: DepartmentCredential) => {
+    const matched = personas.find(item => item.id === personaId);
+    if (!matched || !portal.demoLoaded) return;
+    setSignedOut(false);
+    switchPersona(matched);
+    window.localStorage.setItem("scms_auth_session", JSON.stringify({ personaId, leadEmail: leadInfo.email, leadName: leadInfo.leadName, timestamp: now() }));
   };
   const handleOpenCreate = (typeOrEvent?: unknown, initialValues?: Record<string, string>) => {
     const type = typeof typeOrEvent === "string" ? typeOrEvent : null;
@@ -2176,6 +2185,7 @@ function Portal() {
     setView("queue");
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
+      url.searchParams.delete("signedout");
       if (next.id === "admin") {
         url.searchParams.delete("role");
       } else {
@@ -2248,7 +2258,7 @@ function Portal() {
         feasibilitySignedDepts: [],
         targetClosureDate: targetDate,
         modularConfig: modularConfig,
-        updatedAt: new Date().toISOString().slice(0, 10),
+        updatedAt: businessDate(),
       };
 
       const nextEnqs = existingEnqs.map((e) => (e.id === enquiryId ? updatedTarget : e));
@@ -2361,16 +2371,16 @@ function Portal() {
   const handleApproveGate = async (id: string, notes?: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot approve gates.");
-      return;
+      return false;
     }
     const rawApproval = portal.approvals.find((a) => a.id === id);
-    if (!rawApproval) return;
+    if (!rawApproval) return false;
     const appr = approvalScope(rawApproval);
     if (persona.kind === "lead" && appr) {
       const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
-        return;
+        return false;
       }
     }
 
@@ -2415,24 +2425,25 @@ function Portal() {
       ),
     });
     });
-    if (!committed) return;
+    if (!committed) return false;
     log("Human Approval Signed", `Approved gate ${id} by ${persona.label}. Note: ${notes ?? "Designated reviewer decision recorded."}`);
     announce(`Approval ${id} signed and endorsed. Requester notified.`);
+    return true;
   };
 
   const handleRejectGate = async (id: string, reason: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot reject gates.");
-      return;
+      return false;
     }
     const rawApproval = portal.approvals.find((a) => a.id === id);
-    if (!rawApproval) return;
+    if (!rawApproval) return false;
     const appr = approvalScope(rawApproval);
     if (persona.kind === "lead" && appr) {
       const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
-        return;
+        return false;
       }
     }
 
@@ -2476,24 +2487,25 @@ function Portal() {
       ),
     });
     });
-    if (!committed) return;
+    if (!committed) return false;
     log("Approval Rejected", `Rejected gate ${id} by ${persona.label}. Reason: ${reason}`);
     announce(`Approval ${id} rejected. Requester notified.`);
+    return true;
   };
 
   const handleReturnGate = async (id: string, reworkNotes: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot return gates.");
-      return;
+      return false;
     }
     const rawApproval = portal.approvals.find((a) => a.id === id);
-    if (!rawApproval) return;
+    if (!rawApproval) return false;
     const appr = approvalScope(rawApproval);
     if (persona.kind === "lead" && appr) {
       const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
-        return;
+        return false;
       }
     }
 
@@ -2538,9 +2550,10 @@ function Portal() {
       ),
     });
     });
-    if (!committed) return;
+    if (!committed) return false;
     log("Approval Returned", `Returned gate ${id} by ${persona.label} for modifications: ${reworkNotes}`);
     announce(`Approval ${id} returned for rework. Requester notified.`);
+    return true;
   };
 
   const handleCreateApprovalRequest = async (input: Omit<ApprovalRecord, "id" | "outcome" | "updatedAt">): Promise<boolean> => {
@@ -2663,14 +2676,8 @@ function Portal() {
   const active = areaById(effectiveArea);
   const openRecord = (record: RecordItem) => {
     if (persona.kind === "client") {
-      const allowedClientTypes = ["sor", "nda", "quotation", "quo", "invoice", "inv", "pdi", "tac", "milestone"];
-      const isAllowed = allowedClientTypes.some((t) =>
-        `${record.type} ${record.title} ${record.reference}`.toLowerCase().includes(t)
-      );
-      if (!isAllowed) {
-        announce("Access restricted under ISO 27001: Internal operational record is not accessible to OEM clients.");
-        return;
-      }
+      announce("Internal records require an explicit customer release and recipient grant.");
+      return;
     }
     if (persona.kind === "lead" && persona.departmentId && record.area !== persona.departmentId) {
       announce(`Access restricted: record belongs to ${record.area.toUpperCase()} department.`);
@@ -2694,6 +2701,7 @@ function Portal() {
     setSelectedDocumentId(document.id);
     setModal("document");
   };
+  if (signedOut) return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><h1 className="text-xl font-semibold">Signed out</h1><p className="mt-3 text-sm text-muted-foreground">No department workspace is open.</p><button type="button" onClick={() => setLoginModalOpen(true)} className="mt-5 rounded border border-border px-4 py-2 text-sm">{portal.demoLoaded ? "Choose demo department" : "Sign in"}</button></section><DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={portal.demoLoaded} currentPersonaId="" onClose={() => setLoginModalOpen(false)} onLoginSuccess={handleDemoLogin} onLogout={handleLogout} /></main>;
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
@@ -2718,7 +2726,7 @@ function Portal() {
             setView("project");
             navigate("home");
           }}
-          onOpenDrive={() => setModal("documents")}
+          onOpenDrive={openDocuments}
           onOpenDraftHub={() => setDraftHubOpen(true)}
           onOpenDirectory={() => setDirectoryOpen(true)}
           onOpenLegalHub={() => setLegalHubOpen(true)}
@@ -2826,11 +2834,19 @@ function Portal() {
                 }}
               />
             )}
-            <HeaderAction
-              label={persona.kind === "client" ? "Released Deliverables" : "Documents"}
-              icon={persona.kind === "client" ? Award : FileText}
-              onClick={() => setModal("documents")}
-            />
+            {persona.kind === "client" ? (
+              <HeaderAction
+                label="Released Deliverables"
+                icon={Award}
+                onClick={openDocuments}
+              />
+            ) : (
+              <HeaderAction
+                label="Documents"
+                icon={FileText}
+                onClick={() => setModal("documents")}
+              />
+            )}
             {(persona.id === "admin" || persona.id === "pur") && (
               <HeaderAction label="Live Inventory" icon={PackageSearch} onClick={() => navigate("pur")} />
             )}
@@ -2882,7 +2898,9 @@ function Portal() {
           </div>
         </header>
         <div className="mx-auto max-w-[1600px] space-y-6 px-6 py-6 pb-28 lg:pb-10">
-          {persona.kind === "lead" && view === "assignee" ? (
+          {persona.kind === "client" ? (
+            <ClientOEMPortal demoMode={portal.demoLoaded} focusDeliverables={clientDeliverablesFocus} />
+          ) : persona.kind === "lead" && view === "assignee" ? (
             <section className="ops-section p-5 space-y-4">
               <h1 className="text-xl font-semibold">{active.name} — My Tasks & Action Queue</h1>
               <p className="text-sm text-muted-foreground">Assigned task queue · {personalTasks.length} tasks.</p>
@@ -2920,8 +2938,9 @@ function Portal() {
             />
           ) : view === "index" ? (
             <IndexWorkspace
-              records={activeRecords}
-              documents={portal.documents}
+              records={persona.kind === "lead" ? [...leadRecords, ...leadProjects] : activeRecords}
+              documents={scopedDocuments}
+              allowedProjectIds={persona.kind === "lead" ? leadProjects.map(project => project.id) : []}
               departments={portal.departments}
               departmentContext={departmentContext}
               onBack={() => navigate(activeArea)}
@@ -2970,7 +2989,7 @@ function Portal() {
                 "Test & Calibration",
                 "Packaging & Logistics",
               ]}
-              readOnly={persona.kind === "client"}
+              readOnly={false}
               onMove={moveInventory}
               onAssign={assignInventory}
               activeDepartment="PUR"
@@ -2998,7 +3017,7 @@ function Portal() {
                 "Test & Calibration",
                 "Packaging & Logistics",
               ]}
-              readOnly={persona.kind === "client"}
+              readOnly={false}
               onMove={moveInventory}
               onAssign={assignInventory}
               projectScope={projectScopes[activeArea] === "all" ? "HLPL-AI4T-01" : (projectScopes[activeArea] ?? "HLPL-AI4T-01")}
@@ -3037,18 +3056,7 @@ function Portal() {
               persona={persona}
               onRequestApproval={handleCreateApprovalRequest}
             />
-          ) : persona.kind === "client" ? (
-            <ClientOEMPortal
-              onOpenDocument={(docId) => {
-                const match = portal.documents.find((d) => d.id === docId || d.url.includes(docId));
-                if (match) {
-                  setSelectedDocumentId(match.id);
-                  setModal("document");
-                } else {
-                  setModal("documents");
-                }
-              }}
-            />
+
           ) : effectiveArea === "home" && view === "assignee" && selectedAssignee ? (
             <AssigneeWorkload
               assignee={selectedAssignee}
@@ -3175,7 +3183,7 @@ function Portal() {
                 setView("queue");
               }}
               onOpenDraftHub={() => setDraftHubOpen(true)}
-              onOpenDrive={() => setModal("documents")}
+              onOpenDrive={openDocuments}
               portal={portal}
               onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
               onOpenFeasibilityGate={(projectCode) => {
@@ -3290,7 +3298,7 @@ function Portal() {
             setView("project");
             navigate("home");
           }}
-          onOpenDrive={() => setModal("documents")}
+          onOpenDrive={openDocuments}
           onOpenDraftHub={() => setDraftHubOpen(true)}
           onOpenDirectory={() => setDirectoryOpen(true)}
           onOpenLegalHub={() => setLegalHubOpen(true)}
@@ -3340,7 +3348,7 @@ function Portal() {
       )}{" "}
       {modal === "history" && <HistoryPanel audit={portal.audit} onClose={() => setModal(null)} />}{" "}
       {modal === "approvals" && (() => { setView("approvals"); setModal(null); return null; })()}{" "}
-      {modal === "documents" && (
+      {modal === "documents" && persona.kind !== "client" && (
         <DocumentsPanel
           documents={scopedDocuments}
           departments={portal.departments}
@@ -3424,37 +3432,7 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
-      <DepartmentLeadLoginModal
-        isOpen={loginModalOpen}
-        onClose={() => setLoginModalOpen(false)}
-        currentPersonaId={persona.id}
-        onLoginSuccess={(personaId, leadInfo) => {
-          const matched = personas.find((p) => p.id === personaId);
-          if (matched) {
-            switchPersona(matched);
-            if (typeof window !== "undefined") {
-              window.localStorage.setItem(
-                "scms_auth_session",
-                JSON.stringify({
-                  personaId,
-                  leadEmail: leadInfo.email,
-                  leadName: leadInfo.leadName,
-                  timestamp: new Date().toISOString(),
-                })
-              );
-            }
-          }
-        }}
-        onLogout={() => {
-          const adminPersona = personas.find((p) => p.id === "admin") ?? personas[0];
-          if (adminPersona) {
-            switchPersona(adminPersona);
-            if (typeof window !== "undefined") {
-              window.localStorage.removeItem("scms_auth_session");
-            }
-          }
-        }}
-      />
+      <DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={portal.demoLoaded} onClose={() => setLoginModalOpen(false)} currentPersonaId={persona.id} onLoginSuccess={handleDemoLogin} onLogout={handleLogout} />
       {customerRegisterOpen && (
         <CustomerRegisterModal
           customers={portal.customersRegistry ?? defaultCustomers}
@@ -3551,7 +3529,7 @@ function Portal() {
           modularConfig={(portal?.modularConfigs ?? defaultProjectModularConfigs)[selectedProjectId || "HLPL-AI4T-01"]}
           onKickoffComplete={(path, deliverables) => {
             if (!portal.demoLoaded) { announce("Lifecycle walkthrough is available only in DEMO. Production gate progression requires the verified authenticated workflow contract."); return; }
-            const today = new Date().toISOString().slice(0, 10);
+            const today = businessDate();
             const kickoffTasks: RecordItem[] = path === "poc" ? [
               {
                 id: createId(),
@@ -3837,7 +3815,7 @@ function CommandCenter({
     ? records.filter((record) => record.departmentId === departmentContext)
     : records;
   const pending = portal.approvals.filter((item) => item.outcome === "Pending").length;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDate();
   const tomorrow = nextWorkingDay(today);
   const taskRecords = visible.filter((record) => record.type === "Task");
   const checklistTasks = taskRecords.filter(
@@ -4628,7 +4606,7 @@ function TaskCard({
         <Action
           onClick={() => onMove(task)}
           label={
-            task.fields["dueDate"] === new Date().toISOString().slice(0, 10)
+            task.fields["dueDate"] === businessDate()
               ? "Move to Pending / Tomorrow"
               : "Move to Today"
           }
@@ -5813,7 +5791,7 @@ function AssigneeWorkload({
   );
   const overdue = work.filter(
     (record) =>
-      (record.fields["dueDate"] ?? "") < new Date().toISOString().slice(0, 10) &&
+      (record.fields["dueDate"] ?? "") < businessDate() &&
       record.status !== "Released",
   );
   return (
@@ -5971,7 +5949,7 @@ function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Cross-Department Sync & Order Hub" onClose={onClose} wide>
       <div className="rounded-lg border border-warning/40 bg-accent p-4 text-sm">
-        <strong>OPERATIONAL ENTERPRISE BASELINE</strong>
+        <strong>DEMO WORKSPACE</strong>
         <p className="mt-1 text-muted-foreground">Illustrative order, financial, supplier, production and audit signals. Nothing represents an actual customer order, payment, purchase, release, or certification.</p>
       </div>
       <section className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -6075,7 +6053,7 @@ function DepartmentWorkspace({
   const teamForThisDept = (allTeamMembers ?? demoTeam).filter((member) => member.area === area.id);
   const deptLeadName = persona.kind === "lead" && persona.departmentId === area.id ? persona.person.split(" · ")[0] || "Department Lead" : department?.lead ?? teamForThisDept[0]?.name ?? "Department Lead";
   const departmentMembers = teamForThisDept.length;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDate();
   const open = scopedRecords.filter((record) => record.status === "Draft" || record.status === "Open");
   const blocked = scopedRecords.filter((record) => record.fields["blocker"]);
   const pendingApprovals = approvals.filter(
@@ -6662,6 +6640,12 @@ function RecordDetail({
   const [title, setTitle] = useState(record.title);
   const [notes, setNotes] = useState(record.notes);
   const [status, setStatus] = useState<RecordStatus>(record.status);
+  useEffect(() => {
+    setEditing(false);
+    setTitle(record.title);
+    setNotes(record.notes);
+    setStatus(record.status);
+  }, [record.id, record.title, record.notes, record.status]);
   return (
     <>
       <button
@@ -6681,7 +6665,7 @@ function RecordDetail({
           </div>
           <div className="flex gap-2">
             <Action onClick={() => onOpenPrintable(recordPrintable(record))} label="Open full document" primary />
-            <Action onClick={() => setEditing(!editing)} label={editing ? "Cancel" : "Edit"} />
+            <Action onClick={() => { setTitle(record.title); setNotes(record.notes); setStatus(record.status); setEditing(!editing); }} label={editing ? "Cancel" : "Edit"} />
             <Action onClick={onArchive} label="Archive" />
           </div>
         </div>
@@ -7131,7 +7115,7 @@ function RecordForm({
         notes: field("scope"),
         fields: {
           ...values,
-          dueDate: field("dueDate") || new Date().toISOString().slice(0, 10),
+          dueDate: field("dueDate") || businessDate(),
           assignee: field("assignee") || (area === "sales" ? "Priya Sharma" : "Avery Vale"),
           projectId: field("projectId") || selectedProject,
           controlledNumber: field("controlledNumber") || generatedId,
@@ -8048,7 +8032,7 @@ function CloudSyncPanel({
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(portal, null, 2));
       const downloadAnchor = document.createElement("a");
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `HLPL-SCMS-Backup-${new Date().toISOString().slice(0, 10)}.json`);
+      downloadAnchor.setAttribute("download", `HLPL-SCMS-Backup-${businessDate()}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -8582,6 +8566,7 @@ function SharedIndex({
   documents,
   departments,
   departmentContext,
+  allowedProjectIds = [],
   onSelect,
   onSelectDocument,
 }: {
@@ -8589,6 +8574,7 @@ function SharedIndex({
   documents: ControlledDocument[];
   departments: Department[];
   departmentContext: string | null;
+  allowedProjectIds?: string[] | undefined;
   onSelect: (record: RecordItem) => void;
   onSelectDocument: (document: ControlledDocument) => void;
 }) {
@@ -8601,12 +8587,12 @@ function SharedIndex({
   const matches = (value: string) => value.toLowerCase().includes(query.toLowerCase());
   const matchingRecordKind = (record: RecordItem) =>
     kind === "All" ||
-    (kind === "Clients" && record.area === "sales") ||
-    (kind === "Projects" && record.area === "rnd") ||
+    (kind === "Clients" && /^(Customer|Client)$/i.test(record.type)) ||
+    (kind === "Projects" && record.type === "Project") ||
     (kind === "Audits" && /audit|inspection|ncr|capa|review/i.test(record.type));
   const scopedRecords = records.filter(
     (record) =>
-      (department === "All departments" || record.departmentId === department) &&
+      (department === "All departments" || record.departmentId === department || (record.type === "Project" && allowedProjectIds.includes(record.id))) &&
       matches(`${record.reference} ${record.title} ${record.type} ${record.notes}`) &&
       matchingRecordKind(record),
   );
@@ -8811,6 +8797,7 @@ function IndexWorkspace({
   documents,
   departments,
   departmentContext,
+  allowedProjectIds = [],
   onBack,
   onSelect,
   onSelectDocument,
@@ -8819,6 +8806,7 @@ function IndexWorkspace({
   documents: ControlledDocument[];
   departments: Department[];
   departmentContext: string | null;
+  allowedProjectIds?: string[] | undefined;
   onBack: () => void;
   onSelect: (record: RecordItem) => void;
   onSelectDocument: (document: ControlledDocument) => void;
@@ -8844,6 +8832,7 @@ function IndexWorkspace({
           documents={documents}
           departments={departments}
           departmentContext={departmentContext}
+          allowedProjectIds={allowedProjectIds}
           onSelect={onSelect}
           onSelectDocument={onSelectDocument}
         />
@@ -8857,7 +8846,7 @@ function DemoMarker() {
       <span>
         <strong>OPERATIONAL ENTERPRISE BASELINE</strong>
         <span className="ml-2 text-muted-foreground">
-          IATF 16949 / ISO 9001 / AIS-140 verified operational baseline.
+          Browser-local examples; not verified production, certification or release evidence.
         </span>
       </span>
     </div>

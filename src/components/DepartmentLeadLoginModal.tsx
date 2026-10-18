@@ -118,6 +118,8 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     roleTitle: "Testing & EOL Lead",
     badgeTone: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30",
   },
+  { id: "sit", departmentCode: "SIT", departmentName: "Service & IT", leadName: "Kai Morgan", email: "kai.morgan@example.com", password: "Demo@SIT2026", roleTitle: "Service & IT Lead", badgeTone: "bg-primary/15 text-primary border-primary/30" },
+  { id: "hrops", departmentCode: "HR", departmentName: "HR & Operations", leadName: "Taylor Quinn", email: "taylor.quinn@example.com", password: "Demo@HR2026", roleTitle: "HR & Operations Lead", badgeTone: "bg-primary/15 text-primary border-primary/30" },
   {
     id: "admin",
     departmentCode: "ADMIN",
@@ -133,7 +135,7 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     departmentCode: "OEM",
     departmentName: "Tata Motors Fleet Solutions",
     leadName: "Rohan Verma",
-    email: "rohan.verma@tatamotors.com",
+    email: "rohan.verma@example.com",
     password: "Tata@Client2026",
     roleTitle: "Tata Motors Fleet Operations Manager",
     badgeTone: "bg-blue-600/15 text-blue-700 dark:text-blue-300 border-blue-600/30",
@@ -142,6 +144,7 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
 
 export type DepartmentLeadLoginModalProps = {
   isOpen: boolean;
+  demoMode?: boolean | undefined;
   onClose: () => void;
   currentPersonaId: string;
   onLoginSuccess: (personaId: string, leadInfo: DepartmentCredential) => void;
@@ -150,6 +153,7 @@ export type DepartmentLeadLoginModalProps = {
 
 export function DepartmentLeadLoginModal({
   isOpen,
+  demoMode = false,
   onClose,
   currentPersonaId,
   onLoginSuccess,
@@ -162,6 +166,7 @@ export function DepartmentLeadLoginModal({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
+  if (!demoMode) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-5"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><h2 className="text-lg font-semibold">Production sign-in is not configured</h2><p className="mt-3 text-sm text-muted-foreground">An administrator must enable the approved sign-in method and configure organization membership. Demo credentials cannot authenticate operational users.</p><button type="button" onClick={onClose} className="mt-5 rounded border border-border px-4 py-2 text-sm">Close</button></section></div>;
 
   const activeCred = DEPARTMENT_CREDENTIALS.find((c) => c.id === currentPersonaId);
 
@@ -187,14 +192,14 @@ export function DepartmentLeadLoginModal({
     );
 
     if (matched) {
-      setSuccessMessage(`Authenticated successfully as ${matched.leadName} (${matched.roleTitle})`);
+      setSuccessMessage(`Demo preview opened as ${matched.leadName} (${matched.roleTitle})`);
       setTimeout(() => {
         onLoginSuccess(matched.id, matched);
         setSuccessMessage(null);
         onClose();
       }, 400);
     } else {
-      setErrorMessage("Authentication failed: Invalid work email or password for this department lead.");
+      setErrorMessage("The demo identifier or demo password does not match. These credentials do not sign in to the production backend.");
     }
   };
 
@@ -210,14 +215,14 @@ export function DepartmentLeadLoginModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-foreground">
-                  Department Lead Authentication & Access Control
+                  Demo Department Preview
                 </h3>
                 <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                   IATF 16949 / ISO 27001
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Sign in with official department credentials to access role-governed workspaces.
+                These sample credentials select a browser-local preview role. They are not production authentication.
               </p>
             </div>
           </div>
@@ -403,7 +408,7 @@ export function DepartmentLeadLoginModal({
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90 transition-colors cursor-pointer"
                 >
                   <ShieldCheck className="size-4" />
-                  <span>Authenticate & Sign In as Department Lead</span>
+                  <span>Open Demo Department Preview</span>
                   <ArrowRight className="size-4" />
                 </button>
               </form>
@@ -413,10 +418,10 @@ export function DepartmentLeadLoginModal({
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                     <Sparkles className="size-3.5 text-amber-500" />
-                    <span>Department Lead Credentials Roster (Sign-in Directory)</span>
+                    <span>Demo Role Directory</span>
                   </span>
                   <span className="text-[10px] text-muted-foreground font-mono">
-                    Select a department lead to sign in
+                    Select a demo role to preview
                   </span>
                 </div>
 
