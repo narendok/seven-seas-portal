@@ -84,7 +84,7 @@ import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable"
 import { PurchasingCommandCenter, type PurchasingSubView } from "@/components/PurchasingCommandCenter";
 import { CustomerManagementFullPageView } from "@/components/CustomerManagementFullPageView";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
-import { ApprovalsFullPageView } from "@/components/ApprovalsFullPageView";
+import { ApprovalsFullPageView, type ApprovalRecord } from "@/components/ApprovalsFullPageView";
 import { DepartmentLeadCoordinationCenter } from "@/components/DepartmentLeadCoordinationCenter";
 import {
   LiveInventoryWorkspace,
@@ -629,13 +629,7 @@ type PortalState = {
   masters: MasterData;
   departments: Department[];
   roles: DepartmentRole[];
-  approvals: {
-    id: string;
-    title: string;
-    recordId: string;
-    outcome: "Pending" | "Approved" | "Rejected" | "Returned";
-    updatedAt: string;
-  }[];
+  approvals: ApprovalRecord[];
   documents: ControlledDocument[];
   audit: AuditEvent[];
   notifications: string[];
@@ -894,9 +888,7 @@ const mergeAutomotiveDemoDocuments = (documents: ControlledDocument[]) => {
   return [...documents, ...seed.filter((document) => !existing.has(document.id))];
 };
 const hasCompleteDemoDocumentSet = (documents: ControlledDocument[]) =>
-  ["demo-doc-pmss", "demo-doc-prs", "demo-doc-bom", "demo-doc-datasheet"].every((id) =>
-    documents.some((document) => document.id === id),
-  );
+  Array.isArray(documents) && documents.length >= 8;
 const setupSteps = [
   "Company, locations, calendars & numbering",
   "Departments, leads, roles & sub-roles",
@@ -1718,9 +1710,81 @@ const demoPortal = (): PortalState => {
       ],
     },
     approvals: [
-      { id: "demo-approval-quality-release", title: `DEMO · Human quality release — ${project}`, recordId: "HLPL-SLCT-QA-REL-01", outcome: "Pending", updatedAt: timestamp },
-      { id: "demo-approval-ecn-002", title: "DEMO · EHW ECN-002 thermal layout review", recordId: "DEMO-TASK-EHW-ECN-002", outcome: "Pending", updatedAt: timestamp },
-      { id: "demo-approval-fin-advance", title: "DEMO · FIN advance billing payment release", recordId: "DEMO-TASK-FIN-ADVANCE", outcome: "Pending", updatedAt: timestamp },
+      {
+        id: "approval-fin-advance",
+        title: "FIN Advance Billing & Tooling Disbursement Authorization",
+        recordId: "HLPL-AI4T-FIN-ADV-01",
+        outcome: "Pending",
+        updatedAt: timestamp,
+        department: "FIN",
+        requesterDepartment: "PUR",
+        requester: "Morgan Reed (Purchasing & SCM Lead)",
+        project: "HLPL-AI4T-01 (Tata Ace EV 4G)",
+        riskLevel: "High",
+        iatfClause: "ISO 9001 §8.4 / IATF 16949 §8.4.2",
+        description:
+          "Advance billing payment disbursement release of ₹14.50 Lakh for Molex sealed connector hard tooling and Quectel LTE Cat-1 modem engineering samples.",
+      },
+      {
+        id: "approval-ehw-ecn-002",
+        title: "EHW ECN-002 Thermal Relief & Layout Modification",
+        recordId: "DEMO-TASK-EHW-ECN-002",
+        outcome: "Pending",
+        updatedAt: timestamp,
+        department: "EHW",
+        requesterDepartment: "EHW",
+        requester: "Avery Vale (Embedded Hardware Lead)",
+        project: "HLPL-AI4T-01 (Tata Ace EV 4G)",
+        riskLevel: "High",
+        iatfClause: "IATF 16949 §8.3.4 (Engineering Change Control)",
+        description:
+          "ECN-002: Layout thermal copper relief enhancement around TI Buck Regulator U4 and Vishay 36V TVS clamping diode to improve continuous high-temperature operating envelope up to +85°C.",
+      },
+      {
+        id: "approval-qa-release",
+        title: "QA Production Release Gate & ARAI TAC #842 Endorsement",
+        recordId: "HLPL-SLCT-QA-REL-01",
+        outcome: "Pending",
+        updatedAt: timestamp,
+        department: "QA",
+        requesterDepartment: "EMF",
+        requester: "Casey Rowan (Manufacturing Lead)",
+        project: "HLPL-AI4T-01 (Tata Ace EV 4G)",
+        riskLevel: "Critical",
+        iatfClause: "IATF 16949 §8.5.1 (Production Release Gate)",
+        description:
+          "Authorization for serial production release following successful completion of ARAI Stage 8 Type Approval TAC #842 and 18-point DVP&R environmental verification matrix.",
+      },
+      {
+        id: "approval-pur-bom-01",
+        title: "PUR SCM BOM Cost Freeze & Long-Lead Buffer Authorization",
+        recordId: "HLPL-AI4T-PUR-BOM-01",
+        outcome: "Pending",
+        updatedAt: timestamp,
+        department: "PUR",
+        requesterDepartment: "EHW",
+        requester: "Avery Vale (Embedded Hardware Lead)",
+        project: "HLPL-AI4T-01 (Tata Ace EV 4G)",
+        riskLevel: "High",
+        iatfClause: "IATF 16949 §8.4.1 (Supplier Evaluation & SCM Review)",
+        description:
+          "Verification and commercial price freeze for 10-line automotive BOM including dual-source alternates and 14-week long-lead buffer order.",
+      },
+      {
+        id: "approval-sal-contract",
+        title: "SAL Contract Review Gate HLPL/F/MKT/01 Sign-off",
+        recordId: "HLPL/F/MKT/01",
+        outcome: "Pending",
+        updatedAt: timestamp,
+        department: "SAL",
+        requesterDepartment: "SAL",
+        requester: "Priya Sharma (Sales & BD Lead)",
+        project: "HLPL-AI4T-01 (Tata Ace EV 4G)",
+        riskLevel: "High",
+        iatfClause: "IATF 16949 §8.2.3 (Review of Requirements for Products)",
+        description:
+          "Formal multi-HOD feasibility sign-off consolidation and commercial commitment lock for 50,000 units @ ₹20.33 Cr.",
+      },
     ],
     documents: mergeAutomotiveDemoDocuments([
       document(
@@ -1957,7 +2021,44 @@ const readPortal = (): PortalState => {
           }))
         : [],
       roles: Array.isArray(value.roles) ? value.roles : [],
-      approvals: Array.isArray(value.approvals) ? value.approvals : [],
+      approvals:
+        Array.isArray(value.approvals) && value.approvals.length > 0
+          ? (() => {
+              const defaults = demoPortal().approvals;
+              const mapped: ApprovalRecord[] = value.approvals.map((appr: any) => {
+                const match = defaults.find((d) => d.id === appr.id || (d.id.includes("ecn") && appr.id.includes("ecn")) || (d.id.includes("fin") && appr.id.includes("fin")) || (d.id.includes("quality") && appr.id.includes("quality")));
+                if (match) {
+                  return {
+                    ...match,
+                    ...appr,
+                    outcome: appr.outcome ?? match.outcome,
+                    signedBy: appr.signedBy ?? match.signedBy,
+                    signedAt: appr.signedAt ?? match.signedAt,
+                    comments: appr.comments ?? match.comments,
+                    updatedAt: appr.updatedAt ?? match.updatedAt,
+                    department: appr.department ?? match.department,
+                    requesterDepartment: appr.requesterDepartment ?? match.requesterDepartment,
+                  };
+                }
+                return {
+                  ...appr,
+                  department: appr.department ?? "QA",
+                  requesterDepartment: appr.requesterDepartment ?? "SAL",
+                  requester: appr.requester ?? "Department Lead",
+                  project: appr.project ?? "HLPL-AI4T-01 (Tata Ace EV 4G)",
+                  riskLevel: appr.riskLevel ?? "Medium",
+                  iatfClause: appr.iatfClause ?? "IATF 16949 / ISO 9001",
+                  description: appr.description ?? "Controlled gateway review requiring designated human sign-off.",
+                };
+              });
+              defaults.forEach((def) => {
+                if (!mapped.some((m) => m.id === def.id || (def.id.includes("ecn") && m.id?.includes("ecn")) || (def.id.includes("fin") && m.id?.includes("fin")) || (def.id.includes("quality") && m.id?.includes("quality")))) {
+                  mapped.push(def);
+                }
+              });
+              return mapped;
+            })()
+          : demoPortal().approvals,
       records:
         value.demoLoaded === true
           ? (() => {
@@ -2052,7 +2153,34 @@ function Portal() {
     | "smart_bom"
     | "ingestion_gate"
     | "approvals"
-  >("queue");
+  >(() => {
+    if (typeof window !== "undefined") {
+      const urlView = new URLSearchParams(window.location.search).get("view");
+      if (
+        urlView &&
+        [
+          "queue",
+          "detail",
+          "summary",
+          "project",
+          "assignee",
+          "index",
+          "pmss",
+          "inventory",
+          "orders",
+          "quotations",
+          "suppliers",
+          "customers",
+          "smart_bom",
+          "ingestion_gate",
+          "approvals",
+        ].includes(urlView)
+      ) {
+        return urlView as any;
+      }
+    }
+    return "queue";
+  });
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [customTeamMembers, setCustomTeamMembers] = useState<TeamMember[]>([]);
   const allTeamMembers = useMemo(() => [...demoTeam, ...customTeamMembers], [customTeamMembers]);
@@ -2397,24 +2525,49 @@ function Portal() {
         return;
       }
     }
+    const signedTimestamp = now();
+    const approverName = persona.label;
+    const reqDept = (appr?.requesterDepartment ?? appr?.department ?? "SAL").toLowerCase();
+    const noteText = notes || "Signed and endorsed under IATF 16949 / ISO 9001 quality governance.";
+
+    const newAlert: DemoAlert = {
+      id: `ALERT-APPR-OK-${createId()}`,
+      severity: "Normal" as any,
+      title: `Gate Approved: ${appr?.title ?? id}`,
+      detail: `${approverName} has APPROVED ${appr?.recordId ?? id}. Note: "${noteText}". Synchronized across ${appr?.department ?? "approving"} and ${reqDept.toUpperCase()} departments.`,
+      departmentId: reqDept,
+      resolved: false,
+    };
+
     update((state) => ({
       ...state,
-      approvals: state.approvals.map((appr) =>
-        appr.id === id
+      approvals: state.approvals.map((a) =>
+        a.id === id
           ? {
-              ...appr,
+              ...a,
               outcome: "Approved" as const,
-              updatedAt: now(),
-              signedBy: persona.label,
-              signedAt: now(),
-              comments: notes,
+              updatedAt: signedTimestamp,
+              signedBy: approverName,
+              signedAt: signedTimestamp,
+              comments: noteText,
             }
-          : appr
+          : a
       ),
+      records: state.records.map((r) =>
+        r.id === appr?.recordId || r.reference === appr?.recordId
+          ? { ...r, status: "Approved", updatedAt: signedTimestamp }
+          : r
+      ),
+      alerts: [newAlert, ...state.alerts.filter((alt) => !alt.detail.includes(appr?.recordId ?? id))],
+      notifications: [
+        `Approval Gate ${appr?.recordId ?? id} approved by ${approverName}. Notification sent to ${reqDept.toUpperCase()} department.`,
+        ...state.notifications,
+      ].slice(0, 100),
     }));
-    log("Human Approval Signed", `Approved gate ${id} by ${persona.label}. Note: ${notes ?? "Signed under IATF 16949 / ISO 9001 governance."}`);
-    announce(`Approval ${id} signed and endorsed.`);
+    log("Human Approval Signed", `Approved gate ${id} (${appr?.recordId}) by ${approverName}. Note: ${noteText}`);
+    announce(`Approval ${appr?.recordId ?? id} approved. Notification dispatched to ${reqDept.toUpperCase()} department.`);
   };
+
   const handleRejectGate = (id: string, reason: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot reject gates.");
@@ -2426,26 +2579,50 @@ function Portal() {
       const apprDept = (appr.department ?? "").toUpperCase();
       const isAuthorized = userDept === apprDept || (userDept === "QA" && (appr.riskLevel === "Critical" || apprDept === "QA"));
       if (!isAuthorized) {
-        announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
+        announce(`Gate rejection restricted to ${appr.department ?? "designated"} department lead.`);
         return;
       }
     }
+    const updatedTimestamp = now();
+    const approverName = persona.label;
+    const reqDept = (appr?.requesterDepartment ?? appr?.department ?? "SAL").toLowerCase();
+
+    const newAlert: DemoAlert = {
+      id: `ALERT-APPR-REJ-${createId()}`,
+      severity: "Critical",
+      title: `Gate Rejected: ${appr?.title ?? id}`,
+      detail: `${approverName} REJECTED ${appr?.recordId ?? id}. Root cause: "${reason}". Escalated to ${reqDept.toUpperCase()} and Executive Admin.`,
+      departmentId: reqDept,
+      resolved: false,
+    };
+
     update((state) => ({
       ...state,
-      approvals: state.approvals.map((appr) =>
-        appr.id === id
+      approvals: state.approvals.map((a) =>
+        a.id === id
           ? {
-              ...appr,
+              ...a,
               outcome: "Rejected" as const,
-              updatedAt: now(),
+              updatedAt: updatedTimestamp,
               comments: reason,
             }
-          : appr
+          : a
       ),
+      records: state.records.map((r) =>
+        r.id === appr?.recordId || r.reference === appr?.recordId
+          ? { ...r, status: "In review" as const, fields: { ...r.fields, blocker: reason }, updatedAt: updatedTimestamp }
+          : r
+      ),
+      alerts: [newAlert, ...state.alerts.filter((alt) => !alt.detail.includes(appr?.recordId ?? id))],
+      notifications: [
+        `Approval Gate ${appr?.recordId ?? id} rejected by ${approverName}. Notification sent to ${reqDept.toUpperCase()} department.`,
+        ...state.notifications,
+      ].slice(0, 100),
     }));
-    log("Approval Rejected", `Rejected gate ${id} by ${persona.label}. Reason: ${reason}`);
-    announce(`Approval ${id} rejected.`);
+    log("Approval Rejected", `Rejected gate ${id} (${appr?.recordId}) by ${approverName}. Reason: ${reason}`);
+    announce(`Approval ${appr?.recordId ?? id} rejected. Notification sent to ${reqDept.toUpperCase()} department.`);
   };
+
   const handleReturnGate = (id: string, reworkNotes: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot return gates.");
@@ -2461,21 +2638,128 @@ function Portal() {
         return;
       }
     }
+    const updatedTimestamp = now();
+    const approverName = persona.label;
+    const reqDept = (appr?.requesterDepartment ?? appr?.department ?? "SAL").toLowerCase();
+
+    const newAlert: DemoAlert = {
+      id: `ALERT-APPR-RETURN-${createId()}`,
+      severity: "Warning",
+      title: `Rework Required: ${appr?.title ?? id}`,
+      detail: `${approverName} returned ${appr?.recordId ?? id} for correction: "${reworkNotes}". Action required by ${reqDept.toUpperCase()} before gate can proceed.`,
+      departmentId: reqDept,
+      resolved: false,
+    };
+
     update((state) => ({
       ...state,
-      approvals: state.approvals.map((appr) =>
-        appr.id === id
+      approvals: state.approvals.map((a) =>
+        a.id === id
           ? {
-              ...appr,
+              ...a,
               outcome: "Returned" as const,
-              updatedAt: now(),
+              updatedAt: updatedTimestamp,
               comments: reworkNotes,
             }
-          : appr
+          : a
       ),
+      records: state.records.map((r) =>
+        r.id === appr?.recordId || r.reference === appr?.recordId
+          ? { ...r, status: "In review", updatedAt: updatedTimestamp }
+          : r
+      ),
+      alerts: [newAlert, ...state.alerts.filter((alt) => !alt.detail.includes(appr?.recordId ?? id))],
+      notifications: [
+        `Approval Gate ${appr?.recordId ?? id} returned for rework by ${approverName}. Notification sent to ${reqDept.toUpperCase()} department.`,
+        ...state.notifications,
+      ].slice(0, 100),
     }));
-    log("Approval Returned", `Returned gate ${id} by ${persona.label} for modifications: ${reworkNotes}`);
-    announce(`Approval ${id} returned for rework.`);
+    log("Approval Returned", `Returned gate ${id} (${appr?.recordId}) by ${approverName} for rework: ${reworkNotes}`);
+    announce(`Approval ${appr?.recordId ?? id} returned for rework. Notification sent to ${reqDept.toUpperCase()} department.`);
+  };
+
+  const handleResubmitGate = (id: string, notes: string) => {
+    const appr = portal.approvals.find((a) => a.id === id) as any;
+    const updatedTimestamp = now();
+    const requesterName = persona.label;
+    const approverDept = (appr?.department ?? "QA").toLowerCase();
+
+    const newAlert: DemoAlert = {
+      id: `ALERT-APPR-RESUBMIT-${createId()}`,
+      severity: "Warning",
+      title: `Gate Resubmitted: ${appr?.title ?? id}`,
+      detail: `${requesterName} has resubmitted ${appr?.recordId ?? id} with applied corrections: "${notes}". Ready for ${approverDept.toUpperCase()} lead sign-off.`,
+      departmentId: approverDept,
+      resolved: false,
+    };
+
+    update((state) => ({
+      ...state,
+      approvals: state.approvals.map((a) =>
+        a.id === id
+          ? {
+              ...a,
+              outcome: "Pending" as const,
+              updatedAt: updatedTimestamp,
+              comments: `[Resubmitted with corrections]: ${notes}`,
+            }
+          : a
+      ),
+      records: state.records.map((r) =>
+        r.id === appr?.recordId || r.reference === appr?.recordId
+          ? { ...r, status: "Open", updatedAt: updatedTimestamp }
+          : r
+      ),
+      alerts: [newAlert, ...state.alerts.filter((alt) => !alt.detail.includes(appr?.recordId ?? id))],
+      notifications: [
+        `Approval Gate ${appr?.recordId ?? id} resubmitted for sign-off. Alert sent to ${approverDept.toUpperCase()} lead.`,
+        ...state.notifications,
+      ].slice(0, 100),
+    }));
+    log("Approval Resubmitted", `Resubmitted gate ${id} (${appr?.recordId}) by ${requesterName}. Notes: ${notes}`);
+    announce(`Gate ${appr?.recordId ?? id} resubmitted for ${approverDept.toUpperCase()} approval.`);
+  };
+
+  const handleCreateApprovalRequest = (newAppr: Omit<ApprovalRecord, "id" | "outcome" | "updatedAt">) => {
+    const id = `approval-${createId()}`;
+    const timestamp = now();
+    const targetDept = newAppr.department?.toLowerCase() ?? "qa";
+
+    const alert: DemoAlert = {
+      id: `ALERT-APPR-NEW-${createId()}`,
+      severity: newAppr.riskLevel === "Critical" ? "Critical" : "Warning",
+      title: `Action Required: ${newAppr.title}`,
+      detail: `${persona.label} (${newAppr.requesterDepartment} Lead) requested approval for ${newAppr.recordId}. Risk: ${newAppr.riskLevel}.`,
+      departmentId: targetDept,
+      resolved: false,
+    };
+
+    const approvalRecord: ApprovalRecord = {
+      id,
+      title: newAppr.title,
+      recordId: newAppr.recordId,
+      outcome: "Pending",
+      updatedAt: timestamp,
+      department: newAppr.department,
+      requesterDepartment: newAppr.requesterDepartment,
+      requester: newAppr.requester,
+      project: newAppr.project,
+      riskLevel: newAppr.riskLevel,
+      iatfClause: newAppr.iatfClause,
+      description: newAppr.description,
+    };
+
+    update((state) => ({
+      ...state,
+      approvals: [approvalRecord, ...state.approvals],
+      alerts: [alert, ...state.alerts],
+      notifications: [
+        `New approval request ${newAppr.recordId} submitted to ${newAppr.department} Lead.`,
+        ...state.notifications,
+      ].slice(0, 100),
+    }));
+    log("Approval Requested", `New approval request ${newAppr.recordId} created by ${persona.label} for ${newAppr.department}`);
+    announce(`Approval request ${newAppr.recordId} sent to ${newAppr.department} Lead.`);
   };
   const handleCreateCustomTask = (taskData: {
     title: string;
@@ -2586,6 +2870,13 @@ function Portal() {
     setSelectedDocumentId(document.id);
     setModal("document");
   };
+  const relevantAlerts = portal.alerts.filter((alert) => {
+    if (alert.resolved) return false;
+    if (persona.kind === "admin") return true;
+    if (persona.kind === "client") return alert.departmentId === "client" || alert.departmentId === "sales";
+    const userDept = (persona.departmentId ?? "").toLowerCase();
+    return alert.departmentId.toLowerCase() === userDept;
+  });
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
@@ -2764,9 +3055,9 @@ function Portal() {
               />
             )}
             <HeaderAction
-              label={`Notifications (${portal.alerts.filter((alert) => !alert.resolved).length})`}
+              label={`Notifications (${relevantAlerts.length})`}
               icon={Bell}
-              badge={portal.alerts.filter((alert) => !alert.resolved).length}
+              badge={relevantAlerts.length}
               onClick={() => setAlertsOpen(true)}
             />
             <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} />
@@ -2904,6 +3195,8 @@ function Portal() {
               onApprove={handleApproveGate}
               onReject={handleRejectGate}
               onReturn={handleReturnGate}
+              onResubmit={handleResubmitGate}
+              onCreateRequest={handleCreateApprovalRequest}
               onBack={() => setView("queue")}
               currentUser={persona.label}
               userRole={persona.kind === "admin" ? "Executive Admin" : persona.kind === "lead" ? "Department Lead" : "Client"}
@@ -3017,7 +3310,7 @@ function Portal() {
               area={active}
               records={activeRecords.filter(
                 (record) =>
-                  record.area === activeArea &&
+                  record.area === effectiveArea &&
                   (!departmentContext || record.departmentId === departmentContext) &&
                   (!queueStage ||
                     `${record.type} ${record.fields["lifecycleStage"] ?? ""}`
@@ -3025,11 +3318,11 @@ function Portal() {
                       .includes(queueStage.toLowerCase())),
               )}
               allRecords={activeRecords}
-              projectScope={projectScopes[activeArea] ?? "all"}
-              onProjectScopeChange={(scope) => setProjectScopes((current) => ({ ...current, [activeArea]: scope }))}
+              projectScope={projectScopes[effectiveArea] ?? "all"}
+              onProjectScopeChange={(scope) => setProjectScopes((current) => ({ ...current, [effectiveArea]: scope }))}
               department={
                 portal.departments.find((item) => item.id === departmentContext) ??
-                findAreaDepartment(portal.departments, activeArea)
+                findAreaDepartment(portal.departments, effectiveArea)
               }
               approvals={portal.approvals}
               contextName={departmentContext ? "Administrator" : "Workspace"}
@@ -3073,6 +3366,7 @@ function Portal() {
               onCreateCustomTask={handleCreateCustomTask}
               onAddTeamMember={handleAddTeamMember}
               allTeamMembers={allTeamMembers}
+              onOpenApprovals={() => setView("approvals")}
             />
           )}
         </div>
@@ -3345,7 +3639,7 @@ function Portal() {
       )}{" "}
       {alertsOpen && (
         <NotificationCenter
-          alerts={portal.alerts}
+          alerts={relevantAlerts}
           departments={portal.departments}
           onClose={() => setAlertsOpen(false)}
           onResolve={(id) => {
@@ -5877,6 +6171,7 @@ function DepartmentWorkspace({
   onCreateCustomTask,
   onAddTeamMember,
   allTeamMembers,
+  onOpenApprovals,
 }: {
   area: (typeof areas)[number];
   records: RecordItem[];
@@ -5900,6 +6195,7 @@ function DepartmentWorkspace({
   onSendForFeasibility?: ((enquiry: EnquiryOpportunity) => void) | undefined;
   onOpenAssetCatalog?: (() => void) | undefined;
   onConfigureModularAssets?: ((projectCode: string) => void) | undefined;
+  onOpenApprovals?: (() => void) | undefined;
   inventory: InventoryItem[];
   inventoryMovements: InventoryMovement[];
   inventoryAssignments: InventoryAssignment[];
@@ -5986,6 +6282,9 @@ function DepartmentWorkspace({
             {onOpenAssetCatalog && (
               <Action onClick={onOpenAssetCatalog} label="Platform Asset Library" />
             )}
+            {onOpenApprovals && (
+              <Action onClick={onOpenApprovals} label="Approvals" />
+            )}
             <Action onClick={onOpenDrive} label="Department Cloud Drive" />
             <Action onClick={() => onCreate("Task")} label="Create Task" />
             <Action onClick={() => onCreate(area.recordType)} label={`Create ${area.recordType}`} primary />
@@ -6020,12 +6319,21 @@ function DepartmentWorkspace({
           tone="danger"
         />
         <Metric label="Pending" value={String(open.length)} detail="Draft or open" tone="warning" />
-        <Metric
-          label="Approvals"
-          value={String(pendingApprovals.length)}
-          detail={pendingApprovals.length ? "Human decisions" : "No department approvals"}
-          tone="moss"
-        />
+        <div
+          onClick={onOpenApprovals}
+          className="cursor-pointer transition-transform hover:scale-[1.01]"
+          title="Click to view and sign department approvals"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenApprovals?.(); }}
+        >
+          <Metric
+            label="Approvals"
+            value={String(pendingApprovals.length)}
+            detail={pendingApprovals.length ? "Human decisions" : "No department approvals"}
+            tone="moss"
+          />
+        </div>
         <Metric
           label="Progress"
           value={`${scopedRecords.length ? Math.round((scopedRecords.filter((record) => ["Approved", "Released"].includes(record.status)).length / scopedRecords.length) * 100) : 0}%`}

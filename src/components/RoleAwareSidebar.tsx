@@ -1182,6 +1182,7 @@ export function RoleAwareSidebar({
             return (
               <button
                 key={item.id}
+                data-sidebar-id={item.id}
                 onClick={item.onClick}
                 aria-label={item.label}
                 title={item.label}
@@ -1402,6 +1403,7 @@ export function RoleAwareSidebar({
                           className="group relative flex items-center justify-between rounded-md"
                         >
                           <button
+                            data-sidebar-id={item.id}
                             onClick={item.onClick}
                             className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-xs font-medium transition-colors ${
                               item.isActive
