@@ -90,6 +90,7 @@ import { ProjectLifecyclePlayerAndDetail } from "@/components/ProjectLifecyclePl
 import { buildDocumentDraft, type DraftSource } from "@/lib/document-draft";
 import { assertApprovalDecision } from "@/lib/approval-workflow";
 import { commitLatestState, patchRecord } from "@/lib/portal-store";
+import { getLocalAttachment, migrateLegacyAttachment, removeLocalAttachment, saveLocalAttachment } from "@/lib/local-attachments";
 import { repairDemoState } from "@/lib/portal-hydration";
 import { approvalInDepartment, approvalScope, canDepartmentSign, departmentCode, projectReferences } from "@/lib/department-scope";
 import { ApprovalsFullPageView, type ApprovalRecord } from "@/components/ApprovalsFullPageView";
@@ -266,8 +267,9 @@ type LocalControlledFile = {
   uploadedAt: string;
   uploader: string;
   revision: string;
-  content: string;
-  encoding: "text" | "data-url";
+  content?: string | undefined;
+  encoding?: "text" | "data-url" | undefined;
+  storage: "indexeddb" | "legacy-localstorage";
   checksum?: string | undefined;
 };
 const inventorySeed = (): InventoryItem[] => [
@@ -1955,7 +1957,16 @@ const readPortal = (): PortalState => {
       const restored = demoPortal();
       return repairDemoState(hydrated, restored);
     }
-    return hydrated;
+    return {
+      ...hydrated,
+      documents: hydrated.documents.map((document) => ({
+        ...document,
+        localFiles: document.localFiles?.map((file) => ({
+          ...file,
+          storage: file.storage ?? "legacy-localstorage",
+        })),
+      })),
+    };
   } catch {
     return base;
   }
@@ -2094,11 +2105,13 @@ function Portal() {
     );
   const update = async (recipe: (state: PortalState) => PortalState): Promise<boolean> => {
     try {
-      const next = await commitLatestState(readPortal, state => window.localStorage.setItem(storeKey, JSON.stringify(state)), recipe, commit => navigator.locks ? navigator.locks.request(storeKey, commit) : Promise.resolve(commit()));
+      const save = (state: PortalState) => window.localStorage.setItem(storeKey, JSON.stringify(state));
+      const next = await commitLatestState(readPortal, save, recipe, commit => navigator.locks ? navigator.locks.request(storeKey, commit) : Promise.resolve(commit()));
       setPortal(next);
       return true;
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "The change could not be saved. Please retry.");
+      const quotaExceeded = error instanceof DOMException && (error.name === "QuotaExceededError" || error.code === 22);
+      setNotice(quotaExceeded ? "Browser record storage is full. File attachments are now kept separately; reload this page and try the action again." : error instanceof Error ? error.message : "The change could not be saved. Please retry.");
       return false;
     }
   };
@@ -9092,15 +9105,19 @@ const formatLabel = (file: Pick<LocalControlledFile, "name" | "type">) => {
   return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
 };
 
-const downloadLocalControlledFile = (file: LocalControlledFile) => {
+const downloadLocalControlledFile = async (file: LocalControlledFile) => {
+  const blob = file.storage === "indexeddb" ? await getLocalAttachment(file.id) : null;
+  if (!blob && !file.content) throw new Error("This browser-local attachment is no longer available.");
   const anchor = window.document.createElement("a");
   anchor.href =
-    file.encoding === "text"
-      ? URL.createObjectURL(new Blob([file.content], { type: file.type }))
-      : file.content;
+    blob
+      ? URL.createObjectURL(blob)
+      : file.encoding === "text"
+      ? URL.createObjectURL(new Blob([file.content ?? ""], { type: file.type }))
+      : file.content ?? "";
   anchor.download = file.name;
   anchor.click();
-  if (file.encoding === "text") {
+  if (blob || file.encoding === "text") {
     window.setTimeout(() => URL.revokeObjectURL(anchor.href), 100);
   }
 };
@@ -9214,26 +9231,19 @@ function HardwareDeliverablesDrive({
       const checksum = await sha256(file);
       setUploadProgress(55);
 
-      const textLike = /^(text\/|application\/(json|csv))/.test(file.type) || /\.(json|csv|txt|log|md)$/i.test(file.name);
-      const content = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error("File read failed"));
-        reader.onload = () => resolve(String(reader.result ?? ""));
-        if (textLike) reader.readAsText(file);
-        else reader.readAsDataURL(file);
-      });
+      const id = createId();
+      await saveLocalAttachment(id, file);
       setUploadProgress(85);
 
       const localFile: LocalControlledFile = {
-        id: createId(),
+        id,
         name: file.name,
         type: file.type || "application/octet-stream",
         size: file.size,
         uploadedAt: new Date().toISOString(),
         uploader: "HOD Engineer · Lovable Cloud Storage",
         revision: "01",
-        content,
-        encoding: textLike ? "text" : "data-url",
+        storage: "indexeddb",
         checksum,
       };
 
@@ -9272,7 +9282,7 @@ function HardwareDeliverablesDrive({
       }
 
       setUploadProgress(100);
-      setUploadNotice(`✓ Upload Verified: ${file.name} (${formatBytes(file.size)}) stored with SHA-256 ${checksum.slice(0, 16)}…`);
+      setUploadNotice(`✓ Upload Verified: ${file.name} (${formatBytes(file.size)}) stored separately in this browser with SHA-256 ${checksum.slice(0, 16)}…`);
       window.setTimeout(() => {
         setIsUploading(false);
       }, 1500);
@@ -9524,7 +9534,7 @@ function HardwareDeliverablesDrive({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                downloadLocalControlledFile(file);
+                                void downloadLocalControlledFile(file).catch(() => undefined);
                               }}
                               className="ml-1 font-semibold text-primary hover:underline"
                               title="Download attached file"
@@ -9635,23 +9645,18 @@ function DocumentDetail({
     if (extension === "ZIP") return "GERBER ZIP";
     return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
   };
-  const readLocalFile = (file: File) =>
-    new Promise<LocalControlledFile>((resolve, reject) => {
-      const reader = new FileReader();
-      const textLike = /^(text\/|application\/(json|csv))/.test(file.type) || /\.(json|csv|txt|log|md)$/i.test(file.name);
-      reader.onerror = () => reject(new Error("The selected file could not be read."));
-      reader.onload = () => resolve({
-        id: createId(), name: file.name, type: file.type || "application/octet-stream", size: file.size,
-        uploadedAt: new Date().toISOString(), uploader: `${owner?.lead ?? "Current user"} · ${owner?.name ?? "Controlled documents"}`,
-       revision: document.revision ?? "00", content: String(reader.result ?? ""), encoding: textLike ? "text" : "data-url",
-      });
-      if (textLike) reader.readAsText(file); else reader.readAsDataURL(file);
-    });
   const uploadLocal = async (file: File, incrementRevision = false) => {
     try {
       setFileState("uploading"); setUploadProgress(4); setFileMessage("Securing & Verifying SHA-256 Hash…");
        const checksum = await sha256(file); setUploadProgress(40);
-       const attached = { ...(await readLocalFile(file)), checksum }; setUploadProgress(76);
+      const id = createId();
+      await saveLocalAttachment(id, file);
+      const attached: LocalControlledFile = {
+        id, name: file.name, type: file.type || "application/octet-stream", size: file.size,
+        uploadedAt: new Date().toISOString(), uploader: `${owner?.lead ?? "Current user"} · ${owner?.name ?? "Controlled documents"}`,
+        revision: document.revision ?? "00", storage: "indexeddb", checksum,
+      };
+      setUploadProgress(76);
       const revision = incrementRevision ? String((Number.parseInt(document.revision ?? "0", 10) || 0) + 1).padStart(2, "0") : document.revision ?? "00";
       const updatedFile = { ...attached, revision };
       window.setTimeout(() => { setUploadProgress(100); setFileState("idle"); }, 220);
@@ -9661,7 +9666,7 @@ function DocumentDetail({
         history: [`${now()} · ${updatedFile.name} attached locally · Rev ${revision} · ${updatedFile.uploader}`, ...(document.history ?? [])],
       };
       onDocumentUpdated(next, `${document.title} · ${updatedFile.name} attached locally for DEMO/browser session`);
-      setFileMessage("File Attached & Verified (Private Storage Ready)"); setFileInputKey((value) => value + 1);
+      setFileMessage("File Attached & Verified (stored separately in this browser)"); setFileInputKey((value) => value + 1);
     } catch (error) { setFileState("error"); setUploadProgress(0); setFileMessage(error instanceof Error ? error.message : "Attachment could not be completed."); }
   };
   const upload = async (file: File) => {
@@ -9894,7 +9899,7 @@ function DocumentDetail({
                   {fileState === "uploading" && <div className="mt-3" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Securing & Verifying SHA-256 Hash… {uploadProgress}%</p></div>}
                   {fileMessage && <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-moss"}`}>{fileMessage}</p>}
                   <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-background">
-                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}{file.checksum ? ` · SHA-256 ${file.checksum.slice(0, 16)}…` : ""}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { const anchor = window.document.createElement("a"); anchor.href = file.encoding === "text" ? URL.createObjectURL(new Blob([file.content], { type: file.type })) : file.content; anchor.download = file.name; anchor.click(); if (file.encoding === "text") window.setTimeout(() => URL.revokeObjectURL(anchor.href), 0); }} /><label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label><Action label="Archive" onClick={() => { const next = { ...document, localFiles: localFiles.filter((item) => item.id !== file.id), history: [`${now()} · ${file.name} archived from browser-local revision history`, ...(document.history ?? [])] }; onDocumentUpdated(next, `${document.title} · ${file.name} archived`); }} /></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
+                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}{file.checksum ? ` · SHA-256 ${file.checksum.slice(0, 16)}…` : ""}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { void downloadLocalControlledFile(file).catch((error) => { setFileState("error"); setFileMessage(error instanceof Error ? error.message : "Download is unavailable."); }); }} /><label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label><Action label="Archive" onClick={() => { void removeLocalAttachment(file.id); const next = { ...document, localFiles: localFiles.filter((item) => item.id !== file.id), history: [`${now()} · ${file.name} archived from browser-local revision history`, ...(document.history ?? [])] }; onDocumentUpdated(next, `${document.title} · ${file.name} archived`); }} /></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
                   </div>
                 </>
               )}
@@ -9947,19 +9952,29 @@ function DocumentDetail({
 function FilePreview({ file, formatLabel, onClose }: { file: LocalControlledFile; formatLabel: (file: LocalControlledFile) => string; onClose: () => void }) {
   const [archive, setArchive] = useState<string[] | null>(null);
   const [message, setMessage] = useState("");
-  const inspectZip = () => {
+  const [payload, setPayload] = useState<Blob | null>(null);
+  useEffect(() => {
+    if (file.storage !== "indexeddb") return;
+    getLocalAttachment(file.id).then(setPayload).catch((error) => setMessage(error instanceof Error ? error.message : "This attachment could not be opened."));
+  }, [file.id, file.storage]);
+  const inspectZip = async () => {
     try {
-      const encoded = file.content.split(",")[1];
-      if (!encoded) throw new Error("This archive has no local binary payload.");
-      const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+      const data = payload ? new Uint8Array(await payload.arrayBuffer()) : (() => {
+        const encoded = file.content?.split(",")[1];
+        if (!encoded) throw new Error("This archive has no local binary payload.");
+        return Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+      })();
+      const bytes = data;
       const files = unzipSync(bytes);
       setArchive(Object.entries(files).map(([name, body]) => `${name} · ${body.byteLength} bytes`).slice(0, 250));
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to inspect this ZIP archive."); }
   };
   const isZip = /\.zip$/i.test(file.name);
   const isStep = /\.(stp|step)$/i.test(file.name);
-  const text = file.encoding === "text" ? file.content : isStep ? "3D STEP model preview is not rendered in-browser. Download the verified package for CAD inspection." : "Binary technical file preview is not available in-browser.";
-  return <Modal title={`Preview · ${file.name}`} onClose={onClose} wide><div className="mb-4 flex flex-wrap items-center gap-2"><span className="rounded border border-steel/35 bg-secondary px-2 py-1 font-mono text-xs text-steel">{formatLabel(file)}</span><span className="rounded border border-border bg-panel px-2 py-1 font-mono text-xs">Rev {file.revision}</span>{isZip && <Action label="Inspect ZIP contents" onClick={inspectZip} />}</div>{file.type === "application/pdf" && file.encoding === "data-url" ? <iframe title={file.name} src={file.content} className="h-[55vh] w-full border border-border" /> : archive ? <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{archive.join("\n")}</pre> : <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{text}</pre>}{message && <p className="mt-3 text-sm text-danger">{message}</p>}</Modal>;
+  const previewUrl = payload ? URL.createObjectURL(payload) : file.content;
+  useEffect(() => () => { if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+  const text = file.encoding === "text" ? file.content : isStep ? "3D STEP model preview is not rendered in-browser. Download the verified package for CAD inspection." : payload ? "Binary technical file preview is not available in-browser." : "Loading browser-local attachment…";
+  return <Modal title={`Preview · ${file.name}`} onClose={onClose} wide><div className="mb-4 flex flex-wrap items-center gap-2"><span className="rounded border border-steel/35 bg-secondary px-2 py-1 font-mono text-xs text-steel">{formatLabel(file)}</span><span className="rounded border border-border bg-panel px-2 py-1 font-mono text-xs">Rev {file.revision}</span>{isZip && <Action label="Inspect ZIP contents" onClick={() => void inspectZip()} />}</div>{file.type === "application/pdf" && previewUrl ? <iframe title={file.name} src={previewUrl} className="h-[55vh] w-full border border-border" /> : archive ? <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{archive.join("\n")}</pre> : <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap border border-border bg-panel p-4 font-mono text-xs leading-6 text-foreground">{text}</pre>}{message && <p className="mt-3 text-sm text-danger">{message}</p>}</Modal>;
 }
 type PrintableDocument = {
   title: string;
