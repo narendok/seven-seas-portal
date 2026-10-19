@@ -49,6 +49,8 @@ export type AreaId =
   | "home"
   | "sales"
   | "ehw"
+  | "efw"
+  | "csw"
   | "esw"
   | "mech"
   | "pur"
@@ -156,7 +158,9 @@ const DEFAULT_FAVORITES_BY_ROLE: Record<string, string[]> = {
   sales: ["dept-mywork", "sales-opps", "sales-customers", "dept-projects", "dept-drive"],
   qa: ["dept-mywork", "qa-hub", "qa-dvpr", "dept-projects", "dept-drive"],
   mech: ["dept-mywork", "mech-hub", "mech-cad", "dept-projects"],
-  esw: ["dept-mywork", "esw-hub", "dept-projects", "dept-drive"],
+  efw: ["dept-mywork", "efw-hub", "dept-projects", "dept-drive"],
+  csw: ["dept-mywork", "csw-hub", "dept-projects", "dept-drive"],
+  esw: ["dept-mywork", "efw-hub", "dept-projects", "dept-drive"],
   emf: ["dept-mywork", "emf-hub", "dept-projects"],
   tst: ["dept-mywork", "tst-hub", "dept-projects"],
   fin: ["dept-mywork", "fin-hub", "fin-customers", "dept-projects"],
@@ -417,13 +421,22 @@ export function RoleAwareSidebar({
             onClick: () => handleItemClick(() => onNavigate("ehw")),
           },
           {
-            id: "adm-esw",
-            label: "Firmware & Software (ESW)",
-            shortLabel: "ESW",
+            id: "adm-efw",
+            label: "Embedded Firmware (EFW)",
+            shortLabel: "EFW",
             icon: Terminal,
-            badge: openTaskCounts["esw"],
-            isActive: activeArea === "esw",
-            onClick: () => handleItemClick(() => onNavigate("esw")),
+            badge: openTaskCounts["efw"] ?? openTaskCounts["esw"],
+            isActive: activeArea === "efw" || activeArea === "esw",
+            onClick: () => handleItemClick(() => onNavigate("efw")),
+          },
+          {
+            id: "adm-csw",
+            label: "Cloud & Application Software (CSW)",
+            shortLabel: "CSW",
+            icon: Laptop,
+            badge: openTaskCounts["csw"],
+            isActive: activeArea === "csw",
+            onClick: () => handleItemClick(() => onNavigate("csw")),
           },
           {
             id: "adm-mech",
@@ -938,6 +951,45 @@ export function RoleAwareSidebar({
               id: "mech-cad",
               label: "STEP Clearance & 3D CAD",
               shortLabel: "3D STEP",
+              icon: Layers,
+              isActive: false,
+              onClick: () => handleItemClick(() => onOpenDrive?.()),
+            },
+          ];
+        case "efw":
+        case "esw":
+          return [
+            {
+              id: "efw-hub",
+              label: "Firmware Requirements & RTOS Hub",
+              shortLabel: "EFW Hub",
+              icon: Terminal,
+              isActive: activeArea === "efw" || activeArea === "esw",
+              onClick: () => handleItemClick(() => onNavigate("efw")),
+            },
+            {
+              id: "efw-fota",
+              label: "FOTA & Dual-Bank Bootloader",
+              shortLabel: "FOTA",
+              icon: ShieldAlert,
+              isActive: false,
+              onClick: () => handleItemClick(() => onOpenDrive?.()),
+            },
+          ];
+        case "csw":
+          return [
+            {
+              id: "csw-hub",
+              label: "Software Requirements & Telematics Hub",
+              shortLabel: "CSW Hub",
+              icon: Laptop,
+              isActive: activeArea === "csw",
+              onClick: () => handleItemClick(() => onNavigate("csw")),
+            },
+            {
+              id: "csw-ble",
+              label: "Mobile BLE 5.2 & Telemetry Stacks",
+              shortLabel: "BLE & Cloud",
               icon: Layers,
               isActive: false,
               onClick: () => handleItemClick(() => onOpenDrive?.()),

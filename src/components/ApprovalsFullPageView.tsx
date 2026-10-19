@@ -836,6 +836,8 @@ export function ApprovalsFullPageView({
                   <option value="PUR">PUR (Purchasing & Supply Chain Head)</option>
                   <option value="FIN">FIN (Finance Controller)</option>
                   <option value="EHW">EHW (Hardware Engineering Lead)</option>
+                  <option value="EFW">EFW (Embedded Firmware Lead)</option>
+                  <option value="CSW">CSW (Cloud & Application Software Lead)</option>
                   <option value="ESW">ESW (Firmware & Software Lead)</option>
                   <option value="EMF">EMF (Manufacturing Lead)</option>
                   <option value="SAL">SAL (Sales Lead)</option>

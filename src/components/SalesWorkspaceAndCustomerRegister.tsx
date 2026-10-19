@@ -294,8 +294,8 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     targetClosureDate: "2026-11-15",
     salesOwner: "Riley Stone",
     status: "Baseline Locked",
-    feasibilitySignedDepts: ["EHW", "ESW", "MECH", "PUR", "QA", "FIN"],
-    totalFeasibilityDepts: 6,
+    feasibilitySignedDepts: ["EHW", "EFW", "CSW", "MECH", "PUR", "QA", "FIN"],
+    totalFeasibilityDepts: 7,
     rfqReference: "HLPL-AI4T-SAL-SOR-01",
     linkedProjectCode: "HLPL-AI4T-01",
     createdAt: "2026-09-12",
@@ -315,8 +315,8 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     targetClosureDate: "2026-11-30",
     salesOwner: "Riley Stone",
     status: "Sent for Feasibility",
-    feasibilitySignedDepts: ["EHW", "ESW", "PUR", "FIN"],
-    totalFeasibilityDepts: 6,
+    feasibilitySignedDepts: ["EHW", "EFW", "CSW", "PUR", "FIN"],
+    totalFeasibilityDepts: 7,
     rfqReference: "HLPL-SLCT-SAL-SOR-01",
     linkedProjectCode: "HLPL-SLCT-01",
     createdAt: "2026-09-20",
@@ -337,7 +337,7 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     salesOwner: "Riley Stone",
     status: "Pending Enquiry",
     feasibilitySignedDepts: [],
-    totalFeasibilityDepts: 6,
+    totalFeasibilityDepts: 7,
     createdAt: "2026-10-02",
     updatedAt: "2026-10-04",
   },
@@ -355,8 +355,8 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     targetClosureDate: "2026-12-20",
     salesOwner: "Riley Stone",
     status: "Sent for Feasibility",
-    feasibilitySignedDepts: ["EHW", "ESW", "MECH", "PUR", "QA", "FIN"],
-    totalFeasibilityDepts: 6,
+    feasibilitySignedDepts: ["EHW", "EFW", "CSW", "MECH", "PUR", "QA", "FIN"],
+    totalFeasibilityDepts: 7,
     rfqReference: "HLPL-ALFL-SAL-SOR-01",
     linkedProjectCode: "HLPL-BCU-02",
     createdAt: "2026-10-06",
@@ -603,7 +603,8 @@ export function SendForFeasibilityModal({
 }) {
   const [selectedDepts, setSelectedDepts] = useState<string[]>([
     "EHW",
-    "ESW",
+    "EFW",
+    "CSW",
     "MECH",
     "PUR",
     "QA",
@@ -625,12 +626,13 @@ export function SendForFeasibilityModal({
   const [selectedEnclosureId, setSelectedEnclosureId] = useState<string>("ENC-LIB-001");
 
   const availableDepts = [
-    { code: "EHW", name: "Embedded Hardware (Avery Vale)", desc: "MCU, schematic, RF, TVS & 4-layer PCB" },
-    { code: "ESW", name: "Firmware & Software (Devon Lane)", desc: "FreeRTOS, CAN J1939, AIS-140 MQTT, OTA" },
-    { code: "MECH", name: "Mechanical Eng. (Samira Holt)", desc: "IP67 enclosure, thermal dissipation & connectors" },
-    { code: "PUR", name: "Purchasing & SCM (Morgan Reed)", desc: "BOM costing, AEC-Q parts & supplier lead times" },
-    { code: "QA", name: "Quality Assurance (Jordan Blake)", desc: "DVP&R matrix, AIS-140 test jigs & environmental" },
-    { code: "FIN", name: "Accounts & Finance (Priya Voss)", desc: "Gross margin, NRE tooling recovery & tax close" },
+    { code: "EHW", name: "Embedded Hardware (Avery Vale)", desc: "Hardware PRS (EHW-PRS-01), MCU, schematic, RF, TVS & 4-layer PCB" },
+    { code: "EFW", name: "Embedded Firmware (Devon Lane)", desc: "Firmware FRS (EFW-FRS-01), RTOS kernel, HAL drivers, CAN J1939 & FOTA" },
+    { code: "CSW", name: "Cloud & App Software (Maya Lin)", desc: "Software SRS (CSW-SRS-01), AIS-140 MQTT parser, BLE 5.2 mobile & PC tools" },
+    { code: "MECH", name: "Mechanical Eng. (Samira Holt)", desc: "Mechanical MRS (MECH-MRS-01), IP67 enclosure, thermal CAD & connectors" },
+    { code: "PUR", name: "Purchasing & SCM (Morgan Reed)", desc: "Sourcing SRS (PUR-SRS-01), BOM costing, AEC-Q parts & supplier lead times" },
+    { code: "QA", name: "Quality Assurance (Jordan Blake)", desc: "Quality QRS (QA-QRS-01), DVP&R matrix, iCAT AIS-140 & NABL battery tests" },
+    { code: "FIN", name: "Accounts & Finance (Priya Voss)", desc: "Financial CFS (FIN-CFS-01), gross margin, NRE tooling & cost target" },
   ];
 
   const selectedPcbIds =
@@ -1586,7 +1588,7 @@ export function SalesEnquiriesAndOpportunities({
                             <span className="text-[11px] text-muted-foreground">HOD Sign-offs</span>
                           </div>
                           <div className="flex items-center gap-1 mt-0.5">
-                            {["EHW", "ESW", "MECH", "PUR", "QA", "FIN"].map((d) => (
+                            {["EHW", "EFW", "CSW", "MECH", "PUR", "QA", "FIN"].map((d) => (
                               <span
                                 key={d}
                                 className={`rounded px-1 text-[9px] font-mono font-semibold ${

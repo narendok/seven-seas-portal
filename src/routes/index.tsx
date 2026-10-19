@@ -33,6 +33,8 @@ import {
   UserRoundCog,
   UsersRound,
   Wrench,
+  Terminal,
+  Laptop,
   X,
   FolderOpen,
   Eye,
@@ -126,6 +128,8 @@ type AreaId =
   | "home"
   | "sales"
   | "ehw"
+  | "efw"
+  | "csw"
   | "esw"
   | "mech"
   | "pur"
@@ -381,7 +385,9 @@ const personas: Persona[] = [
   { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
   { id: "sales", label: "SAL Lead", person: "Priya Sharma · Sales & BD", departmentId: "sales", kind: "lead" },
   { id: "ehw", label: "EHW Lead", person: "Avery Vale · Embedded Hardware", departmentId: "ehw", kind: "lead" },
-  { id: "esw", label: "ESW Lead", person: "Devon Lane · Firmware & SW", departmentId: "esw", kind: "lead" },
+  { id: "efw", label: "EFW Lead", person: "Devon Lane · Embedded Firmware", departmentId: "efw", kind: "lead" },
+  { id: "csw", label: "CSW Lead", person: "Maya Lin · Cloud & Application SW", departmentId: "csw", kind: "lead" },
+  { id: "esw", label: "ESW Lead", person: "Devon Lane · Embedded Firmware", departmentId: "efw", kind: "lead" },
   { id: "mech", label: "MECH Lead", person: "Samira Holt · Mechanical Engineering", departmentId: "mech", kind: "lead" },
   { id: "pur", label: "PUR Lead", person: "Morgan Reed · Purchasing & SCM", departmentId: "pur", kind: "lead" },
   { id: "qa", label: "QA Lead", person: "Jordan Blake · Quality Assurance", departmentId: "qa", kind: "lead" },
@@ -398,21 +404,23 @@ export function normalizePersonaId(role: string | null | undefined): string {
   const r = role.toLowerCase().trim();
   if (r === "sal" || r === "sales") return "sales";
   if (r === "hr" || r === "hrops") return "hrops";
+  if (r === "esw" || r === "efw" || r === "fw") return "efw";
+  if (r === "csw" || r === "sw") return "csw";
   return r;
 }
 
 const ai4tStages = [
   ["Stage 1", "Client & Sales Intake", "SOR HLPL-AI4T-SAL-SOR-01 and Mutual NDA HLPL-AI4T-SAL-mNDA-01 are recorded."],
-  ["Stage 2", "Feasibility & Contract Review", "EHW, ESW, MECH, PUR and QA feasibility inputs compile Contract Review HLPL/F/MKT/01."],
-  ["Stage 3", "Requirement & Commercial Lock", "Frozen PRS HLPL-AI4T-EHW-PRS-01 and quotation HLPL-AI4T-SAL-QUO-01 are generated."],
-  ["Stage 4", "Design & Development PoC", "SCH-01, preliminary BOM, MCU bring-up and CAN J1939 firmware PoC are checked."],
+  ["Stage 2", "Feasibility & Contract Review", "EHW, EFW, CSW, MECH, PUR, QA and FIN feasibility requirement sheets compile Contract Review HLPL/F/MKT/01."],
+  ["Stage 3", "Requirement & Commercial Lock", "Consolidated Requirements Package (EHW-PRS-01, EFW-FRS-01, CSW-SRS-01, MECH-MRS-01, QA-QRS-01) and quotation HLPL-AI4T-SAL-QUO-01 are generated."],
+  ["Stage 4", "Design & Development PoC", "SCH-01, preliminary BOM, MCU RTOS bring-up (EFW) and CAN/telematics software stack (CSW) are checked."],
   ["Stage 5", "Pilot Build & SMT Setup", "SMT Line 2 thermal profile, EMF-CP-01 and prototype tooling are confirmed."],
   ["Stage 6", "DVP&R Pre-Compliance", "QA-DVP-01 records 18 illustrative electrical and environmental verification checks."],
   ["Stage 7", "Production Release & PPAP", "Gerber Rev B, EHW-DFMEA-01 and supplier PPAP Level 3 package are released."],
   ["Stage 8", "Type Approval & Production Authorization", "Illustrative TAC evidence and the 50,000-unit authorization are human-reviewed."],
   ["Stage 9", "PDI, Field Mounting & Commercial Invoice", "TST-PDI-01, SIT Service Field Installation & Vehicle Mounting Checklist (HLPL-OBD4-SIT-MNT-01), and FIN-INV-01 complete the full deployment cycle."],
 ] as const;
-const raciDepartments = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "TST", "FIN", "SIT", "HR"] as const;
+const raciDepartments = ["SAL", "EHW", "EFW", "CSW", "MECH", "PUR", "QA", "EMF", "TST", "FIN", "SIT", "HR"] as const;
 const projectDocumentProfiles: Record<string, ProjectDocumentProfile> = {
   "HLPL-OBD4-01": { name: "4G OBD-II Smart Telematics Tracker & Fleet Gateway", customer: "Ashok Leyland Limited · Fleet Solutions Division, Chennai", contact: "Mr. K. Ramanathan · General Manager Telematics", quantity: "25,000 units / year", techSpec: "4G Cat-1 · J1962 OBD-II · Dual CAN · GNSS · BLE 5.2 Sensor Hub", commercialValue: "₹11,25,00,000 · $1.35M", environmental: "12V / 24V (9V–36V) · −40°C to +85°C · IP54 / IP67 Mated", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · ISO 15031 / SAE J1962 · RoHS" },
   "HLPL-AI4T-01": { name: "Tata Ace EV 4G Telematics Gateway", customer: "Tata Motors Limited · EV Fleet Division, Pune", contact: "Mr. Rajesh Sharma · Lead D&D EV", quantity: "50,000 units / year", techSpec: "4G Cat-1 · IP67 · CAN J1939 · Dual SIM · GNSS", commercialValue: "₹20,33,50,000 · $2.45M", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · RoHS / REACH" },
@@ -693,6 +701,24 @@ const areas = [
     icon: Wrench,
     recordType: "Hardware record",
     summary: "HW_01–HW_37, PRS, schematics, BOM and Gerber gates",
+  },
+  {
+    id: "efw" as const,
+    name: "Embedded Firmware Engineering",
+    navLabel: "Firmware Eng.",
+    short: "EFW",
+    icon: Terminal,
+    recordType: "Firmware release",
+    summary: "RTOS kernel, HAL, peripheral drivers, CAN/LIN stacks, bootloader, FOTA fail-safe",
+  },
+  {
+    id: "csw" as const,
+    name: "Cloud & Application Software",
+    navLabel: "Software Eng.",
+    short: "CSW",
+    icon: Laptop,
+    recordType: "Software package",
+    summary: "Telematics backend, MQTT/HTTP protocols, mobile BLE app, diagnostic GUI tools",
   },
   {
     id: "esw" as const,
