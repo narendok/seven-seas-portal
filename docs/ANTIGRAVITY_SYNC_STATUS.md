@@ -606,6 +606,8 @@ Projects pin the approved matrix version. Future changes are effective-dated and
   - `npm run build`: Vite / Nitro production build succeeded with exit code 0 (1.98s).
   - Localhost: Running live at `http://localhost:8080/`.
 
-## Local reconciliation — 19 October 2026
+## Local reconciliation & Active Roadmaps — 19 October 2026
 
-See [local implementation and acceptance evidence](evidence/LOCAL_MASTER_PLAN_RECONCILIATION_2026-10-19.md). Active FW/SW naming is implemented, TST retirement and historical preservation have local coverage, and further authenticated operational acceptance remains open. This working-tree increment is not pushed or deployed.
+- See [master_portal_and_mobile_comprehensive_plan_reviewed.md](master_portal_and_mobile_comprehensive_plan_reviewed.md) for the authoritative execution plan for Batches 3–6.
+- See [department_workspace_ui_refinement_plan.md](department_workspace_ui_refinement_plan.md) for the consolidated desktop workspace UI refinement plan across all 12 departments.
+- Working tree commit `8f014a8` incorporates Batch 2 (53/53 tests passing, clean build, 0 TS errors). Ready for remote git push.
