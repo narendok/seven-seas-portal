@@ -89,6 +89,7 @@ import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVP
 import { buildDocumentDraft, type DraftSource } from "@/lib/document-draft";
 import { assertApprovalDecision } from "@/lib/approval-workflow";
 import { commitLatestState, patchRecord } from "@/lib/portal-store";
+import { getLocalAttachment, migrateLegacyAttachment, removeLocalAttachment, saveLocalAttachment } from "@/lib/local-attachments";
 import { repairDemoState } from "@/lib/portal-hydration";
 import { approvalInDepartment, approvalScope, canDepartmentSign, departmentCode, projectReferences } from "@/lib/department-scope";
 import { ApprovalsFullPageView, type ApprovalRecord } from "@/components/ApprovalsFullPageView";
@@ -265,8 +266,9 @@ type LocalControlledFile = {
   uploadedAt: string;
   uploader: string;
   revision: string;
-  content: string;
-  encoding: "text" | "data-url";
+  content?: string | undefined;
+  encoding?: "text" | "data-url" | undefined;
+  storage: "indexeddb" | "legacy-localstorage";
   checksum?: string | undefined;
 };
 const inventorySeed = (): InventoryItem[] => [
@@ -1950,7 +1952,16 @@ const readPortal = (): PortalState => {
       const restored = demoPortal();
       return repairDemoState(hydrated, restored);
     }
-    return hydrated;
+    return {
+      ...hydrated,
+      documents: hydrated.documents.map((document) => ({
+        ...document,
+        localFiles: document.localFiles?.map((file) => ({
+          ...file,
+          storage: file.storage ?? "legacy-localstorage",
+        })),
+      })),
+    };
   } catch {
     return base;
   }
@@ -2089,11 +2100,13 @@ function Portal() {
     );
   const update = async (recipe: (state: PortalState) => PortalState): Promise<boolean> => {
     try {
-      const next = await commitLatestState(readPortal, state => window.localStorage.setItem(storeKey, JSON.stringify(state)), recipe, commit => navigator.locks ? navigator.locks.request(storeKey, commit) : Promise.resolve(commit()));
+      const save = (state: PortalState) => window.localStorage.setItem(storeKey, JSON.stringify(state));
+      const next = await commitLatestState(readPortal, save, recipe, commit => navigator.locks ? navigator.locks.request(storeKey, commit) : Promise.resolve(commit()));
       setPortal(next);
       return true;
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "The change could not be saved. Please retry.");
+      const quotaExceeded = error instanceof DOMException && (error.name === "QuotaExceededError" || error.code === 22);
+      setNotice(quotaExceeded ? "Browser record storage is full. File attachments are now kept separately; reload this page and try the action again." : error instanceof Error ? error.message : "The change could not be saved. Please retry.");
       return false;
     }
   };
