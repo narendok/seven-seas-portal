@@ -9068,15 +9068,19 @@ const formatLabel = (file: Pick<LocalControlledFile, "name" | "type">) => {
   return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
 };
 
-const downloadLocalControlledFile = (file: LocalControlledFile) => {
+const downloadLocalControlledFile = async (file: LocalControlledFile) => {
+  const blob = file.storage === "indexeddb" ? await getLocalAttachment(file.id) : null;
+  if (!blob && !file.content) throw new Error("This browser-local attachment is no longer available.");
   const anchor = window.document.createElement("a");
   anchor.href =
-    file.encoding === "text"
+    blob
+      ? URL.createObjectURL(blob)
+      : file.encoding === "text"
       ? URL.createObjectURL(new Blob([file.content], { type: file.type }))
-      : file.content;
+      : file.content ?? "";
   anchor.download = file.name;
   anchor.click();
-  if (file.encoding === "text") {
+  if (blob || file.encoding === "text") {
     window.setTimeout(() => URL.revokeObjectURL(anchor.href), 100);
   }
 };
@@ -9190,26 +9194,19 @@ function HardwareDeliverablesDrive({
       const checksum = await sha256(file);
       setUploadProgress(55);
 
-      const textLike = /^(text\/|application\/(json|csv))/.test(file.type) || /\.(json|csv|txt|log|md)$/i.test(file.name);
-      const content = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error("File read failed"));
-        reader.onload = () => resolve(String(reader.result ?? ""));
-        if (textLike) reader.readAsText(file);
-        else reader.readAsDataURL(file);
-      });
+      const id = createId();
+      await saveLocalAttachment(id, file);
       setUploadProgress(85);
 
       const localFile: LocalControlledFile = {
-        id: createId(),
+        id,
         name: file.name,
         type: file.type || "application/octet-stream",
         size: file.size,
         uploadedAt: new Date().toISOString(),
         uploader: "HOD Engineer · Lovable Cloud Storage",
         revision: "01",
-        content,
-        encoding: textLike ? "text" : "data-url",
+        storage: "indexeddb",
         checksum,
       };
 
@@ -9248,7 +9245,7 @@ function HardwareDeliverablesDrive({
       }
 
       setUploadProgress(100);
-      setUploadNotice(`✓ Upload Verified: ${file.name} (${formatBytes(file.size)}) stored with SHA-256 ${checksum.slice(0, 16)}…`);
+      setUploadNotice(`✓ Upload Verified: ${file.name} (${formatBytes(file.size)}) stored separately in this browser with SHA-256 ${checksum.slice(0, 16)}…`);
       window.setTimeout(() => {
         setIsUploading(false);
       }, 1500);
