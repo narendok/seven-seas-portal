@@ -1,3 +1,4 @@
+import { DepartmentProjectWorkspace } from "@/components/DepartmentProjectWorkspace";
 import { businessDate } from "@/lib/business-date";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -2915,13 +2916,20 @@ function Portal() {
                 onCreateTask={handleCreateCustomTask} onAddTeamMember={member => handleAddTeamMember({ ...member, area: persona.departmentId as TeamMember["area"] })}
               />
             </section>
-          ) : persona.kind === "lead" && view === "project" ? (
-            <section className="ops-section p-5 space-y-4">
-              <h1 className="text-xl font-semibold">{active.name} — Active Project Workspaces</h1>
-              <p className="text-sm text-muted-foreground">Projects linked to this department's work. Select a project to open its department contribution.</p>
-              {leadProjects.length === 0 && <p>No projects linked to this department's records.</p>}
-              {leadProjects.map(project => <button key={project.id} onClick={() => { setProjectScopes(current => ({ ...current, [active.id]: project.reference as ProjectScope })); navigate(active.id, "queue"); }} className="block w-full rounded-lg border border-border p-4 text-left hover:bg-secondary"><strong className="block">{project.title}</strong><span className="text-xs text-muted-foreground">{project.reference} · {project.status}</span></button>)}
-            </section>
+          ) : persona.kind === "lead" && (view === "project" || view === "queue" || view === "summary") ? (
+            <DepartmentProjectWorkspace key={persona.id}
+              departmentCode={active.short} departmentName={active.name} lead={leadName}
+              records={leadRecords} projects={leadProjects} documents={scopedDocuments}
+              approvals={portal.approvals.map(approvalScope).filter(approval => approvalInDepartment(approval, persona.departmentId))}
+              team={allTeamMembers.filter(member => member.area === persona.departmentId)}
+              projectScope={projectScopes[active.id] ?? "all"}
+              onProjectChange={scope => setProjectScopes(current => ({ ...current, [active.id]: scope as ProjectScope }))}
+              onCreateRecord={() => handleOpenCreate(active.recordType, (projectScopes[active.id] ?? "all") === "all" ? undefined : { projectCode: projectScopes[active.id] as string })}
+              onOpenRecord={id => { const record = leadRecords.find(item => item.id === id); if (record) openRecord(record); }}
+              onOpenDocument={id => { const document = scopedDocuments.find(item => item.id === id); if (document) openDocument(document); }}
+              onUpdateTask={(id,patch,action) => { void updateTask(id, { ...(patch.fields ? { fields: patch.fields } : {}), ...(patch.status ? { status: patch.status } : {}) }, action); }}
+              onCreateTask={handleCreateCustomTask}
+            />
           ) : view === "pmss" ? (
               <PMSSWorkspace
               portal={portal}

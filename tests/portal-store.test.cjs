@@ -78,3 +78,24 @@ test('business due dates use the India calendar across the UTC midnight boundary
   assert.equal(taskLane(task('In review', {dueDate: today, workStatus: 'In progress'}), today), 'review');
   for (const status of ['Approved', 'Released']) assert.equal(taskLane(task(status, {dueDate: today, workStatus: 'In progress'}), today), 'completed');
 });
+
+test('workspace project selection scopes records by code or UUID and documents by explicit source links', () => {
+  const { recordsForProject, documentsForProject } = loadSource('project-workspace');
+  const project = { id: 'project-uuid-a', reference: 'CUSTOM-A' };
+  const rows = [
+    {id:'a',reference:'TASK-A',type:'Task',fields:{projectId:'project-uuid-a'}},
+    {id:'b',reference:'RECORD-B',type:'Record',fields:{projectCode:'CUSTOM-A'}},
+    {id:'c',reference:'TASK-C',type:'Task',fields:{projectCode:'CUSTOM-B'}},
+  ];
+  const selected = recordsForProject(rows, project);
+  assert.deepEqual(selected.map(row => row.id), ['a','b']);
+  assert.deepEqual(recordsForProject(rows, undefined), []);
+  const docs = [
+    {id:'direct',linkedRecordRefs:['CUSTOM-A']},
+    {id:'source',linkedRecordRefs:['TASK-A']},
+    {id:'uuid',linkedRecordRefs:['project-uuid-a']},
+    {id:'other',linkedRecordRefs:['TASK-C']},
+    {id:'unlinked'},
+  ];
+  assert.deepEqual(documentsForProject(docs, selected, project).map(doc => doc.id), ['direct','source','uuid']);
+});

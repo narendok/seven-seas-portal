@@ -1025,7 +1025,7 @@ export function RoleAwareSidebar({
         items: [
           {
             id: "dept-projects",
-            label: "Active Project Workspaces",
+            label: "Department Project Workspace",
             shortLabel: "Projects",
             icon: Briefcase,
             isActive: view === "project",

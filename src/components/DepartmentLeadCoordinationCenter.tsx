@@ -82,6 +82,8 @@ interface DepartmentLeadCoordinationCenterProps {
     notes: string;
   }) => boolean | void | Promise<boolean | void>;
   onAddTeamMember?: ((member: TeamMember) => void) | undefined;
+  recordsAreScoped?: boolean;
+  hideProjectSelector?: boolean;
   initialAssignee?: string;
   onStartTask?: (taskId: string) => void;
   onOpenTask?: (task: TaskRecord) => void;
@@ -144,6 +146,8 @@ export function DepartmentLeadCoordinationCenter({
   onUpdateTaskStatus,
   onCreateTask,
   onAddTeamMember,
+  recordsAreScoped = false,
+  hideProjectSelector = false,
   initialAssignee = "ALL",
   onStartTask,
   onOpenTask,
@@ -187,7 +191,7 @@ export function DepartmentLeadCoordinationCenter({
   const filteredTasks = useMemo(() => {
     return deptTasks.filter((task) => {
       // Project scope
-      if (projectScope !== "all") {
+      if (!recordsAreScoped && projectScope !== "all") {
         const pId = task.fields["projectId"] ?? task.fields["projectCode"] ?? task.reference;
         if (!pId.includes(projectScope) && task.reference !== projectScope) {
           return false;
@@ -221,7 +225,7 @@ export function DepartmentLeadCoordinationCenter({
       const priority = { Critical: 0, High: 1, Normal: 2, Low: 3 };
       return sortBy === "priority" ? priority[a.priority] - priority[b.priority] || a.title.localeCompare(b.title) : (a.fields["dueDate"] || "9999-12-31").localeCompare(b.fields["dueDate"] || "9999-12-31") || priority[a.priority] - priority[b.priority];
     });
-  }, [deptTasks, projectScope, statusFilter, assigneeFilter, searchQuery, departmentLead, sortBy]);
+  }, [deptTasks, projectScope, statusFilter, assigneeFilter, searchQuery, departmentLead, sortBy, recordsAreScoped]);
 
   // Compute workload per team member
   const memberWorkloads = useMemo(() => {
@@ -309,7 +313,7 @@ export function DepartmentLeadCoordinationCenter({
 
           {/* Quick Scope Selector & Create Task CTA */}
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5">
+            <div hidden={hideProjectSelector} className={hideProjectSelector ? "hidden" : "flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5"}>
               <FolderKanban className="size-3.5 text-muted-foreground" />
               <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                 Project Scope:
@@ -363,7 +367,7 @@ export function DepartmentLeadCoordinationCenter({
               </span>
             </button>
 
-            <button
+            {!hideProjectSelector && (<button
               onClick={() => setActiveTab("projects")}
               className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
                 activeTab === "projects"
@@ -380,9 +384,9 @@ export function DepartmentLeadCoordinationCenter({
               >
                 {projects.length}
               </span>
-            </button>
+            </button>)}
 
-            <button
+            {!hideProjectSelector && (<button
               onClick={() => setActiveTab("teams")}
               className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
                 activeTab === "teams"
@@ -399,7 +403,7 @@ export function DepartmentLeadCoordinationCenter({
               >
                 {teamMembers.length}
               </span>
-            </button>
+            </button>)}
           </div>
 
           {/* View Mode Toggle when on Tasks tab */}
