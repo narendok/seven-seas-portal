@@ -93,6 +93,7 @@ import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVP
 const ProjectLifecyclePlayerAndDetail = lazy(() => import("@/components/ProjectLifecyclePlayerAndDetail").then(module => ({ default: module.ProjectLifecyclePlayerAndDetail })));
 import { draftType, buildDocumentDraft, type DraftSource } from "@/lib/document-draft";
 import { assertApprovalDecision } from "@/lib/approval-workflow";
+import { verifyStageTransition } from "@/lib/stage-gates";
 import { commitLatestState, patchRecord } from "@/lib/portal-store";
 import { getLocalAttachment, migrateLegacyAttachment, removeLocalAttachment, saveLocalAttachment } from "@/lib/local-attachments";
 import { migratePortalState, repairDemoState } from "@/lib/portal-hydration";
@@ -132,6 +133,7 @@ import {
   deriveRaciMatrixFromChronicles,
   deriveDeliverablesForStage,
 } from "@/lib/department-chronicles";
+import { DocumentStandardViewer } from "@/components/DocumentStandardViewer";
 
 type AreaId =
   | "home"
@@ -1081,11 +1083,11 @@ function defaultTemplateSettings(): TemplateSettings {
 }
 
 function defaultTemplateBodies() {
-  return Object.fromEntries(autoDraftTemplates.map(([title]) => [title, templateBlueprint(title)]));
+  return Object.fromEntries(autoDraftTemplates.map(([title, id]) => [title, templateBlueprint(title, id)]));
 }
 
-function templateBlueprint(title: string) {
-  const draft = buildDocumentDraft(title, "");
+function templateBlueprint(title: string, id: string = "") {
+  const draft = buildDocumentDraft(title, id);
   return draft.supported ? draft.sections.map(section => section.title + ": " + section.rows.map(row => row[0]).join(", ")).join("\n") : "Controlled source information and an approved document-specific format are required. No specifications or approvals are inferred.";
 }
 
@@ -3929,8 +3931,22 @@ function Portal() {
           onClose={() => setAi4tOpen(false)}
           onAdvance={() => {
             if (!portal.demoLoaded) { announce("Lifecycle walkthrough is available only in DEMO. Production gate progression requires the verified authenticated workflow contract."); return; }
+            const targetStage = Math.min(ai4tSimulation.stage + 1, ai4tStages.length - 1);
+            const gateCheck = verifyStageTransition({
+              targetStageIndex: targetStage,
+              currentStageIndex: ai4tSimulation.stage,
+              projectId: selectedProjectId,
+              documents: portal.documents,
+              records: portal.records,
+              isDemo: portal.demoLoaded,
+            });
+            if (!gateCheck.allowed) {
+              announce(gateCheck.reason ?? "Stage advancement blocked by automotive stage gate freeze.");
+              log("Automotive Gate Interlock blocked advance", gateCheck.reason ?? gateCheck.gateName);
+              return;
+            }
             setAi4tSimulation((state) => {
-              const stage = Math.min(state.stage + 1, ai4tStages.length - 1);
+              const stage = targetStage;
               const entry = ai4tStages[stage] ?? ai4tStages[0];
               if (!entry) return state;
               const pinnedChronicles = resolveProjectChronicles(portal.responsibilityVersions, portal.records.find(record => record.type === "Project" && record.reference === selectedProjectId)?.fields["responsibilityVersion"], portal.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES);
@@ -3943,6 +3959,19 @@ function Portal() {
           }}
           onJump={(stage) => {
             if (!portal.demoLoaded) { announce("Lifecycle walkthrough is available only in DEMO. Production gate progression requires the verified authenticated workflow contract."); return; }
+            const gateCheck = verifyStageTransition({
+              targetStageIndex: stage,
+              currentStageIndex: ai4tSimulation.stage,
+              projectId: selectedProjectId,
+              documents: portal.documents,
+              records: portal.records,
+              isDemo: portal.demoLoaded,
+            });
+            if (!gateCheck.allowed) {
+              announce(gateCheck.reason ?? "Stage transition blocked by automotive stage gate freeze.");
+              log("Automotive Gate Interlock blocked jump", gateCheck.reason ?? gateCheck.gateName);
+              return;
+            }
             const entry = ai4tStages[stage] ?? ai4tStages[0];
             if (!entry) return;
             setAi4tSimulation((state) => ({ stage, history: [`${now()} · Jumped to ${entry[0]}`, ...state.history] }));
@@ -4416,9 +4445,16 @@ function Ai4tLifecycleHub({
             </div>
             <section className="grid gap-2 sm:grid-cols-3">
         {ai4tStages.map(([stage, title], index) => {
-          const isSchematicPrereqMet = simulation.stage >= 3;
-          const isBlocked = (index === 4 || index === 6 || index === 7 || index === 8) && !isSchematicPrereqMet;
+          const gateCheck = verifyStageTransition({
+            targetStageIndex: index,
+            currentStageIndex: simulation.stage,
+            projectId,
+            documents,
+            isDemo: true,
+          });
+          const isBlocked = !gateCheck.allowed;
           const canJumpToStage = persona.kind === "admin";
+          const isSchematicPrereqMet = simulation.stage >= 3;
 
           return (
             <div
@@ -4428,7 +4464,7 @@ function Ai4tLifecycleHub({
               onClick={() => {
                 if (!canJumpToStage) return;
                 if (isBlocked) {
-                  alert(`AUTOMOTIVE GATE INTERLOCK ACTIVE:\n\nCannot advance to ${stage}: ${title}.\n\nMandatory Prerequisite "Stage 4 Hardware Schematics (EHW-SCH-01)" must be completed and signed off by the Embedded Hardware Lead before Pilot Integration or Production Release can proceed.`);
+                  alert(`AUTOMOTIVE GATE INTERLOCK ACTIVE:\n\nCannot advance to ${stage}: ${title}.\n\n${gateCheck.reason}`);
                   return;
                 }
                 onJump(index);
@@ -4643,18 +4679,61 @@ function SmartNextStep({
 }
 
 const autoDraftTemplates = [
+  // Commercial & Sales (SAL)
+  ["Customer Enquiry Register", "HLPL-SLCT-SAL-ENQ-01", "SAL"],
   ["Customer SOR", "HLPL-SLCT-SAL-SOR-01", "SAL"],
   ["Mutual NDA", "HLPL-SLCT-SAL-mNDA-01", "SAL"],
   ["Commercial Quotation", "HLPL-SLCT-SAL-QUO-01", "SAL"],
   ["Contract Review Record", "HLPL/F/MKT/01", "SAL"],
+
+  // Hardware Engineering (EHW)
   ["Product Requirement Spec", "HLPL-SLCT-EHW-PRS-01", "EHW"],
   ["Production BOM Cost Tracker", "HLPL-SLCT-EHW-BOM-01", "EHW"],
   ["Hardware DFMEA", "HLPL-SLCT-EHW-DFMEA-01", "EHW"],
-  ["Manufacturing Process Flow & Control Plan", "HLPL-SLCT-EMF-CP-01", "EMF"],
+
+  // Embedded Firmware (FW)
+  ["Firmware Requirements Spec", "HLPL-SLCT-FW-FRS-01", "FW"],
+
+  // Cloud & Application Software (SW)
+  ["Cloud Software Requirements Spec", "HLPL-SLCT-SW-SRS-01", "SW"],
+
+  // Mechanical Engineering (MECH)
+  ["Mechanical Requirements Spec", "HLPL-SLCT-MECH-MRS-01", "MECH"],
+
+  // Purchasing & Sourcing (PUR)
+  ["Component Sourcing Feasibility Matrix", "HLPL-SLCT-PUR-SRS-01", "PUR"],
+
+  // Quality Assurance & APQP (QA)
+  ["Quality Requirements & DVP Matrix", "HLPL-SLCT-QA-QRS-01", "QA"],
   ["DVP&R Verification Plan", "HLPL-SLCT-QA-DVP-01", "QA"],
+  ["PPAP Submission Dossier", "HLPL-SLCT-QA-PPAP-01", "QA"],
+  ["Part Submission Warrant", "HLPL-SLCT-QA-PSW-01", "QA"],
+  ["8D Corrective Action Report", "HLPL-SLCT-QA-8D-01", "QA"],
+  ["Nonconformance Report", "HLPL-SLCT-QA-NCR-01", "QA"],
+
+  // Electronics Manufacturing & Box-Build (EMF)
+  ["Electronics Mfg Process Requirements", "HLPL-SLCT-EMF-MPR-01", "EMF"],
+  ["Manufacturing Process Flow & Control Plan", "HLPL-SLCT-EMF-CP-01", "EMF"],
+  ["Process Failure Mode & Effects Analysis", "HLPL-SLCT-EMF-PFMEA-01", "EMF"],
   ["Pre-Dispatch Inspection Report", "HLPL-SLCT-EMF-PDI-01", "EMF"],
+
+  // Mechanical Manufacturing & Tooling (MMF)
+  ["Mechanical Mfg Process Requirements", "HLPL-SLCT-MMF-MPR-01", "MMF"],
+
+  // Finance & Accounts (FIN)
+  ["Financial Feasibility & Cost Sheet", "HLPL-SLCT-FIN-CFS-01", "FIN"],
   ["Commercial Tax Invoice", "HLPL-SLCT-FIN-INV-01", "FIN"],
+
+  // System Integration & Testing (SIT)
+  ["System Integration & Service Feasibility", "HLPL-SLCT-SIT-SRS-01", "SIT"],
+
+  // HR & Operations (HR/OPS)
+  ["Capacity & Competency Feasibility Sheet", "HLPL-SLCT-HROPS-CRS-01", "HR/OPS"],
   ["Annual Skill Matrix", "HLPL/F/HR/03", "HR/OPS"],
+
+  // Change Management & Documentation (DOC)
+  ["Engineering Change Request", "HLPL-SLCT-DOC-ECR-01", "DOC"],
+  ["Engineering Change Order", "HLPL-SLCT-DOC-ECO-01", "DOC"],
 ] as const;
 
 function AutoDraftHub({
@@ -4713,8 +4792,8 @@ function AutoDraftHub({
             <DocumentField label="Classification" value="Internal · controlled draft" /><DocumentField label="Owner" value={`${selected[2]} · DEMO owner`} /><DocumentField label="Approval" value="Human approval required" />
           </div>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">{profile.customer} · {profile.quantity} · {profile.techSpec} · {profile.commercialValue}. Validate all technical and commercial information before any controlled release.</p>
-          <label className="mt-4 block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Editable template content<textarea value={templateBodies[selected[0]] ?? templateBlueprint(selected[0])} onChange={(event) => onTemplateBodiesChange({ ...templateBodies, [selected[0]]: event.target.value })} className="mt-2 min-h-28 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label>
-          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save local draft" primary onClick={() => { const draft = createPrintableDocument(selected, settings, project); onSaveDraft(draft, templateBodies[selected[0]] ?? templateBlueprint(selected[0])); setSavedDraft(draft.documentId); }} /><Action label="Full Document Viewer & Print" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
+          <label className="mt-4 block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Editable template content<textarea value={templateBodies[selected[0]] ?? templateBlueprint(selected[0], selected[1])} onChange={(event) => onTemplateBodiesChange({ ...templateBodies, [selected[0]]: event.target.value })} className="mt-2 min-h-28 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save local draft" primary onClick={() => { const draft = createPrintableDocument(selected, settings, project); onSaveDraft(draft, templateBodies[selected[0]] ?? templateBlueprint(selected[0], selected[1])); setSavedDraft(draft.documentId); }} /><Action label="Full Document Viewer & Print" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
         </section>
       )}
     </Modal>
@@ -10323,13 +10402,14 @@ function recordPrintable(record: RecordItem): PrintableDocument {
 }
 
 function autoDraftStage(title: string) {
-  if (title.includes("SOR") || title.includes("NDA")) return "Stage 1";
-  if (title.includes("Contract Review")) return "Stage 2";
-  if (title.includes("Requirement") || title.includes("Quotation")) return "Stage 3";
-  if (title.includes("BOM")) return "Stage 4";
-  if (title.includes("Control Plan")) return "Stage 5";
-  if (title.includes("DVP")) return "Stage 6";
-  if (title.includes("DFMEA")) return "Stage 7";
+  if (title.includes("SOR") || title.includes("NDA") || title.includes("Enquiry") || title.includes("ENQ")) return "Stage 1";
+  if (title.includes("Contract Review") || title.includes("Feasibility") || title.includes("REVIEW")) return "Stage 2";
+  if (title.includes("Requirement") || title.includes("Quotation") || title.includes("PRS") || title.includes("FRS") || title.includes("SRS") || title.includes("MRS") || title.includes("QRS") || title.includes("MPR") || title.includes("CFS") || title.includes("CRS") || title.includes("Sourcing")) return "Stage 3";
+  if (title.includes("BOM") || title.includes("Schematic") || title.includes("Architecture")) return "Stage 4";
+  if (title.includes("Control Plan") || title.includes("PFMEA") || title.includes("Tooling") || title.includes("FCT") || title.includes("FAIR")) return "Stage 5";
+  if (title.includes("DVP") || title.includes("Integration") || title.includes("Verification") || title.includes("EMC") || title.includes("EMI")) return "Stage 6";
+  if (title.includes("DFMEA") || title.includes("Release") || title.includes("ECR") || title.includes("ECO")) return "Stage 7";
+  if (title.includes("PPAP") || title.includes("PSW") || title.includes("Type Approval") || title.includes("TAC")) return "Stage 8";
   return "Stage 9";
 }
 
@@ -10352,31 +10432,23 @@ function PrintableTemplateView({ document, settings, records, onClose, onOpenSet
   const projectSource = records.find(record => record.type === "Project" && record.reference === document.project);
   const source = document.source ?? records.find(record => record.reference === document.documentId);
   const draft = document.populatedDraft ?? buildDocumentDraft(document.title, document.documentId, source, projectSource, document.templateType);
-  const profile = { name: projectSource?.title || "Project baseline not provided" };
-  const date = "Not issued — draft preview";
-  const markdown = documentMarkdown(document, draft, source);
-  const copyText = () => void navigator.clipboard?.writeText(markdown);
-  const exportText = () => { const url = URL.createObjectURL(new Blob([markdown], { type: "text/plain" })); const link = window.document.createElement("a"); link.href = url; link.download = `${document.documentId}.txt`; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 0); };
-  const printDocument = () => {
-    const source = window.document.getElementById("printable-document");
-    if (!source) return;
-    const frame = window.document.createElement("iframe");
-    frame.setAttribute("title", `Print ${document.documentId}`);
-    frame.style.cssText = "position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;";
-    window.document.body.appendChild(frame);
-    const printable = frame.contentWindow;
-    if (!printable) { frame.remove(); return; }
-    const style = `@page{size:A4 portrait;margin:15mm}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff!important;color:#0f172a!important}body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:1.45}article{width:100%;margin:0;background:#fff;color:#0f172a}header,footer,tr{break-inside:avoid;page-break-inside:avoid}thead{display:table-header-group}td{overflow-wrap:anywhere}header{display:grid;grid-template-columns:1.15fr 1.7fr 1.15fr;border:2px solid #0f172a}header>div{padding:10px;border-right:1px solid #0f172a}header>div:last-child{border-right:0}section{margin-top:16px}h3{margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid #334155;font-size:11pt}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #334155;padding:6px;vertical-align:top;text-align:left}th{background:#e2e8f0}.no-print{display:none!important}[class*="bg-"],[class*="text-"]{background:transparent!important;color:#0f172a!important}.rounded-lg,.rounded-md{border-radius:0!important}.shadow-lg{box-shadow:none!important}`;
-    printable.document.open();
-    printable.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${document.documentId}</title><style>${style}</style></head><body>${source.outerHTML}</body></html>`);
-    printable.document.close();
-    window.setTimeout(() => {
-      printable.focus();
-      printable.print();
-      window.setTimeout(() => frame.remove(), 1000);
-    }, 300);
-  };
-  return <Modal title="Full Document Viewer & Print" onClose={onClose} wide><div className="no-print mb-4 flex flex-wrap justify-end gap-2"><Action label="Copy Full Markdown" onClick={copyText} /><Action label="Export Text" onClick={exportText} /><Action label="Export source snapshot" onClick={() => { const url = URL.createObjectURL(new Blob([JSON.stringify(draft.snapshot, null, 2)], { type: "application/json" })); const link = window.document.createElement("a"); link.href = url; link.download = `${document.documentId}-source.json`; link.click(); URL.revokeObjectURL(url); }} /><Action label="Customize Header & Footer" onClick={onOpenSettings} /><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div><article id="printable-document" className="print-document printable-document-content mx-auto max-w-[794px] border border-border bg-card p-5 text-foreground shadow-lg md:p-8"><header className="grid gap-px overflow-hidden border-2 border-foreground/50 bg-border sm:grid-cols-[1.15fr_1.7fr_1.15fr]"><div className="bg-card p-3"><div className="flex items-center gap-2"><span className="grid size-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">{settings.logoBadge}</span><div><p className="text-xs font-bold">{settings.companyName}</p><p className="text-[10px] text-muted-foreground">XYZ Pvt Ltd</p></div></div><p className="mt-3 text-[9px] leading-4 text-muted-foreground">{settings.accreditationMarks}</p></div><div className="bg-card p-3 text-center"><p className="text-sm font-bold">{document.title}</p><p className="mt-1 text-[10px] font-medium">{document.stage} · {document.project} · {profile.name}</p></div><div className="bg-card p-3 text-[10px]"><p><strong>Document ID:</strong> {document.documentId}</p><p className="mt-1"><strong>Revision:</strong> {document.revision}</p><p className="mt-1"><strong>Effective date:</strong> {date}</p><p className="mt-1"><strong>Classification:</strong> Internal draft — source verification required</p><p className="mt-2"><Status status="Draft" /></p></div></header><section className="mt-5 border border-border"><div className="border-b border-border bg-panel px-3 py-2"><p className="text-xs font-bold">Organization & facility details</p></div><div className="grid gap-px bg-border sm:grid-cols-2"><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Tech Center</p><p className="mt-1 text-xs">{settings.techCenter}</p></div><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Manufacturing plant</p><p className="mt-1 text-xs">{settings.plantLocation}</p></div></div></section><DocumentBody draft={draft} source={source} /><footer className="mt-8 border-t-2 border-foreground/50 pt-3 text-center text-[9px] leading-4 text-muted-foreground"><p>{settings.confidentialityNotice}</p><p className="mt-2">{settings.complianceFooter}</p><p className="mt-2">Classification: Internal draft · Printed {new Date().toLocaleString("en-IN")} · Use print preview for page count</p><div className="no-print mt-4"><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div></footer></article></Modal>;
+
+  return (
+    <DocumentStandardViewer
+      document={{
+        documentId: document.documentId,
+        title: document.title,
+        stage: document.stage,
+        project: document.project,
+        revision: document.revision,
+      }}
+      draft={draft}
+      source={source}
+      settings={settings}
+      onClose={onClose}
+      onOpenSettings={onOpenSettings}
+    />
+  );
 }
 
 function DocumentBody({ draft, source }: { draft: ReturnType<typeof buildDocumentDraft>; source?: DraftSource | undefined }) {

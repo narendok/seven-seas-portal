@@ -52,3 +52,107 @@ test('draft snapshots retain source values and identify missing fields independe
   assert.ok(draft.missingFields.includes('mpn'));
   assert.equal(draft.snapshot.releaseStatus, 'Unissued');
 });
+
+test('Process 01 domain requirements sheets across all departments isolate domain fields without hardware boilerplate leakage', () => {
+  const fwDraft = buildDocumentDraft('Firmware Requirements Spec', 'FW-FRS-01', undefined, undefined, 'FW-FRS');
+  const swDraft = buildDocumentDraft('Software Requirements Spec', 'SW-SRS-01', undefined, undefined, 'SW-SRS');
+  const mechDraft = buildDocumentDraft('Mechanical Requirements Spec', 'MECH-MRS-01', undefined, undefined, 'MECH-MRS');
+  const finDraft = buildDocumentDraft('Financial Feasibility Sheet', 'FIN-CFS-01', undefined, undefined, 'FIN-CFS');
+  const sitDraft = buildDocumentDraft('IT Infrastructure Spec', 'SIT-SRS-01', undefined, undefined, 'SIT-SRS');
+  const hrDraft = buildDocumentDraft('Competency Readiness Spec', 'HROPS-CRS-01', undefined, undefined, 'HROPS-CRS');
+
+  assert.equal(fwDraft.type, 'FW-FRS');
+  assert.equal(swDraft.type, 'SW-SRS');
+  assert.equal(mechDraft.type, 'MECH-MRS');
+  assert.equal(finDraft.type, 'FIN-CFS');
+  assert.equal(sitDraft.type, 'SIT-SRS');
+  assert.equal(hrDraft.type, 'HROPS-CRS');
+
+  // Verify firmware contains RTOS and CAN stacks, but not financial or HR fields
+  const fwRows = fwDraft.sections.flatMap(s => s.rows).map(r => r[0]);
+  assert.ok(fwRows.includes('targetMcu'));
+  assert.ok(fwRows.includes('canJ1939Stack'));
+  assert.ok(!fwRows.includes('grossMarginPercent'));
+  assert.ok(!fwRows.includes('requiredEngineeringHeadcount'));
+
+  // Verify software contains telematics & MQTT endpoints
+  const swRows = swDraft.sections.flatMap(s => s.rows).map(r => r[0]);
+  assert.ok(swRows.includes('telematicsProtocol'));
+  assert.ok(swRows.includes('mqttEndpoints'));
+
+  // Verify mechanical contains IP rating & gasket specifications
+  const mechRows = mechDraft.sections.flatMap(s => s.rows).map(r => r[0]);
+  assert.ok(mechRows.includes('dimensions'));
+  assert.ok(mechRows.includes('ipRating'));
+
+  // Verify financial contains margin & cost targets
+  const finRows = finDraft.sections.flatMap(s => s.rows).map(r => r[0]);
+  assert.ok(finRows.includes('targetBOMCost'));
+  assert.ok(finRows.includes('grossMarginPercent'));
+
+  // All unpopulated fields must strictly start with TBD without synthetic inventions
+  for (const doc of [fwDraft, swDraft, mechDraft, finDraft, sitDraft, hrDraft]) {
+    assert.doesNotMatch(JSON.stringify(doc), /FreeRTOS 10\.4|AIS-140 Annex 8|IP67 Standard|STM32F4/);
+    assert.ok(doc.sections.every(section => section.rows.every(row => row[1].startsWith('TBD'))));
+  }
+});
+
+test('Separate controlled subtypes (PFMEA/DFMEA, PPAP/PSW, 8D/NCR, ECR/ECO) resolve independently', () => {
+  const dfmea = buildDocumentDraft('Design FMEA', 'HLPL-DFMEA-01', undefined, undefined, 'DFMEA');
+  const pfmea = buildDocumentDraft('Process FMEA', 'HLPL-PFMEA-01', undefined, undefined, 'PFMEA');
+  const ppap = buildDocumentDraft('PPAP Package', 'HLPL-PPAP-01', undefined, undefined, 'PPAP');
+  const psw = buildDocumentDraft('Part Submission Warrant', 'HLPL-PSW-01', undefined, undefined, 'PSW');
+  const eightD = buildDocumentDraft('8D Report', 'HLPL-8D-01', undefined, undefined, '8D');
+  const ncr = buildDocumentDraft('Non-Conformance Report', 'HLPL-NCR-01', undefined, undefined, 'NCR');
+  const ecr = buildDocumentDraft('Change Request', 'HLPL-ECR-01', undefined, undefined, 'ECR');
+  const eco = buildDocumentDraft('Change Order', 'HLPL-ECO-01', undefined, undefined, 'ECO');
+
+  assert.equal(dfmea.type, 'DFMEA');
+  assert.equal(pfmea.type, 'PFMEA');
+  assert.notDeepEqual(dfmea.sections, pfmea.sections);
+
+  assert.equal(ppap.type, 'PPAP');
+  assert.equal(psw.type, 'PSW');
+  assert.notDeepEqual(ppap.sections, psw.sections);
+
+  assert.equal(eightD.type, '8D');
+  assert.equal(ncr.type, 'NCR');
+  assert.notDeepEqual(eightD.sections, ncr.sections);
+
+  assert.equal(ecr.type, 'ECR');
+  assert.equal(eco.type, 'ECO');
+  assert.notDeepEqual(ecr.sections, eco.sections);
+});
+
+test('Native file attachments and cryptographic SHA-256 metadata are preserved in draft snapshot', () => {
+  const sampleAttachment = {
+    filename: 'HLPL-SLCT-01-FW-RELEASE.hex',
+    format: 'BIN/HEX',
+    sizeBytes: 1048576,
+    sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    uploadedAt: '2026-10-19T22:00:00Z',
+    uploaderName: 'Devon Lane (FW Lead)',
+  };
+  const source = {
+    reference: 'FW-SOURCE-01',
+    fields: { targetMcu: 'NXP S32K144' },
+    attachments: [sampleAttachment],
+  };
+
+  const draft = buildDocumentDraft('Firmware Release Spec', 'FW-FRS-01', source, undefined, 'FW-FRS');
+  assert.equal(draft.attachments.length, 1);
+  assert.equal(draft.attachments[0].sha256, sampleAttachment.sha256);
+  assert.equal(draft.snapshot.source.attachments[0].filename, 'HLPL-SLCT-01-FW-RELEASE.hex');
+});
+
+test('Catalogue family IDs map correctly across commercial, engineering, production, and quality deliverables', () => {
+  assert.equal(buildDocumentDraft('SOR', 'HLPL-SOR-01', undefined, undefined, 'SOR').catalogueFamilyId, 'D04');
+  assert.equal(buildDocumentDraft('Review', 'HLPL-REVIEW-01', undefined, undefined, 'REVIEW').catalogueFamilyId, 'D05');
+  assert.equal(buildDocumentDraft('Quotation', 'HLPL-QUO-01', undefined, undefined, 'QUO').catalogueFamilyId, 'D06');
+  assert.equal(buildDocumentDraft('FW Spec', 'HLPL-FW-01', undefined, undefined, 'FW-FRS').catalogueFamilyId, 'D08');
+  assert.equal(buildDocumentDraft('BOM', 'HLPL-BOM-01', undefined, undefined, 'BOM').catalogueFamilyId, 'D11');
+  assert.equal(buildDocumentDraft('PSW', 'HLPL-PSW-01', undefined, undefined, 'PSW').catalogueFamilyId, 'D19');
+  assert.equal(buildDocumentDraft('8D', 'HLPL-8D-01', undefined, undefined, '8D').catalogueFamilyId, 'D25');
+  assert.equal(buildDocumentDraft('Invoice', 'HLPL-INV-01', undefined, undefined, 'INV').catalogueFamilyId, 'D26');
+});
+

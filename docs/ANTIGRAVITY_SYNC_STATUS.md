@@ -567,7 +567,44 @@ Projects pin the approved matrix version. Future changes are effective-dated and
   - `npm run build`: Vite build exited 0 in 2.10s.
   - Localhost: HTTP 200 confirmed live on `http://localhost:8080/`.
 
+---
 
+## Batch 2: Document Standardization, 38-Family Catalogue Coverage, 4-Tier Controlled Viewer, Native Attachment Vault & Stage Gate Freezes — 19 October 2026
+
+- **State**: VERIFIED LIVE on localhost; ready for review & push.
+- **Master Plan Requirement**:
+  - Implement full 38-family document catalogue coverage per `docs/SSM One Document Catalogue - Auto-Drafting Audit and Native Upload Rules.json` and `docs/DOCUMENT_STANDARDIZATION_PLAN.md`.
+  - Provide domain-specific Process 01 requirements sheets across all 12 departments (`SAL`, `EHW`, `FW`, `SW`, `MECH`, `PUR`, `QA`, `EMF`, `MMF`, `FIN`, `SIT`, `HR/OPS`), completely isolating domain fields and eliminating generic telematics boilerplate leakage.
+  - Implement 4-tier automotive controlled layout in viewer and printable templates:
+    - Tier 1: Organization identity, accreditation marks, controlled document ID, stage, project, revision, classification, and status.
+    - Tier 2: Customer program context, operating phase gate, source baseline notes, and native attachments vault.
+    - Tier 3: Domain parameters with strict provenance tracking (`[Source Record]`, `[Project Baseline]`, or `TBD — owner confirmation required`).
+    - Tier 4: Role-based sign-off ledger (Prepared By, Technical Review HOD, Lead Authority Approval) with explicit verification status.
+  - Controlled native file attachments: cryptographic SHA-256 copy action, file sizes, format icons, client-side download for CAD (`.step`), PCB (`.pcbdoc`, Gerber `.zip`), firmware (`.hex`, `.bin`), and lab certificates (`.pdf`).
+  - Strict preservation: missing document values render strictly as `TBD — owner confirmation required` with provenance markers; never fabricate fake technical results, test agency certificates, or synthetic signatures.
+  - Enforce Stage 2 Multi-Department Feasibility Freeze (Contract Review Record `HLPL/F/MKT/01`) and Stage 3 Requirements Baseline Freeze (`EHW-PRS`, `FW-FRS`, `SW-SRS`, `MECH-MRS`, `QUO`) with strict interlocks in project lifecycle progression.
+- **Implemented Code**:
+  - `src/lib/document-catalogue.ts`: Complete 38-family machine-readable catalogue mapping 89 unique source blocks, departments, native evidence rules, and delivery scopes.
+  - `src/lib/document-draft.ts`: 24+ core document formats covering all 38 families, Process 01 sheets for all 12 departments, separate controlled subtypes (`PFMEA` vs `DFMEA`, `PPAP` vs `PSW`, `8D` vs `NCR`, `ECR` vs `ECO`), native attachment metadata (`AttachmentMeta`), completion percentage, and client deliverable classification.
+  - `src/components/NativeAttachmentCard.tsx`: Controlled native attachment component with SHA-256 verification pill, file icons, byte formatting, and download action.
+  - `src/components/DocumentStandardViewer.tsx`: Complete 4-tier controlled layout with Markdown copy, source JSON snapshot export, template settings hook, and `@media print` clean A4 styling.
+  - `src/lib/stage-gates.ts`: Automotive APQP Stage Gate Verification engine enforcing Stage 2 Feasibility Freeze, Stage 3 Requirements Baseline Freeze, and Stage 4 Hardware Schematics prerequisite.
+  - `src/routes/index.tsx`: Upgraded `autoDraftTemplates` across all 12 departments, wired `DocumentStandardViewer` into `PrintableTemplateView`, integrated `verifyStageTransition` in `onAdvance`, `onJump`, and the interactive Stage Gate Interlocks matrix.
+  - `tests/document-draft.test.cjs`: 9 tests verifying domain isolation without hardware boilerplate leakage, independent subtype resolution, native attachment preservation, and catalogue family mappings.
+  - `tests/stage-gates.test.cjs`: 8 tests asserting gate interlock rules, client-side progression prevention in production mode, and requirement freeze enforcement.
+- **Verification Evidence**:
+  - `node --test $documentTestFiles`: **53/53 PASS** with 0 failures across all 8 test suites:
+    - `tests/department-chronicles.test.cjs` (5 tests pass)
+    - `tests/department-scope.test.cjs` (5 tests pass)
+    - `tests/document-draft.test.cjs` (9 tests pass)
+    - `tests/migration-preservation.test.cjs` (14 tests pass)
+    - `tests/portal-store.test.cjs` (9 tests pass)
+    - `tests/responsibility-version.test.cjs` (1 test pass)
+    - `tests/stage-gates.test.cjs` (8 tests pass)
+    - `tests/test-auth-persona.test.cjs` (2 tests pass)
+  - `npx tsc --noEmit`: Exited with code 0 (0 errors).
+  - `npm run build`: Vite / Nitro production build succeeded with exit code 0 (1.98s).
+  - Localhost: Running live at `http://localhost:8080/`.
 
 ## Local reconciliation — 19 October 2026
 
