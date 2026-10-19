@@ -567,3 +567,8 @@ Projects pin the approved matrix version. Future changes are effective-dated and
   - `npm run build`: Vite build exited 0 in 2.10s.
   - Localhost: HTTP 200 confirmed live on `http://localhost:8080/`.
 
+
+
+## Local reconciliation — 19 October 2026
+
+See [local implementation and acceptance evidence](evidence/LOCAL_MASTER_PLAN_RECONCILIATION_2026-10-19.md). Active FW/SW naming is implemented, TST retirement and historical preservation have local coverage, and further authenticated operational acceptance remains open. This working-tree increment is not pushed or deployed.

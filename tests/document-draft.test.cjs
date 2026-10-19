@@ -37,3 +37,18 @@ test('copy source values with provenance; project identification cannot supply i
 test('unknown formats explicitly remain unsupported', () => {
   assert.equal(buildDocumentDraft('Unconfigured document', 'CUSTOM-123').supported, false);
 });
+
+test('ambiguous and substring-only names stay unsupported; explicit template IDs take precedence', () => {
+  assert.equal(buildDocumentDraft('Inventory dashboard', 'generic').supported, false);
+  assert.equal(buildDocumentDraft('BOM and QUO', 'generic').supported, false);
+  assert.equal(buildDocumentDraft('BOM and QUO', 'generic', undefined, undefined, 'BOM').type, 'BOM');
+  assert.equal(buildDocumentDraft('BOM', 'generic', undefined, undefined, 'unknown').supported, false);
+});
+test('draft snapshots retain source values and identify missing fields independently of later edits', () => {
+  const source = { reference: 'SOURCE-1', fields: { lineItems: 'verified items' } };
+  const draft = buildDocumentDraft('BOM', 'BOM-1', source);
+  source.fields.lineItems = 'later change';
+  assert.equal(draft.snapshot.source.fields.lineItems, 'verified items');
+  assert.ok(draft.missingFields.includes('mpn'));
+  assert.equal(draft.snapshot.releaseStatus, 'Unissued');
+});

@@ -502,3 +502,16 @@ test('13. Transitional efw/csw inputs migrate/read safely to fw/sw, mapped ESW r
   assert.equal(result.teamMembers.find(m => m.name === 'Siddharth Roy').area, 'sw');
   assert.equal(result.teamMembers.find(m => m.name === 'Old ESW Member').migration_flag, 'unresolved_legacy_esw');
 });
+
+test('schema 3 retirement preserves current records and decisions instead of restoring an obsolete backup', () => {
+  const saved = { schemaVersion: 3, records: [{ id: 'recent', area: 'tst', status: 'Approved', owner: 'Mina' }], approvals: [{ id: 'decision', outcome: 'Approved' }], departments: [{ id: 'demo-dept-tst', code: 'DEMO-TST', active: true }], notifications: ['latest'] };
+  const storage = { getItem: () => JSON.stringify({ records: [{ id: 'obsolete' }] }), setItem: () => assert.fail('must not replace migration backup') };
+  const migrated = migratePortalState(saved, undefined, storage);
+  assert.deepEqual(migrated.records, saved.records);
+  assert.deepEqual(migrated.approvals, saved.approvals);
+  assert.deepEqual(migrated.notifications, saved.notifications);
+  assert.equal(migrated.departments[0].active, false);
+  assert.equal(migrated.departments[0].isLegacy, true);
+  assert.equal(normalizePersonaId('tst'), 'unrecognized');
+  assert.deepEqual(migratePortalState(migrated), migrated);
+});

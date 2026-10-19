@@ -431,3 +431,8 @@ When adding, modifying, or refactoring portal features:
    - Update [`SSM_ONE_WEB_PORTAL_MASTER_PLAN.md`](file:///c:/Users/Test/Documents/antigravity/SSM-new/SSM_ONE_WEB_PORTAL_MASTER_PLAN.md) completed milestones and relevant sections.
 6. **Git Sync**: Commit and push to `origin/main` without rewriting history to maintain Lovable synchronization.
 
+
+
+## Local reconciliation — 19 October 2026
+
+See [local implementation and acceptance evidence](evidence/LOCAL_MASTER_PLAN_RECONCILIATION_2026-10-19.md). Active FW/SW naming is implemented, TST retirement and historical preservation have local coverage, and further authenticated operational acceptance remains open. This working-tree increment is not pushed or deployed.

@@ -473,8 +473,8 @@ export function RoleAwareSidebar({
           },
           {
             id: "adm-tst",
-            label: "EOL Testing & Production (TST)",
-            shortLabel: "TST",
+            label: "Legacy TST · ownership review",
+            shortLabel: "Legacy",
             icon: CheckCircle2,
             badge: openTaskCounts["tst"],
             isActive: activeArea === "tst",

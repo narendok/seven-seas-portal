@@ -288,18 +288,18 @@ export const projectLifecycleData: Record<string, {
       {
         stageNumber: 5,
         stageCode: "Stage 5",
-        title: "Pilot Build & SMT Line Setup (Line 2)",
-        apqpMilestone: "Phase 3: Process Design & Pilot SMT Build",
+        title: "Pilot Build & Box-Build Readiness",
+        apqpMilestone: "Phase 3: Process Design & Pilot Integration",
         leadName: "Casey Rowan",
         leadDept: "EMF",
         leadRole: "Electronics Manufacturing Lead",
         alignedTeam: ["Avery Vale (EHW Lead)", "Morgan Reed (PUR Lead)"],
-        summary: "Manufacturing line setup on SMT Line 2. 10-zone reflow oven thermal profiling calibrated for SAC305 lead-free alloy and Nordic QFN package. Pilot build of 25 golden engineering samples completed with automated 3D SPI and AOI inspection.",
-        hardwareNote: "First-pass SMT yield: 96.0% on pilot run. X-ray inspection verified 0 voids under nRF52840 thermal pad.",
+        summary: "DEMO scenario: review accepted outsourced PCBA lot evidence, enclosure integration, controlled firmware loading and functional checks. Actual pilot results and QA disposition must be attached before release.",
+        hardwareNote: "Supplier PCBA acceptance evidence and actual pilot measurements are required; no in-house SMT capability is assumed.",
         batteryNote: "3.7V Lithium-ion battery packs assembled into enclosure retaining bracket with vibration-dampening foam.",
         regulatoryNote: "Samples serialized from BCU-2026-0001 to BCU-2026-0025 for regulatory test submission.",
         deliverables: [
-          { docId: "HLPL-BCU-EMF-CP-01", title: "Manufacturing Control Plan & Line 2 Profile", dept: "EMF", status: "Approved", description: "Reflow oven thermal zones, solder paste inspection limits, and SMT parameters." },
+          { docId: "HLPL-BCU-EMF-CP-01", title: "Box-Build Control Plan & PCBA Traceability", dept: "EMF", status: "Approved", description: "Accepted PCBA supplier/lot, assembly steps, firmware configuration and functional acceptance criteria." },
           { docId: "HLPL-BCU-EMF-PILOT-01", title: "Pilot Run Build & Inspection Report", dept: "EMF", status: "Approved", description: "25 golden prototype units built, tested, and released for DVP&R." },
         ],
         defaultComments: [
@@ -309,7 +309,7 @@ export const projectLifecycleData: Record<string, {
             departmentCode: "EMF",
             role: "Manufacturing Lead",
             timestamp: "14 Oct 2026, 11:30 IST",
-            content: "SMT Line 2 completed 25 golden units. Reflow peak temperature held at 242°C for 45s. AOI and 3D SPI show 100% paste coverage on Nordic QFN pins.",
+            content: "Illustrative pilot planning only. Record actual PCBA acceptance, serial/lot traceability, box-build checks and QA disposition before claiming completion.",
           },
           {
             id: "c5-2",
@@ -327,7 +327,7 @@ export const projectLifecycleData: Record<string, {
         title: "DVP&R Agency Testing (iCAT Manesar TAC & NABL Battery)",
         apqpMilestone: "Phase 4: Product & Process Validation",
         leadName: "Jordan Blake & Mina Cross",
-        leadDept: "QA/TST",
+        leadDept: "QA · legacy TST ownership review",
         leadRole: "Quality Assurance & EOL Testing Leads",
         alignedTeam: ["Avery Vale (EHW Lead)", "Devon Lane (ESW Lead)"],
         summary: "Execution of the comprehensive DVP&R test suite. Official witness testing conducted by iCAT (International Centre for Automotive Technology, Manesar) for AIS-140 Annexure 8 TAC compliance. 3.7V Lithium-ion battery tested by NABL-accredited laboratory for IS 16046 (Part 2) / UN 38.3. BLE 5.2 RF radiated power and 30m transmission range verified.",
@@ -449,10 +449,10 @@ export const projectLifecycleData: Record<string, {
         title: "Mass Production SOP, PDI & Commercial Delivery",
         apqpMilestone: "Phase 5: Mass Production & Continuous Improvement",
         leadName: "Mina Cross & Priya Voss",
-        leadDept: "TST/FIN",
+        leadDept: "FIN · legacy TST ownership review",
         leadRole: "EOL Testing & Finance Leads",
         alignedTeam: ["Casey Rowan (EMF Lead)", "Riley Stone (Sales Lead)", "Kai Morgan (SIT Lead)"],
-        summary: "Start of Production (SOP). High-volume SMT manufacturing on Line 2 with automated End-of-Line test jig (JIG-BCU-01) validating BLE RF transmission, 4G ping, and 3.7V battery charge. Commercial dispatch and invoice generation.",
+        summary: "Start of Production (SOP). Box-build integration of accepted outsourced PCBAs with automated End-of-Line test jig (JIG-BCU-01) validating BLE RF transmission, 4G ping, and 3.7V battery charge. Commercial dispatch and invoice generation.",
         hardwareNote: "First production batch of 1,000 units achieved 98.4% First-Pass Yield (FPY).",
         batteryNote: "100% of internal 3.7V batteries pre-conditioned to 60% state of charge for safe transport compliance.",
         regulatoryNote: "Serialized QR codes printed on laser-etched nameplates matching iCAT TAC database.",
@@ -524,7 +524,7 @@ export const projectLifecycleData: Record<string, {
             departmentCode: "EHW",
             role: "Embedded Hardware Lead",
             timestamp: "18 Sep 2026, 11:45 IST",
-            content: "This matches our ready PCB HLPL-MOD-PCB-01 Rev 03 100%! Zero layout change needed. We can waive Stage 4 PoC redesign and proceed directly to SMT pilot.",
+            content: "This matches our ready PCB HLPL-MOD-PCB-01 Rev 03 100%! Zero layout change needed. We can waive Stage 4 PoC redesign and proceed directly to box-build pilot.",
             badge: "100% Platform Reuse",
           },
         ],
@@ -539,7 +539,7 @@ export const projectLifecycleData: Record<string, {
         leadRole: "All 6 Department Leads",
         alignedTeam: ["Avery Vale (EHW)", "Devon Lane (ESW)", "Priya Voss (FIN)"],
         summary: "All 6 department HODs approved fast-track feasibility under Master Plan §5 Decoupled Platform Reuse. Development time reduced by 14 weeks and ₹6.5 Lakhs NRE avoided.",
-        hardwareNote: "100% platform PCB reuse confirmed. Ready for direct SMT Line 2 pilot run.",
+        hardwareNote: "100% platform PCB reuse confirmed. Ready for direct box-build pilot run.",
         batteryNote: "Pre-certified 3.7V Lithium-ion cell in stock with active UN 38.3 report.",
         regulatoryNote: "Platform derivative TAC clause applied.",
         deliverables: [
@@ -601,7 +601,7 @@ export const projectLifecycleData: Record<string, {
         leadDept: "EHW",
         leadRole: "Embedded Hardware Lead",
         alignedTeam: ["Devon Lane (ESW Lead)"],
-        summary: "STAGE 4 PoC BYPASSED: Proven PCB & Firmware pre-certified! Bypasses breadboard PoC development; project fast-tracks straight to Stage 5 SMT Pilot Build. Project documentation automatically references master assets under the new project code.",
+        summary: "STAGE 4 PoC BYPASSED: Proven PCB & Firmware pre-certified! Bypasses breadboard PoC development; project fast-tracks straight to Stage 5 Pilot Integration. Project documentation automatically references master assets under the new project code.",
         hardwareNote: "Ready PCB HLPL-MOD-PCB-01 Rev 03 in active production. 0 weeks schematic lead time.",
         batteryNote: "3.7V Lithium-ion circuit pre-verified with 60,000+ units operating in the field.",
         regulatoryNote: "Pre-certified AIS-140 firmware FW-LIB-001 deployed without code re-spin.",
@@ -624,18 +624,18 @@ export const projectLifecycleData: Record<string, {
       {
         stageNumber: 5,
         stageCode: "Stage 5",
-        title: "Pilot Build on SMT Line 2",
-        apqpMilestone: "Phase 3: SMT Pilot Run",
+        title: "Pilot Box-Build Integration",
+        apqpMilestone: "Phase 3: Pilot Integration",
         leadName: "Casey Rowan",
         leadDept: "EMF",
         leadRole: "Manufacturing Lead",
         alignedTeam: ["Avery Vale (EHW Lead)"],
         summary: "Pilot run of 20 units assembled using existing stencils and feeder setup. 99.2% first-pass yield achieved.",
-        hardwareNote: "Existing SMT feeder program loaded in 15 minutes.",
+        hardwareNote: "Confirm outsourced PCBA acceptance, controlled assembly instructions and fixture readiness.",
         batteryNote: "3.7V Li-ion internal battery packs installed.",
         regulatoryNote: "Golden units serialized for client witness demonstration.",
         deliverables: [
-          { docId: "HLPL-SLCT-EMF-CP-01", title: "Manufacturing Control Plan", dept: "EMF", status: "Approved", description: "Standard SMT Line 2 control protocol." },
+          { docId: "HLPL-SLCT-EMF-CP-01", title: "Manufacturing Control Plan", dept: "EMF", status: "Approved", description: "Box-build, programming and functional-test control plan." },
         ],
         defaultComments: [
           {
@@ -644,7 +644,7 @@ export const projectLifecycleData: Record<string, {
             departmentCode: "EMF",
             role: "Manufacturing Lead",
             timestamp: "26 Sep 2026, 14:00 IST",
-            content: "Pilot assembly finished in 2 hours using existing stencils. 100% solder joint pass rate on AOI.",
+            content: "Illustrative pilot sequence. Actual assembly duration, functional test results and QA disposition remain evidence requirements.",
           },
         ],
       },
@@ -735,7 +735,7 @@ export const projectLifecycleData: Record<string, {
         title: "Mass Delivery, PDI & Commercial Billing",
         apqpMilestone: "Phase 5: Commercial SOP & Client Satisfaction",
         leadName: "Mina Cross & Priya Voss",
-        leadDept: "TST/FIN",
+        leadDept: "FIN · legacy TST ownership review",
         leadRole: "EOL Testing & Finance Leads",
         alignedTeam: ["Riley Stone (Sales Lead)"],
         summary: "Mass delivery of initial 1,000 units. Automated EOL testing achieved 99.4% FPY. Commercial billing and client feedback rating recorded.",
@@ -792,7 +792,7 @@ export function ProjectLifecyclePlayerAndDetail({
   const stageIndex = Math.min(Math.max(0, currentStage), stages.length - 1);
   const activeStage = stages[stageIndex]!;
   const stageDeliverables =
-    chronicles && chronicles.length > 0
+    chronicles !== undefined
       ? deriveDeliverablesForStage(chronicles, stageIndex)
       : activeStage.deliverables;
 

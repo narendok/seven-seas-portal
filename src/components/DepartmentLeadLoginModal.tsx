@@ -188,7 +188,7 @@ export function DepartmentLeadLoginModal({
   if (!isOpen) return null;
   if (!demoMode) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-5"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><h2 className="text-lg font-semibold">Production sign-in is not configured</h2><p className="mt-3 text-sm text-muted-foreground">An administrator must enable the approved sign-in method and configure organization membership. Demo credentials cannot authenticate operational users.</p><button type="button" onClick={onClose} className="mt-5 rounded border border-border px-4 py-2 text-sm">Close</button></section></div>;
 
-  const activeCred = DEPARTMENT_CREDENTIALS.find(
+  const activeCred = DEPARTMENT_CREDENTIALS.filter(c => c.departmentCode !== "TST").find(
     (c) => c.id === currentPersonaId || (currentPersonaId === "efw" && c.id === "fw") || (currentPersonaId === "csw" && c.id === "sw")
   );
 
@@ -205,7 +205,7 @@ export function DepartmentLeadLoginModal({
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPass = password.trim();
 
-    const matched = DEPARTMENT_CREDENTIALS.find(
+    const matched = DEPARTMENT_CREDENTIALS.filter(c => c.departmentCode !== "TST").find(
       (c) =>
         (c.email.toLowerCase() === trimmedEmail ||
           c.id.toLowerCase() === trimmedEmail ||
@@ -450,7 +450,7 @@ export function DepartmentLeadLoginModal({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {DEPARTMENT_CREDENTIALS.map((cred) => (
+                  {DEPARTMENT_CREDENTIALS.filter(c => c.departmentCode !== "TST").map((cred) => (
                     <button
                       key={cred.id}
                       type="button"

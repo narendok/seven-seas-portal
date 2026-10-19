@@ -5,7 +5,7 @@
  * referential integrity and user data. Transitional aliases (EFW, CSW) are migrated.
  */
 
-export const MIGRATION_SCHEMA_VERSION = 3;
+export const MIGRATION_SCHEMA_VERSION = 4;
 export const PRE_MIGRATION_BACKUP_KEY = "ssm_portal_backup_pre_12dept_v1";
 
 export interface MigrationStorage {
@@ -71,6 +71,12 @@ export function migratePortalState<T extends MigratableState>(
   // Idempotency: If state is already at schemaVersion >= 2, no further transformation needed.
   if (typeof saved.schemaVersion === "number" && saved.schemaVersion >= MIGRATION_SCHEMA_VERSION) {
     return saved;
+  }
+
+  if (saved.schemaVersion === 3) {
+    return { ...saved, schemaVersion: MIGRATION_SCHEMA_VERSION, departments: saved.departments?.map((department: any) =>
+      /^(DEMO-)?TST$/i.test(department.code ?? "") || /^(demo-dept-)?tst$/i.test(department.id ?? "")
+        ? { ...department, active: false, isLegacy: true } : department) };
   }
 
   // Crash Recovery / Interrupted Migration check
@@ -240,7 +246,7 @@ export function migratePortalState<T extends MigratableState>(
   const existingDeptIds = new Set((sourceState.departments || []).map((d: any) => d?.id));
   const departments = Array.isArray(sourceState.departments)
     ? sourceState.departments.map((dept: any) => {
-        if (dept?.id === "demo-dept-esw") {
+        if (dept?.id === "demo-dept-tst" || dept?.id === "tst" || /^(DEMO-)?TST$/i.test(dept?.code ?? "") || dept?.id === "demo-dept-esw") {
           return { ...dept, active: false, isLegacy: true };
         }
         if (dept?.id === "demo-dept-efw" || dept?.id === "efw") {
@@ -256,7 +262,7 @@ export function migratePortalState<T extends MigratableState>(
   if (seed && Array.isArray((seed as any).departments)) {
     for (const seedDept of (seed as any).departments) {
       if (seedDept?.id && !existingDeptIds.has(seedDept.id)) {
-        departments.push(seedDept);
+        departments.push(/^(DEMO-)?TST$/i.test(seedDept.code ?? "") ? { ...seedDept, active: false, isLegacy: true } : seedDept);
         existingDeptIds.add(seedDept.id);
       }
     }

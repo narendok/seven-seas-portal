@@ -18,7 +18,7 @@ function cleanName(value: string) {
 
 export const beginControlledDocumentUpload = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => fileInput.parse(data))
+  .validator((data) => fileInput.parse(data))
   .handler(async ({ data, context }) => {
     const { data: document, error: documentError } = await context.supabase
       .from("documents")
@@ -72,7 +72,7 @@ export const beginControlledDocumentUpload = createServerFn({ method: "POST" })
 
 export const completeControlledDocumentUpload = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ fileId: z.string().uuid() }).parse(data))
+  .validator((data) => z.object({ fileId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { data: file, error } = await context.supabase
       .from("controlled_document_files")
@@ -93,7 +93,7 @@ export const completeControlledDocumentUpload = createServerFn({ method: "POST" 
 
 export const getControlledDocumentDownload = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ fileId: z.string().uuid() }).parse(data))
+  .validator((data) => z.object({ fileId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { data: file, error } = await context.supabase
       .from("controlled_document_files")
@@ -110,7 +110,7 @@ export const getControlledDocumentDownload = createServerFn({ method: "POST" })
 
 export const listControlledDocumentFiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ documentId: z.string().uuid() }).parse(data))
+  .validator((data) => z.object({ documentId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { data: files, error } = await context.supabase
       .from("controlled_document_files")

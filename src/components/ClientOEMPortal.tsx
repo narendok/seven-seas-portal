@@ -534,11 +534,11 @@ export function ClientOEMPortal({
     {
       id: "EMF-CP-01",
       stage: "Stage 5",
-      title: "SMT Line 2 Process Control Plan & Reflow Profiles",
+      title: "Box-Build Process Control Plan & PCBA Traceability",
       dept: "Manufacturing",
       classification: "Internal Confidential",
       clientAccess: "Restricted",
-      accessReason: "Confidential 10-zone thermal profiling parameters and automated SMT feeder setups.",
+      accessReason: "Internal assembly controls, firmware configuration and functional-test acceptance criteria.",
       retention: "10 Years",
       fileFormat: "Plant MES",
     },
@@ -626,7 +626,7 @@ export function ClientOEMPortal({
     { stage: "Stage 2", name: "Multi-HOD Feasibility", status: "Completed", date: "Aug 2026" },
     { stage: "Stage 3", name: "Commercial & PRS Lock", status: "Completed", date: "Sep 2026" },
     { stage: "Stage 4", name: "PoC & Schematics", status: "Completed", date: "Sep 2026" },
-    { stage: "Stage 5", name: "Pilot SMT Line 2", status: "Completed", date: "Sep 2026" },
+    { stage: "Stage 5", name: "Pilot Box-Build Integration", status: "Completed", date: "Sep 2026" },
     { stage: "Stage 6", name: "DVP&R 18 Tests", status: "Completed", date: "Oct 2026" },
     { stage: "Stage 7", name: "PPAP Level 3", status: "Completed", date: "Oct 2026" },
     { stage: "Stage 8", name: "AIS-140 TAC Approval", status: "Completed", date: "Oct 2026" },
@@ -1081,11 +1081,11 @@ export function ClientOEMPortal({
                 BATCH 02 · 10,000 UNITS
               </span>
               <span className="rounded-full bg-secondary border border-border px-2 py-0.5 font-mono text-[10px] font-bold text-muted-foreground">
-                SCHEDULED SMT
+                SCHEDULED BOX-BUILD
               </span>
             </div>
             <p className="text-xs text-foreground font-semibold">
-              SMT Line 2 Automated Production Queue
+              Box-Build Integration Queue
             </p>
             <p className="text-xs text-muted-foreground">
               Long-lead components secured in buffer inventory. Production run scheduled following vehicle fitment validation of Batch 01.

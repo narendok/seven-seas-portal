@@ -1,0 +1,24 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const ts = require('typescript');
+const path = require('node:path');
+const scope = { exports: {} };
+const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/responsibility-version.ts'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+new Function('module', 'exports', code)(scope, scope.exports);
+const { evolveResponsibilityConfiguration, resolveProjectChronicles } = scope.exports;
+test('configuration edits preserve project-pinned history and never reassign record owners', () => {
+  const previous = [{ id: 'gate', departmentCode: 'QA', title: 'Original' }];
+  const updated = [{ id: 'gate', departmentCode: 'EMF', title: 'Next' }];
+  const saved = { chronicles: previous, records: [{ id: 'p', type: 'Project', fields: { owner: 'QA' } }, { id: 'task', type: 'Task', fields: { owner: 'QA' } }] };
+  const next = evolveResponsibilityConfiguration(saved, previous, updated, '2026-10-19T00:00:00Z');
+  assert.equal(next.responsibilityVersions.length, 2);
+  const pin = next.records[0].fields.responsibilityVersion;
+  assert.equal(resolveProjectChronicles(next.responsibilityVersions, pin, updated)[0].title, 'Original');
+  updated[0].title = 'Edited later';
+  assert.equal(next.responsibilityVersions[1].chronicles[0].title, 'Next');
+  const again = evolveResponsibilityConfiguration(next, next.chronicles, [], '2026-10-20T00:00:00Z');
+  assert.equal(again.records[0].fields.responsibilityVersion, pin);
+  assert.deepEqual(again.records[1], saved.records[1]);
+  assert.deepEqual(resolveProjectChronicles(again.responsibilityVersions, 'missing', previous), []);
+});

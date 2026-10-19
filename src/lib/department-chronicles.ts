@@ -28,7 +28,7 @@ export const CANONICAL_STAGES = [
   ["Stage 2", "Feasibility & Contract Review", "EHW, FW, SW, MECH, PUR, QA, EMF, MMF, FIN, SIT, HR requirements compile into Contract Review HLPL/F/MKT/01."],
   ["Stage 3", "Requirement Freeze & Commercial Lock", "Consolidated Requirements Package freeze, costing model, and formal quotation SAL-QUO-01."],
   ["Stage 4", "Design & Development PoC", "Hardware schematics SCH-01, preliminary BOM, RTOS MCU bring-up, and telematics software stack."],
-  ["Stage 5", "Pilot Build & SMT Setup", "SMT Line 2 thermal profile, Control Plan EMF-CP-01, and enclosure prototype soft-tooling."],
+  ["Stage 5", "Pilot Build & Manufacturing Readiness", "Accepted outsourced PCBA lot traceability, box-build Control Plan EMF-CP-01, and mechanical fitment evidence."],
   ["Stage 6", "DVP&R Pre-Compliance Verification", "18-test automotive DVP&R matrix (transients, thermal shock, vibration, and drop)."],
   ["Stage 7", "Production Release, DFMEA & PPAP", "Production BOM release, DFMEA risk assessment, PPAP Level 3 dossier, and packaging traveler."],
   ["Stage 8", "Type Approval & Regulatory Certification", "Official Type Approval TAC certificate (ARAI/iCAT) and statutory compliance index."],

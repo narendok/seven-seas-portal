@@ -245,7 +245,7 @@ export const defaultBOMRevisions: BOMRevision[] = [
     createdAt: "2026-10-16 16:45",
     lockedAt: "2026-10-16 17:00",
     ecoNumber: "ECO-2026-004",
-    changeRationale: "Formally released baseline for Stage 4 PoC and SMT Line 2 pilot build. All passives upgraded to AEC-Q200.",
+    changeRationale: "Formally released baseline for Stage 4 PoC and box-build pilot integration. All passives upgraded to AEC-Q200.",
     items: [
       {
         id: "R-01",

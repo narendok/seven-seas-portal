@@ -790,7 +790,7 @@ export function ApprovalsFullPageView({
                   aria-label="Approval title"
                   value={reqTitle}
                   onChange={(e) => setReqTitle(e.target.value)}
-                  placeholder="e.g. Stage 5 SMT Pilot Thermal Profile Approval"
+                  placeholder="e.g. Stage 5 PCBA Acceptance & Box-Build Review"
                   className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>

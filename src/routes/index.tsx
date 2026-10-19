@@ -1,3 +1,4 @@
+import { evolveResponsibilityConfiguration, resolveProjectChronicles, type ResponsibilityVersion } from "@/lib/responsibility-version";
 import { DepartmentProjectWorkspace } from "@/components/DepartmentProjectWorkspace";
 import { businessDate } from "@/lib/business-date";
 import { createFileRoute } from "@tanstack/react-router";
@@ -64,7 +65,7 @@ import {
   Key,
   LogOut,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -88,8 +89,8 @@ import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable"
 import { PurchasingCommandCenter, type PurchasingSubView } from "@/components/PurchasingCommandCenter";
 import { CustomerManagementFullPageView } from "@/components/CustomerManagementFullPageView";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
-import { ProjectLifecyclePlayerAndDetail } from "@/components/ProjectLifecyclePlayerAndDetail";
-import { buildDocumentDraft, type DraftSource } from "@/lib/document-draft";
+const ProjectLifecyclePlayerAndDetail = lazy(() => import("@/components/ProjectLifecyclePlayerAndDetail").then(module => ({ default: module.ProjectLifecyclePlayerAndDetail })));
+import { draftType, buildDocumentDraft, type DraftSource } from "@/lib/document-draft";
 import { assertApprovalDecision } from "@/lib/approval-workflow";
 import { commitLatestState, patchRecord } from "@/lib/portal-store";
 import { getLocalAttachment, migrateLegacyAttachment, removeLocalAttachment, saveLocalAttachment } from "@/lib/local-attachments";
@@ -268,6 +269,7 @@ type ControlledDocument = {
   cloudDocumentId?: string | undefined;
   localFiles?: LocalControlledFile[] | undefined;
   draftHtml?: string | undefined;
+  draftSnapshot?: ReturnType<typeof buildDocumentDraft> | undefined;
   releaseNotes?: string | undefined;
   designer?: string | undefined;
   deliverableKind?: "Schematic PDF" | "Gerber ZIP" | "3D STEP" | "Firmware binary" | "BOM tracker" | "Technical document" | undefined;
@@ -357,9 +359,9 @@ const demoTeam: TeamMember[] = [
 
   // EMF - Electronics & Mechanical Manufacturing
   { name: "Casey Rowan", area: "emf", role: "Electronics Manufacturing Lead", score: "3.65/4", level: "Level 4", skills: ["PFD", "PFMEA", "Line startup", "Control plan"] },
-  { name: "Rajesh Gokhale", area: "emf", role: "SMT Line Supervisor & Reflow Specialist", score: "3.75/4", level: "Level 4", skills: ["10-zone reflow profile", "3D SPI setup", "First-off sign-off", "Feeder calibration"] },
-  { name: "Ankit Sharma", area: "emf", role: "Process Quality Technician", score: "3.50/4", level: "Level 3", skills: ["AOI inspection", "Solder paste height analysis", "SMT rework", "Line defect logging"] },
-  { name: "Sunita Das", area: "emf", role: "SMT Feeder & Stencil Technician", score: "3.35/4", level: "Level 2", skills: ["Stencil cleaning", "Reel changeover", "ESD verification", "Visual inspection"] },
+  { name: "Rajesh Gokhale", area: "emf", role: "Box-Build Line Supervisor", score: "3.75/4", level: "Level 4", skills: ["PCBA lot traceability", "Controlled firmware loading", "First-off sign-off", "Fixture readiness"] },
+  { name: "Ankit Sharma", area: "emf", role: "Process Quality Technician", score: "3.50/4", level: "Level 3", skills: ["Incoming PCBA evidence review", "Harness continuity checks", "Controlled assembly rework", "Line defect logging"] },
+  { name: "Sunita Das", area: "emf", role: "Box-Build Assembly Technician", score: "3.35/4", level: "Level 2", skills: ["Stencil cleaning", "Reel changeover", "ESD verification", "Visual inspection"] },
 
   // TST - Production & EOL Testing Jigs
   { name: "Mina Cross", area: "tst", role: "Automated EOL Test Jig Lead", score: "3.65/4", level: "Level 4", skills: ["Pre-flash", "CAN loopback", "QR labels", "Yield analysis"] },
@@ -404,7 +406,6 @@ const personas: Persona[] = [
   { id: "qa", label: "QA Lead", person: "Jordan Blake · Quality Assurance", departmentId: "qa", kind: "lead" },
   { id: "emf", label: "EMF Lead", person: "Casey Rowan · Electronics Manufacturing", departmentId: "emf", kind: "lead" },
   { id: "mmf", label: "MMF Lead", person: "Mechanical Manufacturing Lead (Interim)", departmentId: "mmf", kind: "lead" },
-  { id: "tst", label: "TST (Preserved)", person: "Mina Cross · Production & EOL Testing", departmentId: "tst", kind: "lead" },
   { id: "fin", label: "FIN Lead", person: "Priya Voss · Finance & Accounts", departmentId: "fin", kind: "lead" },
   { id: "sit", label: "SIT Lead", person: "Kai Morgan · Service & IT", departmentId: "sit", kind: "lead" },
   { id: "hrops", label: "HR Lead", person: "Taylor Quinn · HR & Operations", departmentId: "hrops", kind: "lead" },
@@ -422,7 +423,6 @@ const VALID_PERSONA_IDS = new Set([
   "qa",
   "emf",
   "mmf",
-  "tst",
   "fin",
   "sit",
   "hrops",
@@ -436,6 +436,7 @@ export function normalizePersonaId(role: string | null | undefined): string {
   if (r === "client") return "client";
   if (r === "sal" || r === "sales") return "sales";
   if (r === "hr" || r === "hrops" || r === "people") return "hrops";
+  if (r === "tst") return "unrecognized";
   if (r === "fw" || r === "efw" || r === "firmware" || r === "esw") return "fw";
   if (r === "sw" || r === "csw" || r === "software" || r === "cloud software") return "sw";
   if (r === "mmf" || r === "mechanical manufacturing") return "mmf";
@@ -452,7 +453,7 @@ const ai4tStages = [
   ["Stage 2", "Feasibility & Contract Review", "EHW, FW, SW, MECH, PUR, QA and FIN feasibility requirement sheets compile Contract Review HLPL/F/MKT/01."],
   ["Stage 3", "Requirement & Commercial Lock", "Consolidated Requirements Package (EHW-PRS-01, FW-FRS-01, SW-SRS-01, MECH-MRS-01, QA-QRS-01) and quotation HLPL-AI4T-SAL-QUO-01 are generated."],
   ["Stage 4", "Design & Development PoC", "SCH-01, preliminary BOM, MCU RTOS bring-up (FW) and CAN/telematics software stack (SW) are checked."],
-  ["Stage 5", "Pilot Build & SMT Setup", "SMT Line 2 thermal profile, EMF-CP-01 and prototype tooling are confirmed."],
+  ["Stage 5", "Pilot Build & Manufacturing Readiness", "Accepted outsourced PCBA lots, EMF-CP-01, box-build checks and mechanical fitment evidence are reviewed."],
   ["Stage 6", "DVP&R Pre-Compliance", "QA-DVP-01 records 18 illustrative electrical and environmental verification checks."],
   ["Stage 7", "Production Release & PPAP", "Gerber Rev B, EHW-DFMEA-01 and supplier PPAP Level 3 package are released."],
   ["Stage 8", "Type Approval & Production Authorization", "Illustrative TAC evidence and the 50,000-unit authorization are human-reviewed."],
@@ -616,16 +617,16 @@ export function defaultProjectAnalysis(projectId: string): Record<string, Depart
     },
     EMF: {
       departmentCode: "EMF",
-      departmentName: "Manufacturing & SMT Setup",
+      departmentName: "Electronics Manufacturing & Box-Build",
       lead: "Casey Rowan",
       progress: 70,
       status: "On Track",
-      currentDeliverable: "SMT Line 2 Setup & Reflow Thermal Profile",
+      currentDeliverable: "Outsourced PCBA Acceptance & Box-Build Readiness",
       targetDate: "2026-12-10",
-      internalRemarks: "3D SPI stencil aperture optimized for fine-pitch BGA. Reflow peak temperature verified at 242°C with SAC305 lead-free paste.",
-      clientRemarks: "SMT Line 2 validated for high-volume automated production. First-off pilot run of 200 units initiated.",
+      internalRemarks: "Review supplier PCBA acceptance evidence, lot traceability and released assembly instructions. Actual checks and QA disposition must be recorded.",
+      clientRemarks: "Illustrative pilot integration plan; actual acceptance and production readiness evidence remain required.",
       keyDocumentId: `${pfx}-EMF-CP-01`,
-      stageGate: "Stage 5 · SMT Pilot Build",
+      stageGate: "Stage 5 · Pilot Integration",
       lastUpdated: "2026-10-13",
     },
     TST: {
@@ -711,6 +712,7 @@ type PortalState = {
   templateBodies?: Record<string, string> | undefined;
   raciMatrix?: RaciMatrix | undefined;
   chronicles?: DepartmentChronicle[] | undefined;
+  responsibilityVersions?: ResponsibilityVersion[] | undefined;
   customersRegistry?: CustomerRecord[] | undefined;
   enquiriesOpportunities?: EnquiryOpportunity[] | undefined;
   modularConfigs?: Record<string, ProjectModularConfiguration> | undefined;
@@ -940,7 +942,7 @@ const automotivePhases = [
     "Gerber, fabrication, EMC and ESD evidence",
   ],
   ["Phase_8_Hardware_Software_Integration", "HW_28–29", "HSI and bring-up records"],
-  ["Phase_9_Production_and_Verification", "HW_30–35", "SMT, DVR, tests, pilot and release records"],
+  ["Phase_9_Production_and_Verification", "HW_30–35", "Box-build, DVR, tests, pilot and release records"],
   [
     "Phase_10_Change_Control_and_Compliance",
     "HW_36–37",
@@ -1577,12 +1579,12 @@ const demoPortal = (): PortalState => {
       "HLPL-EMF-CHK-01",
       "emf",
       "Line startup checklist",
-      "SMT Line 2 startup verification",
+      "Outsourced PCBA acceptance and box-build startup verification",
       "Approved",
       "High",
       "Line startup",
       ["HLPL-SLCT-PFD-01", "SS-SLCT-02"],
-      { line: "SMT Line 2 · reflow profile verified · paste thickness 120µm · DEMO" },
+      { line: "Accepted PCBA supplier/lot and functional-check evidence required · DEMO" },
     ),
     make(
       "HLPL-SLCT-PFD-01",
@@ -1593,7 +1595,7 @@ const demoPortal = (): PortalState => {
       "High",
       "PFD",
       ["SS-SLCT-02", "HLPL-SLCT-EMF-CP-01"],
-      { flow: "SMT → assembly → test → inspection → pack · illustrative" },
+      { flow: "Accepted outsourced PCBA → box-build → programming → functional test → QA disposition → pack · illustrative" },
     ),
     make(
       "SS-SLCT-02",
@@ -1604,7 +1606,7 @@ const demoPortal = (): PortalState => {
       "High",
       "PFMEA",
       ["HLPL-SLCT-PFD-01", "HLPL-SLCT-EMF-CP-01"],
-      { fmea: "DEMO PFMEA for SMT and assembly controls" },
+      { fmea: "DEMO PFMEA for box-build and functional-test controls" },
     ),
     make(
       "HLPL-SLCT-EMF-CP-01",
@@ -1673,7 +1675,7 @@ const demoPortal = (): PortalState => {
       "Skill matrix",
       ["HLPL-SLCT-01"],
       {
-        roles: "Telematics SMT Lead · Firmware Architect",
+        roles: "Telematics Box-Build Lead · Firmware Architect",
         score: "Level 4 · 3.8/4.0 average · DEMO competency profile",
       },
     ),
@@ -1681,7 +1683,7 @@ const demoPortal = (): PortalState => {
       "HLPL-SLCT-DMAIC-01",
       "hrops",
       "DMAIC tollgate",
-      "SMT yield improvement DMAIC",
+      "Box-build defect improvement DMAIC",
       "Open",
       "Normal",
       "DMAIC",
@@ -1702,7 +1704,7 @@ const demoPortal = (): PortalState => {
     task("DEMO-TASK-EHW-BLE-MOD", "ehw", "Review & approve ECN-2026-BLE-01: Nordic nRF52840 layout on PCB-04", "Critical", today, "Avery Vale", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "Nordic BLE 5.2 2.4GHz RF trace impedance matching & 3.7V battery charger layout review", true),
     task("DEMO-TASK-QA-CONTRACT", "qa", "Sign Contract Review Record HLPL/F/MKT/01 for Select Motors Telematics", "High", today, "Jordan Blake", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Cross-functional sign-off · due today 16:30", true),
     task("DEMO-TASK-QA-ICAT-TAC", "qa", "Coordinate iCAT Manesar witness testing & Form 22 TAC for Ashok Leyland Gateway", "High", today, "Jordan Blake", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "iCAT Annexure 8 testing & NABL 3.7V Li-ion battery certificate review", true),
-    task("DEMO-TASK-EMF-REFLOW", "emf", "Verify reflow oven 10-zone thermal profile for SMT Line 2 lot BATCH-04", "High", today, "Casey Rowan", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Process verification · due today 11:00"),
+    task("DEMO-TASK-EMF-REFLOW", "emf", "Verify accepted outsourced PCBA lot traceability and box-build readiness for BATCH-04", "High", today, "Casey Rowan", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Process verification · due today 11:00"),
     task("DEMO-TASK-ESW-BLE-GATT", "fw", "Implement FreeRTOS Bluetooth GATT profiles for wireless TPMS & temperature sensors", "High", today, "Devon Lane", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "BLE 5.2 GATT parser integration & AIS-140 MQTT aggregation", false),
     task("TASK-EFW-CAN01", "fw", "CAN J1939 driver bring-up on STM32G0B1", "High", today, "Sneha Patel", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Bring up CAN controller registers and test loopback"),
     task("TASK-EFW-BOOT01", "fw", "Secure dual-bank bootloader & rollback check", "High", today, "Devon Lane", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "Dual-bank flash partition swap and CRC32 signature check"),
@@ -1830,7 +1832,7 @@ const demoPortal = (): PortalState => {
       ],
       products: ["HLPL-SLCT-01", "HLPL-SLCT-01", "HLPL-BCU-02", "HLPL-XLINK-03", "HLPL-EFAN-01", "HLPL-PST-01"],
       customers: ["Tata Motors Limited · EV Fleet Division, Pune", "Mahindra Electric Mobility Limited", "Ashok Leyland Limited", "Sonalika Tractors Limited", "Escorts Kubota Limited"],
-      routes: ["DEMO SMT Line 2"],
+      routes: ["DEMO box-build integration"],
       documentTypes: [
         "PRS",
         "Schematic",
@@ -2514,6 +2516,7 @@ function Portal() {
     setAi4tOpen(true);
   };
   const addRecord = (input: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => {
+    if (input.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
     const count = portal.records.filter((record) => record.area === input.area).length + 1;
     const prefix = areaById(input.area)
       .short.toUpperCase()
@@ -2535,6 +2538,7 @@ function Portal() {
     const record: RecordItem = {
       ...input,
       departmentId,
+      fields: { ...input.fields, ...(input.type === "Project" && portal.responsibilityVersions?.length ? { responsibilityVersion: portal.responsibilityVersions.at(-1)!.id } : {}) },
       id: createId(),
       reference: input.fields["controlledNumber"] || generatedNumber,
       createdAt: now(),
@@ -2556,6 +2560,7 @@ function Portal() {
     }
     const task = portal.records.find((record) => record.id === taskId);
     if (!task) return;
+    if (task.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
     if (persona.kind === "lead" && persona.departmentId && task.area !== persona.departmentId) {
       announce("Department leads can only modify tasks in their own department.");
       return;
@@ -3250,7 +3255,7 @@ function Portal() {
               onBack={() => setView("queue")}
               onReleaseToManufacturing={() => {
                 handleOpenCreate("Task", {
-                  title: "BOM Procurement Lock Released to EMF SMT Line 2",
+                  title: "BOM Procurement Lock Released to EMF Box-Build",
                   scope: "All critical line items approved with dual-sourcing and long-lead modem buffer PO issued.",
                 });
               }}
@@ -3346,6 +3351,7 @@ function Portal() {
               record={selected}
               onBack={() => setView("queue")}
               onSave={(patch) => {
+                if (selected.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
                 if (selected.type === "Task") { void updateTask(selected.id, patch, "Task updated"); return; }
                 update((state) => ({
                   ...state,
@@ -3356,6 +3362,7 @@ function Portal() {
                 log("Record updated", `${selected.reference} updated`);
               }}
               onArchive={() => {
+                if (selected.area === "tst") { announce("Preserve legacy TST records until ownership review is complete."); return; }
                 update((state) => ({
                   ...state,
                   records: state.records.map((record) =>
@@ -3711,7 +3718,7 @@ function Portal() {
             update(state => {
               const draftOwner = persona.kind === "lead" ? departmentContext || persona.departmentId || "" : state.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === departmentCode(draft.department))?.id || "";
               const existing = state.documents.find(document => document.part === draft.documentId && document.lifecycle === "Draft" && document.departmentId === draftOwner);
-              const saved: ControlledDocument = { ...(existing ?? {}), id: existing?.id ?? createId(), title: draft.title, type: draft.title, url: existing?.url ?? "", part: draft.documentId, revision: "00", departmentId: draftOwner, lifecycle: "Draft", classification: "Internal", linkedRecordRefs: draft.project ? [draft.project] : [], releaseNotes: body, history: [...(existing?.history ?? []), now() + " · Browser-local draft saved by " + persona.label] };
+              const saved: ControlledDocument = { ...(existing ?? {}), id: existing?.id ?? createId(), title: draft.title, type: draft.title, url: existing?.url ?? "", part: draft.documentId, revision: "00", draftSnapshot: buildDocumentDraft(draft.title, draft.documentId, { reference: draft.documentId, fields: {}, notes: body }, state.records.find(record => record.type === "Project" && record.reference === draft.project), draft.templateType), departmentId: draftOwner, lifecycle: "Draft", classification: "Internal", linkedRecordRefs: draft.project ? [draft.project] : [], releaseNotes: body, history: [...(existing?.history ?? []), now() + " · Browser-local draft saved by " + persona.label] };
               return { ...state, documents: existing ? state.documents.map(document => document.id === existing.id ? saved : document) : [saved, ...state.documents] };
             });
           }}
@@ -3815,18 +3822,18 @@ function Portal() {
                 reference: "TASK-EMF-LINE2",
                 area: "emf",
                 type: "Task",
-                title: "Verify reflow oven 10-zone thermal profile for SMT Line 2 lot BATCH-04",
+                title: "Verify accepted outsourced PCBA lot traceability and box-build readiness for BATCH-04",
                 priority: "Critical",
                 status: "Open",
                 createdAt: now(),
                 updatedAt: now(),
-                notes: "Stage 5 SMT Pilot task",
+                notes: "Stage 5 pilot integration task",
                 fields: {
                   dueDate: today,
                   assignee: "Casey Rowan",
                   project: selectedProjectId,
-                  stage: "Stage 5 · SMT Pilot",
-                  scope: "10-zone reflow profile and 3D SPI calibration for Line 2",
+                  stage: "Stage 5 · Pilot Integration",
+                  scope: "Accepted outsourced PCBA lot traceability and functional fixture readiness",
                 },
               },
               {
@@ -3844,7 +3851,7 @@ function Portal() {
                   dueDate: today,
                   assignee: "Morgan Reed",
                   project: selectedProjectId,
-                  stage: "Stage 5 · SMT Pilot",
+                  stage: "Stage 5 · Pilot Integration",
                   scope: "Polycarbonate UV-stabilized enclosure soft tooling",
                 },
               },
@@ -3863,7 +3870,7 @@ function Portal() {
                   dueDate: today,
                   assignee: "Jordan Blake",
                   project: selectedProjectId,
-                  stage: "Stage 5 · SMT Pilot",
+                  stage: "Stage 5 · Pilot Integration",
                   scope: "AIS-140 Annexure 8, ISO 7637-2 electrical transients DVP&R",
                 },
               },
@@ -3872,11 +3879,11 @@ function Portal() {
               ...currentPortal,
               records: [...kickoffTasks, ...currentPortal.records],
               notifications: [
-                `Hardware Team Kick-Off active for ${selectedProjectId} (${path === "poc" ? "Stage 4: Research / PoC" : "Stage 5: Direct SMT Pilot"}). Core squad deployed with ${deliverables.join(", ")}.`,
+                `Hardware Team Kick-Off active for ${selectedProjectId} (${path === "poc" ? "Stage 4: Research / PoC" : "Stage 5: Direct Pilot Integration"}). Core squad deployed with ${deliverables.join(", ")}.`,
                 ...currentPortal.notifications,
               ],
             }));
-            announce(`Hardware kick-off active: ${path === "poc" ? "PoC bench bring-up squad deployed" : "Direct SMT Line 2 Pilot setup initiated"}.`);
+            announce(`Hardware kick-off active: ${path === "poc" ? "PoC bench bring-up squad deployed" : "Direct box-build pilot planning initiated"}.`);
             log("Hardware Kick-off launched", `${selectedProjectId} · ${path.toUpperCase()} Track · ${deliverables.join(", ")}`);
           }}
           onClose={() => setAi4tOpen(false)}
@@ -3886,7 +3893,8 @@ function Portal() {
               const stage = Math.min(state.stage + 1, ai4tStages.length - 1);
               const entry = ai4tStages[stage] ?? ai4tStages[0];
               if (!entry) return state;
-              const matrix = portal.raciMatrix ?? defaultRaciMatrix();
+              const pinnedChronicles = resolveProjectChronicles(portal.responsibilityVersions, portal.records.find(record => record.type === "Project" && record.reference === selectedProjectId)?.fields["responsibilityVersion"], portal.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES);
+              const matrix = deriveRaciMatrixFromChronicles(pinnedChronicles, ai4tStages, raciDepartments);
               const recipients = Object.entries(matrix[entry[0]] ?? {}).filter(([, role]) => role && role !== "I").map(([department]) => department);
               update((currentPortal) => ({ ...currentPortal, alerts: [...currentPortal.alerts, ...recipients.map((department) => ({ id: createId(), severity: "Warning" as const, title: `${entry[0]} handoff ready`, detail: `${entry[1]} — review the stage handoff and proceed with the assigned controlled work.`, departmentId: currentPortal.departments.find((item) => item.code.replace(/^DEMO-/, "") === department)?.id ?? "sales", resolved: false }))].slice(-100) }));
               log("AI4T lifecycle simulation advanced", `${entry[0]} · ${entry[1]}`);
@@ -3912,7 +3920,7 @@ function Portal() {
           onOpenPrintable={setPrintTemplate}
           documents={portal.documents}
           onOpenDocument={openDocument}
-          chronicles={portal.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES}
+          chronicles={resolveProjectChronicles(portal.responsibilityVersions, portal.records.find(record => record.type === "Project" && record.reference === selectedProjectId)?.fields["responsibilityVersion"], portal.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES)}
           onOpenChroniclesManager={() => {
             setAdminTab("chronicles");
             setModal("admin");
@@ -4037,7 +4045,7 @@ function CommandCenter({
   onOpenCloudSync?: (() => void) | undefined;
   persona: Persona;
 }) {
-  const records = portal.records.filter((record) => !record.archived);
+  const records = portal.records.filter((record) => !record.archived && record.area !== "tst");
   const visible = departmentContext
     ? records.filter((record) => record.departmentId === departmentContext)
     : records;
@@ -4102,7 +4110,7 @@ function CommandCenter({
           <Action label="Switch back to Admin" onClick={onReturnGlobal} />
         </section>
       )}
-      {portal.demoLoaded && <ExecutiveKpis />}
+      {portal.demoLoaded && <ExecutiveKpis portal={portal} />}
       <SmartNextStep records={visible} onOpenDraftHub={onOpenDraftHub} />
       <section className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <Metric
@@ -4158,7 +4166,7 @@ function CommandCenter({
             {portal.departments
               .filter(
                 (department) =>
-                  department.active && (!departmentContext || department.id === departmentContext),
+                  department.active && department.code.replace(/^DEMO-/, "").toUpperCase() !== "TST" && (!departmentContext || department.id === departmentContext),
               )
               .sort((a, b) => a.sortOrder - b.sortOrder)
               .map((department) => {
@@ -4200,6 +4208,8 @@ function CommandCenter({
           </div>
         </div>
         <aside className="ops-section bg-panel p-4">
+          {portal.departments.some(department => department.code.replace(/^DEMO-/, "").toUpperCase() === "TST") && <details className="mb-4 border-b border-border pb-4"><summary className="cursor-pointer text-sm font-semibold">Legacy TST records · ownership review</summary><p className="mt-2 text-xs text-muted-foreground">Retired department. Historical records, owners and IDs are preserved; no automatic reassignment to EMF, MMF or QA.</p><Action label="Review legacy TST records" onClick={() => onNavigate("tst")} /></details>}
+
           <p className="text-sm font-semibold">Quick actions</p>
           <div className="mt-3 grid gap-2">
             <Action onClick={onCreate} label="Create task" />
@@ -4341,7 +4351,7 @@ function Ai4tLifecycleHub({
         <>
           {/* Interactive Playback Stepper & Page-by-Page Distributed View */}
           <div className="mt-4">
-            <ProjectLifecyclePlayerAndDetail
+            <Suspense fallback={<p role="status">Loading lifecycle…</p>}><ProjectLifecyclePlayerAndDetail
               activeProjectId={projectId}
               onSelectProject={(newId) => {
                 if (onSelectProject) onSelectProject(newId);
@@ -4352,7 +4362,7 @@ function Ai4tLifecycleHub({
               onOpenPrintable={onOpenPrintable}
               chronicles={chronicles}
               onOpenChroniclesManager={onOpenChroniclesManager}
-            />
+            /></Suspense>
           </div>
 
           <div className="mt-6 border-t border-border pt-4">
@@ -4378,7 +4388,7 @@ function Ai4tLifecycleHub({
               onClick={() => {
                 if (!canJumpToStage) return;
                 if (isBlocked) {
-                  alert(`AUTOMOTIVE GATE INTERLOCK ACTIVE:\n\nCannot advance to ${stage}: ${title}.\n\nMandatory Prerequisite "Stage 4 Hardware Schematics (EHW-SCH-01)" must be completed and signed off by the Embedded Hardware Lead before SMT Pilot or Production Release can proceed.`);
+                  alert(`AUTOMOTIVE GATE INTERLOCK ACTIVE:\n\nCannot advance to ${stage}: ${title}.\n\nMandatory Prerequisite "Stage 4 Hardware Schematics (EHW-SCH-01)" must be completed and signed off by the Embedded Hardware Lead before Pilot Integration or Production Release can proceed.`);
                   return;
                 }
                 onJump(index);
@@ -4602,7 +4612,7 @@ const autoDraftTemplates = [
   ["Hardware DFMEA", "HLPL-SLCT-EHW-DFMEA-01", "EHW"],
   ["Manufacturing Process Flow & Control Plan", "HLPL-SLCT-EMF-CP-01", "EMF"],
   ["DVP&R Verification Plan", "HLPL-SLCT-QA-DVP-01", "QA"],
-  ["Pre-Dispatch Inspection Certificate", "HLPL-SLCT-TST-PDI-01", "TST"],
+  ["Pre-Dispatch Inspection Report", "HLPL-SLCT-EMF-PDI-01", "EMF"],
   ["Commercial Tax Invoice", "HLPL-SLCT-FIN-INV-01", "FIN"],
   ["Annual Skill Matrix", "HLPL/F/HR/03", "HR/OPS"],
 ] as const;
@@ -5806,7 +5816,7 @@ function ProjectDetail({
                       <span>Automated Stage Gate &amp; Dependency Enforcement (IATF 16949 §8.3 / APQP)</span>
                     </div>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      <strong>Prerequisite Rule:</strong> Hardware Schematics (EHW-SCH-01) is the critical path gate. Manufacturing, SMT line allocation, and Pilot production are programmatically locked until Schematics release is certified.
+                      <strong>Prerequisite Rule:</strong> Hardware Schematics (EHW-SCH-01) is the critical path gate. Box-build, mechanical manufacturing, and pilot production are programmatically locked until Schematics release is certified.
                     </p>
                   </div>
 
@@ -5840,7 +5850,7 @@ function ProjectDetail({
 
                     <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-[10px] text-muted-foreground">Stage 5 · SMT Pilot</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">Stage 5 · Pilot Integration</span>
                         <span className="rounded bg-primary/20 px-1 font-mono text-[9px] font-bold text-primary">ACTIVE</span>
                       </div>
                       <p className="font-bold text-primary mt-1">Line 2 Setup Active</p>
@@ -5852,7 +5862,7 @@ function ProjectDetail({
                         <span className="font-mono text-[10px] text-muted-foreground">Stage 7 · Mass Prod</span>
                         <Lock className="size-3 text-muted-foreground" />
                       </div>
-                      <p className="font-bold text-muted-foreground mt-1">Gated on SMT Pilot</p>
+                      <p className="font-bold text-muted-foreground mt-1">Gated on pilot integration</p>
                       <span className="text-[10px] text-muted-foreground">Awaiting Stage 5 PPAP</span>
                     </div>
                   </div>
@@ -6187,15 +6197,21 @@ function LifecycleProgress({ records, projectId }: { records: RecordItem[]; proj
   );
 }
 
-function ExecutiveKpis() {
+function ExecutiveKpis({ portal }: { portal: PortalState }) {
+  const departments = portal.departments.filter(department => department.active && department.code.replace(/^DEMO-/, "").toUpperCase() !== "TST");
+  const records = portal.records.filter(record => !record.archived && record.area !== "tst");
+  const projects = records.filter(record => record.type === "Project");
+  const tasks = records.filter(record => record.type === "Task");
+  const pending = portal.approvals.filter(approval => approval.outcome === "Pending");
+  const missingOwners = departments.filter(department => !department.lead?.trim() || /interim|unassigned/i.test(department.lead));
   return (
     <section className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      <Metric label="Active project" value="SLCT-01" detail="AIS-140 tracker · DEMO" tone="steel" />
-      <Metric label="Order volume" value="50,000" detail="Illustrative units" tone="moss" />
-      <Metric label="Revenue" value="₹20.33 Cr" detail="Illustrative order value" tone="steel" />
-      <Metric label="Stage" value="8" detail="Type Approval & SCM" tone="warning" />
-      <Metric label="Audit score" value="100%" detail="DEMO readiness assertion" tone="moss" />
-      <Metric label="System sync" value="11/11" detail="Department handoffs" tone="steel" />
+      <Metric label="Projects" value={String(projects.length)} detail="Saved local project records" tone="steel" />
+      <Metric label="Active departments" value={String(departments.length)} detail="Legacy TST excluded" tone="moss" />
+      <Metric label="Open tasks" value={String(tasks.filter(task => !["Approved", "Released", "Archived"].includes(task.status)).length)} detail="Saved local task records" tone="steel" />
+      <Metric label="Pending approvals" value={String(pending.length)} detail="Recorded human decisions needed" tone="warning" />
+      <Metric label="Owners to confirm" value={String(missingOwners.length)} detail="Missing or interim department leads" tone="warning" />
+      <Metric label="Shared persistence" value="Unverified" detail="Browser-local prototype" tone="steel" />
     </section>
   );
 }
@@ -6206,8 +6222,8 @@ function CrossDepartmentSyncHub({ onClose }: { onClose: () => void }) {
     ["FIN", "Advance deposit verified & invoice generated", "₹6.10 Cr illustrative advance · HLPL-SLCT-FIN-INV-01"],
     ["PUR", "Long-lead IC purchase plan synchronized", "STM32 · Quectel 4G · u-blox GNSS · DEMO ASL"],
     ["R&D", "Design release package synchronized", "Final Gerber · production BOM · mold tooling"],
-    ["EMF", "Tranche 1 production scheduled", "SMT Line 2 · 2,500 illustrative units"],
-    ["TST", "EOL capacity preloaded", "SLCT-2026-00001..50000 · 97.4% simulated FPY"],
+    ["EMF", "Tranche 1 production scheduled", "Box-build integration · 2,500 illustrative units"],
+    ["EMF", "Functional test capacity planned", "SLCT-2026-00001..50000 · 97.4% simulated FPY"],
     ["QA", "APQP and compliance evidence ready", "Phases 1–4 closed · DEMO TAC reference only"],
   ];
   return (
@@ -6485,7 +6501,7 @@ function DepartmentWorkspace({
             onSelectSubView={onSelectPurchasingSubView}
             onReleaseToManufacturing={() => {
               onCreate("Task", {
-                title: "BOM Procurement Lock Released to EMF SMT Line 2",
+                title: "BOM Procurement Lock Released to EMF Box-Build",
                 scope: "All critical line items approved with dual-sourcing and long-lead modem buffer PO issued.",
               });
             }}
@@ -6747,11 +6763,11 @@ const departmentProcesses: Partial<Record<AreaId, { drive: string; items: Depart
   emf: {
     drive: "07_Production_and_Testing",
     items: [
-      { name: "SMT process flow & control plan", recordType: "Control plan", defaultTitle: "SMT manufacturing process flow & Control Plan", driveGroup: "03 Client projects", targetFolder: "07_Production_and_Testing" },
-      { name: "10-zone reflow profile log", recordType: "Line startup checklist", defaultTitle: "10-zone reflow oven thermal profiling record", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
-      { name: "3D AOI & SPI criteria", recordType: "PFD", defaultTitle: "3D SPI & automated optical inspection criteria", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
+      { name: "Box-build process flow & control plan", recordType: "Control plan", defaultTitle: "Box-build manufacturing process flow & Control Plan", driveGroup: "03 Client projects", targetFolder: "07_Production_and_Testing" },
+      { name: "Outsourced PCBA acceptance and traceability log", recordType: "Line startup checklist", defaultTitle: "Accepted PCBA lot and box-build readiness record", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
+      { name: "PCBA acceptance & functional check criteria", recordType: "PFD", defaultTitle: "Supplier PCBA acceptance & functional inspection criteria", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
       { name: "SOPs & work instructions", recordType: "PFMEA", defaultTitle: "Assembly standard operating procedures (SOPs)", driveGroup: "01 Common documents", targetFolder: "07_Production_and_Testing" },
-      { name: "Line startup & ESD verification", recordType: "Line startup checklist", defaultTitle: "Daily SMT line startup & ESD workstation log", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
+      { name: "Line startup & ESD verification", recordType: "Line startup checklist", defaultTitle: "Daily box-build startup & ESD workstation log", driveGroup: "04 Other department work", targetFolder: "07_Production_and_Testing" },
     ],
   },
   tst: {
@@ -7728,18 +7744,17 @@ function AdminCommandCenter({
         </span>
       </div>
       {tab === "chronicles" ? (
-        <DepartmentChroniclesManager
+        <><p className="mb-3 text-sm text-muted-foreground">Local draft configuration changes apply to new projects. Existing projects retain their recorded version; changes to an existing baseline require a separate reviewed change. Backend authorization and signer acceptance remain unverified.</p><DepartmentChroniclesManager
           chronicles={portal.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES}
           onUpdateChronicles={(updated) => {
             const newRaci = deriveRaciMatrixFromChronicles(updated, ai4tStages, raciDepartments);
             onUpdate((state) => ({
-              ...state,
-              chronicles: updated,
+              ...evolveResponsibilityConfiguration(state, state.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES, updated, new Date().toISOString()),
               raciMatrix: newRaci,
             }));
           }}
           onLog={onLog}
-        />
+        /></>
       ) : tab === "cloud" ? (
         <CloudSyncPanel portal={portal} onUpdate={onUpdate} onLog={onLog} />
       ) : tab === "team" ? (
@@ -10239,6 +10254,8 @@ type PrintableDocument = {
   title: string;
   documentId: string;
   source?: DraftSource | undefined;
+  templateType?: string | undefined;
+  populatedDraft?: ReturnType<typeof buildDocumentDraft> | undefined;
   department: string;
   revision: string;
   status: RecordStatus;
@@ -10247,15 +10264,15 @@ type PrintableDocument = {
 };
 
 function createPrintableDocument(template: readonly [string, string, string], settings: TemplateSettings, project = "HLPL-AI4T-01"): PrintableDocument {
-  const type = template[0].includes("SOR") ? "SOR" : template[0].includes("Requirement") ? "PRS" : template[0].includes("DVP") ? "DVP" : template[1].split("-").at(-2) ?? "DOC";
+  const type = draftType(template[0], template[1]) ?? "UNSUPPORTED";
   const department = template[2] === "HR/OPS" ? "HR" : template[2];
   const stage = autoDraftStage(template[0]);
-  return { title: template[0].toUpperCase(), documentId: template[1].startsWith("HLPL/") ? template[1] : `DRAFT-${project || "UNLINKED"}-${department}-${type}`, department, revision: "Rev 00 · unissued", status: "Draft", project, stage };
+  return { title: template[0].toUpperCase(), documentId: template[1].startsWith("HLPL/") ? template[1] : `DRAFT-${project || "UNLINKED"}-${department}-${type}`, department, revision: "Rev 00 · unissued", status: "Draft", project, stage, templateType: type };
 }
 
 function controlledDocumentPrintable(document: ControlledDocument, department: string): PrintableDocument {
   const inferredProject = document.linkedRecordRefs?.find(reference => /^HLPL-[A-Z0-9]+-\d+$/.test(reference)) || "Unlinked";
-  return { title: document.title.toUpperCase(), documentId: document.part || document.id, source: { reference: document.part || document.id, fields: {}, notes: document.releaseNotes }, department, revision: `Rev ${document.revision ?? "01"}`, status: document.lifecycle === "Approved" ? "Approved" : document.lifecycle === "In review" ? "In review" : "Draft", project: inferredProject, stage: autoDraftStage(`${document.title} ${document.type}`) };
+  return { title: document.title.toUpperCase(), documentId: document.part || document.id, source: { reference: document.part || document.id, fields: {}, notes: document.releaseNotes }, populatedDraft: document.draftSnapshot, department, revision: `Rev ${document.revision ?? "01"}`, status: document.lifecycle === "Approved" ? "Approved" : document.lifecycle === "In review" ? "In review" : "Draft", project: inferredProject, stage: autoDraftStage(`${document.title} ${document.type}`) };
 }
 
 function recordPrintable(record: RecordItem): PrintableDocument {
@@ -10294,7 +10311,7 @@ function RaciMatrixEditor({ matrix, onChange, onSave }: { matrix: RaciMatrix; on
 function PrintableTemplateView({ document, settings, records, onClose, onOpenSettings }: { document: PrintableDocument; settings: TemplateSettings; records: RecordItem[]; onClose: () => void; onOpenSettings: () => void }) {
   const projectSource = records.find(record => record.type === "Project" && record.reference === document.project);
   const source = document.source ?? records.find(record => record.reference === document.documentId);
-  const draft = buildDocumentDraft(document.title, document.documentId, source, projectSource);
+  const draft = document.populatedDraft ?? buildDocumentDraft(document.title, document.documentId, source, projectSource, document.templateType);
   const profile = { name: projectSource?.title || "Project baseline not provided" };
   const date = "Not issued — draft preview";
   const markdown = documentMarkdown(document, draft, source);
@@ -10319,12 +10336,12 @@ function PrintableTemplateView({ document, settings, records, onClose, onOpenSet
       window.setTimeout(() => frame.remove(), 1000);
     }, 300);
   };
-  return <Modal title="Full Document Viewer & Print" onClose={onClose} wide><div className="no-print mb-4 flex flex-wrap justify-end gap-2"><Action label="Copy Full Markdown" onClick={copyText} /><Action label="Export Text" onClick={exportText} /><Action label="Customize Header & Footer" onClick={onOpenSettings} /><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div><article id="printable-document" className="print-document printable-document-content mx-auto max-w-[794px] border border-border bg-card p-5 text-foreground shadow-lg md:p-8"><header className="grid gap-px overflow-hidden border-2 border-foreground/50 bg-border sm:grid-cols-[1.15fr_1.7fr_1.15fr]"><div className="bg-card p-3"><div className="flex items-center gap-2"><span className="grid size-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">{settings.logoBadge}</span><div><p className="text-xs font-bold">{settings.companyName}</p><p className="text-[10px] text-muted-foreground">XYZ Pvt Ltd</p></div></div><p className="mt-3 text-[9px] leading-4 text-muted-foreground">{settings.accreditationMarks}</p></div><div className="bg-card p-3 text-center"><p className="text-sm font-bold">{document.title}</p><p className="mt-1 text-[10px] font-medium">{document.stage} · {document.project} · {profile.name}</p></div><div className="bg-card p-3 text-[10px]"><p><strong>Document ID:</strong> {document.documentId}</p><p className="mt-1"><strong>Revision:</strong> {document.revision}</p><p className="mt-1"><strong>Effective date:</strong> {date}</p><p className="mt-1"><strong>Classification:</strong> Internal draft — source verification required</p><p className="mt-2"><Status status="Draft" /></p></div></header><section className="mt-5 border border-border"><div className="border-b border-border bg-panel px-3 py-2"><p className="text-xs font-bold">Organization & facility details</p></div><div className="grid gap-px bg-border sm:grid-cols-2"><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Tech Center</p><p className="mt-1 text-xs">{settings.techCenter}</p></div><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Manufacturing plant</p><p className="mt-1 text-xs">{settings.plantLocation}</p></div></div></section><DocumentBody draft={draft} source={source} /><footer className="mt-8 border-t-2 border-foreground/50 pt-3 text-center text-[9px] leading-4 text-muted-foreground"><p>{settings.confidentialityNotice}</p><p className="mt-2">{settings.complianceFooter}</p><p className="mt-2">Classification: Internal draft · Printed {new Date().toLocaleString("en-IN")} · Use print preview for page count</p><div className="no-print mt-4"><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div></footer></article></Modal>;
+  return <Modal title="Full Document Viewer & Print" onClose={onClose} wide><div className="no-print mb-4 flex flex-wrap justify-end gap-2"><Action label="Copy Full Markdown" onClick={copyText} /><Action label="Export Text" onClick={exportText} /><Action label="Export source snapshot" onClick={() => { const url = URL.createObjectURL(new Blob([JSON.stringify(draft.snapshot, null, 2)], { type: "application/json" })); const link = window.document.createElement("a"); link.href = url; link.download = `${document.documentId}-source.json`; link.click(); URL.revokeObjectURL(url); }} /><Action label="Customize Header & Footer" onClick={onOpenSettings} /><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div><article id="printable-document" className="print-document printable-document-content mx-auto max-w-[794px] border border-border bg-card p-5 text-foreground shadow-lg md:p-8"><header className="grid gap-px overflow-hidden border-2 border-foreground/50 bg-border sm:grid-cols-[1.15fr_1.7fr_1.15fr]"><div className="bg-card p-3"><div className="flex items-center gap-2"><span className="grid size-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">{settings.logoBadge}</span><div><p className="text-xs font-bold">{settings.companyName}</p><p className="text-[10px] text-muted-foreground">XYZ Pvt Ltd</p></div></div><p className="mt-3 text-[9px] leading-4 text-muted-foreground">{settings.accreditationMarks}</p></div><div className="bg-card p-3 text-center"><p className="text-sm font-bold">{document.title}</p><p className="mt-1 text-[10px] font-medium">{document.stage} · {document.project} · {profile.name}</p></div><div className="bg-card p-3 text-[10px]"><p><strong>Document ID:</strong> {document.documentId}</p><p className="mt-1"><strong>Revision:</strong> {document.revision}</p><p className="mt-1"><strong>Effective date:</strong> {date}</p><p className="mt-1"><strong>Classification:</strong> Internal draft — source verification required</p><p className="mt-2"><Status status="Draft" /></p></div></header><section className="mt-5 border border-border"><div className="border-b border-border bg-panel px-3 py-2"><p className="text-xs font-bold">Organization & facility details</p></div><div className="grid gap-px bg-border sm:grid-cols-2"><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Tech Center</p><p className="mt-1 text-xs">{settings.techCenter}</p></div><div className="bg-card p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">Manufacturing plant</p><p className="mt-1 text-xs">{settings.plantLocation}</p></div></div></section><DocumentBody draft={draft} source={source} /><footer className="mt-8 border-t-2 border-foreground/50 pt-3 text-center text-[9px] leading-4 text-muted-foreground"><p>{settings.confidentialityNotice}</p><p className="mt-2">{settings.complianceFooter}</p><p className="mt-2">Classification: Internal draft · Printed {new Date().toLocaleString("en-IN")} · Use print preview for page count</p><div className="no-print mt-4"><Action label="🖨️ Print / Save PDF" primary onClick={printDocument} /></div></footer></article></Modal>;
 }
 
 function DocumentBody({ draft, source }: { draft: ReturnType<typeof buildDocumentDraft>; source?: DraftSource | undefined }) {
   return <>
-    <section className="mt-5 rounded-lg border border-warning/40 p-3 text-xs"><strong>Unissued draft · human review required</strong><p>Values below are copied from identified browser-local records. A source reference does not establish approval or certification. Missing information remains TBD.</p>{!draft.supported && <p>No approved format is configured for this document type. Attach the controlled original or configure its format before release.</p>}</section>
+    <section className="mt-5 rounded-lg border border-warning/40 p-3 text-xs"><strong>Unissued draft · human review required</strong><p>Template: {draft.type ?? "Unsupported"} · version {draft.templateVersion} · {draft.missingFields.length} missing fields</p><p>Values below are copied from identified browser-local records. A source reference does not establish approval or certification. Missing information remains TBD.</p>{!draft.supported && <p>No approved format is configured for this document type. Attach the controlled original or configure its format before release.</p>}</section>
     {source?.notes && <section className="mt-5"><h3 className="text-xs font-bold">Source notes — {source.reference}</h3><p className="mt-2 whitespace-pre-wrap text-xs">{source.notes}</p></section>}
     {draft.sections.map((section, index) => <section key={section.title} className="mt-5"><h3 className="border-b border-foreground/30 pb-1 text-xs font-bold">{index + 1}.0 {section.title}</h3><DocumentTable headers={["Field", "Available information", "Source reference"]} rows={section.rows} /></section>)}
     <section className="mt-5"><h3 className="text-xs font-bold">Review and release</h3><DocumentTable headers={["Prepared", "Reviewed", "Approved", "Release evidence"]} rows={[["Not recorded", "Not recorded", "Not recorded", "Required before issue"]]} /></section>
@@ -10334,7 +10351,7 @@ function DocumentBody({ draft, source }: { draft: ReturnType<typeof buildDocumen
 function DocumentTable({ headers, rows }: { headers: string[]; rows: string[][] }) { return <div className="mt-3 overflow-x-auto border border-border"><table className="w-full min-w-[620px] text-left text-xs"><thead className="bg-panel"><tr>{headers.map((header) => <th key={header} className="p-2 font-semibold">{header}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={`${row[0]}-${index}`} className="border-t border-border">{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className="p-2 align-top">{cell}</td>)}</tr>)}</tbody></table></div>; }
 
 function documentMarkdown(document: PrintableDocument, draft: ReturnType<typeof buildDocumentDraft>, source?: DraftSource) {
-  return [`# ${document.title}`, `Document ID: ${document.documentId}`, `Project: ${document.project}`, `Revision: ${document.revision}`, "UNISSUED DRAFT — source verification and human approval required", !draft.supported ? "No approved format configured for this document type." : "", source?.notes || "", ...draft.sections.map(section => [`## ${section.title}`, ...section.rows.map(row => row.join(" | "))].join("\n")), "Prepared: Not recorded | Reviewed: Not recorded | Approved: Not recorded"].join("\n\n");
+  return [`# ${document.title}`, `Document ID: ${document.documentId}`, `Project: ${document.project}`, `Revision: ${document.revision}`, `Template: ${draft.type ?? "Unsupported"} / ${draft.templateVersion}`, "UNISSUED DRAFT — source verification and human approval required", !draft.supported ? "No approved format configured for this document type." : "", source?.notes || "", ...draft.sections.map(section => [`## ${section.title}`, ...section.rows.map(row => row.join(" | "))].join("\n")), "Prepared: Not recorded | Reviewed: Not recorded | Approved: Not recorded"].join("\n\n");
 }
 
 function DocumentField({ label, value }: { label: string; value: string }) {
