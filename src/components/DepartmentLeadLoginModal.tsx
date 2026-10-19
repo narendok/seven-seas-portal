@@ -165,18 +165,22 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
 export type DepartmentLeadLoginModalProps = {
   isOpen: boolean;
   demoMode?: boolean | undefined;
+  testMode?: boolean | undefined;
   onClose: () => void;
   currentPersonaId: string;
   onLoginSuccess: (personaId: string, leadInfo: DepartmentCredential) => void;
+  onTestLogin?: (email: string, password: string) => Promise<void>;
   onLogout: () => void;
 };
 
 export function DepartmentLeadLoginModal({
   isOpen,
   demoMode = false,
+  testMode = false,
   onClose,
   currentPersonaId,
   onLoginSuccess,
+  onTestLogin,
   onLogout,
 }: DepartmentLeadLoginModalProps) {
   const [email, setEmail] = useState("");
@@ -184,9 +188,10 @@ export function DepartmentLeadLoginModal({
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
-  if (!demoMode) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-5"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><h2 className="text-lg font-semibold">Production sign-in is not configured</h2><p className="mt-3 text-sm text-muted-foreground">An administrator must enable the approved sign-in method and configure organization membership. Demo credentials cannot authenticate operational users.</p><button type="button" onClick={onClose} className="mt-5 rounded border border-border px-4 py-2 text-sm">Close</button></section></div>;
+  if (!demoMode && !testMode) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-5"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><h2 className="text-lg font-semibold">TEST sign-in is not available</h2><p className="mt-3 text-sm text-muted-foreground">This workspace remains browser-local until an approved TEST membership is provisioned.</p><button type="button" onClick={onClose} className="mt-5 rounded border border-border px-4 py-2 text-sm">Close</button></section></div>;
 
   const activeCred = DEPARTMENT_CREDENTIALS.filter(c => c.departmentCode !== "TST").find(
     (c) => c.id === currentPersonaId || (currentPersonaId === "efw" && c.id === "fw") || (currentPersonaId === "csw" && c.id === "sw")
@@ -198,12 +203,26 @@ export function DepartmentLeadLoginModal({
     setErrorMessage(null);
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     const trimmedEmail = email.trim().toLowerCase();
-    const trimmedPass = password.trim();
+    const trimmedPass = password;
+
+    if (testMode && !demoMode && onTestLogin) {
+      setIsSubmitting(true);
+      try {
+        await onTestLogin(trimmedEmail, trimmedPass);
+        setSuccessMessage("TEST session verified against the shared backend.");
+        onClose();
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "TEST sign-in could not be completed.");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     const matched = DEPARTMENT_CREDENTIALS.filter(c => c.departmentCode !== "TST").find(
       (c) =>
@@ -239,14 +258,14 @@ export function DepartmentLeadLoginModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-foreground">
-                  Demo Department Preview
+                  {demoMode ? "Demo Department Preview" : "TEST Workspace Sign-in"}
                 </h3>
                 <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                   IATF 16949 / ISO 27001
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                These sample credentials select a browser-local preview role. They are not production authentication.
+                {demoMode ? "These sample credentials select a browser-local preview role. They are not production authentication." : "TEST ONLY — server membership determines your role and department. No local role selector is authoritative."}
               </p>
             </div>
           </div>
@@ -388,6 +407,7 @@ export function DepartmentLeadLoginModal({
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                     <input
+                      aria-label={testMode && !demoMode ? "TEST email" : "Work email address / department username"}
                       type="text"
                       required
                       value={email}
@@ -401,15 +421,16 @@ export function DepartmentLeadLoginModal({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-semibold text-foreground">
-                      Access Password
+                      Password
                     </label>
                     <span className="text-[10px] text-muted-foreground font-mono">
-                      Standard format: Demo@[DEPT]2026
+                      {demoMode ? "Standard format: Demo@[DEPT]2026" : "TEST account password"}
                     </span>
                   </div>
                   <div className="relative">
                     <Key className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                     <input
+                      aria-label={testMode && !demoMode ? "TEST password" : "Password"}
                       type={showPassword ? "text" : "password"}
                       required
                       value={password}
@@ -432,7 +453,7 @@ export function DepartmentLeadLoginModal({
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90 transition-colors cursor-pointer"
                 >
                   <ShieldCheck className="size-4" />
-                  <span>Open Demo Department Preview</span>
+                  <span>{isSubmitting ? "Verifying TEST membership…" : demoMode ? "Open Demo Department Preview" : "Sign in to TEST workspace"}</span>
                   <ArrowRight className="size-4" />
                 </button>
               </form>

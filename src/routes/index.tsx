@@ -68,6 +68,7 @@ import {
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { unzipSync } from "fflate";
 import { supabase } from "@/integrations/supabase/client";
+import { getTestMembership, type TestMembership } from "@/lib/test-auth.functions";
 import {
   beginControlledDocumentUpload,
   completeControlledDocumentUpload,
@@ -2134,6 +2135,9 @@ export const Route = createFileRoute("/")({
 
 function Portal() {
   const [portal, setPortal] = useState<PortalState | null>(null);
+  const getTestMembershipFn = useServerFn(getTestMembership);
+  const [testMembership, setTestMembership] = useState<TestMembership | null>(null);
+  const [testAuthReady, setTestAuthReady] = useState(false);
 
   const isInvalidUrlRole =
     typeof window !== "undefined" &&
@@ -2287,12 +2291,6 @@ function Portal() {
     return () => window.removeEventListener("keydown", handleShortcut);
   }, []);
 
-  if (!portal)
-    return (
-      <main className="grid min-h-screen place-items-center bg-background text-muted-foreground">
-        Opening your portal…
-      </main>
-    );
   const update = async (recipe: (state: PortalState) => PortalState): Promise<boolean> => {
     try {
       const save = (state: PortalState) => window.localStorage.setItem(storeKey, JSON.stringify(state));
@@ -2364,7 +2362,9 @@ function Portal() {
     setQueueStage(null);
     setMobileMenu(false);
   };
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (testMembership) await supabase.auth.signOut();
+    setTestMembership(null);
     window.localStorage.removeItem("scms_auth_session");
     const url = new URL(window.location.href);
     url.searchParams.delete("role");
@@ -2373,6 +2373,46 @@ function Portal() {
     setSignedOut(true);
     setLoginModalOpen(false);
   };
+  const resolveTestMembership = async () => {
+    const membership = await getTestMembershipFn();
+    const byDepartment = membership.departmentCode ? normalizePersonaId(membership.departmentCode) : "unrecognized";
+    const personaId = membership.role === "admin" ? "admin" : membership.isClient ? "client" : byDepartment;
+    const matched = personas.find((item) => item.id === personaId);
+    if (!matched) throw new Error("This TEST account does not have a supported active department membership.");
+    setTestMembership(membership);
+    setSignedOut(false);
+    switchPersona(matched);
+  };
+  const handleTestLogin = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) throw new Error("The TEST email or password was not accepted.");
+    try {
+      await resolveTestMembership();
+    } catch (membershipError) {
+      await supabase.auth.signOut();
+      throw membershipError;
+    }
+  };
+  useEffect(() => {
+    let active = true;
+    const restore = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session || !active) { if (active) setTestAuthReady(true); return; }
+      try { await resolveTestMembership(); } catch { await supabase.auth.signOut(); if (active) setTestMembership(null); }
+      if (active) setTestAuthReady(true);
+    };
+    void restore();
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") { setTestMembership(null); setSignedOut(true); }
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
+  if (!portal)
+    return (
+      <main className="grid min-h-screen place-items-center bg-background text-muted-foreground">
+        Opening your portal…
+      </main>
+    );
   const handleDemoLogin = (personaId: string, leadInfo: DepartmentCredential) => {
     const matched = personas.find(item => item.id === personaId);
     if (!matched || !portal.demoLoaded) return;
@@ -2911,7 +2951,7 @@ function Portal() {
     setSelectedDocumentId(document.id);
     setModal("document");
   };
-  if (signedOut) return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><h1 className="text-xl font-semibold">Signed out</h1><p className="mt-3 text-sm text-muted-foreground">No department workspace is open.</p><button type="button" onClick={() => setLoginModalOpen(true)} className="mt-5 rounded border border-border px-4 py-2 text-sm">{portal.demoLoaded ? "Choose demo department" : "Sign in"}</button></section><DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={portal.demoLoaded} currentPersonaId="" onClose={() => setLoginModalOpen(false)} onLoginSuccess={handleDemoLogin} onLogout={handleLogout} /></main>;
+  if (signedOut) return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><p className="text-[11px] font-bold uppercase text-primary">TEST ONLY</p><h1 className="mt-1 text-xl font-semibold">Signed out</h1><p className="mt-3 text-sm text-muted-foreground">Sign in with a provisioned TEST account. Browser-local demo records remain separate.</p><button type="button" disabled={!testAuthReady} onClick={() => setLoginModalOpen(true)} className="mt-5 rounded border border-border px-4 py-2 text-sm disabled:opacity-50">Sign in to TEST workspace</button></section><DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode currentPersonaId="" onClose={() => setLoginModalOpen(false)} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} /></main>;
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col ${sidebarExpanded ? "w-64" : "w-16"}`}>
@@ -3659,7 +3699,7 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
-      <DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={portal.demoLoaded} onClose={() => setLoginModalOpen(false)} currentPersonaId={persona.id} onLoginSuccess={handleDemoLogin} onLogout={handleLogout} />
+      <DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode onClose={() => setLoginModalOpen(false)} currentPersonaId={persona.id} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} />
       {customerRegisterOpen && (
         <CustomerRegisterModal
           customers={portal.customersRegistry ?? defaultCustomers}

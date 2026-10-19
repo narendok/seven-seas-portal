@@ -30,6 +30,8 @@
 - Keep interactive lifecycle walkthroughs and competency examples in the replaceable DEMO browser-local state, so feature tests never affect configured operational records.
 - Keep demo task, project, alert, and document samples inside the replaceable browser-local DEMO state so no illustrative activity can affect configured operations.
 - Present connected workflow recommendations as derived, human-reviewable actions; auto-draft templates remain clearly marked DEMO drafts until a person saves and approves them.
+- Keep TEST email/password access separate from browser-local DEMO state: derive its persona only from an authenticated active membership in the dedicated TEST organization.
+- Provision synthetic TEST identities only through a server-only administrative utility; it must be idempotent and must never create a public provisioning endpoint.
 
 ## Android Companion Handoff
 - For Android companion work, read `docs/ANDROID_ANTIGRAVITY_HANDOFF.md` and master plan §25 before changing app code.
