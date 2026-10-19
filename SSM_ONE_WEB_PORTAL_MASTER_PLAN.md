@@ -858,7 +858,7 @@ Provide a repeatable, safe demonstration for every department lead using named s
 
 ### 27.2 Current Verified Gaps
 - `DepartmentLeadLoginModal.tsx` holds email/password pairs in browser source and locally matches credentials. The roster exposes those passwords in the UI. This is not Supabase authentication, does not create a trusted server session, and must not be used as an operational security boundary.
-- The UI roster currently has sample identities for nine of the eleven departments (SAL, EHW, ESW, MECH, PUR, QA, EMF, TST, FIN), plus Admin and Client. SIT and HR/OPS are absent despite plan text claiming all eleven.
+- As of 19 October, the explicitly labeled browser-local demo picker includes all eleven departments (including SIT and HR/OPS), Admin and Client. This fixes preview coverage only; these entries are not authenticated backend accounts.
 - `src/integrations/supabase/client.ts` requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (or server equivalents). A local `.env` file exists, but presence alone does not verify correct values, reachable project, applied migrations, Auth configuration, or access policies.
 - `20261003_scms_core_schema.sql` creates broad `USING (true)` / `WITH CHECK (true)` policies for anonymous/public read and write on operational tables. These policies are incompatible with department lead confinement and must be replaced or explicitly isolated before real-user demo access.
 - Existing Supabase migrations define organization/department membership and RLS concepts separately from the legacy core schema. The canonical source of truth, migration order, ownership model, and actual web data paths need reconciliation before claims of end-to-end persistence.
@@ -904,3 +904,40 @@ Before treating this document as the final department-lead delivery plan, reconc
 
 
 Company-name anonymization: current repository display labels, planning/reference snapshots and synthetic examples use XYZ Pvt Ltd. Live business records, identities, backend configuration, official document codes and published Git history were not changed. Sanitized schema/reference text is not a claim of an altered installed database. Image/binary contents and historical commits require separate review; a source sync is not deployment.
+
+
+## 28. Cross-Department Portal Correction and Production Acceptance — 19 October 2026
+
+### 28.1 Current status and evidence authority
+
+This checkpoint qualifies earlier completion/readiness statements in this plan. The portal is **not production-complete**. Source fixes are local and committed through web checkpoint 17c66ca; the attempted push to the connected main branch was rejected by automatic approval review and has not occurred. Publishing, backend provisioning and Android source changes were not performed. Preview sync requires explicit approval for the existing repository/branch destination.
+
+Live Lovable inspection found no enabled sign-in method and zero rows in organizations, membership, departments/roles, operational records, tasks, approvals, documents/files, shares, links and audit tables. The populated browser experience is browser-local demo data, not evidence of installed shared workflows. See [dated implementation and browser evidence](docs/evidence/DEPARTMENT_SCOPE_FIX_2026-10-19.md), [live authentication evidence](docs/evidence/live-auth-not-enabled-2026-10-19.png) and [approved local task round trip](docs/evidence/approved-task-roundtrip-2026-10-19.png).
+
+### 28.2 Implemented and verified in the local web prototype
+
+| Area | Corrected behavior | Evidence boundary |
+|---|---|---|
+| All eleven department leads | Tasks, approvals, badges, projects, documents, references and roster use relevant department/explicit assignment context. No unrelated global lists by default. | Department route/directory checks; browser-local data only. |
+| Tasks and project navigation | My Tasks opens the assigned queue; Active Projects opens linked workspaces. Service's unused lifecycle shortcut is removed. Task creation validates roster/project choice; reassignment retains due date and project. | Service review/reassignment and saved task checks passed. |
+| Approval handoff | Source-linked request with designated authority; pending review blocks task completion. Current pending state and signer are rechecked inside the saved transaction. | Hardware to Quality approval passed in two open tabs; requester received decision, updated task and notification after refresh. |
+| Persistence and concurrency | Refresh repair preserves edits/drafts; mutations read latest saved state under a shared browser lock, propagate storage events, and avoid stale form overwrite. | Fourteen focused tests, TypeScript and production build passed. This is not server concurrency certification. |
+| Documents | Twelve distinct draft schemas; source provenance, missing-data markers, provisional IDs and retained local drafts. No invented technical results or sign-off evidence. | Save/refresh/upsert verified. Full DOCX/XLSX inventory remains planned. |
+| Client boundary and sessions | Client deliverables stay in customer view; internal index/records do not become accessible through names/types. Non-demo releases require verified release/grant. Sign-out stays signed out; picker is explicitly demo. | Client header leak reproduced and corrected; sign-out/refresh and Service picker checked. |
+
+### 28.3 Remaining web/backend delivery order
+
+| Sequence | Responsible role / dependency | Required work | Completion evidence |
+|---|---|---|---|
+| 1 | Project owner; real organization and initial administrator identity | Confirm organization name, first admin work email and approved environment; provision authentication through supported secure setup. Do not send passwords in chat or invent production test users. | Real session, organization/membership and sign-out/expiry demonstrated. |
+| 2 | Backend owner; sequence 1 | Reconcile deployed schema/generated types, legacy migrations, RLS and private storage. Do not apply the legacy unrestricted public-policy migration as a fix. | Versioned contract, unauthorized/anonymous denial, scoped read/write and private-link expiry tests. |
+| 3 | Web/backend implementer; verified contracts | Replace the complete operational workflow with authenticated shared reads/writes, server numbering, approval/audit transactions, concurrency and idempotency. Keep local demo isolated until replacement is complete. | Fresh sessions on independent clients see the same committed records; failed writes remain failed. |
+| 4 | Department owners; actual project information | Complete document inventory and type-specific templates, provenance, review, revision, release and recipient grants under the [document standardization plan](docs/DOCUMENT_STANDARDIZATION_PLAN.md). Correct every reference label/destination/content mapping. | Owner-reviewed source-backed documents; unreleased/internal files denied to clients and unrelated teams. |
+| 5 | Department owners and QA; sequences 2–4 | Run the real lifecycle from enquiry/feasibility through engineering, procurement, production, test, release, dispatch and service. Gate transitions require actual predecessor records and approved evidence. | Persisted cross-department handoffs, negative tests and traceable audit; no simulation used as production evidence. |
+| 6 | Web QA, then Android owner | Repeat all eleven roles plus Admin/Client: queue, detail, create/update, approvals/rework, projects, documents, references, team, notifications and logout. Hand over only verified contracts to Android. | Per-role browser evidence and a separately recorded Android acceptance run. |
+
+### 28.4 Android handoff and final completion rule
+
+The current Android plan is [SSM_ONE_ANDROID_BUILD_PLAN.md](../SSM-new-app/docs/planning/SSM_ONE_ANDROID_BUILD_PLAN.md), §9. Web changes do not update an APK, Android cache, backend policies or mobile contracts. Mobile must use the same trusted membership, permissions, source references and approved server decisions; never copy local demo credentials/role selection as operational authorization.
+
+Final portal acceptance requires real authenticated shared persistence, server-enforced department/client boundaries, complete evidence-backed lifecycle gates, source-backed controlled documents and verified Android parity. A successful build, populated demo, local approval or preview sync alone cannot close this milestone.

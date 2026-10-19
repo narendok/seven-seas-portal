@@ -47,3 +47,7 @@ $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 ```
 
 The latest verified run completed successfully with 26 unit tests passing. Re-run after Android source changes and report any compiler warnings separately from failures.
+
+## 19 October 2026 planning checkpoint
+
+The current checkout is `C:/Users/Admin/AndroidStudioProjects/SSM-new/SSM-new-app`; the Test-user path above is historical. Use [web master plan §28](../SSM_ONE_WEB_PORTAL_MASTER_PLAN.md#28-cross-department-portal-correction-and-production-acceptance--19-october-2026) and [Android plan §9](../../SSM-new-app/docs/planning/SSM_ONE_ANDROID_BUILD_PLAN.md#9-web-cross-department-audit-and-android-acceptance-dependencies--19-october-2026) for department scoping, task/approval round trips, client/document boundaries and current production blockers. Web browser-local fixes do not deploy a backend contract or change Android behavior. Authentication and organization provisioning, shared persistence, RLS/private storage verification and cross-client lifecycle acceptance remain pending. No Android source/build/device work was performed in this plan update.
