@@ -38,6 +38,7 @@ export interface GateVerificationContext {
   documents?: GateDocumentItem[];
   records?: GateRecordItem[];
   isDemo?: boolean;
+  naRationale?: Record<string, string>;
 }
 
 /**
@@ -99,7 +100,7 @@ function isDocumentApproved(
  *    Requires Stage 4 Hardware Schematics Prerequisite (EHW-SCH-01).
  */
 export function verifyStageTransition(context: GateVerificationContext): StageGateVerificationResult {
-  const { targetStageIndex, currentStageIndex, projectId, documents = [], records = [], isDemo = true } = context;
+  const { targetStageIndex, currentStageIndex, projectId, documents = [], records = [], isDemo = true, naRationale = {} } = context;
 
   // Backward movement or same stage is always permitted
   if (targetStageIndex <= currentStageIndex) {
@@ -129,7 +130,8 @@ export function verifyStageTransition(context: GateVerificationContext): StageGa
   // GATE 2 FREEZE: Moving to Stage 3+ requires Contract Review Record (HLPL/F/MKT/01)
   if (targetStageIndex >= 2) {
     const feasibilityApproved = isDocumentApproved(["HLPL/F/MKT/01", "Contract Review", "FEASIBILITY"], documents, records, projectId);
-    if (!feasibilityApproved) {
+    const hasNaRationale = Boolean(naRationale["HLPL/F/MKT/01"]?.trim());
+    if (!feasibilityApproved && !hasNaRationale) {
       return {
         allowed: false,
         gateIndex: 2,
@@ -145,14 +147,18 @@ export function verifyStageTransition(context: GateVerificationContext): StageGa
   // GATE 3 FREEZE: Moving to Stage 4+ requires Multi-Department Requirements Package
   if (targetStageIndex >= 3) {
     const requiredReqDocs = [
-      { name: "Product Requirement Spec (PRS)", candidates: ["PRS", "EHW-PRS", "HLPL-SLCT-EHW-PRS"] },
-      { name: "Commercial Quotation (QUO)", candidates: ["QUO", "Commercial Quotation", "SAL-QUO"] },
+      { key: "EHW-PRS", name: "Product Requirement Spec (PRS)", candidates: ["PRS", "EHW-PRS", "HLPL-SLCT-EHW-PRS"] },
+      { key: "FW-FRS", name: "Firmware Functional Spec (FW-FRS)", candidates: ["FRS", "FW-FRS", "HLPL-SLCT-FW-FRS"] },
+      { key: "SW-SRS", name: "Software Requirement Spec (SW-SRS)", candidates: ["SRS", "SW-SRS", "HLPL-SLCT-SW-SRS"] },
+      { key: "MECH-MRS", name: "Mechanical Requirement Spec (MECH-MRS)", candidates: ["MRS", "MECH-MRS", "HLPL-SLCT-MECH-MRS"] },
+      { key: "SAL-QUO", name: "Commercial Quotation (QUO)", candidates: ["QUO", "Commercial Quotation", "SAL-QUO", "HLPL-SLCT-SAL-QUO"] },
     ];
 
     const missingReqs: string[] = [];
     for (const req of requiredReqDocs) {
       const ok = isDocumentApproved(req.candidates, documents, records, projectId);
-      if (!ok) {
+      const hasNa = Boolean(naRationale[req.key]?.trim() || naRationale[req.name]?.trim());
+      if (!ok && !hasNa) {
         missingReqs.push(req.name);
       }
     }
@@ -162,7 +168,7 @@ export function verifyStageTransition(context: GateVerificationContext): StageGa
         allowed: false,
         gateIndex: 3,
         gateName: "Stage 3 Requirements Baseline Freeze",
-        reason: `Stage 3 Requirements Baseline Freeze active: Mandatory specifications (${missingReqs.join(", ")}) must be approved before advancing to Stage 4.`,
+        reason: `Stage 3 Requirements Baseline Freeze active: Mandatory domain requirement specifications (${missingReqs.join(", ")}) must be approved (or justified with approved N/A rationale) before advancing to Stage 4.`,
         requiredDocuments: requiredReqDocs.map((r) => r.name),
         missingDocuments: missingReqs,
         mode: "demo_simulation",
@@ -173,7 +179,8 @@ export function verifyStageTransition(context: GateVerificationContext): StageGa
   // GATE 4 PREREQUISITE: Moving to Stage 5, 7, 8, 9 requires Hardware Schematics
   if (targetStageIndex >= 4) {
     const schematicApproved = isDocumentApproved(["EHW-SCH", "Schematic", "SCH-01", "SCH-02"], documents, records, projectId);
-    if (!schematicApproved) {
+    const hasNa = Boolean(naRationale["EHW-SCH-01"]?.trim() || naRationale["EHW-SCH"]?.trim());
+    if (!schematicApproved && !hasNa) {
       return {
         allowed: false,
         gateIndex: 4,

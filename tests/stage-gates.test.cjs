@@ -78,7 +78,25 @@ test('Stage 3 Requirements Baseline Freeze blocks advancing to Stage 4 when requ
   assert.ok(result.missingDocuments.length > 0);
 });
 
-test('Stage 3 Requirements Baseline Freeze allows advancing when PRS and QUO are approved', () => {
+test('Stage 3 Requirements Baseline Freeze allows advancing when all domain specs are approved', () => {
+  const result = verifyStageTransition({
+    targetStageIndex: 3,
+    currentStageIndex: 2,
+    documents: [
+      { part: 'HLPL/F/MKT/01', title: 'Contract Review Record', lifecycle: 'Approved' },
+      { part: 'HLPL-SLCT-EHW-PRS-01', title: 'Product Requirement Spec', lifecycle: 'Approved' },
+      { part: 'HLPL-SLCT-FW-FRS-01', title: 'Firmware Functional Spec', lifecycle: 'Approved' },
+      { part: 'HLPL-SLCT-SW-SRS-01', title: 'Software Requirement Spec', lifecycle: 'Approved' },
+      { part: 'HLPL-SLCT-MECH-MRS-01', title: 'Mechanical Requirement Spec', lifecycle: 'Approved' },
+      { part: 'HLPL-SLCT-SAL-QUO-01', title: 'Commercial Quotation', lifecycle: 'Approved' },
+    ],
+    records: [],
+    isDemo: true,
+  });
+  assert.equal(result.allowed, true);
+});
+
+test('Stage 3 Requirements Baseline Freeze allows advancing when unneeded domain specs have approved N/A rationale', () => {
   const result = verifyStageTransition({
     targetStageIndex: 3,
     currentStageIndex: 2,
@@ -88,6 +106,11 @@ test('Stage 3 Requirements Baseline Freeze allows advancing when PRS and QUO are
       { part: 'HLPL-SLCT-SAL-QUO-01', title: 'Commercial Quotation', lifecycle: 'Approved' },
     ],
     records: [],
+    naRationale: {
+      'FW-FRS': 'Hardware-only unmanaged sensor board with no MCU firmware',
+      'SW-SRS': 'No companion software application in baseline',
+      'MECH-MRS': 'Off-the-shelf standard DIN rail enclosure',
+    },
     isDemo: true,
   });
   assert.equal(result.allowed, true);
@@ -102,6 +125,11 @@ test('Stage 4 Hardware Schematic Prerequisite blocks advancing to Stage 5 withou
       { part: 'HLPL-SLCT-EHW-PRS-01', title: 'Product Requirement Spec', lifecycle: 'Approved' },
       { part: 'HLPL-SLCT-SAL-QUO-01', title: 'Commercial Quotation', lifecycle: 'Approved' },
     ],
+    naRationale: {
+      'FW-FRS': 'N/A hardware only',
+      'SW-SRS': 'N/A no app',
+      'MECH-MRS': 'N/A off-shelf',
+    },
     records: [],
     isDemo: true,
   });
@@ -121,6 +149,11 @@ test('Stage 4 Hardware Schematic Prerequisite allows advancing when schematic is
       { part: 'HLPL-SLCT-SAL-QUO-01', title: 'Commercial Quotation', lifecycle: 'Approved' },
       { part: 'HLPL-SLCT-EHW-SCH-01', title: 'Hardware Schematics', lifecycle: 'Approved' },
     ],
+    naRationale: {
+      'FW-FRS': 'N/A hardware only',
+      'SW-SRS': 'N/A no app',
+      'MECH-MRS': 'N/A off-shelf',
+    },
     records: [],
     isDemo: true,
   });

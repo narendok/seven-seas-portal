@@ -658,3 +658,49 @@ Projects pin the approved matrix version. Future changes are effective-dated and
   - `npm run build`: Production build succeeded in 1.88s with Nitro server output.
   - Localhost: Live at `http://localhost:8080/` (HTTP 200 confirmed).
 
+---
+
+## Batch 3: Backend Operational Gate Contracts & Database Policies / Private Native Attachments — 20 October 2026
+
+- **State**: VERIFIED LIVE on localhost (`http://localhost:8080/`); **71/71 PASS** across 10 test suites; clean production build; 0 TypeScript errors.
+- **Master Plan Requirements Addressed**:
+  1. **Dual Migration Ledger Synchronization**:
+     - Created Supabase migration: `supabase/migrations/20261020010000_operational_stage_gate_contract.sql`.
+     - Created Drizzle migration: `drizzle/migrations/0001_operational_stage_gate_contract.sql`.
+     - Updated Drizzle journal: `drizzle/migrations/meta/_journal.json` registering entry index 1.
+  2. **Operational Membership Resolution Contract (`public.resolve_operational_membership()`)**:
+     - Derives `auth.uid()` from the authenticated session; throws `AUTH_REQUIRED` if unauthenticated.
+     - Resolves active organization membership, department alignment, and designated stage gate signing authority.
+     - Preserves `resolve_test_membership()` strictly dedicated to `TEST ONLY` organizations without mixing operational rules.
+  3. **Authoritative Atomic Operational Stage Gate Advancement (`public.verify_and_advance_stage_gate(...)`)**:
+     - Derives actor strictly from `auth.uid()` inside database transaction; rejects caller-supplied actor IDs.
+     - Row locks `operational_records` via `SELECT ... FOR UPDATE` for concurrency control.
+     - Checks active organization membership in `public.organization_members`.
+     - Enforces signing authority: rejects `viewer` and unauthorized members; permits `admin`, department lead, and designated signers.
+     - Idempotency guard: returns `{ idempotent: true, success: true }` when already at or beyond target stage.
+     - APQP stage gate freeze interlocks:
+       - Stage 2 Feasibility Freeze: requires approved Contract Review Record (`HLPL/F/MKT/01`) or approved N/A rationale.
+       - Stage 3 Requirements Baseline Freeze: requires all domain requirement sheets (`EHW-PRS`, `FW-FRS`, `SW-SRS`, `MECH-MRS`, `SAL-QUO`) or approved N/A rationales.
+       - Stage 4 Hardware Schematics Prerequisite: requires approved `EHW-SCH-01` before advancing to Stage 5+.
+     - Single atomic transaction: updates `operational_records.stage` and canonical content hash in `fields`, writes sign-off to `public.approvals`, and appends attributable audit record to `public.audit_events`.
+  4. **Private Native Attachment Vault (`public.get_controlled_file_access(...)` & Storage Handlers)**:
+     - Authoritative RPC validates caller's organization and department access before issuing download links.
+     - Strict 60-second signed URL expiry enforced.
+     - Validates SHA-256 cryptographic hex digest (32–128 hex chars) and positive byte length.
+     - Validates uploaded file size in storage metadata matches registered byte length upon upload completion.
+  5. **Client & Server Integration**:
+     - `src/lib/operational-gate.functions.ts`: TanStack Start server functions `getOperationalMembership`, `advanceOperationalStageGate`, `getControlledFileAccess`.
+     - `src/lib/controlled-documents.functions.ts`: Enhanced checksum validation, storage upload integrity check, and authoritative access check.
+     - `src/lib/stage-gates.ts`: Full domain requirements check across engineering & commercial disciplines with `naRationale` support.
+     - `src/integrations/supabase/types.ts`: Added function definitions for `resolve_operational_membership`, `verify_and_advance_stage_gate`, `get_controlled_file_access`.
+  6. **Automated Test Suite Expansion**:
+     - Added `tests/operational-gate-backend.test.cjs` covering 11 contract and database policy test cases.
+     - Updated `tests/stage-gates.test.cjs` to verify all domain requirement sheets and approved N/A rationales.
+     - Fixed Asia/Kolkata business calendar date boundary in `tests/department-workspace-ui.test.cjs`.
+- **Verification Evidence**:
+  - `node --test $documentTestFiles`: **71/71 PASS** across 10 test suites (0 failures).
+  - `npx tsc --noEmit`: 0 TypeScript errors (code 0).
+  - `npm run build`: Production build succeeded in 1.95s with Nitro server output.
+  - Localhost: Live at `http://localhost:8080/` (HTTP 200 confirmed).
+
+

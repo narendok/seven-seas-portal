@@ -13,13 +13,14 @@ function loadSource(name) {
 }
 
 const { taskLane } = loadSource('task-board');
+const { businessDate } = loadSource('business-date');
 
 test('taskLane deterministically maps tasks to the four lanes without duplication', () => {
   const completedTask = { status: 'Approved', fields: {} };
   const releasedTask = { status: 'Released', fields: {} };
   const reviewTask = { status: 'In review', fields: {} };
   const inProgressTask = { status: 'Open', fields: { workStatus: 'In progress' } };
-  const todayDueTask = { status: 'Open', fields: { dueDate: new Date().toISOString().split('T')[0] } };
+  const todayDueTask = { status: 'Open', fields: { dueDate: businessDate() } };
   const todoTask = { status: 'Open', fields: { dueDate: '2099-01-01' } };
 
   assert.equal(taskLane(completedTask), 'completed');

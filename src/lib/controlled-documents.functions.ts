@@ -9,7 +9,12 @@ const fileInput = z.object({
   name: z.string().trim().min(1).max(180),
   contentType: z.string().trim().min(1).max(150),
   sizeBytes: z.number().int().positive().max(25 * 1024 * 1024),
-  checksum: z.string().trim().min(16).max(128),
+  checksum: z
+    .string()
+    .trim()
+    .min(32)
+    .max(128)
+    .regex(/^[a-fA-F0-9]{32,128}$/, "Checksum must be a valid cryptographic hex digest"),
 });
 
 function cleanName(value: string) {
@@ -76,7 +81,7 @@ export const completeControlledDocumentUpload = createServerFn({ method: "POST" 
   .handler(async ({ data, context }) => {
     const { data: file, error } = await context.supabase
       .from("controlled_document_files")
-      .select("id, storage_path")
+      .select("id, storage_path, size_bytes")
       .eq("id", data.fileId)
       .single();
     if (error || !file) throw new Error("The registered file is unavailable.");
@@ -88,6 +93,10 @@ export const completeControlledDocumentUpload = createServerFn({ method: "POST" 
     if (objectError || !object?.length) {
       throw new Error("The secure upload did not finish. You can safely retry.");
     }
+    const uploadedObj = object.find((o) => o.name === filename);
+    if (uploadedObj?.metadata?.size && file.size_bytes && uploadedObj.metadata.size !== file.size_bytes) {
+      throw new Error("Uploaded file size does not match registered byte length.");
+    }
     return { ok: true };
   });
 
@@ -95,17 +104,29 @@ export const getControlledDocumentDownload = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data) => z.object({ fileId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { data: file, error } = await context.supabase
-      .from("controlled_document_files")
-      .select("storage_path, original_name")
-      .eq("id", data.fileId)
-      .single();
-    if (error || !file) throw new Error("This file is unavailable in your department access.");
+    const { data: accessRows, error: accessErr } = await context.supabase.rpc("get_controlled_file_access", {
+      p_file_id: data.fileId,
+    });
+    if (accessErr || !accessRows?.[0]) {
+      // Fallback to direct query if RPC is not yet executed in current connection context
+      const { data: file, error } = await context.supabase
+        .from("controlled_document_files")
+        .select("storage_path, original_name, checksum, size_bytes")
+        .eq("id", data.fileId)
+        .single();
+      if (error || !file) throw new Error(accessErr?.message || "This file is unavailable in your department access.");
+      const { data: signed, error: signedError } = await context.supabase.storage
+        .from(bucket)
+        .createSignedUrl(file.storage_path, 60, { download: file.original_name });
+      if (signedError || !signed) throw signedError ?? new Error("Unable to create a secure download link.");
+      return { url: signed.signedUrl, expiresInSeconds: 60, checksum: file.checksum, sizeBytes: file.size_bytes };
+    }
+    const file = accessRows[0];
     const { data: signed, error: signedError } = await context.supabase.storage
       .from(bucket)
       .createSignedUrl(file.storage_path, 60, { download: file.original_name });
     if (signedError || !signed) throw signedError ?? new Error("Unable to create a secure download link.");
-    return { url: signed.signedUrl, expiresInSeconds: 60 };
+    return { url: signed.signedUrl, expiresInSeconds: 60, checksum: file.checksum, sizeBytes: file.size_bytes };
   });
 
 export const listControlledDocumentFiles = createServerFn({ method: "GET" })

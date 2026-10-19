@@ -8,6 +8,13 @@
       "when": 1792425722777,
       "tag": "0000_test_only_auth_membership_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792455600000,
+      "tag": "0001_operational_stage_gate_contract",
+      "breakpoints": true
     }
   ]
 }

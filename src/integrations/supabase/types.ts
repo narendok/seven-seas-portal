@@ -867,6 +867,48 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
         }[]
       }
+      resolve_operational_membership: {
+        Args: never
+        Returns: {
+          can_sign_stage_gates: boolean
+          department_code: string | null
+          department_id: string | null
+          department_name: string | null
+          display_name: string
+          is_lead: boolean
+          membership_id: string
+          organization_id: string
+          organization_name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
+      verify_and_advance_stage_gate: {
+        Args: {
+          p_evidence_manifest?: Json
+          p_record_id: string
+          p_target_stage: string
+        }
+        Returns: Json
+      }
+      get_controlled_file_access: {
+        Args: {
+          p_file_id: string
+        }
+        Returns: {
+          checksum: string
+          content_type: string
+          department_id: string
+          document_id: string
+          file_id: string
+          organization_id: string
+          original_name: string
+          revision: string
+          size_bytes: number
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "department_lead" | "member" | "viewer"
