@@ -27,7 +27,7 @@ const departmentDefinitions = [
 ] as const;
 
 export const testIdentities: TestIdentity[] = [
-  { email: "admin@example.com", password: "Demo@ADMIN2026", name: "TEST Executive Admin", role: "admin", departmentCode: null },
+  { email: "admin@example.com", password: "Admin@Demo2026", name: "TEST Executive Admin", role: "admin", departmentCode: null },
   { email: "rohan.verma@example.com", password: "Tata@Client2026", name: "TEST Client Viewer", role: "viewer", departmentCode: "CLIENT" },
   { email: "priya.sharma@example.com", password: "Demo@SAL2026", name: "Priya Sharma", role: "department_lead", departmentCode: "SAL" },
   { email: "avery.vale@example.com", password: "Demo@EHW2026", name: "Avery Vale", role: "department_lead", departmentCode: "EHW" },
@@ -37,7 +37,7 @@ export const testIdentities: TestIdentity[] = [
   { email: "morgan.reed@example.com", password: "Demo@PUR2026", name: "Morgan Reed", role: "department_lead", departmentCode: "PUR" },
   { email: "jordan.blake@example.com", password: "Demo@QA2026", name: "Jordan Blake", role: "department_lead", departmentCode: "QA" },
   { email: "casey.rowan@example.com", password: "Demo@EMF2026", name: "Casey Rowan", role: "department_lead", departmentCode: "EMF" },
-  { email: "mina.cross@example.com", password: "Demo@MMF2026", name: "Mina Cross", role: "department_lead", departmentCode: "MMF" },
+  { email: "mmf.lead@example.com", password: "Demo@MMF2026", name: "Mechanical Manufacturing Lead (Interim)", role: "department_lead", departmentCode: "MMF" },
   { email: "priya.voss@example.com", password: "Demo@FIN2026", name: "Priya Voss", role: "department_lead", departmentCode: "FIN" },
   { email: "kai.morgan@example.com", password: "Demo@SIT2026", name: "Kai Morgan", role: "department_lead", departmentCode: "SIT" },
   { email: "taylor.quinn@example.com", password: "Demo@HR2026", name: "Taylor Quinn", role: "department_lead", departmentCode: "HR" },
@@ -68,6 +68,9 @@ export async function provisionTestIdentities() {
       const { data, error } = await admin.auth.admin.createUser({ email: identity.email, password: identity.password, email_confirm: true });
       if (error || !data.user) throw error ?? new Error("Unable to create a TEST identity.");
       user = data.user;
+    } else {
+      const { error } = await admin.auth.admin.updateUserById(user.id, { password: identity.password, email_confirm: true });
+      if (error) throw error;
     }
     users.set(identity.email, user.id);
   }
