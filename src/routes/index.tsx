@@ -2655,8 +2655,6 @@ function Portal() {
   const leadRecords = activeRecords.filter(record => record.area === persona.departmentId);
   const leadTasks = leadRecords.filter(record => record.type === "Task");
   const leadName = persona.person.split(" · ")[0] ?? "";
-  const taskAssignee = selectedAssignee ?? leadName;
-  const personalTasks = leadTasks.filter(record => taskAssignee === "ALL" || record.fields["assignee"] === taskAssignee);
   const leadProjectCodes = new Set(leadRecords.flatMap(projectReferences));
   const leadProjects = activeRecords.filter(record => record.type === "Project" && (leadProjectCodes.has(record.reference) || leadProjectCodes.has(record.id)));
   const scopedAlerts = portal.alerts.filter(alert => persona.kind === "admin" || (persona.kind === "lead" && [persona.departmentId, departmentContext].includes(alert.departmentId)));
@@ -2901,13 +2899,21 @@ function Portal() {
           {persona.kind === "client" ? (
             <ClientOEMPortal demoMode={portal.demoLoaded} focusDeliverables={clientDeliverablesFocus} />
           ) : persona.kind === "lead" && view === "assignee" ? (
-            <section className="ops-section p-5 space-y-4">
+            <section className="space-y-4">
               <h1 className="text-xl font-semibold">{active.name} — My Tasks & Action Queue</h1>
-              <p className="text-sm text-muted-foreground">Assigned task queue · {personalTasks.length} tasks.</p>
-              {/* Team filters remain within the authenticated department. */}
-              <select aria-label="Task assignee" value={taskAssignee} onChange={event => setSelectedAssignee(event.target.value)} className="rounded border border-input bg-background p-2 text-sm"><option value={leadName}>My tasks — {leadName}</option><option value="ALL">All department tasks</option>{allTeamMembers.filter(member => member.area === persona.departmentId && member.name !== leadName).map(member => <option key={member.name} value={member.name}>{member.name}</option>)}</select>
-              {personalTasks.length === 0 && <p>No tasks assigned in this view.</p>}
-              {personalTasks.map(task => <button key={task.id} onClick={() => openRecord(task)} className="block w-full rounded-lg border border-border p-4 text-left hover:bg-secondary"><strong className="block">{task.title}</strong><span className="text-xs text-muted-foreground">{task.status} · {task.fields["assignee"] || "Unassigned"} · {task.fields["projectId"] || task.fields["projectCode"] || "No project linked"}</span></button>)}
+              <DepartmentLeadCoordinationCenter key={persona.id}
+                departmentCode={active.short} departmentName={active.name} departmentLead={leadName}
+                records={leadRecords} teamMembers={allTeamMembers.filter(member => member.area === persona.departmentId)}
+                initialAssignee={leadName}
+                projects={leadProjects.map(project => ({ id: project.reference, name: project.title, customer: project.fields["customer"] || "Not provided", currentStage: project.fields["lifecycleStage"] || "Not provided", targetDate: project.fields["targetDate"] || "Not provided", volume: project.fields["quantity"] || "Not provided" }))}
+                projectScope={projectScopes[active.id] ?? "all"}
+                onProjectScopeChange={scope => setProjectScopes(current => ({ ...current, [active.id]: scope as ProjectScope }))}
+                onUpdateTaskAssignee={(id, assignee) => { void updateTask(id, { fields: { assignee } }, "Task reassigned"); }}
+                onUpdateTaskStatus={(id, status) => { void updateTask(id, { status, ...(status === "Open" ? { fields: { workStatus: "To do" } } : {}) }, "Task status updated"); }}
+                onStartTask={id => { void updateTask(id, { status: "Open", fields: { workStatus: "In progress" } }, "Task started"); }}
+                onOpenTask={task => { const source = leadRecords.find(record => record.id === task.id); if (source) openRecord(source); }}
+                onCreateTask={handleCreateCustomTask} onAddTeamMember={member => handleAddTeamMember({ ...member, area: persona.departmentId as TeamMember["area"] })}
+              />
             </section>
           ) : persona.kind === "lead" && view === "project" ? (
             <section className="ops-section p-5 space-y-4">
@@ -6082,10 +6088,12 @@ function DepartmentWorkspace({
           `Task reallocated to ${newAssignee}`
         );
       }}
+      onStartTask={taskId => { onUpdateTask?.(taskId, { status: "Open", fields: { workStatus: "In progress" } }, "Task started"); }}
+      onOpenTask={task => onSelect(task.id)}
       onUpdateTaskStatus={(taskId, newStatus) => {
         onUpdateTask?.(
           taskId,
-          { status: newStatus },
+          { status: newStatus, ...(newStatus === "Open" ? { fields: { workStatus: "To do" } } : {}) },
           `Task status marked ${newStatus}`
         );
       }}

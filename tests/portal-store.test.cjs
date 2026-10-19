@@ -65,3 +65,16 @@ test('business due dates use the India calendar across the UTC midnight boundary
   assert.equal(businessDate(new Date('2026-10-18T20:00:00Z')), '2026-10-19');
   assert.equal(businessDate(new Date('2026-10-18T17:00:00Z')), '2026-10-18');
 });
+
+ test('task lanes are exclusive: today/progress, review, backlog and completion cannot duplicate a task', () => {
+  const { taskLane } = loadSource('task-board');
+  const today = '2026-10-19';
+  const task = (status, fields = {}) => ({ status, fields });
+  assert.equal(taskLane(task('Open', {dueDate: today}), today), 'today');
+  assert.equal(taskLane(task('Open', {workStatus: 'In progress'}), today), 'today');
+  assert.equal(taskLane(task('Open', {stage: 'In progress'}), today), 'today');
+  assert.equal(taskLane(task('Open', {dueDate: '2026-10-20'}), today), 'todo');
+  assert.equal(taskLane(task('Draft'), today), 'todo');
+  assert.equal(taskLane(task('In review', {dueDate: today, workStatus: 'In progress'}), today), 'review');
+  for (const status of ['Approved', 'Released']) assert.equal(taskLane(task(status, {dueDate: today, workStatus: 'In progress'}), today), 'completed');
+});

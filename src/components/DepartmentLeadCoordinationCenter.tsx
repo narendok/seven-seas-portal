@@ -1,3 +1,4 @@
+import { taskLane } from "@/lib/task-board";
 import { businessDate } from "@/lib/business-date";
 import React, { useState, useMemo } from "react";
 import {
@@ -81,6 +82,9 @@ interface DepartmentLeadCoordinationCenterProps {
     notes: string;
   }) => boolean | void | Promise<boolean | void>;
   onAddTeamMember?: ((member: TeamMember) => void) | undefined;
+  initialAssignee?: string;
+  onStartTask?: (taskId: string) => void;
+  onOpenTask?: (task: TaskRecord) => void;
   readOnly?: boolean | undefined;
 }
 
@@ -140,12 +144,16 @@ export function DepartmentLeadCoordinationCenter({
   onUpdateTaskStatus,
   onCreateTask,
   onAddTeamMember,
+  initialAssignee = "ALL",
+  onStartTask,
+  onOpenTask,
   readOnly = false,
 }: DepartmentLeadCoordinationCenterProps) {
   const [activeTab, setActiveTab] = useState<"tasks" | "projects" | "teams">("tasks");
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [assigneeFilter, setAssigneeFilter] = useState<string>("ALL");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>(initialAssignee);
+  const [sortBy, setSortBy] = useState<"due" | "priority">("due");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Modals
@@ -172,7 +180,7 @@ export function DepartmentLeadCoordinationCenter({
 
   // Filter tasks to department tasks
   const deptTasks = useMemo(() => {
-    return records.filter((r) => r.type === "Task");
+    return records.filter((r) => r.type === "Task" && r.status !== "Archived");
   }, [records]);
 
   // Scoped tasks based on projectScope, statusFilter, assigneeFilter, and searchQuery
@@ -209,8 +217,11 @@ export function DepartmentLeadCoordinationCenter({
       }
 
       return true;
+    }).sort((a, b) => {
+      const priority = { Critical: 0, High: 1, Normal: 2, Low: 3 };
+      return sortBy === "priority" ? priority[a.priority] - priority[b.priority] || a.title.localeCompare(b.title) : (a.fields["dueDate"] || "9999-12-31").localeCompare(b.fields["dueDate"] || "9999-12-31") || priority[a.priority] - priority[b.priority];
     });
-  }, [deptTasks, projectScope, statusFilter, assigneeFilter, searchQuery, departmentLead]);
+  }, [deptTasks, projectScope, statusFilter, assigneeFilter, searchQuery, departmentLead, sortBy]);
 
   // Compute workload per team member
   const memberWorkloads = useMemo(() => {
@@ -482,11 +493,13 @@ export function DepartmentLeadCoordinationCenter({
               </div>
             </div>
 
+            <select aria-label="Sort tasks" value={sortBy} onChange={event => setSortBy(event.target.value as "due" | "priority")} className="h-8 rounded-lg border border-border bg-background px-2 text-xs"><option value="due">Due date first</option><option value="priority">Priority first</option></select>
             {/* Search box */}
             <div className="relative min-w-60">
               <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
               <input
                 type="text"
+                aria-label="Search department tasks"
                 placeholder="Search tasks, reference, or assignee..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -497,72 +510,21 @@ export function DepartmentLeadCoordinationCenter({
 
           {/* KANBAN VIEW */}
           {viewMode === "kanban" ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {/* Column 1: Backlog / Open */}
-              <KanbanColumn
-                title="To Do / Open"
-                count={filteredTasks.filter((t) => t.status === "Open" || t.status === "Draft").length}
-                tone="blue"
-                tasks={filteredTasks.filter((t) => t.status === "Open" || t.status === "Draft")}
-                teamMembers={teamMembers}
-                onUpdateAssignee={onUpdateTaskAssignee}
-                onUpdateStatus={onUpdateTaskStatus}
-                departmentLead={departmentLead}
-                readOnly={readOnly}
-              />
-
-              {/* Column 2: In Progress */}
-              <KanbanColumn
-                title="In Progress"
-                count={
-                  filteredTasks.filter(
-                    (t) =>
-                      t.status === "Open" &&
-                      (t.fields["stage"]?.toLowerCase().includes("progress") ||
-                        t.notes?.toLowerCase().includes("bring-up") ||
-                        t.notes?.toLowerCase().includes("active"))
-                  ).length
-                }
-                tone="amber"
-                tasks={filteredTasks.filter(
-                  (t) =>
-                    t.status === "Open" &&
-                    (t.fields["stage"]?.toLowerCase().includes("progress") ||
-                      t.notes?.toLowerCase().includes("bring-up") ||
-                      t.notes?.toLowerCase().includes("active"))
-                )}
-                teamMembers={teamMembers}
-                onUpdateAssignee={onUpdateTaskAssignee}
-                onUpdateStatus={onUpdateTaskStatus}
-                departmentLead={departmentLead}
-                readOnly={readOnly}
-              />
-
-              {/* Column 3: Under Review / Gate */}
-              <KanbanColumn
-                title="Under Review / Gate"
-                count={filteredTasks.filter((t) => t.status === "In review").length}
-                tone="purple"
-                tasks={filteredTasks.filter((t) => t.status === "In review")}
-                teamMembers={teamMembers}
-                onUpdateAssignee={onUpdateTaskAssignee}
-                onUpdateStatus={onUpdateTaskStatus}
-                departmentLead={departmentLead}
-                readOnly={readOnly}
-              />
-
-              {/* Column 4: Completed / Released */}
-              <KanbanColumn
-                title="Completed & Released"
-                count={filteredTasks.filter((t) => t.status === "Approved" || t.status === "Released").length}
-                tone="green"
-                tasks={filteredTasks.filter((t) => t.status === "Approved" || t.status === "Released")}
-                teamMembers={teamMembers}
-                onUpdateAssignee={onUpdateTaskAssignee}
-                onUpdateStatus={onUpdateTaskStatus}
-                departmentLead={departmentLead}
-                readOnly={readOnly}
-              />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Department task board">
+              {([
+                { lane: "today", title: "Today / In Progress", tone: "amber" },
+                { lane: "review", title: "Under Review / Gate", tone: "purple" },
+                { lane: "todo", title: "To Do", tone: "blue" },
+                { lane: "completed", title: "Completed & Released", tone: "green" },
+              ] as const).map(column => {
+                const tasks = filteredTasks.filter(task => taskLane(task) === column.lane);
+                return <KanbanColumn key={column.lane} title={column.title} tone={column.tone}
+                  count={tasks.length} tasks={tasks} teamMembers={teamMembers}
+                  onUpdateAssignee={onUpdateTaskAssignee} onUpdateStatus={onUpdateTaskStatus}
+                  onStartTask={onStartTask} onOpenTask={onOpenTask}
+                  departmentLead={departmentLead} readOnly={readOnly}
+                  collapsible={column.lane === "completed"} />;
+              })}
             </div>
           ) : (
             /* DENSE TABLE VIEW */
@@ -639,16 +601,18 @@ export function DepartmentLeadCoordinationCenter({
                             </div>
                           </td>
                           <td className="px-3 py-3 font-mono text-[11px] text-muted-foreground">
-                            {task.fields["dueDate"] ?? "2026-11-15"}
+                            {task.fields["dueDate"] || "No due date"}
                           </td>
                           <td className="px-3 py-3 text-right">
                             <select
-                              value={task.status}
-                              onChange={(e) => onUpdateTaskStatus(task.id, e.target.value as TaskRecord["status"])}
+                              value={task.status === "Open" && task.fields["workStatus"] === "In progress" ? "IN_PROGRESS" : task.status}
+                              onChange={(e) => e.target.value === "IN_PROGRESS" ? onStartTask?.(task.id) : onUpdateTaskStatus(task.id, e.target.value as TaskRecord["status"])}
                               disabled={readOnly}
                               className="h-7 rounded border border-border bg-background px-2 text-[10px] font-semibold outline-none cursor-pointer"
                             >
-                              <option value="Open">Open</option>
+                              <option value="Draft">Draft</option>
+                              <option value="Open">To Do</option>
+                              <option value="IN_PROGRESS">In Progress</option>
                               <option value="In review">Review</option>
                               <option value="Approved">Complete</option>
                             </select>
@@ -1136,6 +1100,7 @@ export function DepartmentLeadCoordinationCenter({
 
 // Subcomponents: Kanban Column & Task Card
 function KanbanColumn({
+  collapsible = false,
   title,
   count,
   tone,
@@ -1143,9 +1108,12 @@ function KanbanColumn({
   teamMembers,
   onUpdateAssignee,
   onUpdateStatus,
+  onStartTask,
+  onOpenTask,
   departmentLead,
   readOnly,
 }: {
+  collapsible?: boolean;
   title: string;
   count: number;
   tone: "blue" | "amber" | "purple" | "green";
@@ -1153,9 +1121,12 @@ function KanbanColumn({
   teamMembers: TeamMember[];
   onUpdateAssignee: (taskId: string, newAssignee: string) => void;
   onUpdateStatus: (taskId: string, newStatus: TaskRecord["status"]) => void;
+  onStartTask?: ((taskId: string) => void) | undefined;
+  onOpenTask?: ((task: TaskRecord) => void) | undefined;
   departmentLead: string;
   readOnly?: boolean | undefined;
 }) {
+  const [expanded, setExpanded] = useState(!collapsible);
   const headerTone =
     tone === "blue"
       ? "border-blue-500/30 bg-blue-500/5 text-blue-600 dark:text-blue-400"
@@ -1166,15 +1137,15 @@ function KanbanColumn({
       : "border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400";
 
   return (
-    <div className="flex flex-col rounded-2xl border border-border bg-muted/20 p-3 min-h-[460px]">
-      <div className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-semibold ${headerTone}`}>
-        <span>{title}</span>
+    <div className={`flex flex-col rounded-2xl border border-border bg-muted/20 p-3 ${collapsible ? "lg:col-span-3" : "min-h-[260px]"}`} aria-label={title}>
+      <button type="button" disabled={!collapsible} aria-expanded={expanded} onClick={() => setExpanded(value => !value)} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-semibold disabled:opacity-100 ${headerTone}`}>
+        <span className="flex items-center gap-2">{collapsible && <ChevronDown className={`size-4 transition-transform ${expanded ? "" : "-rotate-90"}`} />}{title}</span>
         <span className="rounded-full bg-background px-2 py-0.5 font-mono text-[11px] font-bold text-foreground shadow-xs">
           {count}
         </span>
-      </div>
+      </button>
 
-      <div className="mt-3 flex-1 space-y-3">
+      <div hidden={!expanded} className="mt-3 flex-1 space-y-3">
         {tasks.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
             No tasks in this lane
@@ -1187,6 +1158,8 @@ function KanbanColumn({
               teamMembers={teamMembers}
               onUpdateAssignee={onUpdateAssignee}
               onUpdateStatus={onUpdateStatus}
+              onStartTask={onStartTask}
+              onOpenTask={onOpenTask}
               departmentLead={departmentLead}
               readOnly={readOnly}
             />
@@ -1202,6 +1175,8 @@ function KanbanTaskCard({
   teamMembers,
   onUpdateAssignee,
   onUpdateStatus,
+  onStartTask,
+  onOpenTask,
   departmentLead,
   readOnly,
 }: {
@@ -1209,6 +1184,8 @@ function KanbanTaskCard({
   teamMembers: TeamMember[];
   onUpdateAssignee: (taskId: string, newAssignee: string) => void;
   onUpdateStatus: (taskId: string, newStatus: TaskRecord["status"]) => void;
+  onStartTask?: ((taskId: string) => void) | undefined;
+  onOpenTask?: ((task: TaskRecord) => void) | undefined;
   departmentLead: string;
   readOnly?: boolean | undefined;
 }) {
@@ -1224,9 +1201,9 @@ function KanbanTaskCard({
         <PriorityBadge priority={task.priority} />
       </div>
 
-      <p className="text-xs font-bold text-foreground leading-snug tracking-tight">
+      <button type="button" onClick={() => onOpenTask?.(task)} className="text-left text-xs font-bold text-foreground leading-snug tracking-tight hover:underline">
         {task.title}
-      </p>
+      </button>
 
       {task.notes && (
         <p className="text-[11px] text-muted-foreground line-clamp-2">
@@ -1240,7 +1217,7 @@ function KanbanTaskCard({
         </span>
         <span className="flex items-center gap-1">
           <Calendar className="size-3" />
-          {task.fields["dueDate"] ?? "2026-11-15"}
+          {task.fields["dueDate"] || "No due date"}
         </span>
       </div>
 
@@ -1268,12 +1245,13 @@ function KanbanTaskCard({
         <div className="flex items-center justify-between pt-1 text-[10px]">
           <span className="text-muted-foreground font-mono">Move:</span>
           <div className="flex items-center gap-1">
-            {task.status !== "Open" && (
+            {(taskLane(task) === "todo" || taskLane(task) === "today") && onStartTask && task.fields["workStatus"] !== "In progress" && <button onClick={() => onStartTask(task.id)} className="rounded px-1.5 py-0.5 font-semibold text-primary hover:bg-primary/10">Start</button>}
+            {(task.status !== "Open" || task.fields["workStatus"] === "In progress") && (
               <button
                 onClick={() => onUpdateStatus(task.id, "Open")}
                 className="rounded px-1.5 py-0.5 font-semibold text-muted-foreground hover:bg-muted"
               >
-                Open
+                To Do
               </button>
             )}
             {task.status !== "In review" && (
