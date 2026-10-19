@@ -910,7 +910,7 @@ Company-name anonymization: current repository display labels, planning/referenc
 
 ### 28.1 Current status and evidence authority
 
-This checkpoint qualifies earlier completion/readiness statements in this plan. The portal is **not production-complete**. Source fixes are local and committed through web checkpoint 17c66ca; the attempted push to the connected main branch was rejected by automatic approval review and has not occurred. Publishing, backend provisioning and Android source changes were not performed. Preview sync requires explicit approval for the existing repository/branch destination.
+This checkpoint qualifies earlier completion/readiness statements in this plan. The portal is **not production-complete**. Source fixes and the updated web plan were pushed to narendok/ssm-new-web main through checkpoint 3403586 after the user explicitly approved that destination on 19 October. Lovable history shows the received commits and the updated plan as the active preview. The earlier automatic-review rejection was resolved by this explicit approval. Production publishing, backend provisioning and Android source changes were not performed.
 
 Live Lovable inspection found no enabled sign-in method and zero rows in organizations, membership, departments/roles, operational records, tasks, approvals, documents/files, shares, links and audit tables. The populated browser experience is browser-local demo data, not evidence of installed shared workflows. See [dated implementation and browser evidence](docs/evidence/DEPARTMENT_SCOPE_FIX_2026-10-19.md), [live authentication evidence](docs/evidence/live-auth-not-enabled-2026-10-19.png) and [approved local task round trip](docs/evidence/approved-task-roundtrip-2026-10-19.png).
 

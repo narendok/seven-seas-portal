@@ -50,3 +50,9 @@ Production acceptance is blocked on the real organization, administrator identit
 Final verification: 14 tests, TypeScript and full Vite client/SSR/Nitro build passed. [Approved task browser evidence](approved-task-roundtrip-2026-10-19.png).
 
 Tested source checkpoint: e2c1b84 (preserves upstream customer-document work and local fixes). Production publishing, authentication provisioning, migrations and Android changes were not performed.
+
+## Approved connected preview sync — 19 October 2026
+
+User explicitly approved pushing to narendok/ssm-new-web main. Push succeeded through 3403586, and Lovable history shows the fixes and updated web roadmap received with the latest plan commit selected as Previewing. This resolves the earlier automatic-review push block; it does not publish production or enable authentication/backend operations.
+
+Post-push Lovable browser checks passed: Service My Tasks opened its assigned backup task (one task); Finance approvals listed only its own pending advance-billing request (one record, zero awaiting Finance signature), without unrelated Hardware/Quality requests. These are live-preview demo checks, not authenticated production acceptance.
