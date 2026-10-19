@@ -2555,7 +2555,6 @@ function Portal() {
       };
     });
     announce(`Enquiry converted to Opportunity and dispatched for multi-department feasibility with platform linking.`);
-    setAi4tOpen(true);
   };
   const addRecord = (input: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => {
     if (input.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
@@ -3156,6 +3155,8 @@ function Portal() {
             <section className="space-y-4">
               <h1 className="text-xl font-semibold">{active.name} — My Tasks & Action Queue</h1>
               <DepartmentLeadCoordinationCenter key={persona.id}
+                hideHeader
+                hideProjectsAndTeam
                 departmentCode={active.short} departmentName={active.name} departmentLead={leadName}
                 records={leadRecords} teamMembers={allTeamMembers.filter(member => member.area === persona.departmentId)}
                 initialAssignee={leadName}
@@ -6466,6 +6467,7 @@ function DepartmentWorkspace({
   const flow = departmentFlow(area.id, scopedRecords);
   const renderCoordinationCenter = () => (
     <DepartmentLeadCoordinationCenter
+      hideHeader
       departmentCode={area.short}
       departmentName={area.name}
       departmentLead={deptLeadName}
@@ -6530,7 +6532,7 @@ function DepartmentWorkspace({
       />
       <section className="ops-section flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div><p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Project scope</p><p className="mt-1 text-xs text-muted-foreground">{projectScope === "all" ? `Department rollup · ${records.length} records · ${departmentMembers} team member${departmentMembers === 1 ? "" : "s"}` : "Selected-project tasks, stage evidence, team and deliverables only"}</p></div>
-        <select aria-label="Project scope" value={projectScope} onChange={(event) => onProjectScopeChange(event.target.value as ProjectScope)} className="h-9 min-w-64 rounded-lg border border-border bg-card px-3 text-sm font-medium">
+        <select aria-label="Project scope" value={projectScope} onChange={(event) => onProjectScopeChange(event.target.value as ProjectScope)} className="h-9 min-w-64 rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground [&>option]:bg-background [&>option]:text-foreground">
           <option value="all">All Projects (Department Rollup)</option>{departmentProjects.map(project => <option key={project.id} value={project.reference}>{project.reference} · {project.title}</option>)}
         </select>
       </section>

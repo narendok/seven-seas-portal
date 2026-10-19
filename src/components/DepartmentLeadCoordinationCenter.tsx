@@ -14,6 +14,9 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
+  Square,
+  ListTodo,
   UserCheck,
   UserPlus,
   SlidersHorizontal,
@@ -84,6 +87,8 @@ interface DepartmentLeadCoordinationCenterProps {
   onAddTeamMember?: ((member: TeamMember) => void) | undefined;
   recordsAreScoped?: boolean;
   hideProjectSelector?: boolean;
+  hideHeader?: boolean;
+  hideProjectsAndTeam?: boolean;
   initialAssignee?: string;
   onStartTask?: (taskId: string) => void;
   onOpenTask?: (task: TaskRecord) => void;
@@ -148,13 +153,15 @@ export function DepartmentLeadCoordinationCenter({
   onAddTeamMember,
   recordsAreScoped = false,
   hideProjectSelector = false,
+  hideHeader = false,
+  hideProjectsAndTeam = false,
   initialAssignee = "ALL",
   onStartTask,
   onOpenTask,
   readOnly = false,
 }: DepartmentLeadCoordinationCenterProps) {
   const [activeTab, setActiveTab] = useState<"tasks" | "projects" | "teams">("tasks");
-  const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
+  const [viewMode, setViewMode] = useState<"kanban" | "table" | "checklist">("checklist");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [assigneeFilter, setAssigneeFilter] = useState<string>(initialAssignee);
   const [sortBy, setSortBy] = useState<"due" | "priority">("due");
@@ -291,85 +298,89 @@ export function DepartmentLeadCoordinationCenter({
   return (
     <div className="space-y-5">
       {/* Top Department Lead Coordination Header Strip */}
-      <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-                {departmentCode} · COORDINATION HUB
-              </span>
-              <span className="font-mono text-xs text-muted-foreground">
-                Lead: <strong className="text-foreground">{departmentLead}</strong>
-              </span>
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
-              {departmentName} — Operations & Team Management
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Unified control center to manage department tasks, project commitments, and team member workload
-              balancing in 1 click.
-            </p>
-          </div>
-
-          {/* Quick Scope Selector & Create Task CTA */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div hidden={hideProjectSelector} className={hideProjectSelector ? "hidden" : "flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5"}>
-              <FolderKanban className="size-3.5 text-muted-foreground" />
-              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Project Scope:
-              </span>
-              <select
-                value={projectScope}
-                onChange={(e) => onProjectScopeChange(e.target.value)}
-                className="bg-transparent text-xs font-semibold text-foreground outline-none cursor-pointer"
-              >
-                <option value="all">All Projects (Rollup)</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.id} · {p.name.split(" ")[0]} {p.name.split(" ")[1]}
-                  </option>
-                ))}
-              </select>
+      {!hideHeader && (
+        <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
+                  {departmentCode} · COORDINATION HUB
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  Lead: <strong className="text-foreground">{departmentLead}</strong>
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+                {departmentName} — Operations & Team Management
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Unified control center to manage department tasks, project commitments, and team member workload
+                balancing in 1 click.
+              </p>
             </div>
 
-            {!readOnly && (
-              <Button
-                size="sm"
-                onClick={() => handleOpenCreateTask()}
-                className="h-9 gap-1.5 text-xs font-semibold shadow-sm"
-              >
-                <Plus className="size-3.5" />
-                Assign New Task
-              </Button>
-            )}
+            {/* Quick Scope Selector & Create Task CTA */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div hidden={hideProjectSelector} className={hideProjectSelector ? "hidden" : "flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5"}>
+                <FolderKanban className="size-3.5 text-muted-foreground" />
+                <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  Project Scope:
+                </span>
+                <select
+                  value={projectScope}
+                  onChange={(e) => onProjectScopeChange(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-foreground outline-none cursor-pointer [&>option]:bg-background [&>option]:text-foreground"
+                >
+                  <option value="all">All Projects (Rollup)</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.id} · {p.name.split(" ")[0]} {p.name.split(" ")[1]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {!readOnly && (
+                <Button
+                  size="sm"
+                  onClick={() => handleOpenCreateTask()}
+                  className="h-9 gap-1.5 text-xs font-semibold shadow-sm"
+                >
+                  <Plus className="size-3.5" />
+                  Assign New Task
+                </Button>
+              )}
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Tab Navigation Navigation Bar */}
-        <div className="mt-5 flex items-center justify-between border-t border-border/50 pt-4">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab("tasks")}
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
-                activeTab === "tasks"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      {/* Tab Navigation & View Mode Switcher */}
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${hideHeader ? "rounded-xl border border-border bg-card p-3 shadow-xs" : "border-b border-border/50 pb-3"}`}>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setActiveTab("tasks")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              activeTab === "tasks"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <CheckSquare className="size-3.5" />
+            Teams Tasks
+            <span
+              className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                activeTab === "tasks" ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
               }`}
             >
-              <CheckSquare className="size-3.5" />
-              Teams Tasks
-              <span
-                className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
-                  activeTab === "tasks" ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {filteredTasks.length}
-              </span>
-            </button>
+              {filteredTasks.length}
+            </span>
+          </button>
 
-            {!hideProjectSelector && (<button
+          {!hideProjectsAndTeam && !hideProjectSelector && (
+            <button
               onClick={() => setActiveTab("projects")}
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
                 activeTab === "projects"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -384,11 +395,13 @@ export function DepartmentLeadCoordinationCenter({
               >
                 {projects.length}
               </span>
-            </button>)}
+            </button>
+          )}
 
-            {!hideProjectSelector && (<button
+          {!hideProjectsAndTeam && !hideProjectSelector && (
+            <button
               onClick={() => setActiveTab("teams")}
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
                 activeTab === "teams"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -403,37 +416,48 @@ export function DepartmentLeadCoordinationCenter({
               >
                 {teamMembers.length}
               </span>
-            </button>)}
-          </div>
-
-          {/* View Mode Toggle when on Tasks tab */}
-          {activeTab === "tasks" && (
-            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1">
-              <button
-                onClick={() => setViewMode("kanban")}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-                  viewMode === "kanban"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <FolderKanban className="size-3" />
-                Kanban
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-                  viewMode === "table"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <TableIcon className="size-3" />
-                Table
-              </button>
-            </div>
+            </button>
           )}
         </div>
+
+        {/* View Mode Toggle when on Tasks tab */}
+        {activeTab === "tasks" && (
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1">
+            <button
+              onClick={() => setViewMode("checklist")}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                viewMode === "checklist"
+                  ? "bg-background text-foreground shadow-sm font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ListTodo className="size-3" />
+              Checklist
+            </button>
+            <button
+              onClick={() => setViewMode("kanban")}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                viewMode === "kanban"
+                  ? "bg-background text-foreground shadow-sm font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <FolderKanban className="size-3" />
+              Kanban
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                viewMode === "table"
+                  ? "bg-background text-foreground shadow-sm font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <TableIcon className="size-3" />
+              Table
+            </button>
+          </div>
+        )}
       </div>
 
       {/* TAB 1: TEAMS TASKS */}
@@ -485,7 +509,7 @@ export function DepartmentLeadCoordinationCenter({
                 <select
                   value={assigneeFilter}
                   onChange={(e) => setAssigneeFilter(e.target.value)}
-                  className="bg-transparent font-semibold text-foreground outline-none cursor-pointer"
+                  className="bg-transparent font-semibold text-foreground outline-none cursor-pointer [&>option]:bg-background [&>option]:text-foreground"
                 >
                   <option value="ALL">All Team Members</option>
                   {teamMembers.map((m) => (
@@ -497,7 +521,7 @@ export function DepartmentLeadCoordinationCenter({
               </div>
             </div>
 
-            <select aria-label="Sort tasks" value={sortBy} onChange={event => setSortBy(event.target.value as "due" | "priority")} className="h-8 rounded-lg border border-border bg-background px-2 text-xs"><option value="due">Due date first</option><option value="priority">Priority first</option></select>
+            <select aria-label="Sort tasks" value={sortBy} onChange={event => setSortBy(event.target.value as "due" | "priority")} className="h-8 rounded-lg border border-border bg-background px-2 text-xs text-foreground [&>option]:bg-background [&>option]:text-foreground"><option value="due">Due date first</option><option value="priority">Priority first</option></select>
             {/* Search box */}
             <div className="relative min-w-60">
               <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
@@ -507,13 +531,24 @@ export function DepartmentLeadCoordinationCenter({
                 placeholder="Search tasks, reference, or assignee..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-xs outline-none focus:ring-1 focus:ring-primary"
+                className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-xs outline-none focus:ring-1 focus:ring-primary text-foreground"
               />
             </div>
           </div>
 
-          {/* KANBAN VIEW */}
-          {viewMode === "kanban" ? (
+          {/* TASK VIEWS: CHECKLIST, KANBAN, OR TABLE */}
+          {viewMode === "checklist" ? (
+            <TaskChecklistView
+              tasks={filteredTasks}
+              teamMembers={teamMembers}
+              onUpdateAssignee={onUpdateTaskAssignee}
+              onUpdateStatus={onUpdateTaskStatus}
+              onStartTask={onStartTask}
+              onOpenTask={onOpenTask}
+              departmentLead={departmentLead}
+              readOnly={readOnly}
+            />
+          ) : viewMode === "kanban" ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Department task board">
               {([
                 { lane: "today", title: "Today / In Progress", tone: "amber" },
@@ -1098,6 +1133,249 @@ export function DepartmentLeadCoordinationCenter({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Subcomponents: Task Checklist View, Kanban Column & Task Card
+function TaskChecklistView({
+  tasks,
+  teamMembers,
+  onUpdateAssignee,
+  onUpdateStatus,
+  onStartTask,
+  onOpenTask,
+  departmentLead,
+  readOnly,
+}: {
+  tasks: TaskRecord[];
+  teamMembers: TeamMember[];
+  onUpdateAssignee: (taskId: string, newAssignee: string) => void;
+  onUpdateStatus: (taskId: string, newStatus: TaskRecord["status"]) => void;
+  onStartTask?: ((taskId: string) => void) | undefined;
+  onOpenTask?: ((task: TaskRecord) => void) | undefined;
+  departmentLead: string;
+  readOnly?: boolean | undefined;
+}) {
+  const [completedExpanded, setCompletedExpanded] = useState<boolean>(false);
+
+  const sections = [
+    {
+      lane: "today" as const,
+      title: "Today / In Progress",
+      tone: "amber" as const,
+      borderTone: "border-amber-500/30 bg-amber-500/5 text-amber-600 dark:text-amber-400",
+      items: tasks.filter((t) => taskLane(t) === "today"),
+      collapsible: false,
+    },
+    {
+      lane: "review" as const,
+      title: "Under Review / Gate",
+      tone: "purple" as const,
+      borderTone: "border-purple-500/30 bg-purple-500/5 text-purple-600 dark:text-purple-400",
+      items: tasks.filter((t) => taskLane(t) === "review"),
+      collapsible: false,
+    },
+    {
+      lane: "todo" as const,
+      title: "To Do",
+      tone: "blue" as const,
+      borderTone: "border-blue-500/30 bg-blue-500/5 text-blue-600 dark:text-blue-400",
+      items: tasks.filter((t) => taskLane(t) === "todo"),
+      collapsible: false,
+    },
+    {
+      lane: "completed" as const,
+      title: "Completed & Released",
+      tone: "green" as const,
+      borderTone: "border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400",
+      items: tasks.filter((t) => taskLane(t) === "completed"),
+      collapsible: true,
+    },
+  ];
+
+  return (
+    <div className="space-y-4" aria-label="Department task checklist">
+      {sections.map((section) => {
+        const isCollapsed = section.collapsible && !completedExpanded;
+
+        return (
+          <div
+            key={section.lane}
+            className="rounded-xl border border-border bg-card/60 shadow-xs overflow-hidden"
+          >
+            {/* Section Header */}
+            <div
+              className={`flex items-center justify-between px-3.5 py-2 text-xs font-semibold border-b border-border/40 ${
+                section.borderTone
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {section.collapsible ? (
+                  <button
+                    type="button"
+                    onClick={() => setCompletedExpanded(!completedExpanded)}
+                    className="flex items-center gap-1.5 hover:underline cursor-pointer"
+                  >
+                    <ChevronDown
+                      className={`size-4 transition-transform duration-200 ${
+                        completedExpanded ? "" : "-rotate-90"
+                      }`}
+                    />
+                    <span>{section.title}</span>
+                  </button>
+                ) : (
+                  <span>{section.title}</span>
+                )}
+                <span className="rounded-full bg-background px-2 py-0.2 font-mono text-[10px] font-bold text-foreground shadow-xs">
+                  {section.items.length}
+                </span>
+              </div>
+
+              {section.collapsible && (
+                <button
+                  type="button"
+                  onClick={() => setCompletedExpanded(!completedExpanded)}
+                  className="text-[11px] font-mono text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {completedExpanded ? "Collapse" : "Expand completed"}
+                </button>
+              )}
+            </div>
+
+            {/* Tasks list */}
+            {!isCollapsed && (
+              <div className="divide-y divide-border/50">
+                {section.items.length === 0 ? (
+                  <div className="py-4 text-center text-xs text-muted-foreground">
+                    No tasks in {section.title.toLowerCase()}.
+                  </div>
+                ) : (
+                  section.items.map((task) => {
+                    const currentAssignee = task.fields["assignee"] ?? departmentLead;
+                    const projectRef =
+                      task.fields["projectId"] ?? task.fields["projectCode"] ?? task.reference;
+                    const isCompleted =
+                      task.status === "Approved" || task.status === "Released";
+                    const isReview = task.status === "In review";
+
+                    return (
+                      <div
+                        key={task.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-2.5 transition-colors hover:bg-muted/30"
+                      >
+                        {/* Left: Check action, Reference, Title, Project */}
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          {/* Check / Status trigger */}
+                          {!readOnly && (
+                            <button
+                              type="button"
+                              aria-label={
+                                isCompleted
+                                  ? `Mark ${task.title} as To Do`
+                                  : isReview
+                                  ? `Task ${task.title} in review`
+                                  : `Mark ${task.title} complete`
+                              }
+                              onClick={() => {
+                                if (isCompleted) {
+                                  onUpdateStatus(task.id, "Open");
+                                } else if (isReview) {
+                                  onUpdateStatus(task.id, "Approved");
+                                } else {
+                                  onUpdateStatus(task.id, "Approved");
+                                }
+                              }}
+                              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            >
+                              {isCompleted ? (
+                                <CheckSquare className="size-4 text-emerald-500" />
+                              ) : isReview ? (
+                                <Clock className="size-4 text-purple-500" />
+                              ) : (
+                                <Square className="size-4 text-muted-foreground/60 hover:text-emerald-500" />
+                              )}
+                            </button>
+                          )}
+
+                          <span className="font-mono text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0">
+                            {task.reference}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => onOpenTask?.(task)}
+                            className={`text-left text-xs font-semibold hover:underline hover:text-primary truncate ${
+                              isCompleted
+                                ? "line-through text-muted-foreground"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {task.title}
+                          </button>
+
+                          {projectRef && (
+                            <span className="hidden md:inline-block rounded bg-secondary/80 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-secondary-foreground shrink-0 max-w-28 truncate">
+                              {projectRef}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Right: Priority, Assignee, Due Date, Status Changer */}
+                        <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto pl-6 sm:pl-0">
+                          <PriorityBadge priority={task.priority} />
+
+                          {/* 1-Click Assignee Switcher */}
+                          <select
+                            value={currentAssignee}
+                            onChange={(e) => onUpdateAssignee(task.id, e.target.value)}
+                            disabled={readOnly}
+                            className="h-6 rounded border border-border bg-background px-1.5 text-[11px] font-medium text-foreground outline-none cursor-pointer hover:border-primary/50 max-w-32 truncate [&>option]:bg-background [&>option]:text-foreground"
+                          >
+                            {teamMembers.map((m) => (
+                              <option key={m.name} value={m.name}>
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+
+                          {/* Due Date */}
+                          <span className="hidden lg:flex items-center gap-1 font-mono text-[10px] text-muted-foreground shrink-0">
+                            <Calendar className="size-3" />
+                            {task.fields["dueDate"] || "No due"}
+                          </span>
+
+                          {/* Status changer */}
+                          <select
+                            value={
+                              task.status === "Open" && task.fields["workStatus"] === "In progress"
+                                ? "IN_PROGRESS"
+                                : task.status
+                            }
+                            onChange={(e) =>
+                              e.target.value === "IN_PROGRESS"
+                                ? onStartTask?.(task.id)
+                                : onUpdateStatus(task.id, e.target.value as TaskRecord["status"])
+                            }
+                            disabled={readOnly}
+                            className="h-6 rounded border border-border bg-background px-1.5 text-[10px] font-semibold text-foreground outline-none cursor-pointer [&>option]:bg-background [&>option]:text-foreground"
+                          >
+                            <option value="Draft">Draft</option>
+                            <option value="Open">To Do</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="In review">Review</option>
+                            <option value="Approved">Complete</option>
+                          </select>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

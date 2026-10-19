@@ -610,4 +610,51 @@ Projects pin the approved matrix version. Future changes are effective-dated and
 
 - See [master_portal_and_mobile_comprehensive_plan_reviewed.md](master_portal_and_mobile_comprehensive_plan_reviewed.md) for the authoritative execution plan for Batches 3–6.
 - See [department_workspace_ui_refinement_plan.md](department_workspace_ui_refinement_plan.md) for the consolidated desktop workspace UI refinement plan across all 12 departments.
-- Working tree commit `8f014a8` incorporates Batch 2 (53/53 tests passing, clean build, 0 TS errors). Ready for remote git push.
+- Working tree commit `8f014a8` incorporates Batch 2 (53/53 tests passing, clean build, 0 TS errors).
+- Commit `d1dfab5` incorporates master comprehensive roadmap reconciliation.
+
+---
+
+## Track 1: Desktop Workspace UI Refinement Across All 12 Active Departments — 19 October 2026
+
+- **State**: VERIFIED LIVE on localhost (`http://localhost:8080/`); 59/59 tests pass across 9 test suites; clean production build.
+- **Implemented Requirements**:
+  1. **Compact Workspace Header & Landing Overview**:
+     - Left-aligned small department badge and lead context (`SAL`, `EHW`, `FW`, `SW`, `MECH`, `PUR`, `QA`, `EMF`, `MMF`, `FIN`, `SIT`, `HR/OPS`).
+     - Right-aligned compact project selector with accessible styling and `Add Record` primary action.
+     - Reduced padding, margin, and top blank space; removed redundant second large coordination title across all views.
+     - Preserved readable labels, accessible controls, and dark/light theme consistency.
+  2. **Three Task Presentation Modes**:
+     - Synchronized **Checklist mode** implemented alongside Kanban and Table in `DepartmentLeadCoordinationCenter.tsx`.
+     - Preserves existing task collection, project scope, status, assignee, ordering, and priority without duplication.
+     - Compact rows display title, reference, project badge, priority indicator, 1-click assignee switcher, due date, and status selector.
+     - Grouping: Today / In Progress, Review, To Do; **Completed is collapsed initially** with count and expand/collapse chevron toggle.
+  3. **Separation of Tasks, Projects, and Teams**:
+     - `DepartmentProjectWorkspace.tsx` modularized with dedicated sub-navigation tabs: Overview, Tasks, Deliverables & Docs, Approvals, Department Records, and Team & Capacity.
+     - My Tasks (`view === "assignee"`) isolates tasks without embedding full Projects or Teams lists.
+     - Overview displays compact previews with quick jump links rather than stacking all giant sections endlessly.
+  4. **Theme Consistency**:
+     - Added `text-foreground [&>option]:bg-background [&>option]:text-foreground` across all project selectors, coordination filters, and modal dropdowns to eliminate the white popup background on dark mode.
+  5. **Purchase Module Navigation Streamlining**:
+     - Removed the redundant duplicate 6-module switcher inside `PurchasingCommandCenter.tsx`; the left sidebar remains the single authoritative navigation.
+     - Streamlined header displays active subview badge and relevant contextual actions (`+ Create PO`, `+ Add Supplier`, `+ Add Quotation`).
+  6. **Operational vs. Training Separation**:
+     - Removed demo End-to-End Lifecycle walkthrough and autoplay player from everyday operational project navigation in `RoleAwareSidebar.tsx`.
+     - Relocated walkthrough to a dedicated, clearly labelled destination under `Reference & Training: AI4T Lifecycle Walkthrough`.
+     - Removed unexpected auto-launch of demo walkthrough during enquiry conversion.
+  7. **Unified Technical Deliverables Board**:
+     - Provided project-scoped technical deliverables workspace in `DepartmentProjectWorkspace.tsx` covering schematics, preliminary BOM, Gerbers, requirements, and DFMEA records with authorized revision tracking and 1-click inspection.
+     - Routed EHW DFMEA sidebar action to the project workspace.
+- **Implemented Files**:
+  - `src/components/DepartmentLeadCoordinationCenter.tsx`: Checklist mode, collapsible completed group, compact header support, and theme-aware selects.
+  - `src/components/DepartmentProjectWorkspace.tsx`: Compact header, sub-navigation tabs, and unified deliverables board.
+  - `src/components/PurchasingCommandCenter.tsx`: Removed redundant 6-module switcher, added clean header, and theme-aware modal selects.
+  - `src/components/RoleAwareSidebar.tsx`: Relocated demo walkthrough to Reference & Training, linked EHW DFMEA to project workspace.
+  - `src/routes/index.tsx`: Cleaned up My Tasks and DepartmentView calls with `hideHeader` and theme classes, removed automated demo modal popup on sales conversion.
+  - `tests/department-workspace-ui.test.cjs`: Comprehensive test suite verifying task lanes, 3 view modes, compact header, theme styling, and navigation separation.
+- **Verification Evidence**:
+  - `node --test $documentTestFiles`: **59/59 PASS** across 9 test suites (0 failures).
+  - `npx tsc --noEmit`: 0 TypeScript errors.
+  - `npm run build`: Production build succeeded in 1.88s with Nitro server output.
+  - Localhost: Live at `http://localhost:8080/` (HTTP 200 confirmed).
+

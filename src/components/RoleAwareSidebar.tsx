@@ -395,8 +395,8 @@ export function RoleAwareSidebar({
           },
           {
             id: "adm-lifecycle",
-            label: "End-to-End Lifecycle Hub",
-            shortLabel: "AI4T-01",
+            label: "Help & Training: AI4T Lifecycle Walkthrough",
+            shortLabel: "Training",
             icon: PlayCircle,
             isActive: false,
             onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
@@ -867,8 +867,8 @@ export function RoleAwareSidebar({
               label: "DFMEA & Gerber Gates",
               shortLabel: "DFMEA",
               icon: Layers,
-              isActive: false,
-              onClick: () => handleItemClick(() => onNavigate("ehw")),
+              isActive: activeArea === "ehw" && view === "project",
+              onClick: () => handleItemClick(() => onNavigate("ehw", "project")),
             },
           ];
         case "sales":
@@ -1100,14 +1100,6 @@ export function RoleAwareSidebar({
             isActive: view === "project",
             onClick: () => handleItemClick(() => onNavigate(deptId as AreaId, "project")),
           },
-          ...(deptId === "sit" ? [] : [{
-            id: "dept-lifecycle",
-            label: "Demo Lifecycle Walkthrough (AI4T-01)",
-            shortLabel: "Lifecycle",
-            icon: PlayCircle,
-            isActive: false,
-            onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
-          }]),
           {
             id: "dept-drive",
             label: "Project Documents & Vault",
@@ -1126,7 +1118,7 @@ export function RoleAwareSidebar({
       },
       {
         id: "dept_reference",
-        title: "Reference",
+        title: "Reference & Training",
         icon: BookOpen,
         items: [
           ...(deptId === "pur"
@@ -1160,6 +1152,14 @@ export function RoleAwareSidebar({
             icon: Users,
             isActive: false,
             onClick: () => handleItemClick(() => onOpenDirectory?.()),
+          },
+          {
+            id: "dept-ref-training-lifecycle",
+            label: "Help & Training: AI4T Lifecycle Walkthrough",
+            shortLabel: "Training",
+            icon: PlayCircle,
+            isActive: false,
+            onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
           },
         ],
       },

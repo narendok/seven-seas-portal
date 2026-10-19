@@ -1,67 +1,654 @@
+import React, { useState } from "react";
 import { DepartmentLeadCoordinationCenter, type TaskRecord, type TeamMember } from "./DepartmentLeadCoordinationCenter";
 import type { ApprovalRecord } from "./ApprovalsFullPageView";
 import { recordsForProject, documentsForProject } from "@/lib/project-workspace";
+import {
+  FolderKanban,
+  Plus,
+  FileText,
+  CheckCircle2,
+  Clock,
+  Users,
+  ShieldCheck,
+  ArrowRight,
+  Layers,
+  FileSpreadsheet,
+  ExternalLink,
+  ChevronRight,
+  AlertCircle,
+  LayoutDashboard,
+  CheckSquare,
+  Search,
+} from "lucide-react";
 
-type WorkspaceDocument = { id: string; title: string; type: string; lifecycle?: string | undefined; revision?: string | undefined; linkedRecordRefs?: string[] | undefined };
+type WorkspaceDocument = {
+  id: string;
+  title: string;
+  type: string;
+  lifecycle?: string | undefined;
+  revision?: string | undefined;
+  linkedRecordRefs?: string[] | undefined;
+};
+
 type Props = {
-  departmentCode: string; departmentName: string; lead: string;
-  records: TaskRecord[]; projects: TaskRecord[]; documents: WorkspaceDocument[]; approvals: ApprovalRecord[]; team: TeamMember[];
-  projectScope: string; onProjectChange: (value: string) => void;
+  departmentCode: string;
+  departmentName: string;
+  lead: string;
+  records: TaskRecord[];
+  projects: TaskRecord[];
+  documents: WorkspaceDocument[];
+  approvals: ApprovalRecord[];
+  team: TeamMember[];
+  projectScope: string;
+  onProjectChange: (value: string) => void;
   onCreateRecord: () => void;
-  onOpenRecord: (id: string) => void; onOpenDocument: (id: string) => void;
+  onOpenRecord: (id: string) => void;
+  onOpenDocument: (id: string) => void;
   onUpdateTask: (id: string, patch: Partial<TaskRecord>, action: string) => void;
-  onCreateTask: (task: {title: string; priority: TaskRecord["priority"]; assignee: string; projectId: string; dueDate: string; notes: string}) => boolean | void | Promise<boolean | void>;
+  onCreateTask: (task: {
+    title: string;
+    priority: TaskRecord["priority"];
+    assignee: string;
+    projectId: string;
+    dueDate: string;
+    notes: string;
+  }) => boolean | void | Promise<boolean | void>;
 };
 
 export function DepartmentProjectWorkspace(props: Props) {
   const { departmentCode, departmentName, lead, projects, projectScope } = props;
-  const project = projects.find(item => item.reference === projectScope || item.id === projectScope);
+  const [activeTab, setActiveTab] = useState<"overview" | "tasks" | "deliverables" | "approvals" | "records" | "team">("overview");
+  const [recordSearch, setRecordSearch] = useState("");
+
+  const project = projects.find((item) => item.reference === projectScope || item.id === projectScope);
   const all = projectScope === "all";
   const records = all ? props.records : recordsForProject(props.records, project);
   const documents = all ? props.documents : project ? documentsForProject(props.documents, records, project) : [];
-  const sourceIds = new Set(records.map(record => record.id));
-  const approvals = props.approvals.filter(approval => all || sourceIds.has(approval.recordId) || Boolean(project && [project.id, project.reference].includes(approval.project ?? "")));
-  const work = records.filter(record => record.type !== "Project" && record.status !== "Archived");
-  const completed = work.filter(record => record.status === "Approved" || record.status === "Released").length;
-  const progress = work.length ? Math.round(completed / work.length * 100) : 0;
-  const owners = new Set(records.filter(record => record.type === "Task").map(record => record.fields["assignee"]));
-  const team = all ? props.team : props.team.filter(member => owners.has(member.name));
+  const sourceIds = new Set(records.map((record) => record.id));
+  const approvals = props.approvals.filter(
+    (approval) =>
+      all ||
+      sourceIds.has(approval.recordId) ||
+      Boolean(project && [project.id, project.reference].includes(approval.project ?? ""))
+  );
+  const work = records.filter((record) => record.type !== "Project" && record.status !== "Archived");
+  const taskRecords = work.filter((record) => record.type === "Task");
+  const deptWorkRecords = work.filter((record) => record.type !== "Task");
+  const completed = work.filter((record) => record.status === "Approved" || record.status === "Released").length;
+  const progress = work.length ? Math.round((completed / work.length) * 100) : 0;
+  const owners = new Set(taskRecords.map((record) => record.fields["assignee"]));
+  const team = all ? props.team : props.team.filter((member) => owners.has(member.name));
   const shownProjects = all ? projects : project ? [project] : [];
-  return <main className="space-y-6" aria-label="Department project workspace">
-    <header className="rounded-xl border border-border bg-card p-5 space-y-3">
-      <p className="text-xs text-muted-foreground">{departmentCode} · Department workspace</p>
-      <h1 className="text-2xl font-semibold">{departmentName} — Project Workspace</h1>
-      <p className="text-sm text-muted-foreground">Select a project to see its department work, tasks, documents, reviews and assigned team together.</p>
-      <label className="block text-sm font-medium">Project
-        <select aria-label="Workspace project" value={projectScope} onChange={event => props.onProjectChange(event.target.value)} className="mt-2 block w-full rounded-lg border border-input bg-background p-3 sm:max-w-2xl">
-          <option value="all">All projects — department overview</option>
-          {!all && !project && <option value={projectScope}>Selected project unavailable</option>}
-          {projects.map(item => <option key={item.id} value={item.reference}>{item.reference} · {item.title}</option>)}
-        </select>
-      </label>
-      <button type="button" onClick={props.onCreateRecord} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary">Add department record</button>
-      {!all && !project && <p role="status" className="text-sm text-muted-foreground">This project is not linked to your department. Choose an available project.</p>}
-    </header>
-    {project && <section aria-label="Selected project overview" className="rounded-xl border border-border bg-card p-5">
-      <h2 className="text-xl font-semibold">{project.title}</h2><p className="mt-1 text-sm text-muted-foreground">{project.reference} · {project.status}</p>
-      <dl className="mt-4 grid gap-4 sm:grid-cols-3">{[["Customer", project.fields["customer"]], ["Stage", project.fields["lifecycleStage"]], ["Target date", project.fields["targetDate"]]].map(([label,value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 text-sm">{value || "Not recorded"}</dd></div>)}</dl>
-    </section>}
-    <section aria-label="Workspace summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {[["Department progress", `${progress}%`, `${completed} of ${work.length} records complete`], ["Tasks", records.filter(record => record.type === "Task").length, "In selected scope"], ["Documents", documents.length, "Authorized linked documents"], ["Pending approvals", approvals.filter(approval => approval.outcome === "Pending").length, "In selected scope"]].map(([label,value,detail]) => <div key={label} className="rounded-xl border border-border bg-card p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p><p className="mt-1 text-xs text-muted-foreground">{detail}</p></div>)}
-    </section>
-    {all && <section aria-label="Department projects" className="grid gap-3 md:grid-cols-2">{projects.length ? projects.map(item => <button key={item.id} onClick={() => props.onProjectChange(item.reference)} className="rounded-xl border border-border bg-card p-4 text-left hover:border-primary"><strong>{item.title}</strong><p className="mt-1 text-xs text-muted-foreground">{item.reference} · {item.status}</p></button>) : <p>No projects linked to this department yet.</p>}</section>}
-    <DepartmentLeadCoordinationCenter key={`${departmentCode}:${projectScope}`} hideProjectSelector recordsAreScoped departmentCode={departmentCode} departmentName={departmentName} departmentLead={lead}
-      records={records} teamMembers={props.team} projects={shownProjects.map(item => ({id:item.reference,name:item.title,customer:item.fields["customer"] || "Not recorded",currentStage:item.fields["lifecycleStage"] || "Not recorded",targetDate:item.fields["targetDate"] || "Not recorded",volume:item.fields["quantity"] || "Not recorded"}))}
-      projectScope={projectScope} onProjectScopeChange={props.onProjectChange} onCreateTask={props.onCreateTask}
-      onUpdateTaskAssignee={(id, assignee) => props.onUpdateTask(id, {fields:{assignee}}, "Task reassigned")}
-      onUpdateTaskStatus={(id,status) => props.onUpdateTask(id, {status, ...(status === "Open" ? {fields:{workStatus:"To do"}} : {})}, "Task status updated")}
-      onStartTask={id => props.onUpdateTask(id, {status:"Open",fields:{workStatus:"In progress"}}, "Task started")}
-      onOpenTask={task => props.onOpenRecord(task.id)} />
-    <div className="grid gap-5 lg:grid-cols-2">
-      <section aria-label="Project documents" className="rounded-xl border border-border bg-card p-5"><h2 className="font-semibold">Documents & References ({documents.length})</h2><div className="mt-3 space-y-2">{documents.length ? documents.map(doc => <button key={doc.id} onClick={() => props.onOpenDocument(doc.id)} className="block w-full rounded-lg border border-border p-3 text-left hover:bg-secondary"><strong className="text-sm">{doc.title}</strong><p className="mt-1 text-xs text-muted-foreground">{doc.type} · {doc.lifecycle || "Draft"} · Rev {doc.revision || "Not recorded"}</p></button>) : <p className="text-sm text-muted-foreground">No authorized documents linked to this project scope.</p>}</div></section>
-      <section aria-label="Project approvals" className="rounded-xl border border-border bg-card p-5"><h2 className="font-semibold">Approvals & Reviews ({approvals.length})</h2><div className="mt-3 space-y-2">{approvals.length ? approvals.map(approval => <article key={approval.id} className="rounded-lg border border-border p-3"><strong className="text-sm">{approval.title}</strong><p className="mt-1 text-xs text-muted-foreground">{approval.outcome} · Reviewer: {approval.approverAuthority || "Not assigned"}</p>{sourceIds.has(approval.recordId) && <button onClick={() => props.onOpenRecord(approval.recordId)} className="mt-2 text-xs text-primary underline">Open source record</button>}</article>) : <p className="text-sm text-muted-foreground">No approvals in this project scope.</p>}</div></section>
-      <section aria-label="Project records" className="rounded-xl border border-border bg-card p-5"><h2 className="font-semibold">Department Records ({work.filter(record => record.type !== "Task").length})</h2><div className="mt-3 space-y-2">{work.filter(record => record.type !== "Task").map(record => <button key={record.id} onClick={() => props.onOpenRecord(record.id)} className="block w-full rounded-lg border border-border p-3 text-left hover:bg-secondary"><strong className="text-sm">{record.title}</strong><p className="text-xs text-muted-foreground">{record.reference} · {record.status}</p></button>)}{!work.some(record => record.type !== "Task") && <p className="text-sm text-muted-foreground">No department records in this project scope.</p>}</div></section>
-      <section aria-label="Project team" className="rounded-xl border border-border bg-card p-5"><h2 className="font-semibold">{all ? "Department Team" : "Assigned Task Owners"} ({team.length})</h2><div className="mt-3 space-y-2">{team.map(member => <div key={member.name} className="rounded-lg border border-border p-3"><strong className="text-sm">{member.name}</strong><p className="text-xs text-muted-foreground">{member.role}</p></div>)}{!team.length && <p className="text-sm text-muted-foreground">No department task owners recorded in this project scope.</p>}</div></section>
-    </div>
-  </main>;
+
+  const filteredDeptRecords = deptWorkRecords.filter((rec) => {
+    if (!recordSearch.trim()) return true;
+    const q = recordSearch.toLowerCase();
+    return rec.title.toLowerCase().includes(q) || rec.reference.toLowerCase().includes(q) || (rec.type || "").toLowerCase().includes(q);
+  });
+
+  return (
+    <main className="space-y-4" aria-label="Department project workspace">
+      {/* 1. Compact Header: Left title/lead, Right compact project selector and action */}
+      <header className="rounded-xl border border-border/80 bg-card px-4 py-3 shadow-xs">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
+                {departmentCode} · WORKSPACE
+              </span>
+              <span className="font-mono text-xs text-muted-foreground">
+                Lead: <strong className="text-foreground">{lead}</strong>
+              </span>
+            </div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground">
+              {departmentName} — Project Workspace
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground">
+              <FolderKanban className="size-3.5 text-muted-foreground shrink-0" />
+              <span className="font-mono text-[10px] uppercase font-semibold text-muted-foreground shrink-0">
+                Project:
+              </span>
+              <select
+                aria-label="Workspace project"
+                value={projectScope}
+                onChange={(event) => props.onProjectChange(event.target.value)}
+                className="bg-transparent font-semibold text-foreground text-xs outline-none cursor-pointer max-w-[200px] sm:max-w-[280px] truncate [&>option]:bg-background [&>option]:text-foreground"
+              >
+                <option value="all">All projects — department overview</option>
+                {!all && !project && <option value={projectScope}>Selected project unavailable</option>}
+                {projects.map((item) => (
+                  <option key={item.id} value={item.reference}>
+                    {item.reference} · {item.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={props.onCreateRecord}
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors cursor-pointer"
+            >
+              <Plus className="size-3.5" />
+              <span>Add Record</span>
+            </button>
+          </div>
+        </div>
+
+        {!all && !project && (
+          <p role="status" className="mt-2 text-xs text-amber-500 font-medium">
+            This project is not linked to your department. Choose an available project.
+          </p>
+        )}
+      </header>
+
+      {/* 2. Compact Project Overview Banner (if a specific project is selected) */}
+      {project && (
+        <section aria-label="Selected project overview" className="rounded-xl border border-border/80 bg-card p-3.5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                  {project.reference}
+                </span>
+                <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] font-semibold text-secondary-foreground">
+                  {project.status}
+                </span>
+              </div>
+              <h2 className="text-sm font-bold text-foreground mt-1">{project.title}</h2>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Department Deliverable:</span>
+              <strong className="text-foreground font-mono text-[11px]">
+                {project.fields["deliverable"] || "Schematics, Preliminary BOM & Gate Reviews"}
+              </strong>
+            </div>
+          </div>
+
+          <dl className="mt-2.5 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
+            <div>
+              <dt className="text-[10px] uppercase font-mono text-muted-foreground">Customer</dt>
+              <dd className="mt-0.5 font-medium text-foreground">{project.fields["customer"] || "Not recorded"}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] uppercase font-mono text-muted-foreground">Lifecycle Stage</dt>
+              <dd className="mt-0.5 font-medium text-foreground">{project.fields["lifecycleStage"] || "Not recorded"}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] uppercase font-mono text-muted-foreground">Target Date</dt>
+              <dd className="mt-0.5 font-medium text-foreground">{project.fields["targetDate"] || "Not recorded"}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] uppercase font-mono text-muted-foreground">Volume Target</dt>
+              <dd className="mt-0.5 font-medium text-foreground">{project.fields["quantity"] || "50,000 units/yr"}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
+
+      {/* 3. Compact 4-Metric Workspace Summary */}
+      <section aria-label="Workspace summary" className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        {[
+          ["Department progress", `${progress}%`, `${completed} of ${work.length} records complete`],
+          ["Tasks", String(taskRecords.length), "Checklist, Kanban & Table"],
+          ["Deliverables & Vault", String(documents.length), "Authorized linked documents"],
+          ["Pending approvals", String(approvals.filter((approval) => approval.outcome === "Pending").length), "Human decisions required"],
+        ].map(([label, value, detail]) => (
+          <div key={label} className="rounded-xl border border-border/80 bg-card p-3 shadow-xs">
+            <p className="text-[11px] font-mono uppercase text-muted-foreground">{label}</p>
+            <p className="mt-1 text-xl font-bold text-foreground">{value}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground truncate">{detail}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* 4. Sub-Navigation Tabs */}
+      <nav aria-label="Workspace subviews" className="flex items-center gap-1.5 overflow-x-auto rounded-xl border border-border bg-muted/40 p-1">
+        {[
+          { key: "overview", label: "Overview", icon: LayoutDashboard },
+          { key: "tasks", label: `Tasks (${taskRecords.length})`, icon: CheckSquare },
+          { key: "deliverables", label: `Deliverables & Docs (${documents.length})`, icon: FileSpreadsheet },
+          { key: "approvals", label: `Approvals (${approvals.length})`, icon: ShieldCheck },
+          { key: "records", label: `Department Records (${deptWorkRecords.length})`, icon: Layers },
+          { key: "team", label: `Team & Capacity (${team.length})`, icon: Users },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key as typeof activeTab)}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                isActive
+                  ? "bg-background text-foreground shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="size-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* SUBVIEW 1: OVERVIEW */}
+      {activeTab === "overview" && (
+        <div className="space-y-4">
+          {all && (
+            <section aria-label="Department projects" className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Active Department Projects ({projects.length})
+                </h3>
+                <span className="text-[11px] text-muted-foreground">Click a project to scope work</span>
+              </div>
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {projects.length ? (
+                  projects.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => props.onProjectChange(item.reference)}
+                      className="rounded-lg border border-border bg-muted/20 p-3 text-left transition-all hover:border-primary/50 hover:bg-muted/40 cursor-pointer"
+                    >
+                      <span className="font-mono text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        {item.reference}
+                      </span>
+                      <strong className="block text-xs text-foreground mt-1.5 truncate">{item.title}</strong>
+                      <p className="mt-1 text-[11px] text-muted-foreground truncate">{item.status}</p>
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground">No projects linked to this department yet.</p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Embedded Coordination Center (Tasks with Checklist, Kanban, Table) */}
+          <section aria-label="Department tasks coordination" className="space-y-2">
+            <DepartmentLeadCoordinationCenter
+              key={`${departmentCode}:${projectScope}`}
+              hideHeader
+              hideProjectSelector
+              hideProjectsAndTeam
+              recordsAreScoped
+              departmentCode={departmentCode}
+              departmentName={departmentName}
+              departmentLead={lead}
+              records={records}
+              teamMembers={props.team}
+              projects={shownProjects.map((item) => ({
+                id: item.reference,
+                name: item.title,
+                customer: item.fields["customer"] || "Not recorded",
+                currentStage: item.fields["lifecycleStage"] || "Not recorded",
+                targetDate: item.fields["targetDate"] || "Not recorded",
+                volume: item.fields["quantity"] || "Not recorded",
+              }))}
+              projectScope={projectScope}
+              onProjectScopeChange={props.onProjectChange}
+              onCreateTask={props.onCreateTask}
+              onUpdateTaskAssignee={(id, assignee) =>
+                props.onUpdateTask(id, { fields: { assignee } }, "Task reassigned")
+              }
+              onUpdateTaskStatus={(id, status) =>
+                props.onUpdateTask(
+                  id,
+                  { status, ...(status === "Open" ? { fields: { workStatus: "To do" } } : {}) },
+                  "Task status updated"
+                )
+              }
+              onStartTask={(id) =>
+                props.onUpdateTask(id, { status: "Open", fields: { workStatus: "In progress" } }, "Task started")
+              }
+              onOpenTask={(task) => props.onOpenRecord(task.id)}
+            />
+          </section>
+
+          {/* Compact Previews for Deliverables & Approvals */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section aria-label="Project documents" className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Deliverables & Documents ({documents.length})
+                </h3>
+                <button
+                  onClick={() => setActiveTab("deliverables")}
+                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  View all in Board <ArrowRight className="size-3" />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {documents.slice(0, 4).map((doc) => (
+                  <button
+                    key={doc.id}
+                    onClick={() => props.onOpenDocument(doc.id)}
+                    className="block w-full rounded-lg border border-border/70 p-2.5 text-left hover:bg-secondary/50 transition-colors cursor-pointer"
+                  >
+                    <strong className="text-xs text-foreground block truncate">{doc.title}</strong>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {doc.type} · {doc.lifecycle || "Draft"} · Rev {doc.revision || "01"}
+                    </p>
+                  </button>
+                ))}
+                {!documents.length && (
+                  <p className="text-xs text-muted-foreground py-2">No documents linked to this scope.</p>
+                )}
+              </div>
+            </section>
+
+            <section aria-label="Project approvals" className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Approvals & Reviews ({approvals.length})
+                </h3>
+                <button
+                  onClick={() => setActiveTab("approvals")}
+                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  View all approvals <ArrowRight className="size-3" />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {approvals.slice(0, 4).map((approval) => (
+                  <article key={approval.id} className="rounded-lg border border-border/70 p-2.5 text-xs space-y-1">
+                    <strong className="text-foreground block truncate">{approval.title}</strong>
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>Status: {approval.outcome}</span>
+                      <span>Reviewer: {approval.approverAuthority || "Not assigned"}</span>
+                    </div>
+                  </article>
+                ))}
+                {!approvals.length && (
+                  <p className="text-xs text-muted-foreground py-2">No pending approvals in this scope.</p>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {/* SUBVIEW 2: FULL TASKS BOARD */}
+      {activeTab === "tasks" && (
+        <section aria-label="Department tasks full view" className="space-y-4">
+          <DepartmentLeadCoordinationCenter
+            key={`${departmentCode}:${projectScope}-tasks`}
+            hideHeader
+            hideProjectSelector
+            hideProjectsAndTeam
+            recordsAreScoped
+            departmentCode={departmentCode}
+            departmentName={departmentName}
+            departmentLead={lead}
+            records={records}
+            teamMembers={props.team}
+            projects={shownProjects.map((item) => ({
+              id: item.reference,
+              name: item.title,
+              customer: item.fields["customer"] || "Not recorded",
+              currentStage: item.fields["lifecycleStage"] || "Not recorded",
+              targetDate: item.fields["targetDate"] || "Not recorded",
+              volume: item.fields["quantity"] || "Not recorded",
+            }))}
+            projectScope={projectScope}
+            onProjectScopeChange={props.onProjectChange}
+            onCreateTask={props.onCreateTask}
+            onUpdateTaskAssignee={(id, assignee) =>
+              props.onUpdateTask(id, { fields: { assignee } }, "Task reassigned")
+            }
+            onUpdateTaskStatus={(id, status) =>
+              props.onUpdateTask(
+                id,
+                { status, ...(status === "Open" ? { fields: { workStatus: "To do" } } : {}) },
+                "Task status updated"
+              )
+            }
+            onStartTask={(id) =>
+              props.onUpdateTask(id, { status: "Open", fields: { workStatus: "In progress" } }, "Task started")
+            }
+            onOpenTask={(task) => props.onOpenRecord(task.id)}
+          />
+        </section>
+      )}
+
+      {/* SUBVIEW 3: UNIFIED TECHNICAL DELIVERABLES & LIFECYCLE BOARD */}
+      {activeTab === "deliverables" && (
+        <section aria-label="Unified technical deliverables board" className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <FileSpreadsheet className="size-4 text-primary" />
+                Unified Technical Deliverables Board
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Project-scoped technical deliverables, schematics, BOM, Gerbers, requirements, and DFMEA records with authorized revision tracking.
+              </p>
+            </div>
+            <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded">
+              {documents.length} Authorized Documents
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {documents.length === 0 ? (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                No authorized deliverables or documents recorded for {projectScope}.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-border bg-muted/40 font-mono uppercase tracking-wider text-muted-foreground text-[10px]">
+                    <tr>
+                      <th className="px-4 py-3">Deliverable & Title</th>
+                      <th className="px-3 py-3">Category</th>
+                      <th className="px-3 py-3">Revision</th>
+                      <th className="px-3 py-3">Lifecycle State</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {documents.map((doc) => (
+                      <tr key={doc.id} className="transition-colors hover:bg-muted/30">
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-[10px] font-bold text-primary block">
+                            {doc.id}
+                          </span>
+                          <strong className="text-xs text-foreground block mt-0.5">
+                            {doc.title}
+                          </strong>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span className="rounded bg-secondary px-2 py-0.5 font-mono text-[10px] text-secondary-foreground font-semibold">
+                            {doc.type}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 font-mono text-[11px] font-semibold text-foreground">
+                          Rev {doc.revision || "01"}
+                        </td>
+                        <td className="px-3 py-3">
+                          <span
+                            className={`rounded border px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${
+                              doc.lifecycle === "Approved" || doc.lifecycle === "Released"
+                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                : doc.lifecycle === "In review"
+                                ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                : "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                            }`}
+                          >
+                            {doc.lifecycle || "Draft"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => props.onOpenDocument(doc.id)}
+                            className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-secondary/80 transition-colors cursor-pointer"
+                          >
+                            <span>Inspect File</span>
+                            <ExternalLink className="size-3 text-muted-foreground" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* SUBVIEW 4: APPROVALS & REVIEWS */}
+      {activeTab === "approvals" && (
+        <section aria-label="Project approvals register" className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border/60 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <ShieldCheck className="size-4 text-primary" />
+                Approvals & Gate Sign-Offs
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Human governance decisions and stage-gate approvals in the selected project scope.
+              </p>
+            </div>
+            <span className="font-mono text-xs font-bold text-foreground">
+              {approvals.length} Records
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {approvals.length === 0 ? (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                No gate sign-offs or approvals recorded in this scope.
+              </div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {approvals.map((approval) => (
+                  <article key={approval.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <strong className="text-xs font-semibold text-foreground block">{approval.title}</strong>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Outcome: <span className="font-semibold text-foreground">{approval.outcome}</span> · Authority: {approval.approverAuthority || "Not assigned"}
+                      </p>
+                    </div>
+                    {sourceIds.has(approval.recordId) && (
+                      <button
+                        type="button"
+                        onClick={() => props.onOpenRecord(approval.recordId)}
+                        className="text-xs text-primary font-semibold hover:underline self-start sm:self-auto cursor-pointer"
+                      >
+                        Open source record →
+                      </button>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* SUBVIEW 5: DEPARTMENT RECORDS REGISTER */}
+      {activeTab === "records" && (
+        <section aria-label="Department records full register" className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Layers className="size-4 text-primary" />
+                Department Records Register ({deptWorkRecords.length})
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Full-page column view of non-task operational records, technical trackers, and governed documents.
+              </p>
+            </div>
+
+            <div className="relative min-w-56">
+              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search records..."
+                value={recordSearch}
+                onChange={(e) => setRecordSearch(e.target.value)}
+                className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {filteredDeptRecords.length === 0 ? (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                No department records match the active search.
+              </div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {filteredDeptRecords.map((record) => (
+                  <button
+                    key={record.id}
+                    type="button"
+                    onClick={() => props.onOpenRecord(record.id)}
+                    className="flex w-full items-center justify-between py-3 text-left hover:bg-secondary/40 px-2 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <div>
+                      <span className="font-mono text-[10px] font-bold text-primary">{record.reference}</span>
+                      <strong className="block text-xs font-semibold text-foreground mt-0.5">{record.title}</strong>
+                      <span className="text-[11px] text-muted-foreground">{record.type} · {record.fields["lifecycleStage"] || "Operational"}</span>
+                    </div>
+                    <span className="rounded border border-border bg-muted/30 px-2 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground">
+                      {record.status}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* SUBVIEW 6: TEAM & CAPACITY */}
+      {activeTab === "team" && (
+        <section aria-label="Department team roster" className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
+          <div className="border-b border-border/60 pb-3">
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Users className="size-4 text-primary" />
+              {all ? "Department Team & Competency" : "Assigned Task Owners"} ({team.length})
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Active engineering personnel assigned to department commitments.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {team.map((member) => (
+              <div key={member.name} className="rounded-xl border border-border bg-muted/20 p-3.5 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <strong className="text-xs font-bold text-foreground block">{member.name}</strong>
+                    <span className="text-[11px] text-muted-foreground">{member.role}</span>
+                  </div>
+                  <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-bold text-primary">
+                    {member.level}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1 pt-1 border-t border-border/40">
+                  {member.skills?.slice(0, 3).map((skill) => (
+                    <span key={skill} className="rounded bg-secondary/80 px-1.5 py-0.2 font-mono text-[9px] text-secondary-foreground">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {!team.length && (
+              <p className="text-xs text-muted-foreground py-4 col-span-3">No team members recorded in this project scope.</p>
+            )}
+          </div>
+        </section>
+      )}
+    </main>
+  );
 }

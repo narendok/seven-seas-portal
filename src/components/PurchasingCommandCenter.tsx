@@ -599,162 +599,48 @@ export function PurchasingCommandCenter({
 
   return (
     <div className="space-y-6">
-      {isFullPage && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
+      {/* Streamlined Purchasing Header & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          {currentTab === "recordage" && <Package className="size-5 text-primary shrink-0" />}
+          {currentTab === "smart_bom" && <Layers className="size-5 text-primary shrink-0" />}
+          {currentTab === "ingestion_gate" && <Truck className="size-5 text-primary shrink-0" />}
+          {currentTab === "quotations" && <FileText className="size-5 text-primary shrink-0" />}
+          {currentTab === "orders" && <ShoppingCart className="size-5 text-primary shrink-0" />}
+          {currentTab === "suppliers" && <Building className="size-5 text-primary shrink-0" />}
           <div>
             <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                PUR · {currentTab === "recordage" ? "INVENTORY" : currentTab === "smart_bom" ? "SMART BOM" : currentTab === "ingestion_gate" ? "INGESTION GATE" : currentTab === "quotations" ? "QUOTATIONS" : currentTab === "orders" ? "PURCHASE ORDERS" : "SUPPLIERS"}
+              </span>
               {onBack && (
                 <button
                   type="button"
                   onClick={onBack}
-                  className="flex items-center gap-1 text-xs font-mono font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="font-mono text-[11px] text-muted-foreground hover:text-foreground hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <ArrowLeft className="size-3.5" />
-                  <span>Back to Department Overview</span>
+                  <ArrowLeft className="size-3" />
+                  <span>Back to Overview</span>
                 </button>
               )}
-              {onBack && <span className="text-muted-foreground">/</span>}
-              <span className="font-mono text-xs uppercase text-primary font-bold">
-                Purchasing & Supply Chain Management
-              </span>
             </div>
-            <h1 className="mt-1 font-mono text-xl font-bold text-foreground flex items-center gap-2.5">
-              {currentTab === "recordage" && (
-                <>
-                  <Package className="size-5 text-primary" />
-                  <span>Recordage & Governed Stock Master</span>
-                </>
-              )}
-              {currentTab === "smart_bom" && (
-                <>
-                  <Layers className="size-5 text-primary" />
-                  <span>Dual-Lifecycle Smart BOM (Tentative vs Released Baseline)</span>
-                </>
-              )}
-              {currentTab === "ingestion_gate" && (
-                <>
-                  <Truck className="size-5 text-primary" />
-                  <span>Adaptive PO & Invoice Ingestion (Pre-Inventory Review Gate)</span>
-                </>
-              )}
-              {currentTab === "quotations" && (
-                <>
-                  <FileText className="size-5 text-primary" />
-                  <span>Commercial Vendor Quotations & Pricing Breaks</span>
-                </>
-              )}
-              {currentTab === "orders" && (
-                <>
-                  <ShoppingCart className="size-5 text-primary" />
-                  <span>Purchase Orders (POs) & Volume Alignment</span>
-                </>
-              )}
-              {currentTab === "suppliers" && (
-                <>
-                  <Building className="size-5 text-primary" />
-                  <span>Approved Supplier List (ASL) & Vendor Governance</span>
-                </>
-              )}
+            <h1 className="text-base font-bold text-foreground">
+              {currentTab === "recordage" && "Recordage & Governed Stock Master"}
+              {currentTab === "smart_bom" && "Dual-Lifecycle Smart BOM (Tentative vs Released Baseline)"}
+              {currentTab === "ingestion_gate" && "Adaptive PO & Invoice Ingestion (Pre-Inventory Review Gate)"}
+              {currentTab === "quotations" && "Commercial Vendor Quotations & Pricing Breaks"}
+              {currentTab === "orders" && "Purchase Orders (POs) & Volume Alignment"}
+              {currentTab === "suppliers" && "Approved Supplier List (ASL) & Vendor Governance"}
             </h1>
           </div>
         </div>
-      )}
 
-      {/* =========================================================================
-          PURCHASING SUB-NAVIGATION BAR (SYNCHRONIZED WITH SIDEBAR)
-         ========================================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border bg-card p-2.5 shadow-sm">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={() => handleTabChange("recordage")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
-              currentTab === "recordage"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            }`}
-          >
-            <Package className="size-3.5" />
-            <span>1. Recordage & Stores</span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("smart_bom")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
-              currentTab === "smart_bom"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            }`}
-          >
-            <Layers className="size-3.5" />
-            <span>2. Smart BOM (Dual-Lifecycle)</span>
-            <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 font-mono text-[9px]">
-              v0.3 / Rev A
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("ingestion_gate")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
-              currentTab === "ingestion_gate"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            }`}
-          >
-            <Truck className="size-3.5" />
-            <span>3. Adaptive Ingestion & Gate</span>
-            <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 font-mono text-[9px] text-amber-500 font-bold">
-              Fuzzy Match
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("quotations")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
-              currentTab === "quotations"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            }`}
-          >
-            <FileText className="size-3.5" />
-            <span>4. Quotations & Vendor Pricing</span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("orders")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
-              currentTab === "orders"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            }`}
-          >
-            <ShoppingCart className="size-3.5" />
-            <span>5. Purchase Orders (POs)</span>
-            <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 font-mono text-[9px]">
-              {purchaseOrders.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("suppliers")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-bold transition-all ${
-              currentTab === "suppliers"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            }`}
-          >
-            <Building className="size-3.5" />
-            <span>6. Supplier Management (ASL)</span>
-            <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 font-mono text-[9px] text-emerald-500 font-bold">
-              {suppliers.length} Approved
-            </span>
-          </button>
-        </div>
-
+        {/* Tab Specific Action Button */}
         <div className="flex items-center gap-2">
           {currentTab === "orders" && (
             <button
               onClick={() => setCreatePoModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 font-mono text-xs font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 font-mono text-xs font-bold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>+ Create PO</span>
@@ -764,7 +650,7 @@ export function PurchasingCommandCenter({
           {currentTab === "suppliers" && (
             <button
               onClick={() => setCreateSupplierModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 font-mono text-xs font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 font-mono text-xs font-bold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>+ Add Supplier</span>
@@ -774,7 +660,7 @@ export function PurchasingCommandCenter({
           {currentTab === "quotations" && (
             <button
               onClick={() => setCreateQuoModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 font-mono text-xs font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 font-mono text-xs font-bold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>+ Add Quotation</span>
@@ -1434,7 +1320,7 @@ export function PurchasingCommandCenter({
                   <select
                     value={newPoProject}
                     onChange={(e) => setNewPoProject(e.target.value)}
-                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-xs"
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-xs text-foreground [&>option]:bg-background [&>option]:text-foreground"
                   >
                     <option value="HLPL-AI4T-01">HLPL-AI4T-01 (Tata Ace EV 4G · 50,000 units)</option>
                     <option value="HLPL-SLCT-01">HLPL-SLCT-01 (AIS-140 Tracker · 10,000 units)</option>
@@ -1446,7 +1332,7 @@ export function PurchasingCommandCenter({
                   <select
                     value={newPoSupplierId}
                     onChange={(e) => setNewPoSupplierId(e.target.value)}
-                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-xs"
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-xs text-foreground [&>option]:bg-background [&>option]:text-foreground"
                   >
                     {suppliers.map((s) => (
                       <option key={s.id} value={s.id}>
