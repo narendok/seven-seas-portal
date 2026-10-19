@@ -8,9 +8,9 @@ const compiled = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compile
 const scope = { exports: {} };
 new Function('module', 'exports', compiled)(scope, scope.exports);
 const { departmentCode, approvalInDepartment, approvalScope, canDepartmentSign, projectReferences } = scope.exports;
-const departments = ['sales', 'ehw', 'esw', 'mech', 'pur', 'qa', 'emf', 'tst', 'fin', 'sit', 'hrops'];
+const departments = ['sales', 'ehw', 'fw', 'sw', 'mech', 'pur', 'qa', 'emf', 'mmf', 'fin', 'sit', 'hrops'];
 
-test('all eleven leads see their requests and assigned cross-department reviews, but no unrelated requests', () => {
+test('all twelve leads see their requests and assigned cross-department reviews, but no unrelated requests', () => {
   for (const own of departments) {
     for (const other of departments) {
       const request = { department: departmentCode(other), approverAuthority: 'Admin' };
@@ -23,13 +23,37 @@ test('all eleven leads see their requests and assigned cross-department reviews,
   }
 });
 
+test('strict cross-department signing denial between FW and SW', () => {
+  const swApproval = { department: 'SW', approverAuthority: 'SW' };
+  const fwApproval = { department: 'FW', approverAuthority: 'FW' };
+
+  // FW lead attempting to sign SW approval returns false
+  assert.equal(canDepartmentSign(swApproval, 'fw'), false);
+  assert.equal(approvalInDepartment({ department: 'SW', approverAuthority: 'Admin' }, 'fw'), false);
+
+  // SW lead attempting to sign FW approval returns false
+  assert.equal(canDepartmentSign(fwApproval, 'sw'), false);
+  assert.equal(approvalInDepartment({ department: 'FW', approverAuthority: 'Admin' }, 'sw'), false);
+});
+
 test('canonical aliases, absent authority and explicit admin designation fail closed', () => {
   assert.equal(departmentCode('sales'), 'SAL');
   assert.equal(departmentCode('HR/OPS'), 'HR');
+  assert.equal(departmentCode('fw'), 'FW');
+  assert.equal(departmentCode('efw'), 'FW');
+  assert.equal(departmentCode('sw'), 'SW');
+  assert.equal(departmentCode('csw'), 'SW');
+  assert.equal(departmentCode('mmf'), 'MMF');
+  assert.equal(departmentCode('mechanical manufacturing'), 'MMF');
   assert.equal(approvalInDepartment({ department: 'HR' }, 'hrops'), true);
   assert.equal(canDepartmentSign({ department: 'QA', approverAuthority: 'Admin' }, 'qa'), false);
   assert.equal(canDepartmentSign({ department: 'QA' }, 'qa'), false);
   assert.equal(approvalInDepartment({}, undefined), false);
+
+  // Retired ESW alias cannot be signed by arbitrary departments without explicit designated authority
+  assert.equal(canDepartmentSign({ department: 'ESW', approverAuthority: 'ESW' }, 'fw'), false);
+  assert.equal(canDepartmentSign({ department: 'ESW', approverAuthority: 'ESW' }, 'sw'), false);
+  assert.equal(canDepartmentSign({ department: 'ESW', approverAuthority: 'ESW' }, 'sales'), false);
 });
 
 test('legacy compatibility is limited to known demo IDs and preserves explicit assignments', () => {

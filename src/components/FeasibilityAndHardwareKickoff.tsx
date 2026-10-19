@@ -131,11 +131,11 @@ export function FeasibilityAndHardwareKickoff({
           signatureHash: "SHA256:7e8a9f...bcu2",
         },
         {
-          deptCode: "EFW",
-          deptName: "Embedded Firmware Engineering",
+          deptCode: "FW",
+          deptName: "Firmware Engineering",
           leadName: "Devon Lane",
           verdict: "FEASIBLE",
-          scopeSummary: "Firmware Requirements (EFW-FRS-01). FreeRTOS v10.4 + Nordic SoftDevice / Zephyr BLE 5.2 controller bring-up, interrupt priorities, memory mapping, and dual-bank bootloader fail-safe OTA.",
+          scopeSummary: "Firmware Requirements (FW-FRS-01). FreeRTOS v10.4 + Nordic SoftDevice / Zephyr BLE 5.2 controller bring-up, interrupt priorities, memory mapping, and dual-bank bootloader fail-safe OTA.",
           internalRemarks: "BLE scan duty cycle configured for 10% to preserve 3.7V Li-ion battery life during vehicle ignition-off standby. Dual-bank OTA firmware update verified.",
           clientHighlights: "Low-power embedded firmware with fail-safe dual-bank bootloader and power management.",
           keyParameters: [
@@ -147,12 +147,12 @@ export function FeasibilityAndHardwareKickoff({
           signatureHash: "SHA256:4d2c8b...bcu2",
         },
         {
-          deptCode: "CSW",
+          deptCode: "SW",
           deptName: "Cloud & Application Software",
-          leadName: "Maya Lin",
+          leadName: "Siddharth Roy",
           verdict: "FEASIBLE",
-          scopeSummary: "Software Requirements (CSW-SRS-01). Bluetooth GATT server schema for TPMS tire pressure & cold-chain temperature sensors, AIS-140 Annexure 8 MQTT telemetry parser, and companion diagnostic tools.",
-          internalRemarks: "JSON/Protobuf telemetry payload structure approved. Desktop flashing tool CSW-TOOL-01 configured for automated production line provisioning.",
+          scopeSummary: "Software Requirements (SW-SRS-01). Bluetooth GATT server schema for TPMS tire pressure & cold-chain temperature sensors, AIS-140 Annexure 8 MQTT telemetry parser, and companion diagnostic tools.",
+          internalRemarks: "JSON/Protobuf telemetry payload structure approved. Desktop flashing tool SW-TOOL-01 configured for automated production line provisioning.",
           clientHighlights: "Multi-sensor BLE aggregator with automated wireless sensor pairing and tamper event detection.",
           keyParameters: [
             { label: "Bluetooth Profile", value: "BLE 5.2 GATT / Custom Telematics Payload" },
@@ -248,11 +248,11 @@ export function FeasibilityAndHardwareKickoff({
           signatureHash: "SHA256:8a1b2c...slct1",
         },
         {
-          deptCode: "EFW",
-          deptName: "Embedded Firmware Engineering",
+          deptCode: "FW",
+          deptName: "Firmware Engineering",
           leadName: "Devon Lane",
           verdict: "FEASIBLE",
-          scopeSummary: "Firmware Requirements (EFW-FRS-01). Pre-Certified Turnkey Firmware FW-LIB-001 (AIS-140 Stack v2.4.1). Low-level HAL and OBD-II J1962 communication verified.",
+          scopeSummary: "Firmware Requirements (FW-FRS-01). Pre-Certified Turnkey Firmware FW-LIB-001 (AIS-140 Stack v2.4.1). Low-level HAL and OBD-II J1962 communication verified.",
           internalRemarks: "Zero new firmware development lead time. Binary hash matches pre-certified TAC release.",
           clientHighlights: "Pre-tested automotive firmware stack with over-the-air update capability.",
           keyParameters: [
@@ -264,11 +264,11 @@ export function FeasibilityAndHardwareKickoff({
           signatureHash: "SHA256:9b2c3d...slct1",
         },
         {
-          deptCode: "CSW",
+          deptCode: "SW",
           deptName: "Cloud & Application Software",
-          leadName: "Maya Lin",
+          leadName: "Siddharth Roy",
           verdict: "FEASIBLE",
-          scopeSummary: "Software Requirements (CSW-SRS-01). Telemetry state server endpoint configuration, standard AIS-140 MQTT payload mapping, and companion diagnostic tool setup.",
+          scopeSummary: "Software Requirements (SW-SRS-01). Telemetry state server endpoint configuration, standard AIS-140 MQTT payload mapping, and companion diagnostic tool setup.",
           internalRemarks: "Cloud broker endpoint provisioned. EOL automated test packet parser validated.",
           clientHighlights: "Immediate cloud connectivity with standard fleet telematics dashboard integration.",
           keyParameters: [
@@ -365,11 +365,11 @@ export function FeasibilityAndHardwareKickoff({
         signatureHash: "SHA256:7e8a9f...c31b",
       },
       {
-        deptCode: "EFW",
-        deptName: "Embedded Firmware Engineering",
+        deptCode: "FW",
+        deptName: "Firmware Engineering",
         leadName: "Devon Lane",
         verdict: "FEASIBLE",
-        scopeSummary: "Firmware Requirements (EFW-FRS-01). FreeRTOS v10.4 kernel, STM32F405 HAL bring-up, CAN J1939 telemetry stack, dual-bank bootloader for fail-safe OTA updates.",
+        scopeSummary: "Firmware Requirements (FW-FRS-01). FreeRTOS v10.4 kernel, STM32F405 HAL bring-up, CAN J1939 telemetry stack, dual-bank bootloader for fail-safe OTA updates.",
         internalRemarks: "Flash allocation: 512KB fits application (340KB) + bootloader (64KB). Dual-bank partition ensures rollback on OTA power drop.",
         clientHighlights: "AEC-Q compliant embedded firmware with fail-safe bootloader and live over-the-air updates.",
         keyParameters: [
@@ -381,12 +381,12 @@ export function FeasibilityAndHardwareKickoff({
         signatureHash: "SHA256:4d2c8b...e901",
       },
       {
-        deptCode: "CSW",
+        deptCode: "SW",
         deptName: "Cloud & Application Software",
-        leadName: "Maya Lin",
+        leadName: "Siddharth Roy",
         verdict: "FEASIBLE",
-        scopeSummary: "Software Requirements (CSW-SRS-01). AIS-140 emergency protocol engine, MQTT encrypted telemetry parser, cloud broker integration, and desktop diagnostic flashing tools.",
-        internalRemarks: "AIS-140 packet schema validated against MoRTH server requirements. Desktop test rig host tool CSW-TOOL-01 integrated with automated line testing.",
+        scopeSummary: "Software Requirements (SW-SRS-01). AIS-140 emergency protocol engine, MQTT encrypted telemetry parser, cloud broker integration, and desktop diagnostic flashing tools.",
+        internalRemarks: "AIS-140 packet schema validated against MoRTH server requirements. Desktop test rig host tool SW-TOOL-01 integrated with automated line testing.",
         clientHighlights: "Full AIS-140 compliance software with TLS 1.3 encrypted telemetry transmission.",
         keyParameters: [
           { label: "Telemetry Engine", value: "AIS-140 MQTT / TLS 1.3" },

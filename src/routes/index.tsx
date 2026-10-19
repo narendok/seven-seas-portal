@@ -93,7 +93,7 @@ import { buildDocumentDraft, type DraftSource } from "@/lib/document-draft";
 import { assertApprovalDecision } from "@/lib/approval-workflow";
 import { commitLatestState, patchRecord } from "@/lib/portal-store";
 import { getLocalAttachment, migrateLegacyAttachment, removeLocalAttachment, saveLocalAttachment } from "@/lib/local-attachments";
-import { repairDemoState } from "@/lib/portal-hydration";
+import { migratePortalState, repairDemoState } from "@/lib/portal-hydration";
 import { approvalInDepartment, approvalScope, canDepartmentSign, departmentCode, projectReferences } from "@/lib/department-scope";
 import { ApprovalsFullPageView, type ApprovalRecord } from "@/components/ApprovalsFullPageView";
 import { DepartmentLeadCoordinationCenter } from "@/components/DepartmentLeadCoordinationCenter";
@@ -123,11 +123,20 @@ import {
   DEPARTMENT_CREDENTIALS,
   type DepartmentCredential,
 } from "@/components/DepartmentLeadLoginModal";
+import { DepartmentChroniclesManager } from "@/components/DepartmentChroniclesManager";
+import {
+  type DepartmentChronicle,
+  DEFAULT_DEPARTMENT_CHRONICLES,
+  deriveRaciMatrixFromChronicles,
+  deriveDeliverablesForStage,
+} from "@/lib/department-chronicles";
 
 type AreaId =
   | "home"
   | "sales"
   | "ehw"
+  | "fw"
+  | "sw"
   | "efw"
   | "csw"
   | "esw"
@@ -135,6 +144,7 @@ type AreaId =
   | "pur"
   | "qa"
   | "emf"
+  | "mmf"
   | "tst"
   | "fin"
   | "sit"
@@ -319,11 +329,13 @@ const demoTeam: TeamMember[] = [
   { name: "Alex Chen", area: "ehw", role: "Hardware Validation Engineer", score: "3.70/4", level: "Level 3", skills: ["Power supplies", "ISO 7637-2 Clamping", "Thermal relief", "Bench bring-up"] },
   { name: "Raghav Joshi", area: "ehw", role: "Component Qualification Specialist", score: "3.65/4", level: "Level 3", skills: ["AEC-Q100", "AEC-Q200", "Second sourcing", "EOL replacement"] },
 
-  // ESW - Firmware & Software
-  { name: "Devon Lane", area: "esw", role: "Firmware & Software Lead", score: "3.75/4", level: "Level 4", skills: ["CAN/J1939", "Secure telemetry", "CI/CD", "Release governance"] },
-  { name: "Siddharth Roy", area: "esw", role: "Senior RTOS & Linux Driver Engineer", score: "3.85/4", level: "Level 4", skills: ["FreeRTOS", "Device Drivers", "UART/SPI/I2C", "Power optimization"] },
-  { name: "Sneha Patel", area: "esw", role: "CAN Protocol & Telematics Engineer", score: "3.70/4", level: "Level 3", skills: ["J1939 PGNs", "OBD-II PIDs", "Cellular telemetry", "TLS encryption"] },
-  { name: "Nathan Cole", area: "esw", role: "Cloud Telemetry & OTA Specialist", score: "3.60/4", level: "Level 3", skills: ["FOTA bootloaders", "MQTT brokers", "Firmware signing", "Crash dumps"] },
+  // FW - Firmware
+  { name: "Devon Lane", area: "fw", role: "Firmware Lead", score: "3.75/4", level: "Level 4", skills: ["RTOS", "MCU HAL", "Bootloader", "CAN driver"] },
+  { name: "Sneha Patel", area: "fw", role: "CAN Protocol & Telematics Engineer", score: "3.70/4", level: "Level 3", skills: ["J1939 stack", "OBD-II PIDs", "cellular modem AT", "TLS encryption"] },
+
+  // SW - Cloud & Application Software
+  { name: "Siddharth Roy", area: "sw", role: "Cloud & Application Software Lead", score: "3.85/4", level: "Level 4", skills: ["Telemetry architecture", "MQTT broker", "APIs", "Cloud infrastructure"] },
+  { name: "Nathan Cole", area: "sw", role: "Cloud Telemetry & OTA Specialist", score: "3.60/4", level: "Level 3", skills: ["FOTA server", "device shadows", "webhooks", "Crash dumps"] },
 
   // MECH - Mechanical Engineering
   { name: "Samira Holt", area: "mech", role: "Mechanical Engineering Lead", score: "3.60/4", level: "Level 4", skills: ["STEP model", "Tolerance stack", "Tooling", "Sealing review"] },
@@ -385,42 +397,68 @@ const personas: Persona[] = [
   { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" },
   { id: "sales", label: "SAL Lead", person: "Priya Sharma · Sales & BD", departmentId: "sales", kind: "lead" },
   { id: "ehw", label: "EHW Lead", person: "Avery Vale · Embedded Hardware", departmentId: "ehw", kind: "lead" },
-  { id: "efw", label: "EFW Lead", person: "Devon Lane · Embedded Firmware", departmentId: "efw", kind: "lead" },
-  { id: "csw", label: "CSW Lead", person: "Maya Lin · Cloud & Application SW", departmentId: "csw", kind: "lead" },
-  { id: "esw", label: "ESW Lead", person: "Devon Lane · Embedded Firmware", departmentId: "efw", kind: "lead" },
+  { id: "fw", label: "FW Lead", person: "Devon Lane · Firmware", departmentId: "fw", kind: "lead" },
+  { id: "sw", label: "SW Lead", person: "Siddharth Roy · Cloud & Application SW", departmentId: "sw", kind: "lead" },
   { id: "mech", label: "MECH Lead", person: "Samira Holt · Mechanical Engineering", departmentId: "mech", kind: "lead" },
   { id: "pur", label: "PUR Lead", person: "Morgan Reed · Purchasing & SCM", departmentId: "pur", kind: "lead" },
   { id: "qa", label: "QA Lead", person: "Jordan Blake · Quality Assurance", departmentId: "qa", kind: "lead" },
-  { id: "emf", label: "EMF Lead", person: "Casey Rowan · Manufacturing", departmentId: "emf", kind: "lead" },
-  { id: "tst", label: "TST Lead", person: "Mina Cross · Production & EOL Testing", departmentId: "tst", kind: "lead" },
+  { id: "emf", label: "EMF Lead", person: "Casey Rowan · Electronics Manufacturing", departmentId: "emf", kind: "lead" },
+  { id: "mmf", label: "MMF Lead", person: "Mechanical Manufacturing Lead (Interim)", departmentId: "mmf", kind: "lead" },
+  { id: "tst", label: "TST (Preserved)", person: "Mina Cross · Production & EOL Testing", departmentId: "tst", kind: "lead" },
   { id: "fin", label: "FIN Lead", person: "Priya Voss · Finance & Accounts", departmentId: "fin", kind: "lead" },
   { id: "sit", label: "SIT Lead", person: "Kai Morgan · Service & IT", departmentId: "sit", kind: "lead" },
   { id: "hrops", label: "HR Lead", person: "Taylor Quinn · HR & Operations", departmentId: "hrops", kind: "lead" },
   { id: "client", label: "Client Portal", person: "Rohan Verma · Tata Motors Fleet Manager", kind: "client" },
 ];
 
+const VALID_PERSONA_IDS = new Set([
+  "admin",
+  "sales",
+  "ehw",
+  "fw",
+  "sw",
+  "mech",
+  "pur",
+  "qa",
+  "emf",
+  "mmf",
+  "tst",
+  "fin",
+  "sit",
+  "hrops",
+  "client",
+]);
+
 export function normalizePersonaId(role: string | null | undefined): string {
-  if (!role) return "admin";
+  if (!role) return "unselected";
   const r = role.toLowerCase().trim();
+  if (r === "admin") return "admin";
+  if (r === "client") return "client";
   if (r === "sal" || r === "sales") return "sales";
-  if (r === "hr" || r === "hrops") return "hrops";
-  if (r === "esw" || r === "efw" || r === "fw") return "efw";
-  if (r === "csw" || r === "sw") return "csw";
-  return r;
+  if (r === "hr" || r === "hrops" || r === "people") return "hrops";
+  if (r === "fw" || r === "efw" || r === "firmware" || r === "esw") return "fw";
+  if (r === "sw" || r === "csw" || r === "software" || r === "cloud software") return "sw";
+  if (r === "mmf" || r === "mechanical manufacturing") return "mmf";
+  if (r === "rnd") return "ehw";
+  if (r === "stores") return "pur";
+  if (r === "production") return "emf";
+  if (r === "quality") return "qa";
+  if (VALID_PERSONA_IDS.has(r)) return r;
+  return "unrecognized";
 }
 
 const ai4tStages = [
   ["Stage 1", "Client & Sales Intake", "SOR HLPL-AI4T-SAL-SOR-01 and Mutual NDA HLPL-AI4T-SAL-mNDA-01 are recorded."],
-  ["Stage 2", "Feasibility & Contract Review", "EHW, EFW, CSW, MECH, PUR, QA and FIN feasibility requirement sheets compile Contract Review HLPL/F/MKT/01."],
-  ["Stage 3", "Requirement & Commercial Lock", "Consolidated Requirements Package (EHW-PRS-01, EFW-FRS-01, CSW-SRS-01, MECH-MRS-01, QA-QRS-01) and quotation HLPL-AI4T-SAL-QUO-01 are generated."],
-  ["Stage 4", "Design & Development PoC", "SCH-01, preliminary BOM, MCU RTOS bring-up (EFW) and CAN/telematics software stack (CSW) are checked."],
+  ["Stage 2", "Feasibility & Contract Review", "EHW, FW, SW, MECH, PUR, QA and FIN feasibility requirement sheets compile Contract Review HLPL/F/MKT/01."],
+  ["Stage 3", "Requirement & Commercial Lock", "Consolidated Requirements Package (EHW-PRS-01, FW-FRS-01, SW-SRS-01, MECH-MRS-01, QA-QRS-01) and quotation HLPL-AI4T-SAL-QUO-01 are generated."],
+  ["Stage 4", "Design & Development PoC", "SCH-01, preliminary BOM, MCU RTOS bring-up (FW) and CAN/telematics software stack (SW) are checked."],
   ["Stage 5", "Pilot Build & SMT Setup", "SMT Line 2 thermal profile, EMF-CP-01 and prototype tooling are confirmed."],
   ["Stage 6", "DVP&R Pre-Compliance", "QA-DVP-01 records 18 illustrative electrical and environmental verification checks."],
   ["Stage 7", "Production Release & PPAP", "Gerber Rev B, EHW-DFMEA-01 and supplier PPAP Level 3 package are released."],
   ["Stage 8", "Type Approval & Production Authorization", "Illustrative TAC evidence and the 50,000-unit authorization are human-reviewed."],
   ["Stage 9", "PDI, Field Mounting & Commercial Invoice", "TST-PDI-01, SIT Service Field Installation & Vehicle Mounting Checklist (HLPL-OBD4-SIT-MNT-01), and FIN-INV-01 complete the full deployment cycle."],
 ] as const;
-const raciDepartments = ["SAL", "EHW", "EFW", "CSW", "MECH", "PUR", "QA", "EMF", "TST", "FIN", "SIT", "HR"] as const;
+const raciDepartments = ["SAL", "EHW", "FW", "SW", "MECH", "PUR", "QA", "EMF", "MMF", "FIN", "SIT", "HR"] as const;
 const projectDocumentProfiles: Record<string, ProjectDocumentProfile> = {
   "HLPL-OBD4-01": { name: "4G OBD-II Smart Telematics Tracker & Fleet Gateway", customer: "Ashok Leyland Limited · Fleet Solutions Division, Chennai", contact: "Mr. K. Ramanathan · General Manager Telematics", quantity: "25,000 units / year", techSpec: "4G Cat-1 · J1962 OBD-II · Dual CAN · GNSS · BLE 5.2 Sensor Hub", commercialValue: "₹11,25,00,000 · $1.35M", environmental: "12V / 24V (9V–36V) · −40°C to +85°C · IP54 / IP67 Mated", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · ISO 15031 / SAE J1962 · RoHS" },
   "HLPL-AI4T-01": { name: "Tata Ace EV 4G Telematics Gateway", customer: "Tata Motors Limited · EV Fleet Division, Pune", contact: "Mr. Rajesh Sharma · Lead D&D EV", quantity: "50,000 units / year", techSpec: "4G Cat-1 · IP67 · CAN J1939 · Dual SIM · GNSS", commercialValue: "₹20,33,50,000 · $2.45M", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · RoHS / REACH" },
@@ -429,7 +467,7 @@ const projectDocumentProfiles: Record<string, ProjectDocumentProfile> = {
   "HLPL-XLINK-03": { name: "Commercial Fleet Gateway", customer: "Commercial Fleet Solutions Limited", contact: "Demo fleet programme SPOC", quantity: "25,000 units / year", techSpec: "Dual CAN · OBD-II · GNSS · 4G fleet gateway", commercialValue: "Commercial value pending controlled review", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AEC-Q100 · ISO 7637-2 · RoHS / REACH" },
 };
 function defaultRaciMatrix(): RaciMatrix {
-  return Object.fromEntries(ai4tStages.map(([stage], index) => [stage, Object.fromEntries(raciDepartments.map((department) => [department, department === (index < 3 ? "SAL" : index === 5 ? "QA" : index === 8 ? "TST" : "EHW") ? "R" : department === "SAL" ? "A" : ["EHW", "ESW", "MECH", "PUR", "QA"].includes(department) ? "C" : "I"]))]));
+  return Object.fromEntries(ai4tStages.map(([stage], index) => [stage, Object.fromEntries(raciDepartments.map((department) => [department, department === (index < 3 ? "SAL" : index === 5 ? "QA" : index === 8 ? "EMF" : "EHW") ? "R" : department === "SAL" ? "A" : ["EHW", "FW", "SW", "MECH", "PUR", "QA", "EMF", "MMF"].includes(department) ? "C" : "I"]))]));
 }
 const ai4tDossier = [
   ["Customer SOR", "HLPL-AI4T-SAL-SOR-01", "SAL", "Stage 1"],
@@ -506,18 +544,32 @@ export function defaultProjectAnalysis(projectId: string): Record<string, Depart
       stageGate: "Stage 7 · Production Design",
       lastUpdated: "2026-10-16",
     },
-    ESW: {
-      departmentCode: "ESW",
-      departmentName: "Firmware & Software Engineering",
+    FW: {
+      departmentCode: "FW",
+      departmentName: "Firmware",
       lead: "Devon Lane",
       progress: 85,
       status: "On Track",
-      currentDeliverable: "AIS-140 Protocol Stack & CAN J1939 Telemetry",
+      currentDeliverable: "AIS-140 Protocol Stack & CAN J1939 Driver",
       targetDate: "2026-11-20",
       internalRemarks: "RAM utilization at 68% of 512KB Flash. Watchdog timer and fail-safe recovery verified under simulated cellular dropouts.",
       clientRemarks: `Firmware build v2.4 passed 72-hour soak testing. ${customerName} CAN J1939 battery telemetry decoding verified.`,
-      keyDocumentId: `${pfx}-ESW-FOTA-01`,
+      keyDocumentId: `${pfx}-FW-01`,
       stageGate: "Stage 4 · Firmware PoC",
+      lastUpdated: "2026-10-16",
+    },
+    SW: {
+      departmentCode: "SW",
+      departmentName: "Cloud & Application Software",
+      lead: "Siddharth Roy",
+      progress: 85,
+      status: "On Track",
+      currentDeliverable: "Cloud Telemetry Pipeline & FOTA Server",
+      targetDate: "2026-11-20",
+      internalRemarks: "MQTT broker ingestion benchmark passed at 50k msgs/s. FOTA campaign orchestrator integration verified.",
+      clientRemarks: `Cloud telemetry ingestion verified with live dashboards. Real-time fleet streaming active for ${customerName}.`,
+      keyDocumentId: `${pfx}-SW-ARCH-01`,
+      stageGate: "Stage 4 · Cloud Architecture",
       lastUpdated: "2026-10-16",
     },
     MECH: {
@@ -640,6 +692,7 @@ export function defaultProjectAnalysis(projectId: string): Record<string, Depart
 }
 
 type PortalState = {
+  schemaVersion?: number | undefined;
   demoLoaded: boolean;
   demoSnapshot?: PortalState | undefined;
   setup: SetupState;
@@ -657,6 +710,7 @@ type PortalState = {
   templateSettings?: TemplateSettings | undefined;
   templateBodies?: Record<string, string> | undefined;
   raciMatrix?: RaciMatrix | undefined;
+  chronicles?: DepartmentChronicle[] | undefined;
   customersRegistry?: CustomerRecord[] | undefined;
   enquiriesOpportunities?: EnquiryOpportunity[] | undefined;
   modularConfigs?: Record<string, ProjectModularConfiguration> | undefined;
@@ -703,31 +757,22 @@ const areas = [
     summary: "HW_01–HW_37, PRS, schematics, BOM and Gerber gates",
   },
   {
-    id: "efw" as const,
-    name: "Embedded Firmware Engineering",
-    navLabel: "Firmware Eng.",
-    short: "EFW",
+    id: "fw" as const,
+    name: "Firmware",
+    navLabel: "Firmware",
+    short: "FW",
     icon: Terminal,
     recordType: "Firmware release",
     summary: "RTOS kernel, HAL, peripheral drivers, CAN/LIN stacks, bootloader, FOTA fail-safe",
   },
   {
-    id: "csw" as const,
+    id: "sw" as const,
     name: "Cloud & Application Software",
-    navLabel: "Software Eng.",
-    short: "CSW",
+    navLabel: "Software",
+    short: "SW",
     icon: Laptop,
     recordType: "Software package",
     summary: "Telematics backend, MQTT/HTTP protocols, mobile BLE app, diagnostic GUI tools",
-  },
-  {
-    id: "esw" as const,
-    name: "Firmware & Software",
-    navLabel: "Firmware & SW",
-    short: "ESW",
-    icon: Settings2,
-    recordType: "Software gate",
-    summary: "G0–G11, HSI registers and CI/CD telemetry",
   },
   {
     id: "mech" as const,
@@ -758,21 +803,30 @@ const areas = [
   },
   {
     id: "emf" as const,
-    name: "Manufacturing",
-    navLabel: "Manufacturing",
+    name: "Electronics Manufacturing",
+    navLabel: "Electronics Mfg",
     short: "EMF",
     icon: Factory,
     recordType: "Manufacturing record",
-    summary: "PFD, PFMEA, control plan and line startup",
+    summary: "Box-build, harness fitment, controlled firmware loading, in-line testing, and travelers",
+  },
+  {
+    id: "mmf" as const,
+    name: "Mechanical Manufacturing",
+    navLabel: "Mechanical Mfg",
+    short: "MMF",
+    icon: Wrench,
+    recordType: "Mechanical production record",
+    summary: "Mechanical fabrication, finishing, subassembly, fit checks, and EMF integration handoff",
   },
   {
     id: "tst" as const,
-    name: "Production",
-    navLabel: "Production",
-    short: "PRD",
+    name: "Production Testing",
+    navLabel: "EOL Testing",
+    short: "TST",
     icon: CheckCircle2,
     recordType: "Production test run",
-    summary: "EOL test jig, serial QR labels and first-pass yield",
+    summary: "EOL test jig, serial QR labels and first-pass yield (Preserved historical test runs)",
   },
   {
     id: "fin" as const,
@@ -1001,6 +1055,7 @@ const emptyPortal = (): PortalState => ({
   alerts: [],
   templateSettings: defaultTemplateSettings(),
   templateBodies: defaultTemplateBodies(),
+  chronicles: DEFAULT_DEPARTMENT_CHRONICLES,
   customersRegistry: defaultCustomers,
   enquiriesOpportunities: defaultEnquiriesOpportunities,
   modularConfigs: defaultProjectModularConfigs,
@@ -1032,7 +1087,7 @@ function templateBlueprint(title: string) {
 }
 
 const templateProjects = ["HLPL-AI4T-01", "HLPL-SLCT-01", "HLPL-XLINK-03", "VCU", "BMS"];
-const templateDepartments = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "PROD", "FIN", "SIT", "HR"];
+const templateDepartments = ["SAL", "EHW", "FW", "SW", "MECH", "PUR", "QA", "EMF", "MMF", "FIN", "SIT", "HR"];
 const templateDocumentTypes = ["PRS", "SOR", "DVP", "DFMEA", "PFMEA", "CP", "BOM", "PPAP", "WI", "SOP", "QUO", "INV"];
 const formDocumentTypes = ["Contract Review", "Skill Matrix", "Form"];
 const projectSeed = {
@@ -1045,12 +1100,15 @@ const projectSeed = {
 const departmentSignatories: Record<string, { author: string; reviewer: string; approver: string }> = {
   SAL: { author: "Priya Sharma", reviewer: "Priya Sharma", approver: "Executive Admin / MD" },
   EHW: { author: "Avery Vale", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
-  ESW: { author: "Devon Lane", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  FW: { author: "Devon Lane", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
+  SW: { author: "Siddharth Roy", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
   MECH: { author: "Samira Holt", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
   PUR: { author: "Morgan Reed", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
   QA: { author: "Jordan Blake", reviewer: "Jordan Blake · QA HOD", approver: "Tech Director" },
   EMF: { author: "Casey Rowan", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
-  PROD: { author: "Mina Cross", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  MMF: { author: "Mechanical Manufacturing Lead", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  TST: { author: "Mina Cross", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
+  PROD: { author: "Casey Rowan", reviewer: "Jordan Blake · QA HOD", approver: "Plant Head" },
   FIN: { author: "Priya Voss", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
   SIT: { author: "Kai Morgan", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
   HR: { author: "Taylor Quinn", reviewer: "Executive Admin / MD", approver: "Executive Admin / MD" },
@@ -1089,11 +1147,18 @@ const demoPortal = (): PortalState => {
       lead: "Avery Vale · demo",
     },
     {
-      id: "esw",
-      name: "Firmware & Software",
-      code: "ESW",
-      departmentType: "Firmware & Software",
+      id: "fw",
+      name: "Firmware",
+      code: "FW",
+      departmentType: "Firmware",
       lead: "Devon Lane · demo",
+    },
+    {
+      id: "sw",
+      name: "Cloud & Application Software",
+      code: "SW",
+      departmentType: "Cloud & Application Software",
+      lead: "Siddharth Roy · demo",
     },
     {
       id: "mech",
@@ -1118,10 +1183,17 @@ const demoPortal = (): PortalState => {
     },
     {
       id: "emf",
-      name: "Manufacturing",
+      name: "Electronics Manufacturing",
       code: "EMF",
-      departmentType: "Manufacturing",
+      departmentType: "Electronics Manufacturing",
       lead: "Casey Rowan · demo",
+    },
+    {
+      id: "mmf",
+      name: "Mechanical Manufacturing",
+      code: "MMF",
+      departmentType: "Mechanical Manufacturing",
+      lead: "Mechanical Manufacturing Lead (Interim) · demo",
     },
     {
       id: "tst",
@@ -1371,7 +1443,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "HLPL-SLCT-ESW-HSI-01",
-      "esw",
+      "fw",
       "HSI register",
       "Hardware-software interface specification",
       "Approved",
@@ -1382,7 +1454,7 @@ const demoPortal = (): PortalState => {
     ),
     make(
       "HLPL-SLCT-ESW-FW-01",
-      "esw",
+      "fw",
       "Firmware release",
       "Firmware v1.4.2 production candidate",
       "Approved",
@@ -1390,6 +1462,33 @@ const demoPortal = (): PortalState => {
       "G9–G11",
       ["HLPL-SLCT-ESW-HSI-01", "HLPL-SLCT-TST-EOL-01"],
       { version: "v1.4.2", cicd: "100% pass · 0 critical bugs · DEMO telemetry" },
+    ),
+    make(
+      "HLPL-SLCT-CSW-ARCH-01",
+      "sw",
+      "Architecture",
+      "Cloud Telemetry Architecture & API Contract",
+      "Approved",
+      "High",
+      "Architecture",
+      ["HLPL-SLCT-ESW-HSI-01"],
+      {
+        telemetry: "High-throughput MQTT broker ingestion pipeline (50k msgs/s target) · REST API v2",
+        fota: "Automated delta OTA campaign orchestration engine with cryptographic binary verification",
+      },
+    ),
+    make(
+      "HLPL-SLCT-CSW-BENCH-01",
+      "sw",
+      "PoC Bench",
+      "MQTT Broker Ingestion Benchmark (50k msgs/s)",
+      "Approved",
+      "Normal",
+      "PoC Bench",
+      ["HLPL-SLCT-CSW-ARCH-01"],
+      {
+        benchmark: "50,000 telemetry msgs/sec sustained at 42ms p99 latency · zero packet loss in simulation",
+      },
     ),
     make(
       "HLPL-SLCT-MECH-CAD-01",
@@ -1604,7 +1703,12 @@ const demoPortal = (): PortalState => {
     task("DEMO-TASK-QA-CONTRACT", "qa", "Sign Contract Review Record HLPL/F/MKT/01 for Select Motors Telematics", "High", today, "Jordan Blake", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Cross-functional sign-off · due today 16:30", true),
     task("DEMO-TASK-QA-ICAT-TAC", "qa", "Coordinate iCAT Manesar witness testing & Form 22 TAC for Ashok Leyland Gateway", "High", today, "Jordan Blake", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "iCAT Annexure 8 testing & NABL 3.7V Li-ion battery certificate review", true),
     task("DEMO-TASK-EMF-REFLOW", "emf", "Verify reflow oven 10-zone thermal profile for SMT Line 2 lot BATCH-04", "High", today, "Casey Rowan", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Process verification · due today 11:00"),
-    task("DEMO-TASK-ESW-BLE-GATT", "esw", "Implement FreeRTOS Bluetooth GATT profiles for wireless TPMS & temperature sensors", "High", today, "Devon Lane", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "BLE 5.2 GATT parser integration & AIS-140 MQTT aggregation", false),
+    task("DEMO-TASK-ESW-BLE-GATT", "fw", "Implement FreeRTOS Bluetooth GATT profiles for wireless TPMS & temperature sensors", "High", today, "Devon Lane", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "BLE 5.2 GATT parser integration & AIS-140 MQTT aggregation", false),
+    task("TASK-EFW-CAN01", "fw", "CAN J1939 driver bring-up on STM32G0B1", "High", today, "Sneha Patel", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Bring up CAN controller registers and test loopback"),
+    task("TASK-EFW-BOOT01", "fw", "Secure dual-bank bootloader & rollback check", "High", today, "Devon Lane", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "Dual-bank flash partition swap and CRC32 signature check"),
+    task("TASK-CSW-MQTT01", "sw", "High-throughput MQTT ingestion pipeline", "Critical", today, "Siddharth Roy", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "Deploy and test scalable MQTT broker ingestion cluster"),
+    task("TASK-CSW-DASH01", "sw", "Telematics fleet dashboard WebSocket feed", "High", today, "Nathan Cole", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Live map telemetry WebSocket stream for fleet operators"),
+    task("TASK-CSW-OTA01", "sw", "Cloud FOTA campaign orchestrator & binary signing", "High", today, "Nathan Cole", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "Automated FOTA distribution rollout with rollback protection"),
     task("DEMO-TASK-FIN-NRE-BLE", "fin", "Verify NRE tooling invoice & 30% advance commercial deposit for Ashok Leyland", "High", today, "Priya Voss", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "₹1.85L PCB spin NRE + ₹2.40L iCAT & NABL agency testing review", true),
     task("DEMO-TASK-FIN-ADVANCE", "fin", "Approve advance billing payment release for EC200U reel batch", "High", today, "Priya Voss", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Financial commitment · due today 15:00", true),
     task("DEMO-TASK-PUR-FIBOCOM", "pur", "Verify second-source vendor capacity scorecard F-PUR-16 for Fibocom", "Normal", today, "Morgan Reed", "HLPL-XLINK-03", "HLPL-XLINK-03 · Commercial Vehicle Gateway", "Capacity scorecard review · due today 18:00"),
@@ -1799,7 +1903,8 @@ const demoPortal = (): PortalState => {
       document("demo-doc-contract", "Cross-functional feasibility record", "demo-dept-sales", "Governance/QMS", "HLPL/F/MKT/01", "Stage 2 · Feasibility", "In review", ["HLPL/F/MKT/01"]),
       document("demo-doc-schematic", "Approved schematic package", "demo-dept-ehw", "Product/Device Audit Packs", "HLPL-SLCT-EHW-SCH-02", "Phase_4_Schematic_Design · HW_15–16", "Approved", ["HLPL-SLCT-EHW-SCH-02"]),
       document("demo-doc-gerber", "Gerber and PCB release", "demo-dept-ehw", "Product/Device Audit Packs", "HLPL-SLCT-EHW-GER-01", "Phase_7_Fabrication_and_Precompliance · HW_24–27", "Approved", ["HLPL-SLCT-EHW-GER-01"]),
-      document("demo-doc-hsi", "Hardware-software interface specification", "demo-dept-esw", "Product/Device Audit Packs", "HLPL-SLCT-ESW-HSI-01", "Phase_8_Hardware_Software_Integration · HW_28–29", "Approved", ["HLPL-SLCT-ESW-HSI-01"]),
+      document("demo-doc-hsi", "Hardware-software interface specification", "demo-dept-fw", "Product/Device Audit Packs", "HLPL-SLCT-ESW-HSI-01", "Phase_8_Hardware_Software_Integration · HW_28–29", "Approved", ["HLPL-SLCT-ESW-HSI-01"]),
+      document("demo-doc-csw-arch", "Cloud Telemetry Architecture & API Contract", "demo-dept-sw", "03_Engineering/CSW", "HLPL-SLCT-CSW-ARCH-01", "Phase_2_Requirements_and_Architecture", "Approved", ["HLPL-SLCT-CSW-ARCH-01"]),
       document("demo-doc-step", "3D STEP enclosure clearance report", "demo-dept-mech", "Product/Device Audit Packs", "HLPL-SLCT-MECH-CAD-01", "Phase_5_Mechanical_and_Enclosure · HW_17–18", "Approved", ["HLPL-SLCT-MECH-CAD-01"]),
       document("demo-doc-ppap", "Supplier PPAP Level 3 dossier", "demo-dept-pur", "Supplier Quality/IQC", "F-PUR-15/SLCT-01", "Stage 8 · Type Approval & SCM Planning", "In review", ["F-PUR-15/SLCT-01"]),
       document("demo-doc-eol", "Pre-dispatch inspection and serialized EOL certificate", "demo-dept-tst", "Product/Device Audit Packs", "HLPL-SLCT-TST-PDI-01", "Phase_9_Production_and_Verification · HW_30–35", "Approved", ["HLPL-SLCT-TST-EOL-01"]),
@@ -1810,7 +1915,7 @@ const demoPortal = (): PortalState => {
       {
         id: "demo-audit-slct",
         at: timestamp,
-        action: "Complete 11-hub demo lifecycle loaded",
+        action: "Complete 12-hub demo lifecycle loaded",
         detail: `${project} Stage 8 sample data loaded. ${demoNote}`,
       },
     ],
@@ -1820,6 +1925,8 @@ const demoPortal = (): PortalState => {
       { id: "ALERT_SAL_02", severity: "Warning", title: "Contract Review pending functional sign-offs beyond 48 hours", detail: "DEMO Tata Ace EV contract review is awaiting simulated functional acknowledgement.", departmentId: "demo-dept-sales", resolved: false },
       { id: "ALERT_TST_01", severity: "Critical", title: "First-pass yield below 95% threshold on Line 1", detail: "Current DEMO FPY: 92.4%. Review the simulated failure trend before release.", departmentId: "demo-dept-tst", resolved: false },
       { id: "ALERT_FIN_03", severity: "Warning", title: "Customer payment overdue beyond 45 days for Ashok Leyland Batch 02", detail: "Illustrative exposure: ₹8,40,000. No actual receivable is represented.", departmentId: "demo-dept-fin", resolved: false },
+      { id: "ALERT_ESW_FW_01", severity: "Warning", title: "Firmware stack memory margin below threshold on BLE task", detail: "FreeRTOS task stack high-water mark indicates 12% headroom. Optimization needed.", departmentId: "demo-dept-fw", resolved: false },
+      { id: "ALERT_CSW_INGEST_01", severity: "Warning", title: "Cloud telemetry MQTT connection broker ping latency", detail: "Simulated MQTT broker connection latency elevated (68ms). Review websocket worker pool.", departmentId: "demo-dept-sw", resolved: false },
     ],
     customersRegistry: defaultCustomers,
     enquiriesOpportunities: defaultEnquiriesOpportunities,
@@ -1973,17 +2080,9 @@ const readPortal = (): PortalState => {
       inventoryMovements: Array.isArray(value.inventoryMovements) ? value.inventoryMovements : [],
       inventoryAssignments: Array.isArray(value.inventoryAssignments) ? value.inventoryAssignments : [],
       raciMatrix: value.raciMatrix ?? defaultRaciMatrix(),
+      chronicles: Array.isArray(value.chronicles) ? value.chronicles : DEFAULT_DEPARTMENT_CHRONICLES,
     };
-    // A legacy browser snapshot may retain the DEMO marker while losing its arrays.
-    // Restore the complete DEMO workspace rather than leaving document controls unreachable.
-    if (
-      hydrated.demoLoaded &&
-      (!hasCompleteDemoDocumentSet(hydrated.documents) || !hydrated.departments.length || !hydrated.records.length)
-    ) {
-      const restored = demoPortal();
-      return repairDemoState(hydrated, restored);
-    }
-    return {
+    const finalHydrated = {
       ...hydrated,
       documents: hydrated.documents.map((document) => ({
         ...document,
@@ -1993,6 +2092,22 @@ const readPortal = (): PortalState => {
         })),
       })),
     };
+
+    if (
+      finalHydrated.demoLoaded &&
+      (!hasCompleteDemoDocumentSet(finalHydrated.documents) || !finalHydrated.departments.length || !finalHydrated.records.length)
+    ) {
+      const restored = demoPortal();
+      return repairDemoState(finalHydrated, restored);
+    }
+
+    const migrated = migratePortalState(finalHydrated as any, base as any, typeof window !== "undefined" ? window.localStorage : null) as PortalState;
+    if (typeof window !== "undefined" && value && (value as any).schemaVersion !== 2) {
+      try {
+        window.localStorage.setItem(storeKey, JSON.stringify(migrated));
+      } catch {}
+    }
+    return migrated;
   } catch {
     return base;
   }
@@ -2017,29 +2132,76 @@ export const Route = createFileRoute("/")({
 
 function Portal() {
   const [portal, setPortal] = useState<PortalState | null>(null);
+
+  const isInvalidUrlRole =
+    typeof window !== "undefined" &&
+    (() => {
+      const rawRole = new URLSearchParams(window.location.search).get("role");
+      return rawRole !== null && normalizePersonaId(rawRole) === "unrecognized";
+    })();
+
+  const isStaleStoredSession =
+    typeof window !== "undefined" &&
+    (() => {
+      const rawRole = new URLSearchParams(window.location.search).get("role");
+      if (rawRole !== null) return false;
+      try {
+        const stored = window.localStorage.getItem("scms_auth_session");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed.personaId === "string" && parsed.personaId !== "admin") {
+            return normalizePersonaId(parsed.personaId) === "unrecognized";
+          }
+        }
+      } catch (_) {}
+      return false;
+    })();
+
+  const mustPromptRole = isInvalidUrlRole || isStaleStoredSession;
+
   const initialRole =
     typeof window !== "undefined"
       ? (() => {
           const urlRole = new URLSearchParams(window.location.search).get("role");
-          if (urlRole) return normalizePersonaId(urlRole);
+          if (urlRole) {
+            const norm = normalizePersonaId(urlRole);
+            return norm === "unrecognized" ? null : norm;
+          }
           try {
             const stored = window.localStorage.getItem("scms_auth_session");
             if (stored) {
               const parsed = JSON.parse(stored);
-              if (parsed && typeof parsed.personaId === "string" && parsed.personaId !== "admin") {
-                return normalizePersonaId(parsed.personaId);
+              if (parsed && typeof parsed.personaId === "string") {
+                const norm = normalizePersonaId(parsed.personaId);
+                return norm === "unrecognized" ? null : norm;
               }
             }
           } catch (_) {}
           return null;
         })()
       : null;
-  const normalizedInitialRole = normalizePersonaId(initialRole);
-  const initialPersona = personas.find((p) => p.id === normalizedInitialRole) ?? (personas[0] ?? { id: "admin", label: "Executive Admin / MD", person: "Full master access", kind: "admin" });
+
+  const safeUnassignedPersona: Persona = {
+    id: "unassigned",
+    label: "Select Persona",
+    person: "Role selection required",
+    kind: "lead",
+  };
+
+  const initialPersona = mustPromptRole
+    ? safeUnassignedPersona
+    : (initialRole
+        ? (personas.find((p) => p.id === initialRole) ?? safeUnassignedPersona)
+        : (personas[0] ?? safeUnassignedPersona));
+
   const [activeArea, setActiveArea] = useState<AreaId>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? initialPersona.departmentId : "home"));
   const [clientDeliverablesFocus, setClientDeliverablesFocus] = useState(0);
   const openDocuments = () => { setModal(null); if (persona.kind === "client") { setView("queue"); setClientDeliverablesFocus(value => value + 1); } else setModal("documents"); };
-  const [signedOut, setSignedOut] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("signedout") === "1");
+  const [signedOut, setSignedOut] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (mustPromptRole) return true;
+    return new URLSearchParams(window.location.search).get("signedout") === "1";
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<
     | "queue"
@@ -2086,7 +2248,7 @@ function Portal() {
   const [darkMode, setDarkMode] = useState(true);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [customerRegisterOpen, setCustomerRegisterOpen] = useState(false);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(() => mustPromptRole);
   const [feasibilityDispatchEnquiry, setFeasibilityDispatchEnquiry] = useState<EnquiryOpportunity | null>(null);
   const [directoryOpen, setDirectoryOpen] = useState(false);
   const [decisionLogOpen, setDecisionLogOpen] = useState(false);
@@ -2095,7 +2257,7 @@ function Portal() {
   const [assetLinkerProjectId, setAssetLinkerProjectId] = useState<string | null>(null);
   const [purchasingSubView, setPurchasingSubView] = useState<PurchasingSubView>("recordage");
   const [adminTab, setAdminTab] = useState<
-    "company" | "templates" | "raci" | "departments" | "roles" | "masters" | "settings" | "cloud" | "team" | "demo"
+    "company" | "chronicles" | "departments" | "templates" | "roles" | "masters" | "cloud" | "team" | "demo"
   >("company");
   useEffect(() => {
     setPortal(readPortal());
@@ -3611,8 +3773,8 @@ function Portal() {
               },
               {
                 id: createId(),
-                reference: "TASK-ESW-CAN01",
-                area: "esw",
+                reference: "TASK-EFW-CAN01",
+                area: "fw",
                 type: "Task",
                 title: "CAN J1939 telemetry firmware parser & FreeRTOS bring-up",
                 priority: "High",
@@ -3748,8 +3910,14 @@ function Portal() {
             log("AI4T lifecycle simulation reset", "Simulation reset to Stage 1");
           }}
           onOpenPrintable={setPrintTemplate}
-           documents={portal.documents}
-           onOpenDocument={openDocument}
+          documents={portal.documents}
+          onOpenDocument={openDocument}
+          chronicles={portal.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES}
+          onOpenChroniclesManager={() => {
+            setAdminTab("chronicles");
+            setModal("admin");
+            setAi4tOpen(false);
+          }}
         />
       )}
       {rfqOpen && (
@@ -4115,6 +4283,8 @@ function Ai4tLifecycleHub({
   onSelectProject,
   onKickoffComplete,
   modularConfig,
+  chronicles,
+  onOpenChroniclesManager,
 }: {
   persona: Persona;
   simulation: Ai4tSimulation;
@@ -4131,6 +4301,8 @@ function Ai4tLifecycleHub({
   onSelectProject?: ((id: string) => void) | undefined;
   onKickoffComplete?: ((path: "poc" | "pilot", deliverables: string[]) => void) | undefined;
   modularConfig?: ProjectModularConfiguration | undefined;
+  chronicles?: DepartmentChronicle[] | undefined;
+  onOpenChroniclesManager?: () => void;
 }) {
   const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
   const [tab, setTab] = useState<"stages" | "feasibility" | "binder">(initialTab ?? "stages");
@@ -4178,6 +4350,8 @@ function Ai4tLifecycleHub({
               onJumpToStage={(stageIdx) => onJump(stageIdx)}
               persona={persona}
               onOpenPrintable={onOpenPrintable}
+              chronicles={chronicles}
+              onOpenChroniclesManager={onOpenChroniclesManager}
             />
           </div>
 
@@ -4332,9 +4506,9 @@ function Ai4tLifecycleHub({
           (() => {
             const stageOwnerMap: Record<number, string[]> = {
               0: ["sales"],
-              1: ["sales", "ehw", "esw", "mech", "pur", "qa"],
-              2: ["ehw", "sales"],
-              3: ["ehw"],
+              1: ["sales", "ehw", "fw", "sw", "mech", "pur", "qa", "fin"],
+              2: ["ehw", "fw", "sw", "sales"],
+              3: ["ehw", "fw", "sw"],
               4: ["emf"],
               5: ["qa"],
               6: ["ehw", "qa"],
@@ -4913,7 +5087,7 @@ function ProjectDetail({
       )
     );
 
-  const deptCodes = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "TST", "FIN", "SIT", "HR"];
+  const deptCodes = ["SAL", "EHW", "FW", "SW", "MECH", "PUR", "QA", "EMF", "MMF", "TST", "FIN", "SIT", "HR"];
 
   return (
     <div className="space-y-6">
@@ -7419,12 +7593,11 @@ function AdminCommandCenter({
   activeDepartmentId: string | null;
   initialTab?:
     | "company"
-    | "templates"
-    | "raci"
+    | "chronicles"
     | "departments"
+    | "templates"
     | "roles"
     | "masters"
-    | "settings"
     | "cloud"
     | "team"
     | "demo";
@@ -7436,8 +7609,15 @@ function AdminCommandCenter({
   onResetDemo: () => void;
 }) {
   const [tab, setTab] = useState<
-    "company" | "templates" | "raci" | "departments" | "roles" | "masters" | "settings" | "cloud" | "team" | "demo"
-  >(initialTab);
+    "company" | "chronicles" | "departments" | "templates" | "roles" | "masters" | "cloud" | "team" | "demo"
+  >(
+    initialTab === ("raci" as any)
+      ? "chronicles"
+      : initialTab === ("settings" as any)
+        ? "departments"
+        : (initialTab ?? "company")
+  );
+  const [managedDeptId, setManagedDeptId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
   const [page, setPage] = useState(0);
@@ -7511,23 +7691,34 @@ function AdminCommandCenter({
   return (
     <Modal title="Administration command center" onClose={onClose} wide>
       <div className="mb-5 flex flex-wrap gap-2 border-b border-border pb-4">
-        {(["company", "templates", "raci", "departments", "roles", "masters", "settings", "cloud", "team", "demo"] as const).map(
+        {(["company", "chronicles", "departments", "templates", "roles", "masters", "cloud", "team", "demo"] as const).map(
           (item) => (
             <button
               key={item}
-              onClick={() => setTab(item)}
+              onClick={() => {
+                setTab(item);
+                if (item === "departments") setManagedDeptId(null);
+              }}
               className={`h-9 px-3 text-sm font-semibold capitalize ${tab === item ? "bg-primary text-primary-foreground" : "border border-border"}`}
             >
               {item === "company"
                 ? "Company & calendar"
-                : item === "settings"
-                  ? "Department settings"
+                : item === "chronicles"
+                  ? "Department chronicles & RACI"
+                : item === "departments"
+                  ? "Department governance & SLA"
                   : item === "templates"
                     ? "Template settings"
-                    : item === "raci"
-                      ? "Responsibility matrix"
+                    : item === "roles"
+                      ? "Roles & permissions"
+                    : item === "masters"
+                      ? "Locations & masters"
                     : item === "cloud"
-                      ? "Cloud & Supabase Sync"
+                      ? "Cloud & Supabase sync"
+                    : item === "team"
+                      ? "Competency roster"
+                    : item === "demo"
+                      ? "Demo controls"
                   : item}
             </button>
           ),
@@ -7536,7 +7727,20 @@ function AdminCommandCenter({
           Acting role · Administrator
         </span>
       </div>
-      {tab === "cloud" ? (
+      {tab === "chronicles" ? (
+        <DepartmentChroniclesManager
+          chronicles={portal.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES}
+          onUpdateChronicles={(updated) => {
+            const newRaci = deriveRaciMatrixFromChronicles(updated, ai4tStages, raciDepartments);
+            onUpdate((state) => ({
+              ...state,
+              chronicles: updated,
+              raciMatrix: newRaci,
+            }));
+          }}
+          onLog={onLog}
+        />
+      ) : tab === "cloud" ? (
         <CloudSyncPanel portal={portal} onUpdate={onUpdate} onLog={onLog} />
       ) : tab === "team" ? (
         <TeamCompetencyPanel members={demoTeam} />
@@ -7548,8 +7752,6 @@ function AdminCommandCenter({
           onChange={(templateSettings) => onUpdate((state) => ({ ...state, templateSettings }))}
           onSave={() => onLog("Document template settings saved", "Header, footer, locations and numbering updated")}
         />
-      ) : tab === "raci" ? (
-        <RaciMatrixEditor matrix={portal.raciMatrix ?? defaultRaciMatrix()} onChange={(raciMatrix) => onUpdate((state) => ({ ...state, raciMatrix }))} onSave={() => onLog("Responsibility matrix saved", "Stage handoff notification routing updated")} />
       ) : tab === "company" ? (
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">
@@ -7611,8 +7813,32 @@ function AdminCommandCenter({
       ) : tab === "masters" ? (
         <MasterManager portal={portal} onUpdate={onUpdate} onLog={onLog} />
       ) : tab === "departments" ? (
-        <>
-          <div className="grid gap-3 border border-border bg-panel p-4 md:grid-cols-3">
+        managedDeptId ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setManagedDeptId(null)}
+                  className="rounded bg-secondary px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted transition"
+                >
+                  ← Back to Department Roster
+                </button>
+                <span className="text-muted-foreground text-xs font-mono">/</span>
+                <span className="text-xs font-bold text-foreground">
+                  {portal.departments.find((d) => d.id === managedDeptId)?.name} ({portal.departments.find((d) => d.id === managedDeptId)?.code}) Governance & SLA
+                </span>
+              </div>
+            </div>
+            <DepartmentSettingsManager
+              department={portal.departments.find((d) => d.id === managedDeptId) ?? selected}
+              onUpdate={onUpdate}
+              onLog={onLog}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 border border-border bg-panel p-4 md:grid-cols-3">
             <TextField
               label="Department name"
               value={draft.name}
@@ -7692,6 +7918,14 @@ function AdminCommandCenter({
                         Manage
                       </button>
                       <button
+                        type="button"
+                        onClick={() => setManagedDeptId(department.id)}
+                        className="ml-3 font-semibold text-primary hover:underline"
+                        title="Configure numbering prefix, format, and SLA approval gates"
+                      >
+                        SLA & Rules
+                      </button>
+                      <button
                         onClick={() => {
                           onUpdate((state) => ({
                             ...state,
@@ -7732,10 +7966,9 @@ function AdminCommandCenter({
             </div>
           </div>
         </>
-      ) : tab === "roles" ? (
-        <RoleManager portal={portal} onUpdate={onUpdate} onLog={onLog} />
+        )
       ) : (
-        <DepartmentSettingsManager department={selected} onUpdate={onUpdate} onLog={onLog} />
+        <RoleManager portal={portal} onUpdate={onUpdate} onLog={onLog} />
       )}
     </Modal>
   );
@@ -10028,7 +10261,7 @@ function controlledDocumentPrintable(document: ControlledDocument, department: s
 function recordPrintable(record: RecordItem): PrintableDocument {
   const documentId = record.reference || record.fields["controlledNumber"] || `HLPL-AI4T-${record.area.toUpperCase()}-DOC-01`;
   const project = projectReferences(record)[0] || "Unlinked";
-  const department = record.area === "ehw" ? "EHW" : record.area === "esw" ? "ESW" : record.area === "mech" ? "MECH" : record.area === "pur" ? "PUR" : record.area === "quality" ? "QA" : record.area === "emf" ? "EMF" : record.area === "tst" || record.area === "production" ? "TST" : record.area === "fin" ? "FIN" : record.area === "sit" ? "SIT" : record.area === "hrops" || record.area === "people" ? "HR" : "SAL";
+  const department = record.area === "ehw" ? "EHW" : (record.area === "fw" || record.area === "efw") ? "FW" : (record.area === "sw" || record.area === "csw") ? "SW" : record.area === "esw" ? "ESW" : record.area === "mech" ? "MECH" : record.area === "pur" ? "PUR" : record.area === "quality" ? "QA" : record.area === "emf" ? "EMF" : record.area === "tst" || record.area === "production" ? "TST" : record.area === "fin" ? "FIN" : record.area === "sit" ? "SIT" : record.area === "hrops" || record.area === "people" ? "HR" : "SAL";
   return { title: record.title.toUpperCase(), documentId, source: { reference: record.reference, fields: record.fields, notes: record.notes }, department, revision: "Rev 01", status: record.status, project, stage: autoDraftStage(`${record.type} ${record.title} ${documentId}`) };
 }
 

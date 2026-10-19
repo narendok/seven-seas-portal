@@ -294,8 +294,8 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     targetClosureDate: "2026-11-15",
     salesOwner: "Riley Stone",
     status: "Baseline Locked",
-    feasibilitySignedDepts: ["EHW", "EFW", "CSW", "MECH", "PUR", "QA", "FIN"],
-    totalFeasibilityDepts: 7,
+    feasibilitySignedDepts: ["EHW", "FW", "SW", "MECH", "PUR", "QA", "EMF", "MMF", "FIN", "SIT", "HR"],
+    totalFeasibilityDepts: 11,
     rfqReference: "HLPL-AI4T-SAL-SOR-01",
     linkedProjectCode: "HLPL-AI4T-01",
     createdAt: "2026-09-12",
@@ -315,8 +315,8 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     targetClosureDate: "2026-11-30",
     salesOwner: "Riley Stone",
     status: "Sent for Feasibility",
-    feasibilitySignedDepts: ["EHW", "EFW", "CSW", "PUR", "FIN"],
-    totalFeasibilityDepts: 7,
+    feasibilitySignedDepts: ["EHW", "FW", "SW", "PUR", "EMF", "MMF", "FIN"],
+    totalFeasibilityDepts: 11,
     rfqReference: "HLPL-SLCT-SAL-SOR-01",
     linkedProjectCode: "HLPL-SLCT-01",
     createdAt: "2026-09-20",
@@ -337,7 +337,7 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     salesOwner: "Riley Stone",
     status: "Pending Enquiry",
     feasibilitySignedDepts: [],
-    totalFeasibilityDepts: 7,
+    totalFeasibilityDepts: 11,
     createdAt: "2026-10-02",
     updatedAt: "2026-10-04",
   },
@@ -355,8 +355,8 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     targetClosureDate: "2026-12-20",
     salesOwner: "Riley Stone",
     status: "Sent for Feasibility",
-    feasibilitySignedDepts: ["EHW", "EFW", "CSW", "MECH", "PUR", "QA", "FIN"],
-    totalFeasibilityDepts: 7,
+    feasibilitySignedDepts: ["EHW", "FW", "SW", "MECH", "PUR", "QA", "EMF", "MMF", "FIN"],
+    totalFeasibilityDepts: 11,
     rfqReference: "HLPL-ALFL-SAL-SOR-01",
     linkedProjectCode: "HLPL-BCU-02",
     createdAt: "2026-10-06",
@@ -603,12 +603,16 @@ export function SendForFeasibilityModal({
 }) {
   const [selectedDepts, setSelectedDepts] = useState<string[]>([
     "EHW",
-    "EFW",
-    "CSW",
+    "FW",
+    "SW",
     "MECH",
     "PUR",
     "QA",
+    "EMF",
+    "MMF",
     "FIN",
+    "SIT",
+    "HR",
   ]);
   const [dueDate, setDueDate] = useState("2026-11-05");
   const [notes, setNotes] = useState(
@@ -627,12 +631,16 @@ export function SendForFeasibilityModal({
 
   const availableDepts = [
     { code: "EHW", name: "Embedded Hardware (Avery Vale)", desc: "Hardware PRS (EHW-PRS-01), MCU, schematic, RF, TVS & 4-layer PCB" },
-    { code: "EFW", name: "Embedded Firmware (Devon Lane)", desc: "Firmware FRS (EFW-FRS-01), RTOS kernel, HAL drivers, CAN J1939 & FOTA" },
-    { code: "CSW", name: "Cloud & App Software (Maya Lin)", desc: "Software SRS (CSW-SRS-01), AIS-140 MQTT parser, BLE 5.2 mobile & PC tools" },
+    { code: "FW", name: "Firmware Engineering (Devon Lane)", desc: "Firmware FRS (FW-FRS-01), RTOS kernel, HAL drivers, CAN J1939 & FOTA" },
+    { code: "SW", name: "Cloud & App Software (Siddharth Roy)", desc: "Software SRS (SW-SRS-01), AIS-140 MQTT parser, BLE 5.2 mobile & PC tools" },
     { code: "MECH", name: "Mechanical Eng. (Samira Holt)", desc: "Mechanical MRS (MECH-MRS-01), IP67 enclosure, thermal CAD & connectors" },
-    { code: "PUR", name: "Purchasing & SCM (Morgan Reed)", desc: "Sourcing SRS (PUR-SRS-01), BOM costing, AEC-Q parts & supplier lead times" },
+    { code: "PUR", name: "Purchasing & SCM (Morgan Reed)", desc: "Sourcing SRS (PUR-BOM-01), BOM costing, AEC-Q parts & supplier lead times" },
     { code: "QA", name: "Quality Assurance (Jordan Blake)", desc: "Quality QRS (QA-QRS-01), DVP&R matrix, iCAT AIS-140 & NABL battery tests" },
+    { code: "EMF", name: "Electronics Mfg (Casey Rowan)", desc: "Manufacturing DFM (EMF-DFM-01), box-build traveler, harness fitment & in-line test" },
+    { code: "MMF", name: "Mechanical Mfg (Lead)", desc: "Mechanical DFM (MMF-DFM-01), enclosure fabrication, fit checks & tooling" },
     { code: "FIN", name: "Accounts & Finance (Priya Voss)", desc: "Financial CFS (FIN-CFS-01), gross margin, NRE tooling & cost target" },
+    { code: "SIT", name: "Service & IT (Kai Morgan)", desc: "Infrastructure IFS (SIT-IFS-01), cloud telemetry servers, VPN & field diagnostics" },
+    { code: "HR", name: "HR & Operations (Taylor Quinn)", desc: "Competency HRS (HR-OPS-01), IPC-A-610 workmanship, ESD certification & staffing" },
   ];
 
   const selectedPcbIds =
@@ -1588,7 +1596,7 @@ export function SalesEnquiriesAndOpportunities({
                             <span className="text-[11px] text-muted-foreground">HOD Sign-offs</span>
                           </div>
                           <div className="flex items-center gap-1 mt-0.5">
-                            {["EHW", "EFW", "CSW", "MECH", "PUR", "QA", "FIN"].map((d) => (
+                            {["EHW", "FW", "SW", "MECH", "PUR", "QA", "EMF", "MMF", "FIN", "SIT", "HR"].map((d) => (
                               <span
                                 key={d}
                                 className={`rounded px-1 text-[9px] font-mono font-semibold ${

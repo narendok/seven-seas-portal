@@ -27,6 +27,7 @@ import {
   FileCheck2,
 } from "lucide-react";
 import type { Persona } from "@/components/RoleAwareSidebar";
+import { type DepartmentChronicle, deriveDeliverablesForStage } from "@/lib/department-chronicles";
 
 export type StageComment = {
   id: string;
@@ -149,20 +150,20 @@ export const projectLifecycleData: Record<string, {
           {
             id: "c2-2",
             author: "Devon Lane",
-            departmentCode: "EFW",
-            role: "Embedded Firmware Lead",
+            departmentCode: "FW",
+            role: "Firmware Lead",
             timestamp: "08 Oct 2026, 14:45 IST",
-            content: "EFW Feasibility & FRS-01: APPROVED. FreeRTOS + Zephyr BLE 5.2 controller will aggregate sensor tags and support fail-safe dual-bank OTA rollback.",
-            badge: "EFW Sign-off",
+            content: "FW Feasibility & FRS-01: APPROVED. FreeRTOS + Zephyr BLE 5.2 controller will aggregate sensor tags and support fail-safe dual-bank OTA rollback.",
+            badge: "FW Sign-off",
           },
           {
             id: "c2-2b",
-            author: "Maya Lin",
-            departmentCode: "CSW",
-            role: "Cloud & Software Lead",
+            author: "Siddharth Roy",
+            departmentCode: "SW",
+            role: "Cloud & Application Software Lead",
             timestamp: "08 Oct 2026, 15:00 IST",
-            content: "CSW Feasibility & SRS-01: APPROVED. AIS-140 Annexure 8 MQTT telemetry parser and Bluetooth GATT server schema validated for fleet telematics backend.",
-            badge: "CSW Sign-off",
+            content: "SW Feasibility & SRS-01: APPROVED. AIS-140 Annexure 8 MQTT telemetry parser and Bluetooth GATT server schema validated for fleet telematics backend.",
+            badge: "SW Sign-off",
           },
           {
             id: "c2-3",
@@ -269,16 +270,16 @@ export const projectLifecycleData: Record<string, {
           {
             id: "c4-2",
             author: "Devon Lane",
-            departmentCode: "EFW",
-            role: "Embedded Firmware Lead",
+            departmentCode: "FW",
+            role: "Firmware Lead",
             timestamp: "12 Oct 2026, 17:30 IST",
             content: "Zephyr BLE peripheral GATT stack compiled. Handshake verified with Nordic nRF52-DK test bench at 1Mbps and 2Mbps PHY.",
           },
           {
             id: "c4-3",
-            author: "Maya Lin",
-            departmentCode: "CSW",
-            role: "Cloud & Software Lead",
+            author: "Siddharth Roy",
+            departmentCode: "SW",
+            role: "Cloud & Application Software Lead",
             timestamp: "12 Oct 2026, 18:15 IST",
             content: "Telemetry parser connected to mobile BLE diagnostic app. Sensor telemetry packet streaming verified over local MQTT mock broker.",
           },
@@ -768,13 +769,17 @@ export function ProjectLifecyclePlayerAndDetail({
   onJumpToStage,
   persona,
   onOpenPrintable,
+  chronicles,
+  onOpenChroniclesManager,
 }: {
   activeProjectId: string;
   onSelectProject: (projectId: string) => void;
   currentStage: number;
   onJumpToStage: (stageIndex: number) => void;
   persona: Persona;
-  onOpenPrintable?: (doc: any) => void;
+  onOpenPrintable?: ((doc: any) => void) | undefined;
+  chronicles?: DepartmentChronicle[] | undefined;
+  onOpenChroniclesManager?: (() => void) | undefined;
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeed, setPlaySpeed] = useState<number>(3000); // 3 seconds per stage
@@ -786,6 +791,10 @@ export function ProjectLifecyclePlayerAndDetail({
   const stages = projectData.stages;
   const stageIndex = Math.min(Math.max(0, currentStage), stages.length - 1);
   const activeStage = stages[stageIndex]!;
+  const stageDeliverables =
+    chronicles && chronicles.length > 0
+      ? deriveDeliverablesForStage(chronicles, stageIndex)
+      : activeStage.deliverables;
 
   // Auto-play animation timer
   useEffect(() => {
@@ -1049,16 +1058,28 @@ export function ProjectLifecyclePlayerAndDetail({
             <div className="flex items-center gap-2">
               <FileCheck2 className="size-4 text-primary" />
               <h4 className="text-xs font-bold text-foreground">
-                Controlled Deliverables & Signed Documents ({activeStage.deliverables.length})
+                Controlled Deliverables & Signed Documents ({stageDeliverables.length})
               </h4>
             </div>
-            <span className="font-mono text-[10px] text-muted-foreground">
-              IATF 16949 / ISO 9001 Governed
-            </span>
+            <div className="flex items-center gap-2">
+              {onOpenChroniclesManager && (
+                <button
+                  type="button"
+                  onClick={onOpenChroniclesManager}
+                  className="inline-flex items-center gap-1 rounded bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-2 py-0.5 text-[10px] font-semibold transition"
+                  title="Configure department chronicles and milestones dynamically"
+                >
+                  ⚡ Configure Stage Chronicles
+                </button>
+              )}
+              <span className="font-mono text-[10px] text-muted-foreground">
+                IATF 16949 / ISO 9001 Governed
+              </span>
+            </div>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2">
-            {activeStage.deliverables.map((deliv) => (
+            {stageDeliverables.map((deliv) => (
               <div
                 key={deliv.docId}
                 className="flex items-start justify-between gap-2 rounded-lg border border-border bg-muted/20 p-3 hover:bg-secondary/40 transition"

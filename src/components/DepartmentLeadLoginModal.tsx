@@ -79,34 +79,24 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
     badgeTone: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30",
   },
   {
-    id: "efw",
-    departmentCode: "EFW",
-    departmentName: "Embedded Firmware Engineering",
+    id: "fw",
+    departmentCode: "FW",
+    departmentName: "Firmware Engineering",
     leadName: "Devon Lane",
     email: "devon.lane@example.com",
     password: "Demo@EFW2026",
-    roleTitle: "Embedded Firmware Lead",
+    roleTitle: "Firmware Lead",
     badgeTone: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
   },
   {
-    id: "csw",
-    departmentCode: "CSW",
+    id: "sw",
+    departmentCode: "SW",
     departmentName: "Cloud & Application Software",
-    leadName: "Maya Lin",
-    email: "maya.lin@example.com",
+    leadName: "Siddharth Roy",
+    email: "siddharth.roy@example.com",
     password: "Demo@CSW2026",
-    roleTitle: "Cloud & Software Lead",
+    roleTitle: "Cloud & Application Software Lead",
     badgeTone: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30",
-  },
-  {
-    id: "esw",
-    departmentCode: "ESW",
-    departmentName: "Firmware & Software",
-    leadName: "Devon Lane",
-    email: "devon.lane@example.com",
-    password: "Demo@ESW2026",
-    roleTitle: "Firmware & SW Lead",
-    badgeTone: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
   },
   {
     id: "mech",
@@ -121,21 +111,31 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
   {
     id: "emf",
     departmentCode: "EMF",
-    departmentName: "Electronics & Mechanical Manufacturing",
+    departmentName: "Electronics Manufacturing",
     leadName: "Casey Rowan",
     email: "casey.rowan@example.com",
     password: "Demo@EMF2026",
-    roleTitle: "Manufacturing Lead",
+    roleTitle: "Electronics Manufacturing Lead",
     badgeTone: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
+  },
+  {
+    id: "mmf",
+    departmentCode: "MMF",
+    departmentName: "Mechanical Manufacturing",
+    leadName: "Mechanical Manufacturing Lead (Interim)",
+    email: "mmf.lead@example.com",
+    password: "Demo@MMF2026",
+    roleTitle: "Mechanical Manufacturing Lead",
+    badgeTone: "bg-amber-600/15 text-amber-600 dark:text-amber-400 border-amber-600/30",
   },
   {
     id: "tst",
     departmentCode: "TST",
-    departmentName: "Production & Automated EOL Testing",
+    departmentName: "Production & Automated EOL Testing (Historical)",
     leadName: "Mina Cross",
     email: "mina.cross@example.com",
     password: "Demo@TST2026",
-    roleTitle: "Testing & EOL Lead",
+    roleTitle: "Testing & EOL Lead (Preserved)",
     badgeTone: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30",
   },
   { id: "sit", departmentCode: "SIT", departmentName: "Service & IT", leadName: "Kai Morgan", email: "kai.morgan@example.com", password: "Demo@SIT2026", roleTitle: "Service & IT Lead", badgeTone: "bg-primary/15 text-primary border-primary/30" },
@@ -188,7 +188,9 @@ export function DepartmentLeadLoginModal({
   if (!isOpen) return null;
   if (!demoMode) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-5"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><h2 className="text-lg font-semibold">Production sign-in is not configured</h2><p className="mt-3 text-sm text-muted-foreground">An administrator must enable the approved sign-in method and configure organization membership. Demo credentials cannot authenticate operational users.</p><button type="button" onClick={onClose} className="mt-5 rounded border border-border px-4 py-2 text-sm">Close</button></section></div>;
 
-  const activeCred = DEPARTMENT_CREDENTIALS.find((c) => c.id === currentPersonaId);
+  const activeCred = DEPARTMENT_CREDENTIALS.find(
+    (c) => c.id === currentPersonaId || (currentPersonaId === "efw" && c.id === "fw") || (currentPersonaId === "csw" && c.id === "sw")
+  );
 
   const handleAutofill = (cred: DepartmentCredential) => {
     setEmail(cred.email);
@@ -207,7 +209,9 @@ export function DepartmentLeadLoginModal({
       (c) =>
         (c.email.toLowerCase() === trimmedEmail ||
           c.id.toLowerCase() === trimmedEmail ||
-          c.departmentCode.toLowerCase() === trimmedEmail) &&
+          c.departmentCode.toLowerCase() === trimmedEmail ||
+          (trimmedEmail === "efw" && c.id === "fw") ||
+          (trimmedEmail === "csw" && c.id === "sw")) &&
         c.password === trimmedPass
     );
 

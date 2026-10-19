@@ -49,6 +49,8 @@ export type AreaId =
   | "home"
   | "sales"
   | "ehw"
+  | "fw"
+  | "sw"
   | "efw"
   | "csw"
   | "esw"
@@ -56,6 +58,7 @@ export type AreaId =
   | "pur"
   | "qa"
   | "emf"
+  | "mmf"
   | "tst"
   | "fin"
   | "sit"
@@ -158,10 +161,13 @@ const DEFAULT_FAVORITES_BY_ROLE: Record<string, string[]> = {
   sales: ["dept-mywork", "sales-opps", "sales-customers", "dept-projects", "dept-drive"],
   qa: ["dept-mywork", "qa-hub", "qa-dvpr", "dept-projects", "dept-drive"],
   mech: ["dept-mywork", "mech-hub", "mech-cad", "dept-projects"],
-  efw: ["dept-mywork", "efw-hub", "dept-projects", "dept-drive"],
-  csw: ["dept-mywork", "csw-hub", "dept-projects", "dept-drive"],
-  esw: ["dept-mywork", "efw-hub", "dept-projects", "dept-drive"],
+  fw: ["dept-mywork", "fw-hub", "dept-projects", "dept-drive"],
+  sw: ["dept-mywork", "sw-hub", "dept-projects", "dept-drive"],
+  efw: ["dept-mywork", "fw-hub", "dept-projects", "dept-drive"],
+  csw: ["dept-mywork", "sw-hub", "dept-projects", "dept-drive"],
+  esw: ["dept-mywork", "fw-hub", "dept-projects", "dept-drive"],
   emf: ["dept-mywork", "emf-hub", "dept-projects"],
+  mmf: ["dept-mywork", "mmf-hub", "dept-projects"],
   tst: ["dept-mywork", "tst-hub", "dept-projects"],
   fin: ["dept-mywork", "fin-hub", "fin-customers", "dept-projects"],
   sit: ["dept-mywork", "sit-hub", "dept-projects"],
@@ -421,22 +427,22 @@ export function RoleAwareSidebar({
             onClick: () => handleItemClick(() => onNavigate("ehw")),
           },
           {
-            id: "adm-efw",
-            label: "Embedded Firmware (EFW)",
-            shortLabel: "EFW",
+            id: "adm-fw",
+            label: "Firmware (FW)",
+            shortLabel: "FW",
             icon: Terminal,
-            badge: openTaskCounts["efw"] ?? openTaskCounts["esw"],
-            isActive: activeArea === "efw" || activeArea === "esw",
-            onClick: () => handleItemClick(() => onNavigate("efw")),
+            badge: openTaskCounts["fw"] ?? openTaskCounts["efw"] ?? openTaskCounts["esw"],
+            isActive: activeArea === "fw" || activeArea === "efw" || activeArea === "esw",
+            onClick: () => handleItemClick(() => onNavigate("fw")),
           },
           {
-            id: "adm-csw",
-            label: "Cloud & Application Software (CSW)",
-            shortLabel: "CSW",
+            id: "adm-sw",
+            label: "Cloud & Application Software (SW)",
+            shortLabel: "SW",
             icon: Laptop,
-            badge: openTaskCounts["csw"],
-            isActive: activeArea === "csw",
-            onClick: () => handleItemClick(() => onNavigate("csw")),
+            badge: openTaskCounts["sw"] ?? openTaskCounts["csw"],
+            isActive: activeArea === "sw" || activeArea === "csw",
+            onClick: () => handleItemClick(() => onNavigate("sw")),
           },
           {
             id: "adm-mech",
@@ -449,12 +455,21 @@ export function RoleAwareSidebar({
           },
           {
             id: "adm-emf",
-            label: "SMT & Manufacturing (EMF)",
+            label: "Electronics Mfg (EMF)",
             shortLabel: "EMF",
             icon: Factory,
             badge: openTaskCounts["emf"],
             isActive: activeArea === "emf",
             onClick: () => handleItemClick(() => onNavigate("emf")),
+          },
+          {
+            id: "adm-mmf",
+            label: "Mechanical Mfg (MMF)",
+            shortLabel: "MMF",
+            icon: Wrench,
+            badge: openTaskCounts["mmf"],
+            isActive: activeArea === "mmf",
+            onClick: () => handleItemClick(() => onNavigate("mmf")),
           },
           {
             id: "adm-tst",
@@ -956,19 +971,20 @@ export function RoleAwareSidebar({
               onClick: () => handleItemClick(() => onOpenDrive?.()),
             },
           ];
+        case "fw":
         case "efw":
         case "esw":
           return [
             {
-              id: "efw-hub",
+              id: "fw-hub",
               label: "Firmware Requirements & RTOS Hub",
-              shortLabel: "EFW Hub",
+              shortLabel: "FW Hub",
               icon: Terminal,
-              isActive: activeArea === "efw" || activeArea === "esw",
-              onClick: () => handleItemClick(() => onNavigate("efw")),
+              isActive: activeArea === "fw" || activeArea === "efw" || activeArea === "esw",
+              onClick: () => handleItemClick(() => onNavigate("fw")),
             },
             {
-              id: "efw-fota",
+              id: "fw-fota",
               label: "FOTA & Dual-Bank Bootloader",
               shortLabel: "FOTA",
               icon: ShieldAlert,
@@ -976,18 +992,19 @@ export function RoleAwareSidebar({
               onClick: () => handleItemClick(() => onOpenDrive?.()),
             },
           ];
+        case "sw":
         case "csw":
           return [
             {
-              id: "csw-hub",
+              id: "sw-hub",
               label: "Software Requirements & Telematics Hub",
-              shortLabel: "CSW Hub",
+              shortLabel: "SW Hub",
               icon: Laptop,
-              isActive: activeArea === "csw",
-              onClick: () => handleItemClick(() => onNavigate("csw")),
+              isActive: activeArea === "sw" || activeArea === "csw",
+              onClick: () => handleItemClick(() => onNavigate("sw")),
             },
             {
-              id: "csw-ble",
+              id: "sw-ble",
               label: "Mobile BLE 5.2 & Telemetry Stacks",
               shortLabel: "BLE & Cloud",
               icon: Layers,

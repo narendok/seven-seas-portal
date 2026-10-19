@@ -1,7 +1,29 @@
 /** Canonical department codes used by the browser-local portal. Backend RLS remains authoritative. */
 export function departmentCode(value?: string | null): string {
   const code = (value ?? "").trim().toUpperCase();
-  return ({ SALES: "SAL", HROPS: "HR", "HR/OPS": "HR", OPS: "HR", PRODUCTION: "EMF", QUALITY: "QA", STORES: "PUR", EFW: "EFW", FW: "EFW", CSW: "CSW", SW: "CSW" } as Record<string, string>)[code] ?? code;
+  return (
+    {
+      SALES: "SAL",
+      HROPS: "HR",
+      "HR/OPS": "HR",
+      OPS: "HR",
+      PRODUCTION: "EMF",
+      QUALITY: "QA",
+      STORES: "PUR",
+      EFW: "FW",
+      FW: "FW",
+      FIRMWARE: "FW",
+      "EMBEDDED FIRMWARE": "FW",
+      CSW: "SW",
+      SW: "SW",
+      SOFTWARE: "SW",
+      "CLOUD SOFTWARE": "SW",
+      "CLOUD & APPLICATION SOFTWARE": "SW",
+      MMF: "MMF",
+      "MECHANICAL MANUFACTURING": "MMF",
+      "MECH MFG": "MMF",
+    } as Record<string, string>
+  )[code] ?? code;
 }
 
 export function approvalInDepartment(
