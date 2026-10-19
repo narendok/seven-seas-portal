@@ -9076,7 +9076,7 @@ const downloadLocalControlledFile = async (file: LocalControlledFile) => {
     blob
       ? URL.createObjectURL(blob)
       : file.encoding === "text"
-      ? URL.createObjectURL(new Blob([file.content], { type: file.type }))
+      ? URL.createObjectURL(new Blob([file.content ?? ""], { type: file.type }))
       : file.content ?? "";
   anchor.download = file.name;
   anchor.click();
@@ -9497,7 +9497,7 @@ function HardwareDeliverablesDrive({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                downloadLocalControlledFile(file);
+                                void downloadLocalControlledFile(file).catch(() => undefined);
                               }}
                               className="ml-1 font-semibold text-primary hover:underline"
                               title="Download attached file"
