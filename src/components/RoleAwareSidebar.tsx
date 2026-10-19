@@ -121,6 +121,8 @@ export type RoleAwareSidebarProps = {
       | "customers"
       | "smart_bom"
       | "ingestion_gate"
+      | "records"
+      | "deliverables"
   ) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   onOpenAi4tLifecycle?: (() => void) | undefined;
@@ -843,7 +845,7 @@ export function RoleAwareSidebar({
               label: "Hardware Engineering (HW_01-HW_37)",
               shortLabel: "EHW Hub",
               icon: Wrench,
-              isActive: activeArea === "ehw",
+              isActive: activeArea === "ehw" && view === "queue",
               onClick: () => handleItemClick(() => onNavigate("ehw")),
             },
             {
@@ -851,24 +853,24 @@ export function RoleAwareSidebar({
               label: "PRS & Technical Specs",
               shortLabel: "PRS",
               icon: FileText,
-              isActive: false,
-              onClick: () => handleItemClick(() => onOpenDrive?.()),
+              isActive: activeArea === "ehw" && view === "deliverables",
+              onClick: () => handleItemClick(() => onNavigate("ehw", "deliverables")),
             },
             {
               id: "ehw-schematics",
               label: "Schematics & Preliminary BOM",
               shortLabel: "Schematics",
               icon: Cpu,
-              isActive: false,
-              onClick: () => handleItemClick(() => onOpenDrive?.()),
+              isActive: activeArea === "ehw" && view === "deliverables",
+              onClick: () => handleItemClick(() => onNavigate("ehw", "deliverables")),
             },
             {
               id: "ehw-gerber",
               label: "DFMEA & Gerber Gates",
               shortLabel: "DFMEA",
               icon: Layers,
-              isActive: activeArea === "ehw" && view === "project",
-              onClick: () => handleItemClick(() => onNavigate("ehw", "project")),
+              isActive: activeArea === "ehw" && (view === "project" || view === "deliverables"),
+              onClick: () => handleItemClick(() => onNavigate("ehw", "deliverables")),
             },
           ];
         case "sales":
@@ -959,7 +961,7 @@ export function RoleAwareSidebar({
               label: "Mechanical Engineering Hub",
               shortLabel: "MECH Hub",
               icon: Box,
-              isActive: activeArea === "mech",
+              isActive: activeArea === "mech" && view === "queue",
               onClick: () => handleItemClick(() => onNavigate("mech")),
             },
             {
@@ -967,8 +969,8 @@ export function RoleAwareSidebar({
               label: "STEP Clearance & 3D CAD",
               shortLabel: "3D STEP",
               icon: Layers,
-              isActive: false,
-              onClick: () => handleItemClick(() => onOpenDrive?.()),
+              isActive: activeArea === "mech" && view === "deliverables",
+              onClick: () => handleItemClick(() => onNavigate("mech", "deliverables")),
             },
           ];
         case "fw":
@@ -980,7 +982,7 @@ export function RoleAwareSidebar({
               label: "Firmware Requirements & RTOS Hub",
               shortLabel: "FW Hub",
               icon: Terminal,
-              isActive: activeArea === "fw" || activeArea === "efw" || activeArea === "esw",
+              isActive: (activeArea === "fw" || activeArea === "efw" || activeArea === "esw") && view === "queue",
               onClick: () => handleItemClick(() => onNavigate("fw")),
             },
             {
@@ -988,8 +990,8 @@ export function RoleAwareSidebar({
               label: "FOTA & Dual-Bank Bootloader",
               shortLabel: "FOTA",
               icon: ShieldAlert,
-              isActive: false,
-              onClick: () => handleItemClick(() => onOpenDrive?.()),
+              isActive: (activeArea === "fw" || activeArea === "efw" || activeArea === "esw") && view === "deliverables",
+              onClick: () => handleItemClick(() => onNavigate("fw", "deliverables")),
             },
           ];
         case "sw":
@@ -1000,7 +1002,7 @@ export function RoleAwareSidebar({
               label: "Software Requirements & Telematics Hub",
               shortLabel: "SW Hub",
               icon: Laptop,
-              isActive: activeArea === "sw" || activeArea === "csw",
+              isActive: (activeArea === "sw" || activeArea === "csw") && view === "queue",
               onClick: () => handleItemClick(() => onNavigate("sw")),
             },
             {
@@ -1008,8 +1010,8 @@ export function RoleAwareSidebar({
               label: "Mobile BLE 5.2 & Telemetry Stacks",
               shortLabel: "BLE & Cloud",
               icon: Layers,
-              isActive: false,
-              onClick: () => handleItemClick(() => onOpenDrive?.()),
+              isActive: (activeArea === "sw" || activeArea === "csw") && view === "deliverables",
+              onClick: () => handleItemClick(() => onNavigate("sw", "deliverables")),
             },
           ];
         default:
@@ -1089,7 +1091,7 @@ export function RoleAwareSidebar({
       },
       {
         id: "dept_projects",
-        title: "Projects",
+        title: "Projects & Records",
         icon: Briefcase,
         items: [
           {
@@ -1099,6 +1101,14 @@ export function RoleAwareSidebar({
             icon: Briefcase,
             isActive: view === "project",
             onClick: () => handleItemClick(() => onNavigate(deptId as AreaId, "project")),
+          },
+          {
+            id: "dept-records",
+            label: "Department Records Register",
+            shortLabel: "Records",
+            icon: Layers,
+            isActive: view === "records",
+            onClick: () => handleItemClick(() => onNavigate(deptId as AreaId, "records")),
           },
           {
             id: "dept-drive",

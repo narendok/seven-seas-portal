@@ -94,8 +94,13 @@ test('RoleAwareSidebar separates Demo Lifecycle Walkthrough to Reference & Train
   assert.ok(deptProjectsSection, 'dept_projects section exists');
   assert.doesNotMatch(deptProjectsSection[1], /dept-lifecycle/, 'dept_projects does not embed demo lifecycle');
 
-  // Verify EHW DFMEA routes to project workspace
-  assert.match(sidebarSource, /id:\s*"ehw-gerber"[\s\S]*?onNavigate\("ehw",\s*"project"\)/, 'EHW DFMEA navigates to project workspace');
+  // Verify EHW DFMEA and specs route to full-page deliverables board
+  assert.match(sidebarSource, /id:\s*"ehw-gerber"[\s\S]*?onNavigate\("ehw",\s*"(?:project|deliverables)"\)/, 'EHW DFMEA navigates to deliverables board');
+  assert.match(sidebarSource, /id:\s*"ehw-specs"[\s\S]*?onNavigate\("ehw",\s*"deliverables"\)/, 'EHW Specs navigates to deliverables board');
+
+  // Verify Department Records Register is discoverable under Projects & Records
+  assert.match(deptProjectsSection[1], /dept-records/, 'Department Records Register present in sidebar');
+  assert.match(deptProjectsSection[1], /Department Records Register/, 'Department Records label used in sidebar');
 });
 
 test('Theme styling consistency on select controls and options', () => {

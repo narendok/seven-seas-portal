@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DepartmentLeadCoordinationCenter, type TaskRecord, type TeamMember } from "./DepartmentLeadCoordinationCenter";
 import type { ApprovalRecord } from "./ApprovalsFullPageView";
 import { recordsForProject, documentsForProject } from "@/lib/project-workspace";
@@ -40,6 +40,7 @@ type Props = {
   approvals: ApprovalRecord[];
   team: TeamMember[];
   projectScope: string;
+  initialTab?: "overview" | "tasks" | "deliverables" | "approvals" | "records" | "team" | undefined;
   onProjectChange: (value: string) => void;
   onCreateRecord: () => void;
   onOpenRecord: (id: string) => void;
@@ -57,7 +58,15 @@ type Props = {
 
 export function DepartmentProjectWorkspace(props: Props) {
   const { departmentCode, departmentName, lead, projects, projectScope } = props;
-  const [activeTab, setActiveTab] = useState<"overview" | "tasks" | "deliverables" | "approvals" | "records" | "team">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "tasks" | "deliverables" | "approvals" | "records" | "team">(
+    props.initialTab ?? "overview"
+  );
+
+  useEffect(() => {
+    if (props.initialTab) {
+      setActiveTab(props.initialTab);
+    }
+  }, [props.initialTab]);
   const [recordSearch, setRecordSearch] = useState("");
 
   const project = projects.find((item) => item.reference === projectScope || item.id === projectScope);

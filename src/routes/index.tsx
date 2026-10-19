@@ -119,7 +119,7 @@ import {
   type ProjectModularConfiguration,
 } from "@/components/ModularProductArchitectureAndPcbCatalog";
 import { DeviceVisualSpecAndBlockDiagram } from "@/components/DeviceVisualSpecAndBlockDiagram";
-import { RoleAwareSidebar } from "@/components/RoleAwareSidebar";
+import { RoleAwareSidebar, type RoleAwareSidebarProps } from "@/components/RoleAwareSidebar";
 import { ClientOEMPortal } from "@/components/ClientOEMPortal";
 import {
   DepartmentLeadLoginModal,
@@ -2227,6 +2227,8 @@ function Portal() {
     | "smart_bom"
     | "ingestion_gate"
     | "approvals"
+    | "records"
+    | "deliverables"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const allTeamMembers = useMemo(() => [...(portal?.demoLoaded ? demoTeam : []), ...(portal?.teamMembers ?? [])], [portal?.demoLoaded, portal?.teamMembers]);
@@ -2331,7 +2333,9 @@ function Portal() {
       | "suppliers"
       | "customers"
       | "smart_bom"
-      | "ingestion_gate" = "queue",
+      | "ingestion_gate"
+      | "records"
+      | "deliverables" = "queue",
   ) => {
     if (persona.kind === "client") {
       if (area !== "home") {
@@ -3170,8 +3174,9 @@ function Portal() {
                 onCreateTask={handleCreateCustomTask} onAddTeamMember={member => handleAddTeamMember({ ...member, area: persona.departmentId as TeamMember["area"] })}
               />
             </section>
-          ) : persona.kind === "lead" && (view === "project" || view === "queue" || view === "summary") ? (
-            <DepartmentProjectWorkspace key={persona.id}
+          ) : persona.kind === "lead" && (view === "project" || view === "queue" || view === "summary" || view === "records" || view === "deliverables") ? (
+            <DepartmentProjectWorkspace key={`${persona.id}:${view}`}
+              initialTab={view === "records" ? "records" : view === "deliverables" ? "deliverables" : undefined}
               departmentCode={active.short} departmentName={active.name} lead={leadName}
               records={leadRecords} projects={leadProjects} documents={scopedDocuments}
               approvals={portal.approvals.map(approvalScope).filter(approval => approvalInDepartment(approval, persona.departmentId))}
@@ -10981,24 +10986,7 @@ function MobileMenu({
   approvalCounts,
 }: {
   onClose: () => void;
-  onNavigate: (
-    area: AreaId,
-    targetView?:
-      | "queue"
-      | "detail"
-      | "summary"
-      | "project"
-      | "assignee"
-      | "index"
-      | "pmss"
-      | "inventory"
-      | "orders"
-      | "quotations"
-      | "suppliers"
-      | "customers"
-      | "smart_bom"
-      | "ingestion_gate"
-  ) => void;
+  onNavigate: RoleAwareSidebarProps["onNavigate"];
   darkMode: boolean;
   onToggleTheme: () => void;
   purchasingSubView?: PurchasingSubView | undefined;
