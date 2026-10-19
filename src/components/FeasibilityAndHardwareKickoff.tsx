@@ -110,105 +110,312 @@ export function FeasibilityAndHardwareKickoff({
     else setSelectedGate(4);
   }, [currentStageIndex]);
 
-  // Department reviews per Master Plan §4 & §5
-  const reviews: DepartmentFeasibility[] = [
-    {
-      deptCode: "EHW",
-      deptName: "Embedded Hardware Engineering",
-      leadName: "Avery Vale",
-      verdict: "FEASIBLE",
-      scopeSummary: "STM32F405VG automotive MCU, 9V-36V input with ISO 7637-2 TVS suppression, 4G Cat-1 + GNSS RF frontend, 4-layer stackup.",
-      internalRemarks: "SM5S24A TVS diode selected for 24V load dump. Microstrip 50-ohm RF trace clearance verified on Layer 1.",
-      clientHighlights: "Automotive AEC-Q100 hardware architecture with dual CAN bus and rugged IP67 transient protection.",
-      keyParameters: [
-        { label: "Nominal Voltage", value: "12V / 24V (9-36V Operating)" },
-        { label: "Transient Immunity", value: "ISO 7637-2 Pulse 1, 2a/2b, 3a/3b, 5b" },
-        { label: "PCB Layer Count", value: "4-Layer FR4 (1.6mm thickness)" },
-      ],
-      signedAt: "14 Oct 2026, 16:30 IST",
-      signatureHash: "SHA256:7e8a9f...c31b",
-    },
-    {
-      deptCode: "ESW",
-      deptName: "Firmware & Software Engineering",
-      leadName: "Devon Lane",
-      verdict: "FEASIBLE",
-      scopeSummary: "FreeRTOS kernel, CAN J1939 telemetry stack, AIS-140 MQTT packet engine, dual-bank bootloader for fail-safe OTA.",
-      internalRemarks: "Flash allocation: 512KB fits application (340KB) + bootloader (64KB). Dual-bank partition ensures rollback on OTA power drop.",
-      clientHighlights: "Full AIS-140 compliance firmware with encrypted telemetry transmission and live over-the-air updates.",
-      keyParameters: [
-        { label: "RTOS Kernel", value: "FreeRTOS v10.4 (AEC-Q compliant)" },
-        { label: "CAN Protocol", value: "J1939 @ 250kbps / 500kbps" },
-        { label: "OTA Rollback", value: "Dual-Bank Flash + CRC32" },
-      ],
-      signedAt: "14 Oct 2026, 17:15 IST",
-      signatureHash: "SHA256:4d2c8b...e901",
-    },
-    {
-      deptCode: "MECH",
-      deptName: "Mechanical Engineering",
-      leadName: "Samira Holt",
-      verdict: "FEASIBLE",
-      scopeSummary: "Custom IP67 UV-stabilized polycarbonate enclosure, molded silicone gasket seal, Molex MX150 automotive-grade waterproof connector.",
-      internalRemarks: "Thermal simulation: maximum internal junction temperature 68°C at 85°C ambient under full 4G transmission burst.",
-      clientHighlights: "Rugged automotive IP67 waterproof enclosure tested for commercial electric vehicle chassis mounting.",
-      keyParameters: [
-        { label: "Enclosure Ingress", value: "IP67 (1m water immersion / 30 min)" },
-        { label: "Material", value: "Polycarbonate UV-Stabilized (UL94-V0)" },
-        { label: "Vibration Standard", value: "AIS-140 Annexure 8 Random Vibration" },
-      ],
-      signedAt: "14 Oct 2026, 18:00 IST",
-      signatureHash: "SHA256:9a11ef...55bc",
-    },
-    {
-      deptCode: "PUR",
-      deptName: "Purchasing & Supply Chain",
-      leadName: "Morgan Reed",
-      verdict: "FEASIBLE_WITH_CONDITIONS",
-      scopeSummary: "Tier-1 ASL component pipeline, 50,000 unit volume pricing, supplier PPAP Level 3 readiness, target BOM cost $35.42.",
-      internalRemarks: "Quectel 4G modem has 14-week lead time. Recommend releasing advance long-lead PO for first 10,000 units by Week 16.",
-      clientHighlights: "Strategic semiconductor allocation secured for 50,000 units/year with dual-sourcing on critical passives.",
-      keyParameters: [
-        { label: "BOM Cost Target", value: "$35.42 / unit (Achievable at 50k qty)" },
-        { label: "Critical Lead Time", value: "14 Weeks (Quectel EC200U modem)" },
-        { label: "ASL Sourcing Risk", value: "Low (Dual-source on power ICs)" },
-      ],
-      signedAt: "14 Oct 2026, 18:45 IST",
-      signatureHash: "SHA256:1f78ea...a412",
-    },
-    {
-      deptCode: "QA",
-      deptName: "Quality Assurance & APQP",
-      leadName: "Jordan Blake",
-      verdict: "FEASIBLE",
-      scopeSummary: "18-test DVP&R matrix planned, ARAI/ICAT type approval schedule, IATF 16949 §8.2.3 contract review sign-off.",
-      internalRemarks: "Pre-compliance EMC/ESD tests to be executed in-house before sending golden units to ARAI Pune.",
-      clientHighlights: "Comprehensive automotive qualification framework ensuring zero-defect release and TAC certification.",
-      keyParameters: [
-        { label: "DVP&R Suite", value: "18 Tests (Electrical & Environmental)" },
-        { label: "Governing Standard", value: "IATF 16949:2016 & AIS-140" },
-        { label: "APQP Milestone", value: "Gate 2 (Feasibility Sign-off)" },
-      ],
-      signedAt: "14 Oct 2026, 19:10 IST",
-      signatureHash: "SHA256:b6329c...887f",
-    },
-    {
-      deptCode: "FIN",
-      deptName: "Accounts & Finance",
-      leadName: "Priya Voss",
-      verdict: "FEASIBLE",
-      scopeSummary: "Commercial contract review: unit price ₹4,067, order value ₹20.33 Cr, 30% advance deposit terms verified.",
-      internalRemarks: "Advance deposit of ₹6.10 Cr covers prototype tooling and component buffer procurement.",
-      clientHighlights: "Approved commercial proposal with milestone-based invoicing and statutory GST compliance.",
-      keyParameters: [
-        { label: "Programme Value", value: "₹20,33,50,000 ($2.45M)" },
-        { label: "Advance Payment", value: "30% (₹6,10,05,000) Upon PO" },
-        { label: "HSN Code", value: "852610 (Radar/Radio Navigation)" },
-      ],
-      signedAt: "14 Oct 2026, 19:30 IST",
-      signatureHash: "SHA256:3c810d...fe55",
-    },
-  ];
+  // Dynamic department reviews per Master Plan §4 & §5 based on active project
+  const getProjectReviews = (): DepartmentFeasibility[] => {
+    if (projectId === "HLPL-BCU-02") {
+      return [
+        {
+          deptCode: "EHW",
+          deptName: "Embedded Hardware Engineering",
+          leadName: "Avery Vale",
+          verdict: "FEASIBLE",
+          scopeSummary: "Hardware Modification ECN: Integrate Nordic nRF52840 BLE 5.2 SoC with impedance-matched 2.4GHz RF ceramic chip antenna on ready PCB HLPL-MOD-PCB-01 -> spin Rev 04-BLE. Internal 3.7V Lithium-ion 1000mAh backup battery charging circuit.",
+          internalRemarks: "50-ohm RF trace clearance verified on Layer 1. 3.7V Li-ion battery charging CC/CV profile tested with NTC thermal cutoff at 45°C. ECN-2026-BLE-01 drafted.",
+          clientHighlights: "Custom OEM modification adding BLE 5.2 wireless sensor hub for tire pressure (TPMS) and cold-chain temperature tags.",
+          keyParameters: [
+            { label: "BLE Subsystem", value: "Nordic nRF52840 (BLE 5.2, +8dBm Max TX)" },
+            { label: "Internal Battery", value: "3.7V 1000mAh Li-ion (NABL Certified)" },
+            { label: "PCB Modification", value: "Spin Rev 04-BLE (ECN-2026-BLE-01)" },
+          ],
+          signedAt: "15 Oct 2026, 14:30 IST",
+          signatureHash: "SHA256:7e8a9f...bcu2",
+        },
+        {
+          deptCode: "ESW",
+          deptName: "Firmware & Software Engineering",
+          leadName: "Devon Lane",
+          verdict: "FEASIBLE",
+          scopeSummary: "FreeRTOS v10.4 + Zephyr BLE subsystem integration. Bluetooth GATT server for TPMS pressure sensors and cold-chain temperature tags with periodic AIS-140 MQTT telemetry uplink.",
+          internalRemarks: "BLE scan duty cycle configured for 10% to preserve 3.7V Li-ion battery life during vehicle ignition-off standby. Dual-bank OTA firmware update verified.",
+          clientHighlights: "Multi-sensor BLE aggregator with automated wireless sensor pairing and tamper event detection.",
+          keyParameters: [
+            { label: "Bluetooth Profile", value: "BLE 5.2 GATT / Custom Telematics Payload" },
+            { label: "Concurrent Sensors", value: "Up to 8 BLE Sensors (TPMS + Temp)" },
+            { label: "Low Power Standby", value: "<3.5mA with BLE Beacon Listening" },
+          ],
+          signedAt: "15 Oct 2026, 15:15 IST",
+          signatureHash: "SHA256:4d2c8b...bcu2",
+        },
+        {
+          deptCode: "MECH",
+          deptName: "Mechanical Engineering",
+          leadName: "Samira Holt",
+          verdict: "FEASIBLE",
+          scopeSummary: "Modify polycarbonate enclosure top lid to add 2.4GHz RF transparent window; verify silicone gasket IP67 seal integrity and 3.7V Li-ion battery retention bracket.",
+          internalRemarks: "Zero metallic plating above BLE antenna zone. Drop simulation confirms internal 3.7V battery cushion survives 1.5m drop onto concrete.",
+          clientHighlights: "Rugged automotive IP67 waterproof enclosure with RF window transparent to 2.4GHz wireless telemetry.",
+          keyParameters: [
+            { label: "RF Window Material", value: "SABIC Lexan (Permittivity 2.9 @ 2.4GHz)" },
+            { label: "Battery Retention", value: "Shock-Absorbing Flame Retardant Foam" },
+            { label: "Ingress Protection", value: "IP67 Maintained" },
+          ],
+          signedAt: "15 Oct 2026, 16:00 IST",
+          signatureHash: "SHA256:9a11ef...bcu2",
+        },
+        {
+          deptCode: "PUR",
+          deptName: "Purchasing & Supply Chain",
+          leadName: "Morgan Reed",
+          verdict: "FEASIBLE_WITH_CONDITIONS",
+          scopeSummary: "Sourcing Nordic nRF52840-QIAA-R BLE SoC, 2.4GHz chip antennas, and NABL-certified 3.7V 1000mAh Lithium-ion cells. Incremental BOM: +$3.15/unit.",
+          internalRemarks: "Nordic lead time is 10 weeks; initial buffer stock of 500 units available via authorized distributor. Battery supplier provides UN 38.3 test report.",
+          clientHighlights: "Dual-sourcing on BLE passives; advance semiconductor buffer secured for 15,000 units/year.",
+          keyParameters: [
+            { label: "Nordic SoC Lead Time", value: "10 Weeks (500 Samples in Stock)" },
+            { label: "3.7V Battery Supplier", value: "NABL Accredited Cell Pack" },
+            { label: "Incremental BOM", value: "+$3.15 / unit ($38.57 total)" },
+          ],
+          signedAt: "15 Oct 2026, 16:45 IST",
+          signatureHash: "SHA256:1f78ea...bcu2",
+        },
+        {
+          deptCode: "QA",
+          deptName: "Quality Assurance & APQP",
+          leadName: "Jordan Blake",
+          verdict: "FEASIBLE",
+          scopeSummary: "DVP&R test plan updated for BLE RF radiated power (ETSI EN 300 328), 30m range verification, 3.7V Li-ion battery NABL certification (IS 16046 Part 2 / UN 38.3), and iCAT agency type approval.",
+          internalRemarks: "Testing slot reserved at iCAT Manesar for AIS-140 Annexure 8 and RF radiated testing. External NABL lab test scheduled for battery safety.",
+          clientHighlights: "Comprehensive automotive qualification framework with witness testing at iCAT Manesar and NABL battery certification.",
+          keyParameters: [
+            { label: "Certification Agency", value: "iCAT (Manesar) + NABL Battery Lab" },
+            { label: "Battery Standard", value: "IS 16046 (Part 2) / IEC 62133-2 / UN 38.3" },
+            { label: "RF Standard", value: "ETSI EN 300 328 & WPC ETA" },
+          ],
+          signedAt: "15 Oct 2026, 17:10 IST",
+          signatureHash: "SHA256:b6329c...bcu2",
+        },
+        {
+          deptCode: "FIN",
+          deptName: "Accounts & Finance",
+          leadName: "Priya Voss",
+          verdict: "FEASIBLE",
+          scopeSummary: "Commercial feasibility for Ashok Leyland: 15,000 units/year @ ₹4,480/unit. Modification NRE: ₹1.85 Lakhs tooling & stencils + ₹2.40 Lakhs iCAT/NABL agency testing fees.",
+          internalRemarks: "Client agreed to absorb 50% NRE on confirmation of 15,000 unit annual volume. 30% advance required upon Feasibility Sign-off.",
+          clientHighlights: "Approved commercial proposal with milestone-based invoicing and statutory GST compliance.",
+          keyParameters: [
+            { label: "PCB Modification NRE", value: "₹1,85,000 (Tooling & Stencils)" },
+            { label: "Agency Testing Fee", value: "₹2,40,000 (iCAT & NABL Battery)" },
+            { label: "Target OEM Price", value: "₹4,480 / unit" },
+          ],
+          signedAt: "15 Oct 2026, 17:30 IST",
+          signatureHash: "SHA256:3c810d...bcu2",
+        },
+      ];
+    }
+
+    if (projectId === "HLPL-SLCT-01") {
+      return [
+        {
+          deptCode: "EHW",
+          deptName: "Embedded Hardware Engineering",
+          leadName: "Avery Vale",
+          verdict: "FEASIBLE",
+          scopeSummary: "100% Platform Reuse: Proven ready PCB HLPL-MOD-PCB-01 Rev 03 (Quectel EC200U-CN, STM32F405, 3.7V 1000mAh Li-ion battery). Zero schematic or layout changes needed. Stage 4 PoC bypassed.",
+          internalRemarks: "Pre-qualified 4-layer stackup and power circuit. Ready for direct SMT pilot build on Line 2.",
+          clientHighlights: "Zero-NRE deployment leveraging field-proven hardware with 60,000+ units operating in the field.",
+          keyParameters: [
+            { label: "Hardware Path", value: "100% Reused (Bypasses Stage 4 PoC)" },
+            { label: "Platform Motherboard", value: "HLPL-MOD-PCB-01 Rev 03" },
+            { label: "Internal Battery", value: "3.7V 1000mAh Li-ion (Pre-Certified)" },
+          ],
+          signedAt: "14 Oct 2026, 11:30 IST",
+          signatureHash: "SHA256:8a1b2c...slct1",
+        },
+        {
+          deptCode: "ESW",
+          deptName: "Firmware & Software Engineering",
+          leadName: "Devon Lane",
+          verdict: "FEASIBLE",
+          scopeSummary: "Pre-Certified Turnkey Firmware FW-LIB-001 (AIS-140 Stack v2.4.1). OBD-II telemetry parser and state server endpoint configuration only.",
+          internalRemarks: "Zero new firmware development lead time. Binary hash matches pre-certified TAC release.",
+          clientHighlights: "Pre-tested automotive firmware stack with over-the-air update capability.",
+          keyParameters: [
+            { label: "Firmware Stack", value: "FW-LIB-001 (AIS-140 v2.4.1 Pre-Certified)" },
+            { label: "Development Lead Time", value: "0 Weeks (Turnkey Stack)" },
+            { label: "Protocol", value: "OBD-II J1962 / AIS-140 MQTT" },
+          ],
+          signedAt: "14 Oct 2026, 12:00 IST",
+          signatureHash: "SHA256:9b2c3d...slct1",
+        },
+        {
+          deptCode: "MECH",
+          deptName: "Mechanical Engineering",
+          leadName: "Samira Holt",
+          verdict: "FEASIBLE",
+          scopeSummary: "Standard IP67 polycarbonate enclosure ENC-LIB-001 + pass-through OBD-II harness HARN-LIB-002. Tooling and molds already active.",
+          internalRemarks: "Existing injection tooling operational with zero modification needed.",
+          clientHighlights: "Automotive-grade IP67 enclosure with plug-and-play OBD-II harness.",
+          keyParameters: [
+            { label: "Enclosure", value: "ENC-LIB-001 (Tooling Active)" },
+            { label: "Harness", value: "HARN-LIB-002 (OBD-II Pass-through)" },
+            { label: "Ingress Rating", value: "IP67 Waterproof" },
+          ],
+          signedAt: "14 Oct 2026, 12:30 IST",
+          signatureHash: "SHA256:ac3d4e...slct1",
+        },
+        {
+          deptCode: "PUR",
+          deptName: "Purchasing & Supply Chain",
+          leadName: "Morgan Reed",
+          verdict: "FEASIBLE",
+          scopeSummary: "Components mapped to established high-volume ASL suppliers. Target BOM cost $35.42 achievable at 10,000 units/year.",
+          internalRemarks: "Standard reel inventory in stock at factory stores for 5,000 units.",
+          clientHighlights: "Immediate component allocation with zero long-lead semiconductor risks.",
+          keyParameters: [
+            { label: "BOM Cost", value: "$35.42 / unit" },
+            { label: "Component Availability", value: "Immediate Factory Stock" },
+            { label: "Supplier Risk", value: "Zero (Qualified ASL)" },
+          ],
+          signedAt: "14 Oct 2026, 13:00 IST",
+          signatureHash: "SHA256:bd4e5f...slct1",
+        },
+        {
+          deptCode: "QA",
+          deptName: "Quality Assurance & APQP",
+          leadName: "Jordan Blake",
+          verdict: "FEASIBLE",
+          scopeSummary: "Existing iCAT TAC certificate leveraged under vehicle model extension. Full DVP&R pre-compliance completed.",
+          internalRemarks: "Regression tests only required for harness connection. Zero deviations recorded.",
+          clientHighlights: "Certified AIS-140 compliance backed by existing TAC report.",
+          keyParameters: [
+            { label: "DVP&R Status", value: "Pre-Certified (Platform Derivative)" },
+            { label: "Type Approval", value: "iCAT Extension Applicable" },
+            { label: "Battery Safety", value: "IS 16046 / NABL Valid" },
+          ],
+          signedAt: "14 Oct 2026, 13:30 IST",
+          signatureHash: "SHA256:ce5f6a...slct1",
+        },
+        {
+          deptCode: "FIN",
+          deptName: "Accounts & Finance",
+          leadName: "Priya Voss",
+          verdict: "FEASIBLE",
+          scopeSummary: "Commercial contract review: 10,000 units @ ₹3,450/unit (₹3.45 Cr annual volume). Zero NRE required.",
+          internalRemarks: "Zero tooling NRE saves customer ₹6.5 Lakhs upfront cost.",
+          clientHighlights: "Fast-track commercial clearance with zero NRE tooling cost.",
+          keyParameters: [
+            { label: "Order Value", value: "₹3,45,00,000 (10k units/yr)" },
+            { label: "NRE Charge", value: "₹0 (100% Waived)" },
+            { label: "Payment Terms", value: "20% Advance, Net 30 Days" },
+          ],
+          signedAt: "14 Oct 2026, 14:00 IST",
+          signatureHash: "SHA256:df6a7b...slct1",
+        },
+      ];
+    }
+
+    // Default Tata Ace EV baseline (HLPL-AI4T-01)
+    return [
+      {
+        deptCode: "EHW",
+        deptName: "Embedded Hardware Engineering",
+        leadName: "Avery Vale",
+        verdict: "FEASIBLE",
+        scopeSummary: "STM32F405VG automotive MCU, 9V-36V input with ISO 7637-2 TVS suppression, 4G Cat-1 + GNSS RF frontend, 4-layer stackup.",
+        internalRemarks: "SM5S24A TVS diode selected for 24V load dump. Microstrip 50-ohm RF trace clearance verified on Layer 1.",
+        clientHighlights: "Automotive AEC-Q100 hardware architecture with dual CAN bus and rugged IP67 transient protection.",
+        keyParameters: [
+          { label: "Nominal Voltage", value: "12V / 24V (9-36V Operating)" },
+          { label: "Transient Immunity", value: "ISO 7637-2 Pulse 1, 2a/2b, 3a/3b, 5b" },
+          { label: "PCB Layer Count", value: "4-Layer FR4 (1.6mm thickness)" },
+        ],
+        signedAt: "14 Oct 2026, 16:30 IST",
+        signatureHash: "SHA256:7e8a9f...c31b",
+      },
+      {
+        deptCode: "ESW",
+        deptName: "Firmware & Software Engineering",
+        leadName: "Devon Lane",
+        verdict: "FEASIBLE",
+        scopeSummary: "FreeRTOS kernel, CAN J1939 telemetry stack, AIS-140 MQTT packet engine, dual-bank bootloader for fail-safe OTA.",
+        internalRemarks: "Flash allocation: 512KB fits application (340KB) + bootloader (64KB). Dual-bank partition ensures rollback on OTA power drop.",
+        clientHighlights: "Full AIS-140 compliance firmware with encrypted telemetry transmission and live over-the-air updates.",
+        keyParameters: [
+          { label: "RTOS Kernel", value: "FreeRTOS v10.4 (AEC-Q compliant)" },
+          { label: "CAN Protocol", value: "J1939 @ 250kbps / 500kbps" },
+          { label: "OTA Rollback", value: "Dual-Bank Flash + CRC32" },
+        ],
+        signedAt: "14 Oct 2026, 17:15 IST",
+        signatureHash: "SHA256:4d2c8b...e901",
+      },
+      {
+        deptCode: "MECH",
+        deptName: "Mechanical Engineering",
+        leadName: "Samira Holt",
+        verdict: "FEASIBLE",
+        scopeSummary: "Custom IP67 UV-stabilized polycarbonate enclosure, molded silicone gasket seal, Molex MX150 automotive-grade waterproof connector.",
+        internalRemarks: "Thermal simulation: maximum internal junction temperature 68°C at 85°C ambient under full 4G transmission burst.",
+        clientHighlights: "Rugged automotive IP67 waterproof enclosure tested for commercial electric vehicle chassis mounting.",
+        keyParameters: [
+          { label: "Enclosure Ingress", value: "IP67 (1m water immersion / 30 min)" },
+          { label: "Material", value: "Polycarbonate UV-Stabilized (UL94-V0)" },
+          { label: "Vibration Standard", value: "AIS-140 Annexure 8 Random Vibration" },
+        ],
+        signedAt: "14 Oct 2026, 18:00 IST",
+        signatureHash: "SHA256:9a11ef...55bc",
+      },
+      {
+        deptCode: "PUR",
+        deptName: "Purchasing & Supply Chain",
+        leadName: "Morgan Reed",
+        verdict: "FEASIBLE_WITH_CONDITIONS",
+        scopeSummary: "Tier-1 ASL component pipeline, 50,000 unit volume pricing, supplier PPAP Level 3 readiness, target BOM cost $35.42.",
+        internalRemarks: "Quectel 4G modem has 14-week lead time. Recommend releasing advance long-lead PO for first 10,000 units by Week 16.",
+        clientHighlights: "Strategic semiconductor allocation secured for 50,000 units/year with dual-sourcing on critical passives.",
+        keyParameters: [
+          { label: "BOM Cost Target", value: "$35.42 / unit (Achievable at 50k qty)" },
+          { label: "Critical Lead Time", value: "14 Weeks (Quectel EC200U modem)" },
+          { label: "ASL Sourcing Risk", value: "Low (Dual-source on power ICs)" },
+        ],
+        signedAt: "14 Oct 2026, 18:45 IST",
+        signatureHash: "SHA256:1f78ea...a412",
+      },
+      {
+        deptCode: "QA",
+        deptName: "Quality Assurance & APQP",
+        leadName: "Jordan Blake",
+        verdict: "FEASIBLE",
+        scopeSummary: "18-test DVP&R matrix planned, ARAI/ICAT type approval schedule, IATF 16949 §8.2.3 contract review sign-off.",
+        internalRemarks: "Pre-compliance EMC/ESD tests to be executed in-house before sending golden units to ARAI Pune.",
+        clientHighlights: "Comprehensive automotive qualification framework ensuring zero-defect release and TAC certification.",
+        keyParameters: [
+          { label: "DVP&R Suite", value: "18 Tests (Electrical & Environmental)" },
+          { label: "Governing Standard", value: "IATF 16949:2016 & AIS-140" },
+          { label: "APQP Milestone", value: "Gate 2 (Feasibility Sign-off)" },
+        ],
+        signedAt: "14 Oct 2026, 19:10 IST",
+        signatureHash: "SHA256:b6329c...887f",
+      },
+      {
+        deptCode: "FIN",
+        deptName: "Accounts & Finance",
+        leadName: "Priya Voss",
+        verdict: "FEASIBLE",
+        scopeSummary: "Commercial contract review: unit price ₹4,067, order value ₹20.33 Cr, 30% advance deposit terms verified.",
+        internalRemarks: "Advance deposit of ₹6.10 Cr covers prototype tooling and component buffer procurement.",
+        clientHighlights: "Approved commercial proposal with milestone-based invoicing and statutory GST compliance.",
+        keyParameters: [
+          { label: "Programme Value", value: "₹20,33,50,000 ($2.45M)" },
+          { label: "Advance Payment", value: "30% (₹6,10,05,000) Upon PO" },
+          { label: "HSN Code", value: "852610 (Radar/Radio Navigation)" },
+        ],
+        signedAt: "14 Oct 2026, 19:30 IST",
+        signatureHash: "SHA256:3c810d...fe55",
+      },
+    ];
+  };
+
+  const reviews = getProjectReviews();
 
   return (
     <div className="space-y-6">
@@ -220,7 +427,7 @@ export function FeasibilityAndHardwareKickoff({
               Project Lifecycle Feasibility & Engineering Gate Engine
             </span>
             <p className="text-xs font-semibold text-foreground">
-              {projectId} · Tata Ace EV 4G Telematics Gateway
+              {projectId} · {activeConfig.projectTitle}
             </p>
           </div>
           <div className="flex items-center gap-1.5 font-mono text-[11px]">

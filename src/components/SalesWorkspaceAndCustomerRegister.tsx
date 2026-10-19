@@ -39,6 +39,13 @@ import {
   type ProjectModularConfiguration,
 } from "./ModularProductArchitectureAndPcbCatalog";
 
+export type CustomerContact = {
+  name: string;
+  designation: string;
+  email: string;
+  phone: string;
+};
+
 export type CustomerRecord = {
   id: string;
   code: string;
@@ -50,8 +57,10 @@ export type CustomerRecord = {
   cityState: string;
   gstin: string;
   status: "Active" | "Prospect" | "Inactive";
+  customerType?: "Tier-1 Commercial OEM" | "EV Fleet OEM" | "Agri & Off-Highway OEM" | "Mobility & Telematics Operator";
   activeOpportunitiesCount: number;
   assignedLead: string;
+  additionalContacts?: CustomerContact[];
   createdAt: string;
 };
 
@@ -90,21 +99,66 @@ export const defaultCustomers: CustomerRecord[] = [
     code: "CUST-TATA-01",
     name: "Tata Motors Limited",
     division: "EV Fleet Division · Commercial Vehicles",
+    customerType: "Tier-1 Commercial OEM",
     spocName: "Mr. Rajesh Sharma",
     spocEmail: "rajesh.sharma@tatamotors.com",
     spocPhone: "+91 98200 12345",
     cityState: "Pune, Maharashtra",
     gstin: "27AAACT2727Q1ZW",
     status: "Active",
+    activeOpportunitiesCount: 2,
+    assignedLead: "Riley Stone · Sales Lead",
+    additionalContacts: [
+      { name: "Mr. Rohan Verma", designation: "Fleet Engineering Manager (Tata Ace EV)", email: "rohan.verma@tatamotors.com", phone: "+91 98201 54321" },
+      { name: "Mr. Amit Kulkarni", designation: "Senior Manager Electrical Procurement", email: "amit.kulkarni@tatamotors.com", phone: "+91 98202 98765" },
+    ],
+    createdAt: "2026-09-10",
+  },
+  {
+    id: "cust-alfl-04",
+    code: "CUST-ALFL-04",
+    name: "Ashok Leyland Limited",
+    division: "Heavy Commercial Vehicles · Fleet Telematics",
+    customerType: "Tier-1 Commercial OEM",
+    spocName: "Mr. K. Ramanathan",
+    spocEmail: "k.raman@ashokleyland.com",
+    spocPhone: "+91 94440 11223",
+    cityState: "Chennai, Tamil Nadu",
+    gstin: "33AAACA1234B1ZK",
+    status: "Active",
+    activeOpportunitiesCount: 2,
+    assignedLead: "Riley Stone · Sales Lead",
+    additionalContacts: [
+      { name: "Mr. S. Balaji", designation: "Deputy GM Electrical SCM", email: "s.balaji@ashokleyland.com", phone: "+91 94441 22334" },
+      { name: "Ms. Deepa Sundaram", designation: "Head of Supplier Quality (Electronics)", email: "deepa.s@ashokleyland.com", phone: "+91 94442 33445" },
+    ],
+    createdAt: "2026-10-05",
+  },
+  {
+    id: "cust-mhev-03",
+    code: "CUST-MHEV-03",
+    name: "Mahindra Electric Mobility Limited",
+    division: "Electric 3W & Light Commercial Platforms",
+    customerType: "EV Fleet OEM",
+    spocName: "Ms. Ananya Deshmukh",
+    spocEmail: "ananya.d@mahindraelectric.com",
+    spocPhone: "+91 98450 67890",
+    cityState: "Bengaluru, Karnataka",
+    gstin: "29AABCM9876K1ZS",
+    status: "Active",
     activeOpportunitiesCount: 1,
     assignedLead: "Riley Stone · Sales Lead",
-    createdAt: "2026-09-10",
+    additionalContacts: [
+      { name: "Mr. Pradeep Joshi", designation: "Component Sourcing Manager", email: "pradeep.j@mahindraelectric.com", phone: "+91 98451 11223" },
+    ],
+    createdAt: "2026-10-02",
   },
   {
     id: "cust-slct-02",
     code: "CUST-SLCT-02",
     name: "Select Motors Limited",
     division: "Telematics & Connected Fleet Mobility",
+    customerType: "Mobility & Telematics Operator",
     spocName: "Mr. Vikram Singhania",
     spocEmail: "vikram.s@selectmotors.in",
     spocPhone: "+91 98110 54321",
@@ -113,43 +167,36 @@ export const defaultCustomers: CustomerRecord[] = [
     status: "Active",
     activeOpportunitiesCount: 1,
     assignedLead: "Riley Stone · Sales Lead",
+    additionalContacts: [
+      { name: "Ms. Sunita Rao", designation: "Lead Systems Engineer", email: "sunita.r@selectmotors.in", phone: "+91 98111 88776" },
+    ],
     createdAt: "2026-09-18",
   },
   {
-    id: "cust-mhev-03",
-    code: "CUST-MHEV-03",
-    name: "Mahindra Electric Mobility Limited",
-    division: "Electric 3W & Light Commercial Platforms",
-    spocName: "Ms. Ananya Deshmukh",
-    spocEmail: "ananya.d@mahindraelectric.com",
-    spocPhone: "+91 98450 67890",
-    cityState: "Bengaluru, Karnataka",
-    gstin: "29AABCM9876K1ZS",
-    status: "Prospect",
+    id: "cust-vecv-06",
+    code: "CUST-VECV-06",
+    name: "VE Commercial Vehicles Limited",
+    division: "Eicher Trucks & Buses Connected Solutions",
+    customerType: "Tier-1 Commercial OEM",
+    spocName: "Mr. Sanjay Mehra",
+    spocEmail: "smehra@vecv.in",
+    spocPhone: "+91 98260 12345",
+    cityState: "Pithampur, Madhya Pradesh",
+    gstin: "23AABCV5678P1Z0",
+    status: "Active",
     activeOpportunitiesCount: 1,
     assignedLead: "Riley Stone · Sales Lead",
-    createdAt: "2026-10-02",
-  },
-  {
-    id: "cust-alfl-04",
-    code: "CUST-ALFL-04",
-    name: "Ashok Leyland Limited",
-    division: "Heavy Commercial Vehicles · Fleet Solutions",
-    spocName: "Mr. K. Ramanathan",
-    spocEmail: "k.raman@ashokleyland.com",
-    spocPhone: "+91 94440 11223",
-    cityState: "Chennai, Tamil Nadu",
-    gstin: "33AAACA1234B1ZK",
-    status: "Prospect",
-    activeOpportunitiesCount: 1,
-    assignedLead: "Riley Stone · Sales Lead",
-    createdAt: "2026-10-05",
+    additionalContacts: [
+      { name: "Ms. Neha Agarwal", designation: "Vendor Development & Quality Lead", email: "nagarwal@vecv.in", phone: "+91 98261 67890" },
+    ],
+    createdAt: "2026-10-07",
   },
   {
     id: "cust-eskt-05",
     code: "CUST-ESKT-05",
     name: "Escorts Kubota Limited",
     division: "Agri-Machinery & Telematics Division",
+    customerType: "Agri & Off-Highway OEM",
     spocName: "Mr. Hardeep Singh",
     spocEmail: "hardeep.singh@escortskubota.com",
     spocPhone: "+91 98180 99887",
@@ -159,6 +206,76 @@ export const defaultCustomers: CustomerRecord[] = [
     activeOpportunitiesCount: 1,
     assignedLead: "Riley Stone · Sales Lead",
     createdAt: "2026-10-08",
+  },
+  {
+    id: "cust-bajaj-07",
+    code: "CUST-BAJAJ-07",
+    name: "Bajaj Auto Limited",
+    division: "Commercial 3W & Electric Fleet Solutions",
+    customerType: "EV Fleet OEM",
+    spocName: "Mr. Nitin Shinde",
+    spocEmail: "nshinde@bajajauto.co.in",
+    spocPhone: "+91 98220 55443",
+    cityState: "Pune, Maharashtra",
+    gstin: "27AAACB1234A1Z9",
+    status: "Prospect",
+    activeOpportunitiesCount: 1,
+    assignedLead: "Riley Stone · Sales Lead",
+    createdAt: "2026-10-10",
+  },
+  {
+    id: "cust-msil-08",
+    code: "CUST-MSIL-08",
+    name: "Maruti Suzuki India Limited",
+    division: "Commercial Fleet & Logistics Telematics",
+    customerType: "Tier-1 Commercial OEM",
+    spocName: "Mr. Deepak Chawla",
+    spocEmail: "deepak.chawla@maruti.co.in",
+    spocPhone: "+91 98100 11998",
+    cityState: "Gurugram, Haryana",
+    gstin: "06AAACM1234C1Z7",
+    status: "Active",
+    activeOpportunitiesCount: 1,
+    assignedLead: "Riley Stone · Sales Lead",
+    additionalContacts: [
+      { name: "Ms. Pooja Mittal", designation: "Commercial SCM Procurement Manager", email: "pooja.m@maruti.co.in", phone: "+91 98101 22887" },
+    ],
+    createdAt: "2026-10-12",
+  },
+  {
+    id: "cust-pvpl-09",
+    code: "CUST-PVPL-09",
+    name: "Piaggio Vehicles Private Limited",
+    division: "Ape Electrik Commercial 3W Platform",
+    customerType: "EV Fleet OEM",
+    spocName: "Mr. Vivek Joshi",
+    spocEmail: "v.joshi@piaggio.co.in",
+    spocPhone: "+91 98230 44332",
+    cityState: "Baramati, Maharashtra",
+    gstin: "27AAACP9988D1Z2",
+    status: "Prospect",
+    activeOpportunitiesCount: 1,
+    assignedLead: "Riley Stone · Sales Lead",
+    createdAt: "2026-10-13",
+  },
+  {
+    id: "cust-olae-10",
+    code: "CUST-OLAE-10",
+    name: "Ola Electric Mobility Limited",
+    division: "Futurefactory Commercial Telematics Division",
+    customerType: "EV Fleet OEM",
+    spocName: "Mr. Gaurav Nair",
+    spocEmail: "gaurav.nair@olaelectric.com",
+    spocPhone: "+91 98800 66554",
+    cityState: "Hosur, Tamil Nadu",
+    gstin: "33AAAC01234E1Z3",
+    status: "Active",
+    activeOpportunitiesCount: 1,
+    assignedLead: "Riley Stone · Sales Lead",
+    additionalContacts: [
+      { name: "Ms. Ritu Saxena", designation: "Vendor Quality Assurance Manager", email: "ritu.s@olaelectric.com", phone: "+91 98801 77665" },
+    ],
+    createdAt: "2026-10-14",
   },
 ];
 
@@ -225,23 +342,25 @@ export const defaultEnquiriesOpportunities: EnquiryOpportunity[] = [
     updatedAt: "2026-10-04",
   },
   {
-    id: "enq-alfl-104",
-    reference: "HLPL-2026-ENQ-104",
-    kind: "enquiry",
-    title: "Ashok Leyland Boss Truck OBD-II & FMS Gateway",
+    id: "opp-bcu-02",
+    reference: "HLPL-2026-OPP-104",
+    kind: "opportunity",
+    title: "Ashok Leyland Boss/e-Dost Telematics & BLE Wireless Sensor Gateway",
     customerCode: "CUST-ALFL-04",
     customerName: "Ashok Leyland Limited",
     spocName: "Mr. K. Ramanathan",
     spocEmail: "k.raman@ashokleyland.com",
-    scopeSummary: "FMS protocol compliant telematics unit with dual CAN channels for commercial trucking fleet.",
+    scopeSummary: "Custom OEM modification: Adding Nordic nRF52840 BLE 5.2 subsystem to ready telematics PCB for wireless tire pressure (TPMS) and cold-chain temperature sensors; dual CAN J1939, 3.7V NABL-certified Li-ion backup battery, iCAT type approval.",
     targetVolume: "15,000 units / year",
     targetClosureDate: "2026-12-20",
     salesOwner: "Riley Stone",
-    status: "Pending Enquiry",
-    feasibilitySignedDepts: [],
+    status: "Sent for Feasibility",
+    feasibilitySignedDepts: ["EHW", "ESW", "MECH", "PUR", "QA", "FIN"],
     totalFeasibilityDepts: 6,
+    rfqReference: "HLPL-ALFL-SAL-SOR-01",
+    linkedProjectCode: "HLPL-BCU-02",
     createdAt: "2026-10-06",
-    updatedAt: "2026-10-08",
+    updatedAt: "2026-10-15",
   },
   {
     id: "enq-eskt-112",
@@ -898,6 +1017,7 @@ export function CustomerRegisterModal({
       "Customer Code",
       "Customer Name",
       "Division / Segment",
+      "Customer Type",
       "SPOC Contact",
       "Email Address",
       "Phone Number",
@@ -906,6 +1026,7 @@ export function CustomerRegisterModal({
       "Account Status",
       "Active Opportunities",
       "Assigned Sales Lead",
+      "Additional Contacts",
       "Registered Date",
     ];
 
@@ -913,6 +1034,7 @@ export function CustomerRegisterModal({
       `"${c.code}"`,
       `"${c.name}"`,
       `"${c.division}"`,
+      `"${c.customerType ?? "Tier-1 Commercial OEM"}"`,
       `"${c.spocName}"`,
       `"${c.spocEmail}"`,
       `"${c.spocPhone}"`,
@@ -921,6 +1043,7 @@ export function CustomerRegisterModal({
       `"${c.status}"`,
       `"${c.activeOpportunitiesCount}"`,
       `"${c.assignedLead}"`,
+      `"${c.additionalContacts?.map((ac) => `${ac.name} (${ac.designation})`).join("; ") || "None recorded"}"`,
       `"${c.createdAt}"`,
     ]);
 
@@ -1034,12 +1157,30 @@ export function CustomerRegisterModal({
                 <tr key={c.id} className="transition hover:bg-secondary/40">
                   <td className="p-3 font-mono font-semibold text-primary">{c.code}</td>
                   <td className="p-3">
-                    <p className="font-semibold text-foreground">{c.name}</p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="font-semibold text-foreground">{c.name}</p>
+                      {c.customerType && (
+                        <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-primary">
+                          {c.customerType}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-muted-foreground">{c.division}</p>
                   </td>
                   <td className="p-3">
                     <p className="font-medium text-foreground">{c.spocName}</p>
                     <p className="text-[11px] text-muted-foreground">{c.assignedLead}</p>
+                    {c.additionalContacts && c.additionalContacts.length > 0 && (
+                      <div className="mt-1 space-y-0.5 border-t border-border/50 pt-1 text-[10px] text-muted-foreground">
+                        <span className="font-semibold text-foreground/80">Secondary Contacts:</span>
+                        {c.additionalContacts.map((ac, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            <span className="text-foreground">• {ac.name}</span>
+                            <span className="text-[9px] opacity-75">({ac.designation})</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="p-3 space-y-0.5">
                     <div className="flex items-center gap-1.5 text-muted-foreground">

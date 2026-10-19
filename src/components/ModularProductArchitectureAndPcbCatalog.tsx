@@ -178,6 +178,41 @@ export const defaultPcbCatalog: PcbAsset[] = [
     sampleLeadTimeWeeks: 1,
     description: "Specialized high-voltage step-down module for direct connection to 48V/72V/96V EV light electric vehicle packs.",
   },
+  {
+    id: "PCB-LIB-004",
+    code: "HLPL-MOD-PCB-04-BLE",
+    title: "BLE 5.2 Sensor Hub & AIS-140 Telematics Motherboard (OEM Modification)",
+    revision: "Rev 01 (Modified)",
+    category: "Telematics Motherboard",
+    mcu: "STM32F405VGT6 + Nordic nRF52840 (BLE 5.2 SoC)",
+    modem: "Quectel EC200U-CN (4G Cat-1 + GNSS)",
+    voltageRange: "9V - 36V Automotive Transient Protected",
+    layerCount: 4,
+    dimensions: "98 x 68 mm",
+    interfaces: [
+      "BLE 5.2 2.4GHz RF Ceramic Chip Antenna",
+      "CAN 2.0B / J1939 @ 250k/500k",
+      "RS-232 / Diagnostic K-Line",
+      "1-Wire iButton Reader",
+      "4x Opto-isolated DI",
+      "2x 0-32V AI",
+      "Internal 3.7V Lithium-ion Battery Charger (300mA CC/CV)",
+    ],
+    compliance: [
+      "AIS-140 Annexure 8 (iCAT TAC)",
+      "ETSI EN 300 328 (BLE RF Radiated Power)",
+      "IS 16046 (Part 2) / IEC 62133-2 (3.7V Li-ion Battery)",
+      "UN 38.3 Transport Safety",
+      "ISO 7637-2 Level IV Transients",
+    ],
+    fabricationSpec: "4-Layer FR4, TG170, 1.6mm, ENIG Surface Finish, Controlled 50Ω RF Microstrip",
+    schematicRef: "HLPL-BCU-EHW-SCH-01",
+    gerberArchive: "HLPL-MOD-PCB-04-BLE-REV01-GERBER.zip",
+    electronicBomItemCount: 168,
+    status: "Under Revision",
+    sampleLeadTimeWeeks: 4,
+    description: "OEM variant of ready telematics motherboard with integrated Nordic nRF52840 BLE 5.2 radio for wireless TPMS and cold-chain temperature tags. Multi-department feasibility sign-off complete.",
+  },
 ];
 
 export const defaultHarnessCatalog: HarnessAsset[] = [
@@ -334,14 +369,28 @@ export const defaultProjectModularConfigs: Record<string, ProjectModularConfigur
   },
   "HLPL-SLCT-01": {
     projectId: "HLPL-SLCT-01",
-    projectTitle: "Select Motors Plug-and-Play AIS-140 Fleet Tracker",
+    projectTitle: "Select Motors AIS-140 GPS Telematics Tracker (Reusable Platform)",
+    architectureMode: "reusable_platform",
+    selectedPcbIds: ["PCB-LIB-001"], // 100% Reusable Proven Motherboard (Quectel EC200U-CN, STM32F405, 3.7V Li-ion)!
+    selectedHarnessId: "HARN-LIB-002", // Standard OBD-II Pass-through
+    selectedFirmwareId: "FW-LIB-001", // Pre-Certified Turnkey AIS-140 Stack v2.4.1
+    selectedEnclosureId: "ENC-LIB-001", // Proven IP67 Polycarbonate
+    customFirmwareNotes: "Zero code modification needed. Pre-certified TAC payload configuration.",
+    lastUpdated: "2026-10-15 11:30 IST",
+    configuredBy: "Avery Vale (EHW Lead) & Devon Lane (ESW Lead)",
+  },
+  "HLPL-BCU-02": {
+    projectId: "HLPL-BCU-02",
+    projectTitle: "Ashok Leyland Telematics & BLE Sensor Gateway (OEM Modification)",
     architectureMode: "hybrid_variant",
-    selectedPcbIds: ["PCB-LIB-001"], // Same Core Motherboard!
-    selectedHarnessId: "HARN-LIB-002", // Different Harness: OBD-II Pass-through!
-    selectedFirmwareId: "FW-LIB-001", // Same Firmware Stack!
-    selectedEnclosureId: "ENC-LIB-001", // Same Enclosure!
-    lastUpdated: "2026-10-14 18:20 IST",
-    configuredBy: "Devon Lane (ESW Lead)",
+    selectedPcbIds: ["PCB-LIB-004"], // Modified Motherboard with BLE 5.2 Nordic nRF52840!
+    selectedHarnessId: "HARN-LIB-001", // Molex MX150 Sealed Automotive Harness
+    selectedFirmwareId: "FW-LIB-002", // Dual CAN Gateway & BLE Sensor Hub Firmware
+    selectedEnclosureId: "ENC-LIB-001", // IP67 Polycarbonate with RF Transparent Window
+    customFirmwareNotes: "Zephyr BLE stack for TPMS & temperature probes with AIS-140 MQTT uplink",
+    customEnclosureNotes: "SABIC Lexan enclosure with 2.4GHz RF transparent window over BLE chip antenna",
+    lastUpdated: "2026-10-15 17:45 IST",
+    configuredBy: "Avery Vale (EHW Lead) & Devon Lane (ESW Lead)",
   },
   "HLPL-XLINK-03": {
     projectId: "HLPL-XLINK-03",

@@ -86,6 +86,7 @@ import { PurchasingBOMReviewTable } from "@/components/PurchasingBOMReviewTable"
 import { PurchasingCommandCenter, type PurchasingSubView } from "@/components/PurchasingCommandCenter";
 import { CustomerManagementFullPageView } from "@/components/CustomerManagementFullPageView";
 import { QualityAssuranceDVPReviewTable } from "@/components/QualityAssuranceDVPReviewTable";
+import { ProjectLifecyclePlayerAndDetail } from "@/components/ProjectLifecyclePlayerAndDetail";
 import { buildDocumentDraft, type DraftSource } from "@/lib/document-draft";
 import { assertApprovalDecision } from "@/lib/approval-workflow";
 import { commitLatestState, patchRecord } from "@/lib/portal-store";
@@ -413,7 +414,8 @@ const raciDepartments = ["SAL", "EHW", "ESW", "MECH", "PUR", "QA", "EMF", "TST",
 const projectDocumentProfiles: Record<string, ProjectDocumentProfile> = {
   "HLPL-OBD4-01": { name: "4G OBD-II Smart Telematics Tracker & Fleet Gateway", customer: "Ashok Leyland Limited · Fleet Solutions Division, Chennai", contact: "Mr. K. Ramanathan · General Manager Telematics", quantity: "25,000 units / year", techSpec: "4G Cat-1 · J1962 OBD-II · Dual CAN · GNSS · BLE 5.2 Sensor Hub", commercialValue: "₹11,25,00,000 · $1.35M", environmental: "12V / 24V (9V–36V) · −40°C to +85°C · IP54 / IP67 Mated", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · ISO 15031 / SAE J1962 · RoHS" },
   "HLPL-AI4T-01": { name: "Tata Ace EV 4G Telematics Gateway", customer: "Tata Motors Limited · EV Fleet Division, Pune", contact: "Mr. Rajesh Sharma · Lead D&D EV", quantity: "50,000 units / year", techSpec: "4G Cat-1 · IP67 · CAN J1939 · Dual SIM · GNSS", commercialValue: "₹20,33,50,000 · $2.45M", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100/Q200 · ISO 7637-2 · RoHS / REACH" },
-  "HLPL-SLCT-01": { name: "AIS-140 GPS Gateway", customer: "Select Motors Limited", contact: "Demo client contact · review required", quantity: "10,000 units / year", techSpec: "AIS-140 GNSS gateway · 4G · OBD-II · IP67", commercialValue: "₹4,12,00,000 · illustrative", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS" },
+  "HLPL-BCU-02": { name: "Ashok Leyland Telematics & BLE Sensor Gateway (OEM Modification)", customer: "Ashok Leyland Limited · Commercial Vehicle Telematics, Chennai", contact: "Mr. K. Ramanathan · General Manager Telematics", quantity: "15,000 units / year", techSpec: "4G Cat-1 · Dual CAN J1939 · BLE 5.2 Nordic nRF52840 · 3.7V NABL Li-ion Battery · iCAT TAC", commercialValue: "₹6,72,00,000 · $810k", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 Annexure 8 · ETSI EN 300 328 · IS 16046 / UN 38.3 · ISO 7637-2" },
+  "HLPL-SLCT-01": { name: "Select Motors AIS-140 GPS Telematics Tracker (Reusable Platform)", customer: "Select Motors Limited · Telematics Division, Noida", contact: "Mr. Vikram Singhania · Lead Telematics", quantity: "10,000 units / year", techSpec: "100% Platform Reused PCB · 4G Cat-1 · OBD-II · 3.7V Li-ion Battery · IP67", commercialValue: "₹3,45,00,000 · $415k", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AIS-140 · AEC-Q100 · ISO 7637-2 · RoHS" },
   "HLPL-XLINK-03": { name: "Commercial Fleet Gateway", customer: "Commercial Fleet Solutions Limited", contact: "Demo fleet programme SPOC", quantity: "25,000 units / year", techSpec: "Dual CAN · OBD-II · GNSS · 4G fleet gateway", commercialValue: "Commercial value pending controlled review", environmental: "12V / 24V · −40°C to +85°C · IP67", compliance: "AEC-Q100 · ISO 7637-2 · RoHS / REACH" },
 };
 function defaultRaciMatrix(): RaciMatrix {
@@ -1570,27 +1572,30 @@ const demoPortal = (): PortalState => {
       ["HLPL-SLCT-QA-DVP-01", "HLPL-SLCT-TST-EOL-01"],
       { approval: "PENDING · NEVER AUTO-APPROVED", release: "Not released" },
     ),
-    task("DEMO-TASK-EHW-ECN-002", "ehw", "Review & approve ECN-002 MOSFET package layout change", "Critical", today, "Avery Vale", "HLPL-BCU-02", "HLPL-BCU-02 · Body Control Unit Gen 3", "Thermal dissipation layout review · due today 14:00", true),
-    task("DEMO-TASK-QA-CONTRACT", "qa", "Sign Contract Review Record HLPL/F/MKT/01 for Tata Ace EV Telematics", "High", today, "Jordan Blake", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Cross-functional sign-off · due today 16:30", true),
+    task("DEMO-TASK-EHW-BLE-MOD", "ehw", "Review & approve ECN-2026-BLE-01: Nordic nRF52840 layout on PCB-04", "Critical", today, "Avery Vale", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "Nordic BLE 5.2 2.4GHz RF trace impedance matching & 3.7V battery charger layout review", true),
+    task("DEMO-TASK-QA-CONTRACT", "qa", "Sign Contract Review Record HLPL/F/MKT/01 for Select Motors Telematics", "High", today, "Jordan Blake", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Cross-functional sign-off · due today 16:30", true),
+    task("DEMO-TASK-QA-ICAT-TAC", "qa", "Coordinate iCAT Manesar witness testing & Form 22 TAC for Ashok Leyland Gateway", "High", today, "Jordan Blake", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "iCAT Annexure 8 testing & NABL 3.7V Li-ion battery certificate review", true),
     task("DEMO-TASK-EMF-REFLOW", "emf", "Verify reflow oven 10-zone thermal profile for SMT Line 2 lot BATCH-04", "High", today, "Casey Rowan", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Process verification · due today 11:00"),
-    task("DEMO-TASK-ESW-PR142", "esw", "Merge PR #142 CAN J1939 telemetry parser with unit test coverage above 90%", "Normal", today, "Devon Lane", "HLPL-XLINK-03", "HLPL-XLINK-03 · Commercial Vehicle Gateway", "Peer review and CI check · due today 17:00"),
+    task("DEMO-TASK-ESW-BLE-GATT", "esw", "Implement FreeRTOS Bluetooth GATT profiles for wireless TPMS & temperature sensors", "High", today, "Devon Lane", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "BLE 5.2 GATT parser integration & AIS-140 MQTT aggregation", false),
+    task("DEMO-TASK-FIN-NRE-BLE", "fin", "Verify NRE tooling invoice & 30% advance commercial deposit for Ashok Leyland", "High", today, "Priya Voss", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "₹1.85L PCB spin NRE + ₹2.40L iCAT & NABL agency testing review", true),
     task("DEMO-TASK-FIN-ADVANCE", "fin", "Approve advance billing payment release for EC200U reel batch", "High", today, "Priya Voss", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Financial commitment · due today 15:00", true),
     task("DEMO-TASK-PUR-FIBOCOM", "pur", "Verify second-source vendor capacity scorecard F-PUR-16 for Fibocom", "Normal", today, "Morgan Reed", "HLPL-XLINK-03", "HLPL-XLINK-03 · Commercial Vehicle Gateway", "Capacity scorecard review · due today 18:00"),
     task("DEMO-TASK-HR-IPC", "hrops", "Log IPC-A-610 workmanship training attendance in Skill Matrix HLPL/F/HR/03", "Low", today, "Taylor Quinn", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Competency record update · due today 17:30"),
     task("DEMO-TASK-SIT-BACKUP", "sit", "Execute offsite encrypted backup replication drill for telemetry DB", "Normal", today, "Kai Morgan", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Recovery evidence capture · due today 19:00"),
-    task("DEMO-TASK-MECH-CLEARANCE", "mech", "Conduct 3D STEP clearance check for BCU Gen 3 connector harness", "High", tomorrow, "Samira Holt", "HLPL-BCU-02", "HLPL-BCU-02 · Body Control Unit Gen 3", "Harness clearance review · tomorrow"),
+    task("DEMO-TASK-MECH-CLEARANCE", "mech", "Conduct 3D STEP clearance check for BCU Gen 3 connector harness", "High", tomorrow, "Samira Holt", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "Harness clearance review · tomorrow"),
     task("DEMO-TASK-TST-CAL", "tst", "Calibrate automated EOL jig JIG-SLCT-01 optical barcode scanner", "Normal", tomorrow, "Mina Cross", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Jig calibration check · tomorrow"),
-    task("DEMO-TASK-SAL-QUO", "sales", "Transmit revised quotation HLPL-BCU-SAL-QUO-02 to Mahindra Electric", "High", tomorrow, "Riley Stone", "HLPL-BCU-02", "HLPL-BCU-02 · Body Control Unit Gen 3", "Commercial response draft · tomorrow"),
+    task("DEMO-TASK-SAL-QUO", "sales", "Transmit revised quotation HLPL-BCU-SAL-QUO-02 to Ashok Leyland SCM", "High", tomorrow, "Riley Stone", "HLPL-BCU-02", "HLPL-BCU-02 · Ashok Leyland Telematics & BLE Gateway", "Commercial response draft · tomorrow"),
     task("DEMO-TASK-QA-PPAP", "qa", "Review Supplier PPAP Level 3 submission F-PUR-15 for Molex connector", "High", tomorrow, "Jordan Blake", "HLPL-SLCT-01", "HLPL-SLCT-01 · AIS-140 GPS/4G Telematics Gateway", "Supplier evidence review · tomorrow"),
     task("DEMO-TASK-EMF-5S", "emf", "Conduct pre-manufacturing 5S audit for through-hole assembly station", "Normal", tomorrow, "Casey Rowan", "HLPL-PST-01", "HLPL-PST-01 · Power Shuttle Transmission Unit", "Readiness audit · tomorrow"),
     task("DEMO-TASK-PUR-MLCC", "pur", "Audit lead-time variance report for passive MLCC capacitors", "Normal", tomorrow, "Morgan Reed", "HLPL-EFAN-01", "HLPL-EFAN-01 · High-Power eFan Speed Controller", "Supply risk review · tomorrow"),
   ];
   const projectProfiles = [
-    ["HLPL-SLCT-01", "AIS-140 Intelligent 4G Telematics Tracker", "Tata Motors Limited · EV Fleet Division", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
-    ["HLPL-BCU-02", "Body Control Unit Gen 3", "Mahindra Electric ", "Stage 5 · Pilot Build", "24V", "IP67", "$52.00"],
-    ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Ashok Leyland Fleet ", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
-    ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors ", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
-    ["HLPL-PST-01", "Power Shuttle Transmission Unit", "Escorts Kubota ", "Stage 9 · Mass Production", "24V", "IP67", "$64.50"],
+    ["HLPL-SLCT-01", "Select Motors AIS-140 GPS Telematics Tracker (Reusable Platform)", "Select Motors Limited · Telematics Division", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
+    ["HLPL-BCU-02", "Ashok Leyland Telematics & BLE Sensor Gateway (OEM Modification)", "Ashok Leyland Limited · Commercial Vehicle Telematics", "Stage 2 · Multi-Dept Feasibility", "12V / 24V", "IP67", "$38.57"],
+    ["HLPL-AI4T-01", "Tata Ace EV 4G Telematics Gateway", "Tata Motors Limited · EV Fleet Division", "Stage 8 · Type Approval & SCM", "12V / 24V", "IP67", "$35.42"],
+    ["HLPL-XLINK-03", "Commercial Vehicle Gateway", "Commercial Fleet Solutions Limited", "Stage 4 · PoC", "24V", "IP67", "$44.10"],
+    ["HLPL-EFAN-01", "High-Power eFan Speed Controller", "Sonalika Tractors Limited", "Stage 2 · Feasibility", "48V", "IP68", "$29.80"],
+    ["HLPL-PST-01", "Power Shuttle Transmission Unit", "Escorts Kubota Limited", "Stage 9 · Mass Production", "24V", "IP67", "$64.50"],
   ] as const;
   projectProfiles.slice(1).forEach(([id, title, client, stage, voltage, enclosure, bom]) => {
     records.push(make(id, "ehw", "Project", title, "In review", "High", stage, [], { client, currentStage: stage, voltage, enclosure, actualBom: `${bom} · illustrative`, pmss: `${id}-PMSS-00` }));
@@ -3540,6 +3545,7 @@ function Portal() {
           simulation={ai4tSimulation}
           initialTab={ai4tInitialTab}
           projectId={selectedProjectId}
+          onSelectProject={(id) => setSelectedProjectId(id)}
           modularConfig={(portal?.modularConfigs ?? defaultProjectModularConfigs)[selectedProjectId || "HLPL-AI4T-01"]}
           onKickoffComplete={(path, deliverables) => {
             if (!portal.demoLoaded) { announce("Lifecycle walkthrough is available only in DEMO. Production gate progression requires the verified authenticated workflow contract."); return; }
@@ -4067,6 +4073,7 @@ function Ai4tLifecycleHub({
   onOpenDocument,
   initialTab,
   projectId = "HLPL-AI4T-01",
+  onSelectProject,
   onKickoffComplete,
   modularConfig,
 }: {
@@ -4082,11 +4089,13 @@ function Ai4tLifecycleHub({
   onOpenDocument: (document: ControlledDocument) => void;
   initialTab?: ("stages" | "feasibility" | "binder") | undefined;
   projectId?: string | undefined;
+  onSelectProject?: ((id: string) => void) | undefined;
   onKickoffComplete?: ((path: "poc" | "pilot", deliverables: string[]) => void) | undefined;
   modularConfig?: ProjectModularConfiguration | undefined;
 }) {
   const [dossier, setDossier] = useState<(typeof ai4tDossier)[number] | null>(null);
   const [tab, setTab] = useState<"stages" | "feasibility" | "binder">(initialTab ?? "stages");
+  const activeProfile = projectDocumentProfiles[projectId] ?? projectDocumentProfiles["HLPL-AI4T-01"]!;
   const current = ai4tStages[simulation.stage] ?? ai4tStages[0];
   const progress = Math.round(((simulation.stage + 1) / ai4tStages.length) * 100);
   const accessibleDossier = persona.kind === "client"
@@ -4101,8 +4110,8 @@ function Ai4tLifecycleHub({
         <div className="ops-section-header flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Enterprise Automotive Lifecycle & Gate Engine (IATF 16949 / AIS-140)</p>
-            <h3 className="mt-1 text-base font-semibold">HLPL-AI4T-01 · Tata Ace EV 4G Telematics Gateway</h3>
-            <p className="mt-1 text-xs text-muted-foreground">50,000 units/year · ₹20.33 Cr · Commercial baseline locked under IATF 16949 APQP Stage Gate review.</p>
+            <h3 className="mt-1 text-base font-semibold">{projectId} · {activeProfile.name}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{activeProfile.customer} · {activeProfile.quantity} · {activeProfile.commercialValue}</p>
           </div>
           <Status status={simulation.stage === ai4tStages.length - 1 ? "Released" : "In review"} />
         </div>
@@ -4117,7 +4126,32 @@ function Ai4tLifecycleHub({
         <button onClick={() => setTab("feasibility")} className={`rounded-md px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 ${tab === "feasibility" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}><Lock className="size-3.5" /> Feasibility & Req Lock Gate (Stage 2-5)</button>
         <button onClick={() => setTab("binder")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "binder" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Master dossier binder</button>
       </div>
-      {tab === "stages" && <><section className="mt-5 grid gap-2 sm:grid-cols-3">
+      {tab === "stages" && (
+        <>
+          {/* Interactive Playback Stepper & Page-by-Page Distributed View */}
+          <div className="mt-4">
+            <ProjectLifecyclePlayerAndDetail
+              activeProjectId={projectId}
+              onSelectProject={(newId) => {
+                if (onSelectProject) onSelectProject(newId);
+              }}
+              currentStage={simulation.stage}
+              onJumpToStage={(stageIdx) => onJump(stageIdx)}
+              persona={persona}
+              onOpenPrintable={onOpenPrintable}
+            />
+          </div>
+
+          <div className="mt-6 border-t border-border pt-4">
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="font-mono text-xs font-bold text-foreground">
+                Automotive Stage Gate Interlocks & Verification Matrix
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {persona.kind === "admin" ? "Admin Mode · Direct Jump Enabled" : "Strict Gate Interlocks Active"}
+              </span>
+            </div>
+            <section className="grid gap-2 sm:grid-cols-3">
         {ai4tStages.map(([stage, title], index) => {
           const isSchematicPrereqMet = simulation.stage >= 3;
           const isBlocked = (index === 4 || index === 6 || index === 7 || index === 8) && !isSchematicPrereqMet;
@@ -4176,6 +4210,7 @@ function Ai4tLifecycleHub({
           );
         })}
       </section>
+      </div>
       <div className="mt-5">
         <FeasibilityAndHardwareKickoff
           currentStageIndex={simulation.stage}
@@ -4203,7 +4238,9 @@ function Ai4tLifecycleHub({
         <div className="divide-y divide-border">
           {accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}
         </div>
-      </section></>}
+      </section>
+        </>
+      )}
       {tab === "feasibility" && (
         <div className="mt-5">
           <FeasibilityAndHardwareKickoff
