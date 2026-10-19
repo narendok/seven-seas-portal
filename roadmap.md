@@ -59,3 +59,8 @@
 - [x] Compare the browser-local inventory workspace with the read-only SSM one phase 8 reference.
 - [x] Expand the local inventory register with the reference's searchable component fields, broader controlled categories, stock states, project links and research-team allocations.
 - [x] Derive the assigned department directly from the selected research owner; do not ask the allocator to choose it separately.
+
+## 6. TEST-Only Authenticated Access
+- [ ] Enable real TEST email/password sign-in against the existing Lovable Cloud backend for Admin, Client, 12 active department leads, and one synthetic employee per department; resolve server membership on every session and keep local DEMO state separate.
+- [ ] Provision only synthetic TEST identities into a dedicated DEMO organization, with no membership or access path to real organizations.
+- [ ] Verify independent localhost and Lovable preview sessions, server-side role identity, logout/session restoration, and cross-department/client denials. Workflow persistence migration is explicitly deferred.

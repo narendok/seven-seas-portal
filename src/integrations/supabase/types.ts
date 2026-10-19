@@ -854,6 +854,19 @@ export type Database = {
         Args: { _organization_id: string }
         Returns: boolean
       }
+      resolve_test_membership: {
+        Args: never
+        Returns: {
+          department_code: string
+          department_name: string
+          display_name: string
+          is_client: boolean
+          membership_id: string
+          organization_id: string
+          organization_name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "department_lead" | "member" | "viewer"
