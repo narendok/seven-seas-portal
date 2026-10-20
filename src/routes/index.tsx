@@ -2150,6 +2150,7 @@ function Portal() {
   const getTestMembershipFn = useServerFn(getTestMembership);
   const [testMembership, setTestMembership] = useState<TestMembership | null>(null);
   const [testAuthReady, setTestAuthReady] = useState(false);
+  const [showSharedTestWorkspace, setShowSharedTestWorkspace] = useState(false);
 
   const isInvalidUrlRole =
     typeof window !== "undefined" &&
@@ -2306,7 +2307,7 @@ function Portal() {
   }, []);
 
   const update = async (recipe: (state: PortalState) => PortalState): Promise<boolean> => {
-    if (testMembership) { setNotice("Shared TEST writes must use the authenticated workspace."); return false; }
+    if (testMembership) { setNotice("This view contains browser-local examples. Open Shared TEST records to save account data."); return false; }
     try {
       const save = (state: PortalState) => window.localStorage.setItem(storeKey, JSON.stringify(state));
       const next = await commitLatestState(readPortal, save, recipe, commit => navigator.locks ? navigator.locks.request(storeKey, commit) : Promise.resolve(commit()));
@@ -2382,6 +2383,7 @@ function Portal() {
   const handleLogout = async () => {
     if (testMembership) await supabase.auth.signOut();
     setTestMembership(null);
+    setShowSharedTestWorkspace(false);
     window.localStorage.removeItem("scms_auth_session");
     const url = new URL(window.location.href);
     url.searchParams.delete("role");
@@ -2397,6 +2399,7 @@ function Portal() {
     const matched = personas.find((item) => item.id === personaId);
     if (!matched) throw new Error("This TEST account does not have a supported active department membership.");
     setTestMembership(membership);
+    setShowSharedTestWorkspace(false);
     setSignedOut(false);
     switchPersona(matched);
   };
@@ -3024,7 +3027,12 @@ function Portal() {
     setModal("document");
   };
   if (!testAuthReady) return <main className="grid min-h-screen place-items-center bg-background text-foreground">Checking authenticated session…</main>;
-  if (testMembership) return <SharedTestWorkspace membership={testMembership} onLogout={handleLogout} darkMode={darkMode} />;
+  if (testMembership && showSharedTestWorkspace) return <div className={darkMode ? "dark" : ""}>
+    <div className="border-b border-border bg-card px-4 py-2 text-foreground">
+      <button type="button" onClick={() => setShowSharedTestWorkspace(false)} className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-secondary">Back to portal</button>
+    </div>
+    <SharedTestWorkspace membership={testMembership} onLogout={handleLogout} darkMode={darkMode} />
+  </div>;
   if (signedOut) return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><p className="text-[11px] font-bold uppercase text-primary">TEST ONLY</p><h1 className="mt-1 text-xl font-semibold">Signed out</h1><p className="mt-3 text-sm text-muted-foreground">Sign in with a provisioned TEST account. Browser-local demo records remain separate.</p><button type="button" disabled={!testAuthReady} onClick={() => setLoginModalOpen(true)} className="mt-5 rounded border border-border px-4 py-2 text-sm disabled:opacity-50">Sign in to TEST workspace</button></section><DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode currentPersonaId="" onClose={() => setLoginModalOpen(false)} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} /></main>;
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
@@ -3115,6 +3123,7 @@ function Portal() {
                   : `All departments · ${portal?.setup.location ?? ""}`}
               </p>
             </button>
+            {testMembership && <HeaderAction label="Shared TEST records" icon={Layers} onClick={() => setShowSharedTestWorkspace(true)} />}
             <PersonaSwitcher
               persona={persona}
               onSelect={switchPersona}
