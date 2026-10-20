@@ -162,6 +162,18 @@ export const DEPARTMENT_CREDENTIALS: DepartmentCredential[] = [
   },
 ];
 
+/** Existing synthetic employees only; permissions come from server membership. */
+export const EMPLOYEE_TEST_CREDENTIALS: DepartmentCredential[] = DEPARTMENT_CREDENTIALS
+  .filter((lead) => !["TST", "ADMIN", "OEM"].includes(lead.departmentCode))
+  .map((lead) => ({
+    ...lead,
+    id: `employee-${lead.departmentCode.toLowerCase()}`,
+    leadName: `${lead.departmentCode} TEST Employee`,
+    email: `employee.${lead.departmentCode.toLowerCase()}@example.com`,
+    password: `Demo@${lead.departmentCode}EMP2026`,
+    roleTitle: `${lead.departmentCode} Employee`,
+  }));
+
 export type DepartmentLeadLoginModalProps = {
   isOpen: boolean;
   demoMode?: boolean | undefined;
@@ -496,6 +508,21 @@ export function DepartmentLeadLoginModal({
                     </button>
                   ))}
                 </div>
+                {testMode && !demoMode && <>
+                  <p className="text-xs font-bold text-foreground">Department employee TEST accounts</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {EMPLOYEE_TEST_CREDENTIALS.map((cred) => <button key={cred.id} type="button"
+                      onClick={() => handleAutofill(cred)}
+                      className={`flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition-all hover:border-primary/50 hover:bg-accent/40 ${email.toLowerCase() === cred.email.toLowerCase() ? "border-primary bg-primary/5" : "border-border/80 bg-card/60"}`}>
+                      <span className={`grid size-7 shrink-0 place-items-center rounded-md border font-mono text-[10px] font-bold ${cred.badgeTone}`}>{cred.departmentCode}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-foreground">{cred.leadName}</p>
+                        <p className="truncate font-mono text-[10px] text-muted-foreground">{cred.email}</p>
+                        <p className="mt-0.5 font-mono text-[9px] text-primary/80">Password: {cred.password}</p>
+                      </div>
+                    </button>)}
+                  </div>
+                </>}
               </div>
             </>
           )}

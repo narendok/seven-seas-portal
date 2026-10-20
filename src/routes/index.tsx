@@ -3791,7 +3791,7 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
-      <DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode onClose={() => setLoginModalOpen(false)} currentPersonaId={persona.id} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} />
+      <DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode onClose={() => setLoginModalOpen(false)} currentPersonaId={testMembership?.role === "member" ? "" : persona.id} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} />
       {customerRegisterOpen && (
         <CustomerRegisterModal
           customers={portal.customersRegistry ?? defaultCustomers}
