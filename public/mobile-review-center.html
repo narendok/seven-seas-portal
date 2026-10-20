@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSM One — Android Planning Review Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .code-view { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .markdown-body { color: #f1f5f9; line-height: 1.6; }
+    .markdown-body h1 { font-size: 1.75rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+    .markdown-body h2 { font-size: 1.4rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #60a5fa; border-bottom: 1px solid #1e293b; padding-bottom: 0.25rem; }
+    .markdown-body h3 { font-size: 1.15rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #93c5fd; }
+    .markdown-body p { margin-bottom: 0.75rem; color: #cbd5e1; }
+    .markdown-body ul, .markdown-body ol { margin-left: 1.5rem; margin-bottom: 0.75rem; }
+    .markdown-body ul { list-style-type: disc; }
+    .markdown-body ol { list-style-type: decimal; }
+    .markdown-body li { margin-bottom: 0.25rem; }
+    .markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.875rem; }
+    .markdown-body th { background: #1e293b; color: #f8fafc; text-align: left; padding: 0.5rem 0.75rem; border: 1px solid #334155; font-weight: 600; }
+    .markdown-body td { padding: 0.5rem 0.75rem; border: 1px solid #334155; }
+    .markdown-body tr:nth-child(even) { background: rgba(30, 41, 59, 0.4); }
+    .markdown-body code { background: #1e293b; color: #38bdf8; padding: 0.15rem 0.35rem; border-radius: 4px; font-size: 0.85em; font-family: ui-monospace, monospace; }
+    .markdown-body pre { background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155; overflow-x: auto; margin-bottom: 1rem; }
+    .markdown-body pre code { background: transparent; padding: 0; color: #e2e8f0; }
+    .markdown-body blockquote { border-left: 4px solid #38bdf8; padding-left: 1rem; margin-left: 0; margin-bottom: 0.75rem; color: #94a3b8; font-style: italic; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-900/30 text-lg">
+        ⚡
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-bold text-white tracking-tight">SSM One — Android Planning Review Center</h1>
+          <span class="text-[11px] font-semibold uppercase tracking-wider bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 px-2.5 py-0.5 rounded-full">Interactive Triage Workbench</span>
+          <span class="text-[11px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">http://localhost:3333</span>
+        </div>
+        <p class="text-xs text-slate-400">Review, consolidate, merge, and clean up scattered Android planning documents & backend contracts</p>
+      </div>
+    </div>
+
+    <!-- Triage Counters & Actions -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5 bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium">
+        <span class="text-slate-400">Triage:</span>
+        <span id="statKeep" class="text-emerald-400 font-bold">0 Keep</span>
+        <span class="text-slate-600">•</span>
+        <span id="statMerge" class="text-amber-400 font-bold">0 Merge</span>
+        <span class="text-slate-600">•</span>
+        <span id="statRemove" class="text-rose-400 font-bold">0 Remove</span>
+        <span class="text-slate-600">•</span>
+        <span id="statUnset" class="text-slate-400">54 Pending</span>
+      </div>
+
+      <button onclick="openExportModal()" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Export Cleanup Plan
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Split Layout -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- Left Column: File Explorer (340px) -->
+    <aside class="w-80 md:w-96 bg-slate-900/60 border-r border-slate-800 flex flex-col flex-shrink-0">
+      <!-- Search & Filters -->
+      <div class="p-3 border-b border-slate-800/80 space-y-2">
+        <div class="relative">
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search 54 planning files..."
+            oninput="filterFiles()"
+            class="w-full bg-slate-950/90 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+          />
+          <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs">✕</button>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex items-center gap-1 overflow-x-auto pb-1 text-[11px] custom-scrollbar">
+          <button onclick="setFilter('all')" class="filter-chip px-2 py-0.5 rounded-full font-medium bg-indigo-600 text-white" data-cat="all">All (54)</button>
+          <button onclick="setFilter('master')" class="filter-chip px-2 py-0.5 rounded-full font-medium bg-slate-800 text-slate-400 hover:text-slate-200" data-cat="master">Master Plans</button>
+          <button onclick="setFilter('contracts')" class="filter-chip px-2 py-0.5 rounded-full font-medium bg-slate-800 text-slate-400 hover:text-slate-200" data-cat="contracts">Contracts</button>
+          <button onclick="setFilter('loose')" class="filter-chip px-2 py-0.5 rounded-full font-medium bg-slate-800 text-slate-400 hover:text-slate-200" data-cat="loose">Root Loose</button>
+          <button onclick="setFilter('evidence')" class="filter-chip px-2 py-0.5 rounded-full font-medium bg-slate-800 text-slate-400 hover:text-slate-200" data-cat="evidence">Evidence</button>
+        </div>
+      </div>
+
+      <!-- File List -->
+      <div id="fileListContainer" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-4">
+        <!-- Rendered dynamically -->
+      </div>
+    </aside>
+
+    <!-- Center/Right Column: Document Review & Triage Panel -->
+    <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+
+      <!-- Active File Action Bar -->
+      <div id="fileHeader" class="bg-slate-900/90 border-b border-slate-800 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div id="activeIcon" class="w-8 h-8 rounded-lg bg-indigo-950 border border-indigo-700/60 flex items-center justify-center text-sm font-bold text-indigo-400">
+            📄
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="activeFilename" class="text-sm font-bold text-white tracking-tight">Select a document to inspect</h2>
+              <span id="activeBadge" class="hidden text-[10px] font-semibold px-2 py-0.5 rounded-full border">Badge</span>
+              <span id="activeSize" class="text-[11px] font-mono text-slate-400">0 KB</span>
+            </div>
+            <p id="activePath" class="text-[11px] font-mono text-slate-400 select-all">Path will appear here</p>
+          </div>
+        </div>
+
+        <!-- 3-Way Triage Selector -->
+        <div class="flex items-center gap-2">
+          <div class="flex items-center rounded-lg bg-slate-950 border border-slate-800 p-1 gap-1">
+            <button
+              id="btnKeep"
+              onclick="setDecision('KEEP')"
+              class="px-3 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-emerald-400 transition flex items-center gap-1"
+            >
+              <span>🟢</span> Keep
+            </button>
+            <button
+              id="btnMerge"
+              onclick="setDecision('MERGE')"
+              class="px-3 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-amber-400 transition flex items-center gap-1"
+            >
+              <span>🟡</span> Merge
+            </button>
+            <button
+              id="btnRemove"
+              onclick="setDecision('REMOVE')"
+              class="px-3 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-rose-400 transition flex items-center gap-1"
+            >
+              <span>🔴</span> Remove
+            </button>
+          </div>
+
+          <!-- View Mode Toggle -->
+          <div class="flex items-center rounded-lg bg-slate-950 border border-slate-800 p-1 text-xs font-medium">
+            <button id="btnViewRendered" onclick="setViewMode('rendered')" class="px-2.5 py-1 rounded bg-slate-800 text-white font-semibold">Preview</button>
+            <button id="btnViewRaw" onclick="setViewMode('raw')" class="px-2.5 py-1 rounded text-slate-400 hover:text-slate-200">Raw</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommendation & Duplicate Alert Banner (if applicable) -->
+      <div id="recommendationBanner" class="hidden bg-slate-900 border-b border-slate-800/80 px-6 py-2.5 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-slate-300">Architectural Recommendation:</span>
+          <span id="recommendationText" class="text-amber-300">...</span>
+        </div>
+        <div id="duplicateHint" class="hidden text-rose-300 text-[11px] font-mono bg-rose-950/60 border border-rose-800/60 px-2 py-0.5 rounded">
+          ⚠️ Duplicate of docs/backend-handoff/...
+        </div>
+      </div>
+
+      <!-- Document Content Body -->
+      <div class="flex-1 overflow-y-auto p-6 custom-scrollbar" id="contentScrollArea">
+        <div id="renderedContainer" class="markdown-body max-w-4xl mx-auto">
+          <div class="text-center py-24 text-slate-500">
+            <div class="text-4xl mb-3">📋</div>
+            <h3 class="text-base font-semibold text-slate-400">No Document Selected</h3>
+            <p class="text-xs text-slate-500 mt-1">Click any planning document on the left sidebar to inspect and triage.</p>
+          </div>
+        </div>
+        <pre id="rawContainer" class="hidden code-view text-xs text-slate-300 whitespace-pre-wrap max-w-5xl mx-auto"></pre>
+      </div>
+    </main>
+  </div>
+
+  <!-- Export Triage Plan Modal -->
+  <div id="exportModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-white">Export Planning Consolidation Plan</h3>
+          <p class="text-xs text-slate-400">Actionable checklist & automation script based on your triage decisions</p>
+        </div>
+        <button onclick="closeExportModal()" class="text-slate-500 hover:text-slate-300">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scrollbar my-4 space-y-4 text-xs">
+        <div>
+          <h4 class="font-bold text-slate-300 mb-1">Triage Summary:</h4>
+          <div id="modalSummary" class="p-3 bg-slate-950 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300"></div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-300 mb-1">Generated PowerShell Cleanup Script (Safe Archive):</h4>
+          <p class="text-[11px] text-slate-400 mb-1">Moves files marked for removal into a safe `SSM-new-app/docs/archive/` folder rather than permanently deleting.</p>
+          <pre id="modalScript" class="p-3 bg-slate-950 rounded-lg border border-slate-800 font-mono text-[11px] text-sky-300 overflow-x-auto select-all"></pre>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+        <button onclick="copyScript()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs">Copy Script to Clipboard</button>
+        <button onclick="closeExportModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let filesData = [];
+    let currentFile = null;
+    let triageDecisions = JSON.parse(localStorage.getItem('scms_planning_triage') || '{}');
+    let activeFilter = 'all';
+    let currentViewMode = 'rendered';
+
+    async function init() {
+      try {
+        const res = await fetch('/api/files');
+        filesData = await res.json();
+        
+        filesData.forEach(f => {
+          if (!triageDecisions[f.path]) {
+            triageDecisions[f.path] = f.defaultAction || 'UNSET';
+          }
+        });
+
+        renderSidebar();
+        updateTriageStats();
+
+        const defaultDoc = filesData.find(f => f.filename.includes('ANDROID_BUILD_PLAN')) || filesData[0];
+        if (defaultDoc) selectFile(defaultDoc.id);
+      } catch (e) {
+        console.error('Failed to load files:', e);
+      }
+    }
+
+    function renderSidebar() {
+      const container = document.getElementById('fileListContainer');
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
+      const categories = {};
+      filesData.forEach(f => {
+        if (query && !f.filename.toLowerCase().includes(query) && !f.path.toLowerCase().includes(query)) {
+          return;
+        }
+        if (activeFilter === 'master' && !f.category.includes('Active Master Plans')) return;
+        if (activeFilter === 'contracts' && !f.category.includes('Contracts')) return;
+        if (activeFilter === 'loose' && !f.category.includes('Root Handoffs')) return;
+        if (activeFilter === 'evidence' && !f.category.includes('Evidence')) return;
+
+        if (!categories[f.category]) categories[f.category] = [];
+        categories[f.category].push(f);
+      });
+
+      let html = '';
+      const catKeys = Object.keys(categories).sort();
+
+      if (catKeys.length === 0) {
+        container.innerHTML = '<div class="text-xs text-slate-500 text-center py-8">No matching files found.</div>';
+        return;
+      }
+
+      catKeys.forEach(cat => {
+        const items = categories[cat];
+        html += `
+          <div>
+            <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1">
+              <span>${cat}</span>
+              <span class="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded font-mono text-slate-300">${items.length}</span>
+            </div>
+            <div class="mt-1 space-y-1">
+        `;
+
+        items.forEach(file => {
+          const isSelected = currentFile && currentFile.id === file.id;
+          const decision = triageDecisions[file.path] || 'UNSET';
+
+          let decisionBadge = '';
+          if (decision === 'KEEP') decisionBadge = '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/80">KEEP</span>';
+          else if (decision === 'MERGE') decisionBadge = '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 border border-amber-800/80">MERGE</span>';
+          else if (decision === 'REMOVE') decisionBadge = '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-950 text-rose-400 border border-rose-800/80">REMOVE</span>';
+
+          html += `
+            <div
+              onclick="selectFile('${file.id}')"
+              class="group cursor-pointer rounded-lg px-2.5 py-2 text-xs transition border flex items-center justify-between ${
+                isSelected
+                  ? 'bg-indigo-950/60 border-indigo-600/70 text-white'
+                  : 'bg-slate-900/40 border-slate-800/60 hover:bg-slate-800/60 text-slate-300'
+              }"
+            >
+              <div class="flex items-center gap-2 overflow-hidden flex-1 mr-2">
+                <span class="text-xs flex-shrink-0">${file.filename.endsWith('.json') ? '📦' : '📄'}</span>
+                <div class="truncate">
+                  <div class="truncate font-medium ${isSelected ? 'text-indigo-200' : 'text-slate-200'}">${file.filename}</div>
+                  <div class="text-[10px] text-slate-500 font-mono truncate">${file.path}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                ${decisionBadge}
+                <span class="text-[10px] font-mono text-slate-500">${Math.round(file.size / 1024)}K</span>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    async function selectFile(fileId) {
+      const file = filesData.find(f => f.id === fileId);
+      if (!file) return;
+      currentFile = file;
+
+      document.getElementById('activeFilename').textContent = file.filename;
+      document.getElementById('activePath').textContent = file.path;
+      document.getElementById('activeSize').textContent = `${(file.size / 1024).toFixed(1)} KB`;
+      
+      const badge = document.getElementById('activeBadge');
+      badge.textContent = file.badge;
+      badge.className = `text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-${file.color}-950/80 text-${file.color}-400 border-${file.color}-800/80`;
+      badge.classList.remove('hidden');
+
+      const banner = document.getElementById('recommendationBanner');
+      const recText = document.getElementById('recommendationText');
+      const dupHint = document.getElementById('duplicateHint');
+
+      recText.textContent = file.recommendation;
+      if (file.duplicateOf) {
+        dupHint.textContent = `⚠️ Exact Duplicate of ${file.duplicateOf}`;
+        dupHint.classList.remove('hidden');
+      } else {
+        dupHint.classList.add('hidden');
+      }
+      banner.classList.remove('hidden');
+
+      updateDecisionButtons(triageDecisions[file.path] || 'UNSET');
+      renderSidebar();
+
+      try {
+        const res = await fetch(`/api/file?path=${encodeURIComponent(file.path)}`);
+        const text = await res.text();
+
+        document.getElementById('rawContainer').textContent = text;
+        if (window.marked) {
+          document.getElementById('renderedContainer').innerHTML = marked.parse(text);
+        } else {
+          document.getElementById('renderedContainer').innerHTML = '<pre>' + text + '</pre>';
+        }
+
+        document.getElementById('contentScrollArea').scrollTop = 0;
+      } catch (e) {
+        document.getElementById('renderedContainer').innerHTML = `<div class="text-rose-400">Failed to load content: ${e.message}</div>`;
+      }
+    }
+
+    function setDecision(decision) {
+      if (!currentFile) return;
+      triageDecisions[currentFile.path] = decision;
+      localStorage.setItem('scms_planning_triage', JSON.stringify(triageDecisions));
+      
+      fetch('/api/triage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(triageDecisions)
+      }).catch(console.error);
+
+      updateDecisionButtons(decision);
+      updateTriageStats();
+      renderSidebar();
+    }
+
+    function updateDecisionButtons(decision) {
+      const btnKeep = document.getElementById('btnKeep');
+      const btnMerge = document.getElementById('btnMerge');
+      const btnRemove = document.getElementById('btnRemove');
+
+      btnKeep.className = `px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1 ${decision === 'KEEP' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-emerald-400'}`;
+      btnMerge.className = `px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1 ${decision === 'MERGE' ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-amber-400'}`;
+      btnRemove.className = `px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1 ${decision === 'REMOVE' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-rose-400'}`;
+    }
+
+    function updateTriageStats() {
+      let keep = 0, merge = 0, remove = 0, unset = 0;
+      filesData.forEach(f => {
+        const d = triageDecisions[f.path];
+        if (d === 'KEEP') keep++;
+        else if (d === 'MERGE') merge++;
+        else if (d === 'REMOVE') remove++;
+        else unset++;
+      });
+
+      document.getElementById('statKeep').textContent = `${keep} Keep`;
+      document.getElementById('statMerge').textContent = `${merge} Merge`;
+      document.getElementById('statRemove').textContent = `${remove} Remove`;
+      document.getElementById('statUnset').textContent = `${unset} Pending`;
+    }
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      const btnRendered = document.getElementById('btnViewRendered');
+      const btnRaw = document.getElementById('btnViewRaw');
+      const rendered = document.getElementById('renderedContainer');
+      const raw = document.getElementById('rawContainer');
+
+      if (mode === 'rendered') {
+        btnRendered.className = 'px-2.5 py-1 rounded bg-slate-800 text-white font-semibold';
+        btnRaw.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-slate-200';
+        rendered.classList.remove('hidden');
+        raw.classList.add('hidden');
+      } else {
+        btnRaw.className = 'px-2.5 py-1 rounded bg-slate-800 text-white font-semibold';
+        btnRendered.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-slate-200';
+        raw.classList.remove('hidden');
+        rendered.classList.add('hidden');
+      }
+    }
+
+    function setFilter(cat) {
+      activeFilter = cat;
+      document.querySelectorAll('.filter-chip').forEach(btn => {
+        if (btn.getAttribute('data-cat') === cat) {
+          btn.className = 'filter-chip px-2 py-0.5 rounded-full font-medium bg-indigo-600 text-white';
+        } else {
+          btn.className = 'filter-chip px-2 py-0.5 rounded-full font-medium bg-slate-800 text-slate-400 hover:text-slate-200';
+        }
+      });
+      renderSidebar();
+    }
+
+    function filterFiles() {
+      const q = document.getElementById('searchInput').value;
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', !q);
+      renderSidebar();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      renderSidebar();
+    }
+
+    function openExportModal() {
+      const modal = document.getElementById('exportModal');
+      const summary = document.getElementById('modalSummary');
+      const script = document.getElementById('modalScript');
+
+      const toKeep = [];
+      const toMerge = [];
+      const toRemove = [];
+
+      filesData.forEach(f => {
+        const d = triageDecisions[f.path] || 'UNSET';
+        if (d === 'KEEP') toKeep.push(f.path);
+        else if (d === 'MERGE') toMerge.push(f.path);
+        else if (d === 'REMOVE') toRemove.push(f.path);
+      });
+
+      summary.innerHTML = `
+Total Files Triaged: ${filesData.length}
+• KEEP (Authoritative): ${toKeep.length} files
+• MERGE (Consolidate into Build Plan): ${toMerge.length} files
+• REMOVE / ARCHIVE (Clean up): ${toRemove.length} files
+      `.trim();
+
+      let psScript = '# SSM One — Planning Document Safe Archive Script\n';
+      psScript += '$archiveDir = "SSM-new-app/docs/archive"\n';
+      psScript += 'if (!(Test-Path $archiveDir)) { New-Item -ItemType Directory -Path $archiveDir }\n\n';
+      psScript += '# Move redundant or duplicate files into archive\n';
+
+      toRemove.forEach(p => {
+        psScript += `if (Test-Path "${p}") { Move-Item -Path "${p}" -Destination $archiveDir -Force }\n`;
+      });
+
+      psScript += '\nWrite-Host "Cleanup complete! All redundant files safely moved to $archiveDir."';
+
+      script.textContent = psScript;
+      modal.classList.remove('hidden');
+    }
+
+    function closeExportModal() {
+      document.getElementById('exportModal').classList.add('hidden');
+    }
+
+    function copyScript() {
+      const text = document.getElementById('modalScript').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Archive script copied to clipboard!');
+      });
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
