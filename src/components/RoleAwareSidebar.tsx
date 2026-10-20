@@ -75,7 +75,7 @@ export type Persona = {
   label: string;
   person: string;
   departmentId?: AreaId | undefined;
-  kind: "admin" | "lead" | "client";
+  kind: "admin" | "lead" | "member" | "client";
 };
 
 export type SidebarMenuItem = {

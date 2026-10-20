@@ -494,7 +494,7 @@ type Persona = {
   label: string;
   person: string;
   departmentId?: AreaId | undefined;
-  kind: "admin" | "lead" | "client";
+  kind: "admin" | "lead" | "member" | "client";
 };
 type Ai4tSimulation = { stage: number; history: string[] };
 type ProjectScope = string;
@@ -2213,7 +2213,7 @@ function Portal() {
         ? (personas.find((p) => p.id === initialRole) ?? safeUnassignedPersona)
         : (personas[0] ?? safeUnassignedPersona));
 
-  const [activeArea, setActiveArea] = useState<AreaId>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? initialPersona.departmentId : "home"));
+  const [activeArea, setActiveArea] = useState<AreaId>(() => ((initialPersona.kind === "lead" || initialPersona.kind === "member") && initialPersona.departmentId ? initialPersona.departmentId : "home"));
   const [clientDeliverablesFocus, setClientDeliverablesFocus] = useState(0);
   const openDocuments = () => { setModal(null); if (persona.kind === "client") { setView("queue"); setClientDeliverablesFocus(value => value + 1); } else setModal("documents"); };
   const [signedOut, setSignedOut] = useState(() => {
@@ -2252,7 +2252,7 @@ function Portal() {
   const [createInitialValues, setCreateInitialValues] = useState<Record<string, string> | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [departmentContext, setDepartmentContext] = useState<string | null>(() => (initialPersona.kind === "lead" && initialPersona.departmentId ? `demo-dept-${initialPersona.departmentId}` : null));
+  const [departmentContext, setDepartmentContext] = useState<string | null>(() => ((initialPersona.kind === "lead" || initialPersona.kind === "member") && initialPersona.departmentId ? `demo-dept-${initialPersona.departmentId}` : null));
   const [persona, setPersona] = useState<Persona>(() => initialPersona);
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
@@ -2361,7 +2361,7 @@ function Portal() {
         return;
       }
     }
-    if (persona.kind === "lead" && persona.departmentId) {
+    if ((persona.kind === "lead" || persona.kind === "member") && persona.departmentId) {
       if (area !== persona.departmentId) {
         announce(`Access restricted under IATF 16949 / ISO 27001: As ${persona.label}, you are confined to your assigned department workspace (${persona.departmentId.toUpperCase()}).`);
         setActiveArea(persona.departmentId);
@@ -2401,7 +2401,12 @@ function Portal() {
     setTestMembership(membership);
     setShowSharedTestWorkspace(false);
     setSignedOut(false);
-    switchPersona(matched);
+    switchPersona(membership.role === "member" ? {
+      ...matched,
+      kind: "member",
+      label: `${membership.departmentCode} Employee`,
+      person: membership.displayName,
+    } : { ...matched, person: membership.displayName });
   };
   const handleTestLogin = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -2448,9 +2453,9 @@ function Portal() {
   };
   const switchPersona = (next: Persona) => {
     setPersona(next);
-    const nextDepartment = next.kind === "lead" ? findAreaDepartment(portal.departments, next.departmentId ?? "home")?.id ?? null : null;
+    const nextDepartment = (next.kind === "lead" || next.kind === "member") ? findAreaDepartment(portal.departments, next.departmentId ?? "home")?.id ?? null : null;
     setDepartmentContext(nextDepartment);
-    setActiveArea(next.kind === "lead" && next.departmentId ? next.departmentId : "home");
+    setActiveArea((next.kind === "lead" || next.kind === "member") && next.departmentId ? next.departmentId : "home");
     setView("queue");
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -2667,13 +2672,13 @@ function Portal() {
     const task = portal.records.find((record) => record.id === taskId);
     if (!task) return;
     if (task.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
-    if (persona.kind === "lead" && persona.departmentId && task.area !== persona.departmentId) {
+    if ((persona.kind === "lead" || persona.kind === "member") && persona.departmentId && task.area !== persona.departmentId) {
       announce("Department leads can only modify tasks in their own department.");
       return;
     }
     const committed = await update((state) => {
       const current = state.records.find(record => record.id === taskId);
-      if (!current || (persona.kind === "lead" && current.area !== persona.departmentId)) throw new Error("This task is outside your department.");
+      if (!current || ((persona.kind === "lead" || persona.kind === "member") && current.area !== persona.departmentId)) throw new Error("This task is outside your department.");
       if ((patch.status === "Approved" || patch.status === "Released") && state.approvals.some(approval => approval.outcome === "Pending" && [current.id, current.reference].includes(approval.recordId))) throw new Error("Wait for the designated approval before completing this task.");
       return ({
       ...state,
@@ -2694,7 +2699,7 @@ function Portal() {
     const rawApproval = portal.approvals.find((a) => a.id === id);
     if (!rawApproval) return false;
     const appr = approvalScope(rawApproval);
-    if (persona.kind === "lead" && appr) {
+    if ((persona.kind === "lead" || persona.kind === "member") && appr) {
       const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
@@ -2766,7 +2771,7 @@ function Portal() {
     const rawApproval = portal.approvals.find((a) => a.id === id);
     if (!rawApproval) return false;
     const appr = approvalScope(rawApproval);
-    if (persona.kind === "lead" && appr) {
+    if ((persona.kind === "lead" || persona.kind === "member") && appr) {
       const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
@@ -2828,7 +2833,7 @@ function Portal() {
     const rawApproval = portal.approvals.find((a) => a.id === id);
     if (!rawApproval) return false;
     const appr = approvalScope(rawApproval);
-    if (persona.kind === "lead" && appr) {
+    if ((persona.kind === "lead" || persona.kind === "member") && appr) {
       const isAuthorized = canDepartmentSign(appr, persona.departmentId);
       if (!isAuthorized) {
         announce(`Gate sign-off restricted to ${appr.department ?? "designated"} department lead.`);
@@ -2890,7 +2895,7 @@ function Portal() {
     const newId = createId();
     const committed = await update(state => {
       const source = state.records.find(record => !record.archived && (record.id === input.recordId || record.reference === input.recordId));
-      if (!source || (persona.kind === "lead" && source.area !== persona.departmentId)) throw new Error("Choose an existing source record in your department.");
+      if (!source || ((persona.kind === "lead" || persona.kind === "member") && source.area !== persona.departmentId)) throw new Error("Choose an existing source record in your department.");
       const project = state.records.find(record => record.type === "Project" && record.reference === input.project);
       const refs = projectReferences(source);
       if (input.project && !refs.includes(input.project) && !(project && refs.includes(project.id))) throw new Error("The selected project is not linked to this source record.");
@@ -2949,7 +2954,7 @@ function Portal() {
     return true;
   };
   const handleAddTeamMember = (member: TeamMember) => {
-    if (persona.kind === "lead" && member.area !== persona.departmentId) { announce("Team members must belong to your department."); return; }
+    if ((persona.kind === "lead" || persona.kind === "member") && member.area !== persona.departmentId) { announce("Team members must belong to your department."); return; }
     update(state => ({ ...state, teamMembers: [...(state.teamMembers ?? []), member] }));
     log("Team Member Added", `Added ${member.name} (${member.role}, ${member.level}) to ${member.area.toUpperCase()} department roster.`);
     announce(`${member.name} added to ${member.area.toUpperCase()} roster.`);
@@ -2984,7 +2989,7 @@ function Portal() {
   const leadName = persona.person.split(" · ")[0] ?? "";
   const leadProjectCodes = new Set(leadRecords.flatMap(projectReferences));
   const leadProjects = activeRecords.filter(record => record.type === "Project" && (leadProjectCodes.has(record.reference) || leadProjectCodes.has(record.id)));
-  const scopedAlerts = portal.alerts.filter(alert => persona.kind === "admin" || (persona.kind === "lead" && [persona.departmentId, departmentContext].includes(alert.departmentId)));
+  const scopedAlerts = portal.alerts.filter(alert => persona.kind === "admin" || ((persona.kind === "lead" || persona.kind === "member") && [persona.departmentId, departmentContext].includes(alert.departmentId)));
   const scopedDocuments = portal.documents.filter(document => canDepartmentAccessDocument(document, persona, departmentContext));
   const scopedApprovalCounts = Object.fromEntries(areas.map(area => [area.id, portal.approvals.map(approvalScope).filter(approval => approval.outcome === "Pending" && approvalInDepartment(approval, area.id)).length]));
   const selected = activeRecords.find((record) => record.id === selectedId);
@@ -2995,7 +3000,7 @@ function Portal() {
   const effectiveArea: AreaId =
     persona.kind === "client"
       ? "home"
-      : persona.kind === "lead" && persona.departmentId
+      : (persona.kind === "lead" || persona.kind === "member") && persona.departmentId
       ? persona.departmentId
       : activeArea;
   const active = areaById(effectiveArea);
@@ -3004,7 +3009,7 @@ function Portal() {
       announce("Internal records require an explicit customer release and recipient grant.");
       return;
     }
-    if (persona.kind === "lead" && persona.departmentId && record.area !== persona.departmentId) {
+    if ((persona.kind === "lead" || persona.kind === "member") && persona.departmentId && record.area !== persona.departmentId) {
       announce(`Access restricted: record belongs to ${record.area.toUpperCase()} department.`);
       return;
     }
@@ -3098,7 +3103,7 @@ function Portal() {
               onClick={() => {
                 if (persona.kind === "client") {
                   navigate("home");
-                } else if (persona.kind === "lead" && persona.departmentId) {
+                } else if ((persona.kind === "lead" || persona.kind === "member") && persona.departmentId) {
                   navigate(persona.departmentId);
                 } else {
                   navigate("home");
@@ -3109,14 +3114,14 @@ function Portal() {
               <p className="truncate text-sm font-semibold md:text-base">
                 {persona.kind === "client"
                   ? "Tata Motors Limited · EV Fleet Solutions Delivery Portal"
-                  : persona.kind === "lead"
+                  : (persona.kind === "lead" || persona.kind === "member")
                   ? (portal?.departments.find((item) => item.id === (departmentContext ?? `demo-dept-${persona.departmentId}`))?.name ?? active.name)
                   : (view === "index" ? "Unified index" : active.name)}
               </p>
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {persona.kind === "client"
                   ? "Rohan Verma · Authorized External OEM Stakeholder (ISO 27001 §A.9)"
-                  : persona.kind === "lead"
+                  : (persona.kind === "lead" || persona.kind === "member")
                   ? `${persona.label} · Authorized Department Scope (IATF 16949 / ISO 27001)`
                   : departmentContext
                   ? `${portal?.departments.find((item) => item.id === departmentContext)?.name ?? "Department"} · Administrator context`
@@ -3232,7 +3237,7 @@ function Portal() {
         <div className="mx-auto max-w-[1600px] space-y-6 px-6 py-6 pb-28 lg:pb-10">
           {persona.kind === "client" ? (
             <ClientOEMPortal demoMode={portal.demoLoaded} focusDeliverables={clientDeliverablesFocus} />
-          ) : persona.kind === "lead" && view === "assignee" ? (
+          ) : (persona.kind === "lead" || persona.kind === "member") && view === "assignee" ? (
             <section className="space-y-4">
               <h1 className="text-xl font-semibold">{active.name} — My Tasks & Action Queue</h1>
               <DepartmentLeadCoordinationCenter key={persona.id}
@@ -3251,7 +3256,7 @@ function Portal() {
                 onCreateTask={handleCreateCustomTask} onAddTeamMember={member => handleAddTeamMember({ ...member, area: persona.departmentId as TeamMember["area"] })}
               />
             </section>
-          ) : persona.kind === "lead" && (view === "project" || view === "queue" || view === "summary" || view === "records" || view === "deliverables") ? (
+          ) : (persona.kind === "lead" || persona.kind === "member") && (view === "project" || view === "queue" || view === "summary" || view === "records" || view === "deliverables") ? (
             <DepartmentProjectWorkspace key={`${persona.id}:${view}`}
               initialTab={view === "records" ? "records" : view === "deliverables" ? "deliverables" : undefined}
               departmentCode={active.short} departmentName={active.name} lead={leadName}
@@ -3291,9 +3296,9 @@ function Portal() {
             <>
             {persona.kind === "admin" && activeArea === "rnd" && <div className="mb-4 flex items-center justify-between"><h1 className="text-xl font-semibold">Project Register</h1><Action label="New Project" primary onClick={() => handleOpenCreate("Project")} /></div>}
             <IndexWorkspace
-              records={persona.kind === "lead" ? [...leadRecords, ...leadProjects] : activeArea === "rnd" ? activeRecords.filter(record => record.type === "Project") : activeRecords}
+              records={(persona.kind === "lead" || persona.kind === "member") ? [...leadRecords, ...leadProjects] : activeArea === "rnd" ? activeRecords.filter(record => record.type === "Project") : activeRecords}
               documents={scopedDocuments}
-              allowedProjectIds={persona.kind === "lead" ? leadProjects.map(project => project.id) : []}
+              allowedProjectIds={(persona.kind === "lead" || persona.kind === "member") ? leadProjects.map(project => project.id) : []}
               departments={portal.departments}
               departmentContext={departmentContext}
               onBack={() => navigate(activeArea)}
@@ -3402,14 +3407,14 @@ function Portal() {
           ) : view === "approvals" ? (
             <ApprovalsFullPageView key={persona.id}
               approvals={portal.approvals}
-              projects={persona.kind === "lead" ? leadProjects : activeRecords.filter(record => record.type === "Project")}
-              records={persona.kind === "lead" ? leadRecords : activeRecords}
+              projects={(persona.kind === "lead" || persona.kind === "member") ? leadProjects : activeRecords.filter(record => record.type === "Project")}
+              records={(persona.kind === "lead" || persona.kind === "member") ? leadRecords : activeRecords}
               onApprove={handleApproveGate}
               onReject={handleRejectGate}
               onReturn={handleReturnGate}
               onBack={() => setView("queue")}
               currentUser={persona.label}
-              userRole={persona.kind === "admin" ? "Executive Admin" : persona.kind === "lead" ? "Department Lead" : "Client"}
+              userRole={persona.kind === "admin" ? "Executive Admin" : persona.kind === "member" ? "Employee" : persona.kind === "lead" ? "Department Lead" : "Client"}
               persona={persona}
               onRequestApproval={handleCreateApprovalRequest}
             />
@@ -3528,7 +3533,7 @@ function Portal() {
                 findAreaDepartment(portal.departments, activeArea)
               }
               approvals={portal.approvals}
-              contextName={persona.kind === "lead" ? "Department Lead" : departmentContext ? "Administrator" : "Workspace"}
+              contextName={persona.kind === "member" ? "Employee" : persona.kind === "lead" ? "Department Lead" : departmentContext ? "Administrator" : "Workspace"}
               view={view === "summary" ? "summary" : "queue"}
               onView={setView}
               onCreate={handleOpenCreate}
@@ -3574,7 +3579,7 @@ function Portal() {
         </div>
       </section>
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-background/95 px-1 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur lg:hidden">
-        {persona.kind === "lead" && persona.departmentId ? (
+        {(persona.kind === "lead" || persona.kind === "member") && persona.departmentId ? (
           <>
             <button
               onClick={() => navigate(persona.departmentId as AreaId)}
@@ -3844,11 +3849,11 @@ function Portal() {
       {draftHubOpen && persona.kind !== "client" && (
         <AutoDraftHub
           onClose={() => setDraftHubOpen(false)}
-          departmentScope={persona.kind === "lead" ? departmentCode(persona.departmentId) : undefined}
-          projects={persona.kind === "lead" ? leadProjects : activeRecords.filter(record => record.type === "Project")}
+          departmentScope={(persona.kind === "lead" || persona.kind === "member") ? departmentCode(persona.departmentId) : undefined}
+          projects={(persona.kind === "lead" || persona.kind === "member") ? leadProjects : activeRecords.filter(record => record.type === "Project")}
           onSaveDraft={(draft, body) => {
             update(state => {
-              const draftOwner = persona.kind === "lead" ? departmentContext || persona.departmentId || "" : state.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === departmentCode(draft.department))?.id || "";
+              const draftOwner = (persona.kind === "lead" || persona.kind === "member") ? departmentContext || persona.departmentId || "" : state.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === departmentCode(draft.department))?.id || "";
               const existing = state.documents.find(document => document.part === draft.documentId && document.lifecycle === "Draft" && document.departmentId === draftOwner);
               const saved: ControlledDocument = { ...(existing ?? {}), id: existing?.id ?? createId(), title: draft.title, type: draft.title, url: existing?.url ?? "", part: draft.documentId, revision: "00", draftSnapshot: buildDocumentDraft(draft.title, draft.documentId, { reference: draft.documentId, fields: {}, notes: body }, state.records.find(record => record.type === "Project" && record.reference === draft.project), draft.templateType), departmentId: draftOwner, lifecycle: "Draft", classification: "Internal", linkedRecordRefs: draft.project ? [draft.project] : [], releaseNotes: body, history: [...(existing?.history ?? []), now() + " · Browser-local draft saved by " + persona.label] };
               return { ...state, documents: existing ? state.documents.map(document => document.id === existing.id ? saved : document) : [saved, ...state.documents] };
@@ -3873,7 +3878,7 @@ function Portal() {
       {printTemplate && (
         <PrintableTemplateView
           document={printTemplate}
-          records={persona.kind === "lead" ? [...leadRecords, ...leadProjects] : activeRecords}
+          records={(persona.kind === "lead" || persona.kind === "member") ? [...leadRecords, ...leadProjects] : activeRecords}
           settings={portal.templateSettings ?? defaultTemplateSettings()}
           onClose={() => setPrintTemplate(null)}
           onOpenSettings={() => setTemplateSettingsOpen(true)}
@@ -4102,7 +4107,7 @@ function Portal() {
         />
       )}
       {directoryOpen && persona.kind !== "client" && (
-        <CompanyDirectoryModal key={persona.id} onClose={() => setDirectoryOpen(false)} initialDepartment={persona.kind === "lead" ? departmentCode(persona.departmentId) : undefined} lockedDepartment={persona.kind === "lead" ? departmentCode(persona.departmentId) : undefined} contacts={persona.kind === "lead" ? allTeamMembers.filter(member => member.area === persona.departmentId).map((member, index) => ({ id: String(index), name: member.name, departmentCode: departmentCode(member.area), departmentName: areaById(member.area).name, designation: member.role, reportingManager: "Department lead", workEmail: "", deskExtension: "Not provided", facilityLocation: "Not provided", primarySkills: member.skills, avatarInitial: member.name.split(" ").map(part => part[0]).join("").slice(0,2) })) : undefined} />
+        <CompanyDirectoryModal key={persona.id} onClose={() => setDirectoryOpen(false)} initialDepartment={(persona.kind === "lead" || persona.kind === "member") ? departmentCode(persona.departmentId) : undefined} lockedDepartment={(persona.kind === "lead" || persona.kind === "member") ? departmentCode(persona.departmentId) : undefined} contacts={(persona.kind === "lead" || persona.kind === "member") ? allTeamMembers.filter(member => member.area === persona.departmentId).map((member, index) => ({ id: String(index), name: member.name, departmentCode: departmentCode(member.area), departmentName: areaById(member.area).name, designation: member.role, reportingManager: "Department lead", workEmail: "", deskExtension: "Not provided", facilityLocation: "Not provided", primarySkills: member.skills, avatarInitial: member.name.split(" ").map(part => part[0]).join("").slice(0,2) })) : undefined} />
       )}
       {decisionLogOpen && persona.kind === "admin" && (
         <OfficialDecisionLogModal
@@ -4480,7 +4485,7 @@ function Ai4tLifecycleHub({
   const progress = Math.round(((simulation.stage + 1) / ai4tStages.length) * 100);
   const accessibleDossier = persona.kind === "client"
     ? ai4tDossier.filter(([, , owner]) => owner === "SAL" || owner === "TST" || owner === "FIN")
-    : persona.kind === "lead" && persona.departmentId
+    : (persona.kind === "lead" || persona.kind === "member") && persona.departmentId
       ? ai4tDossier.filter(([, , owner]) => owner === areaById(persona.departmentId ?? "home").short)
       : ai4tDossier;
   return (
@@ -5176,7 +5181,7 @@ function ProjectDetail({
   }, [portal.projectAnalysis, activeProjectKey]);
 
   const defaultDeptCode = useMemo(() => {
-    if (persona.kind === "lead" && persona.departmentId) {
+    if ((persona.kind === "lead" || persona.kind === "member") && persona.departmentId) {
       const d = portal.departments.find((dep) => dep.id === persona.departmentId);
       if (d?.code && analysisMap[d.code]) return d.code;
     }
@@ -5208,7 +5213,7 @@ function ProjectDetail({
   const canEditSelectedDept = useMemo(() => {
     if (persona.kind === "client") return false;
     if (persona.kind === "admin") return true;
-    if (persona.kind === "lead" && persona.departmentId) {
+    if ((persona.kind === "lead" || persona.kind === "member") && persona.departmentId) {
       const d = portal.departments.find((dep) => dep.id === persona.departmentId);
       return d?.code === selectedDeptCode;
     }
@@ -6586,7 +6591,7 @@ function DepartmentWorkspace({
       onAddTeamMember={(member) => {
         onAddTeamMember?.(member as unknown as TeamMember);
       }}
-      readOnly={persona.kind === "client" || (persona.kind === "lead" && persona.departmentId !== area.id)}
+      readOnly={persona.kind === "client" || persona.kind === "member" || (persona.kind === "lead" && persona.departmentId !== area.id)}
     />
   );
   return (
@@ -10906,7 +10911,7 @@ function PersonaSwitcher({
         <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs">
           <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="rounded bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase text-primary border border-primary/20">
-            {persona.departmentId?.toUpperCase() || persona.id.toUpperCase()} LEAD
+            {persona.departmentId?.toUpperCase() || persona.id.toUpperCase()} {persona.kind === "member" ? "EMPLOYEE" : "LEAD"}
           </span>
           <span className="font-semibold text-foreground truncate max-w-44">
             {persona.label}
@@ -10916,7 +10921,7 @@ function PersonaSwitcher({
         {onLogout && (
           <button
             type="button"
-            title="Sign Out of Department Lead Session"
+            title="Sign Out of Department Session"
             aria-label="Sign Out"
             onClick={onLogout}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs font-bold text-destructive hover:bg-destructive/20 transition-colors shadow-xs"
