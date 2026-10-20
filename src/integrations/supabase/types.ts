@@ -21,6 +21,7 @@ export type Database = {
           created_by: string
           decided_at: string | null
           decided_by: string | null
+          decision_notes: string
           department_id: string | null
           evidence_checksum: string | null
           evidence_document_id: string | null
@@ -33,6 +34,7 @@ export type Database = {
           outcome: Database["public"]["Enums"]["approval_outcome"]
           protected_action: boolean
           record_id: string | null
+          reviewer_department_id: string | null
           title: string
           updated_at: string
         }
@@ -42,6 +44,7 @@ export type Database = {
           created_by: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_notes?: string
           department_id?: string | null
           evidence_checksum?: string | null
           evidence_document_id?: string | null
@@ -54,6 +57,7 @@ export type Database = {
           outcome?: Database["public"]["Enums"]["approval_outcome"]
           protected_action?: boolean
           record_id?: string | null
+          reviewer_department_id?: string | null
           title: string
           updated_at?: string
         }
@@ -63,6 +67,7 @@ export type Database = {
           created_by?: string
           decided_at?: string | null
           decided_by?: string | null
+          decision_notes?: string
           department_id?: string | null
           evidence_checksum?: string | null
           evidence_document_id?: string | null
@@ -75,6 +80,7 @@ export type Database = {
           outcome?: Database["public"]["Enums"]["approval_outcome"]
           protected_action?: boolean
           record_id?: string | null
+          reviewer_department_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -119,6 +125,13 @@ export type Database = {
             columns: ["record_id"]
             isOneToOne: false
             referencedRelation: "operational_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approvals_reviewer_department_id_fkey"
+            columns: ["reviewer_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -884,6 +897,7 @@ export type Database = {
           uploaded_by: string
         }[]
       }
+      get_shared_test_workspace: { Args: never; Returns: Json }
       has_department_permission: {
         Args: {
           _department_id: string
@@ -902,6 +916,10 @@ export type Database = {
       is_organization_member: {
         Args: { _organization_id: string }
         Returns: boolean
+      }
+      mutate_shared_test_workspace: {
+        Args: { p_action: string; p_payload: Json; p_request_id: string }
+        Returns: Json
       }
       resolve_operational_membership: {
         Args: never
