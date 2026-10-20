@@ -22,6 +22,12 @@ export type Database = {
           decided_at: string | null
           decided_by: string | null
           department_id: string | null
+          evidence_checksum: string | null
+          evidence_document_id: string | null
+          evidence_is_na: boolean
+          evidence_record_id: string | null
+          evidence_requirement: string | null
+          evidence_revision: string | null
           id: string
           organization_id: string
           outcome: Database["public"]["Enums"]["approval_outcome"]
@@ -37,6 +43,12 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           department_id?: string | null
+          evidence_checksum?: string | null
+          evidence_document_id?: string | null
+          evidence_is_na?: boolean
+          evidence_record_id?: string | null
+          evidence_requirement?: string | null
+          evidence_revision?: string | null
           id?: string
           organization_id: string
           outcome?: Database["public"]["Enums"]["approval_outcome"]
@@ -52,6 +64,12 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           department_id?: string | null
+          evidence_checksum?: string | null
+          evidence_document_id?: string | null
+          evidence_is_na?: boolean
+          evidence_record_id?: string | null
+          evidence_requirement?: string | null
+          evidence_revision?: string | null
           id?: string
           organization_id?: string
           outcome?: Database["public"]["Enums"]["approval_outcome"]
@@ -73,6 +91,20 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approvals_evidence_document_id_fkey"
+            columns: ["evidence_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approvals_evidence_record_id_fkey"
+            columns: ["evidence_record_id"]
+            isOneToOne: false
+            referencedRelation: "operational_records"
             referencedColumns: ["id"]
           },
           {
@@ -835,6 +867,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_controlled_file_access: {
+        Args: { p_file_id: string }
+        Returns: {
+          checksum: string
+          content_type: string
+          department_id: string
+          document_id: string
+          file_id: string
+          organization_id: string
+          original_name: string
+          revision: string
+          size_bytes: number
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+        }[]
+      }
       has_department_permission: {
         Args: {
           _department_id: string
@@ -854,6 +903,21 @@ export type Database = {
         Args: { _organization_id: string }
         Returns: boolean
       }
+      resolve_operational_membership: {
+        Args: never
+        Returns: {
+          can_sign_stage_gates: boolean
+          department_code: string
+          department_id: string
+          department_name: string
+          display_name: string
+          is_lead: boolean
+          membership_id: string
+          organization_id: string
+          organization_name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       resolve_test_membership: {
         Args: never
         Returns: {
@@ -866,6 +930,25 @@ export type Database = {
           organization_name: string
           role: Database["public"]["Enums"]["app_role"]
         }[]
+      }
+      verify_and_advance_stage_gate: {
+        Args: {
+          p_evidence_manifest?: Json
+          p_record_id: string
+          p_target_stage: string
+        }
+        Returns: Json
+      }
+      verify_approved_stage_deliverable: {
+        Args: {
+          p_allow_na?: boolean
+          p_deliverables: Json
+          p_na_rationales: Json
+          p_organization_id: string
+          p_pattern: string
+          p_record_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
