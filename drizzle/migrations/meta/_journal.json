@@ -22,6 +22,13 @@
       "when": 1792460735792,
       "tag": "0002_bind_stage_gate_approval_revisions",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792464883678,
+      "tag": "0003_enforce_operational_gate_write_boundary",
+      "breakpoints": true
     }
   ]
 }

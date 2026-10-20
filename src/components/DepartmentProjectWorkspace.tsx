@@ -43,6 +43,7 @@ type Props = {
   initialTab?: "overview" | "tasks" | "deliverables" | "approvals" | "records" | "team" | undefined;
   onProjectChange: (value: string) => void;
   onCreateRecord: () => void;
+  onCreateProject?: (() => void) | undefined;
   onOpenRecord: (id: string) => void;
   onOpenDocument: (id: string) => void;
   onUpdateTask: (id: string, patch: Partial<TaskRecord>, action: string) => void;
@@ -136,6 +137,7 @@ export function DepartmentProjectWorkspace(props: Props) {
               </select>
             </div>
 
+            {props.onCreateProject && <button type="button" onClick={props.onCreateProject} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold">New Project</button>}
             <button
               type="button"
               onClick={props.onCreateRecord}

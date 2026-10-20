@@ -1,6 +1,7 @@
 import { evolveResponsibilityConfiguration, resolveProjectChronicles, type ResponsibilityVersion } from "@/lib/responsibility-version";
 import { DepartmentProjectWorkspace } from "@/components/DepartmentProjectWorkspace";
 import { businessDate } from "@/lib/business-date";
+import { salesEnquiryFromRecord, validateIntakeProject } from "@/lib/portal-intake";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -513,6 +514,14 @@ export type DepartmentAnalysisEntry = {
 };
 
 export function defaultProjectAnalysis(projectId: string): Record<string, DepartmentAnalysisEntry> {
+  if (!Object.prototype.hasOwnProperty.call(projectDocumentProfiles, projectId)) {
+    return Object.fromEntries(Object.entries(defaultProjectAnalysis("HLPL-SLCT-01")).map(([code, sample]) => {
+      const { lastUpdated: _sampleDate, ...entry } = sample;
+      return [code, { ...entry, lead: "Not assigned", progress: 0, status: "On Track" as const,
+        currentDeliverable: "Not recorded", targetDate: "", internalRemarks: "", clientRemarks: "",
+        keyDocumentId: "", stageGate: "Not assigned" }];
+    }));
+  }
   const isAi4t = projectId === "HLPL-AI4T-01";
   const isXlink = projectId === "HLPL-XLINK-03";
   const isObd = projectId === "HLPL-OBD4-01" || projectId.includes("OBD");
@@ -2429,7 +2438,7 @@ function Portal() {
   const handleOpenCreate = (typeOrEvent?: unknown, initialValues?: Record<string, string>) => {
     const type = typeof typeOrEvent === "string" ? typeOrEvent : null;
     setCreateType(type);
-    setCreateInitialValues(initialValues ?? null);
+    setCreateInitialValues(initialValues ? { ...initialValues, ...(initialValues["projectCode"] ? { projectId: initialValues["projectCode"] } : {}) } : null);
     setModal("create");
   };
   const switchPersona = (next: Persona) => {
@@ -2492,16 +2501,46 @@ function Portal() {
     });
     announce(`Customer ${customer.name} saved to Customer Master.`);
   };
-  const handleDispatchFeasibility = (
+  const handleDispatchFeasibility = async (
     enquiryId: string,
     departments: string[],
     targetDate: string,
     modularConfig?: ProjectModularConfiguration,
   ) => {
-    update((state) => {
+    const committed = await update((state) => {
       const existingEnqs = state.enquiriesOpportunities ?? defaultEnquiriesOpportunities;
       const target = existingEnqs.find((e) => e.id === enquiryId);
-      if (!target) return state;
+      if (!target) throw new Error("Enquiry not found.");
+      if (!target.linkedProjectCode || !state.records.some(record => record.type === "Project" && record.reference === target.linkedProjectCode && !record.archived)) throw new Error("Link this enquiry to an existing project first.");
+      if (!["Pending Enquiry", "Internal Review"].includes(target.status)) throw new Error("This enquiry has already been dispatched.");
+      if (!departments.length || new Set(departments).size !== departments.length) throw new Error("Choose at least one distinct review department.");
+      const contractRef = target.linkedProjectCode + "-SAL-CONTRACT-01";
+      if (state.records.some(record => record.reference === contractRef)) throw new Error("A contract review already exists for this project.");
+      const at = now();
+      const contract: RecordItem = {
+        id: createId(), reference: contractRef, area: "sales", type: "Contract review",
+        title: "Contract Review · " + target.title, status: "In review", priority: "High", createdAt: at, updatedAt: at,
+        notes: "Participating department sign-offs are required; no engineering results are presumed.",
+        fields: { projectId: target.linkedProjectCode, enquiryId: target.id, revision: "01", formCode: "HLPL/F/MKT/01", requiredDepartments: departments.join(",") },
+      };
+      const requests: ApprovalRecord[] = [];
+      const tasks: RecordItem[] = [];
+      for (const code of departments) {
+        const area = areas.find(item => departmentCode(item.short) === departmentCode(code));
+        if (!area || area.id === "tst") throw new Error("Unsupported reviewer department: " + code);
+        const requestId = createId();
+        requests.push({ id: requestId, title: code + " feasibility review · " + target.title, recordId: contractRef,
+          outcome: "Pending", updatedAt: at, department: "SAL", approverAuthority: code,
+          project: target.linkedProjectCode, requester: persona.label, riskLevel: "High", iatfClause: "Contract Review HLPL/F/MKT/01",
+          description: target.scopeSummary,
+        });
+        tasks.push({ id: createId(), reference: contractRef + "-" + code, area: area.id,
+          type: "Task", title: code + " feasibility review · " + target.title, status: "In review", priority: "High",
+          createdAt: at, updatedAt: at, notes: target.scopeSummary,
+          fields: { projectId: target.linkedProjectCode, linkedRecords: contractRef, dueDate: targetDate,
+            feasibilityApprovalId: requestId, assignee: personas.find(person => person.departmentId === area.id)?.person.split(" · ")[0] ?? "Unassigned" },
+        });
+      }
 
       const oppRef = target.reference.replace(/ENQ/g, "OPP").replace(/HLPL-\d+-/, "OPP-");
       const updatedTarget: EnquiryOpportunity = {
@@ -2541,6 +2580,10 @@ function Portal() {
       return {
         ...state,
         enquiriesOpportunities: nextEnqs,
+        approvals: [...requests, ...state.approvals],
+        records: [contract, ...tasks, ...state.records.map(record => record.type === "Project" && record.reference === target.linkedProjectCode
+          ? { ...record, fields: { ...record.fields, lifecycleStage: "Stage 2 · Feasibility", currentStage: "Stage 2 · Feasibility" }, updatedAt: at }
+          : record)],
         modularConfigs: nextConfigs,
         alerts: [...newAlerts, ...state.alerts],
         audit: [
@@ -2558,9 +2601,10 @@ function Portal() {
         ],
       };
     });
+    if (!committed) return;
     announce(`Enquiry converted to Opportunity and dispatched for multi-department feasibility with platform linking.`);
   };
-  const addRecord = (input: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => {
+  const addRecord = async (input: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => {
     if (input.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
     const count = portal.records.filter((record) => record.area === input.area).length + 1;
     const prefix = areaById(input.area)
@@ -2589,7 +2633,19 @@ function Portal() {
       createdAt: now(),
       updatedAt: now(),
     };
-    update((state) => ({ ...state, records: [record, ...state.records] }));
+    const saved = await update((state) => {
+      if (state.records.some(existing => existing.reference.toUpperCase() === record.reference.toUpperCase())) throw new Error("This controlled number already exists.");
+      const enquiry = input.area === "sales" && ["Enquiry", "Opportunity", "Enquiry & Opportunity"].includes(input.type);
+      return { ...state, records: [record, ...state.records],
+        ...(input.type === "Project" ? { masters: { ...state.masters, products: Array.from(new Set([...state.masters.products, record.reference])) } } : {}),
+        ...(enquiry ? { enquiriesOpportunities: [salesEnquiryFromRecord(record, state.customersRegistry ?? []), ...(state.enquiriesOpportunities ?? [])] } : {}),
+      };
+    });
+    if (!saved) return;
+    if (input.type === "Project") {
+      setSelectedProjectId(record.reference);
+      setProjectScopes(current => ({ ...current, [input.area]: record.reference }));
+    }
     log("Record created", `${record.reference} created`);
     if (input.type !== "Task") {
       setSelectedId(record.id);
@@ -2668,13 +2724,22 @@ function Portal() {
             }
           : a
       ),
+      enquiriesOpportunities: (state.enquiriesOpportunities ?? []).map(enquiry => {
+        const contract = state.records.find(record => [record.id, record.reference].includes(appr.recordId) && record.fields["enquiryId"] === enquiry.id);
+        if (!contract) return enquiry;
+        const requests = state.approvals.filter(approval => [contract.id,contract.reference].includes(approval.recordId));
+        const signed = requests.filter(approval => approval.id === id || approval.outcome === "Approved").map(approval => approval.approverAuthority || "");
+        return { ...enquiry, feasibilitySignedDepts: Array.from(new Set(signed)),
+          status: requests.every(approval => approval.id === id || approval.outcome === "Approved") ? "Feasibility Complete" as const : enquiry.status,
+          updatedAt: now() };
+      }),
       alerts: [syncAlert, ...state.alerts],
       notifications: [`[APPROVED] ${appr?.title ?? id} signed by ${persona.label}`, ...state.notifications].slice(0, 50),
       records: state.records.map((r) =>
-        r.reference === appr?.recordId || r.id === appr?.recordId
+        r.reference === appr?.recordId || r.id === appr?.recordId || r.fields["feasibilityApprovalId"] === id
           ? {
               ...r,
-              status: "Approved" as const,
+              status: state.approvals.filter(approval => [r.id,r.reference].includes(approval.recordId)).every(approval => approval.id === id || approval.outcome === "Approved") ? "Approved" as const : "In review" as const,
               updatedAt: now(),
               notes: `${r.notes ? r.notes + " · " : ""}Gate approved by ${persona.label} (${notes || "Designated review complete"})`,
             }
@@ -2978,8 +3043,7 @@ function Portal() {
           onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
           onOpenAi4tLifecycle={() => setAi4tOpen(true)}
           onOpenProjectAnalysis={() => {
-            setView("project");
-            navigate("home");
+            navigate("rnd", "index");
           }}
           onOpenDrive={openDocuments}
           onOpenDraftHub={() => setDraftHubOpen(true)}
@@ -3183,6 +3247,7 @@ function Portal() {
               team={allTeamMembers.filter(member => member.area === persona.departmentId)}
               projectScope={projectScopes[active.id] ?? "all"}
               onProjectChange={scope => setProjectScopes(current => ({ ...current, [active.id]: scope as ProjectScope }))}
+              onCreateProject={persona.departmentId === "sales" ? () => handleOpenCreate("Project") : undefined}
               onCreateRecord={() => handleOpenCreate(active.recordType, (projectScopes[active.id] ?? "all") === "all" ? undefined : { projectCode: projectScopes[active.id] as string })}
               onOpenRecord={id => { const record = leadRecords.find(item => item.id === id); if (record) openRecord(record); }}
               onOpenDocument={id => { const document = scopedDocuments.find(item => item.id === id); if (document) openDocument(document); }}
@@ -3210,16 +3275,22 @@ function Portal() {
               onLog={log}
             />
           ) : view === "index" ? (
+            <>
+            {persona.kind === "admin" && activeArea === "rnd" && <div className="mb-4 flex items-center justify-between"><h1 className="text-xl font-semibold">Project Register</h1><Action label="New Project" primary onClick={() => handleOpenCreate("Project")} /></div>}
             <IndexWorkspace
-              records={persona.kind === "lead" ? [...leadRecords, ...leadProjects] : activeRecords}
+              records={persona.kind === "lead" ? [...leadRecords, ...leadProjects] : activeArea === "rnd" ? activeRecords.filter(record => record.type === "Project") : activeRecords}
               documents={scopedDocuments}
               allowedProjectIds={persona.kind === "lead" ? leadProjects.map(project => project.id) : []}
               departments={portal.departments}
               departmentContext={departmentContext}
               onBack={() => navigate(activeArea)}
-              onSelect={openRecord}
+              onSelect={record => {
+                if (record.type === "Project" && persona.kind === "admin") { setSelectedId(record.id); setSelectedProjectId(record.reference); setView("project"); }
+                else openRecord(record);
+              }}
               onSelectDocument={openDocument}
             />
+            </>
           ) : view === "project" ? (
             <ProjectDetail
               project={selectedProjectProfile ?? selected ?? fallbackProjectRecord(selectedProjectId, activeRecords)}
@@ -5081,7 +5152,11 @@ function ProjectDetail({
 }) {
   const [tab, setTab] = useState<"shared" | "dept" | "client" | "records">("shared");
   const activeProjectKey = project.fields?.["projectId"] || project.reference || selectedProjectId || "HLPL-AI4T-01";
-  const profile = projectDocumentProfiles[activeProjectKey] ?? projectDocumentProfiles["HLPL-AI4T-01"]!;
+  const profile = projectDocumentProfiles[activeProjectKey] ?? {
+    name: project.title, customer: project.fields["customer"] || "Not recorded", contact: "Not recorded",
+    quantity: project.fields["quantity"] || "Not recorded", techSpec: project.fields["scope"] || "Requirements not yet recorded",
+    commercialValue: "Not recorded", environmental: "Not recorded", compliance: "Not yet verified",
+  };
 
   const analysisMap: Record<string, DepartmentAnalysisEntry> = useMemo(() => {
     return portal.projectAnalysis?.[activeProjectKey] ?? defaultProjectAnalysis(activeProjectKey);
@@ -5249,10 +5324,7 @@ function ProjectDetail({
               onChange={(e) => onSelectProject(e.target.value)}
               className="h-8 rounded border border-border bg-background px-2.5 text-xs font-semibold"
             >
-              <option value="HLPL-OBD4-01">HLPL-OBD4-01 · 4G OBD-II Smart Tracker</option>
-              <option value="HLPL-AI4T-01">HLPL-AI4T-01 · Tata Ace EV 4G</option>
-              <option value="HLPL-SLCT-01">HLPL-SLCT-01 · AIS-140 GPS</option>
-              <option value="HLPL-XLINK-03">HLPL-XLINK-03 · Commercial CV</option>
+              {records.filter(record => record.type === "Project").map(record => <option key={record.id} value={record.reference}>{record.reference} · {record.title}</option>)}
             </select>
           </div>
         )}
@@ -5270,7 +5342,7 @@ function ProjectDetail({
                 {profile.customer}
               </span>
               <span className="rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase">
-                {project.fields?.["currentStage"] ?? "Stage 8 · Type Approval TAC"}
+                {project.fields["lifecycleStage"] || project.fields["currentStage"] || "Stage not recorded"}
               </span>
             </div>
             <h2 className="mt-2 text-lg font-bold tracking-tight text-foreground md:text-xl">
@@ -7444,11 +7516,11 @@ function RecordForm({
 }) {
   const spec = formSpecs[area] ?? formSpecs.ehw;
   if (!spec) return null;
-  const availableTypes = Array.from(new Set(["Task", ...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
+  const availableTypes = Array.from(new Set(["Task", ...(area === "sales" || area === "rnd" ? ["Project"] : []), ...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
   const [type, setType] = useState(initialType ?? spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>(() => ({
     location: portal.masters.locations?.[0] || "XYZ Pvt Ltd — Noida Tech Center",
-    projectId: "HLPL-AI4T-01",
+    projectId: "",
     hwStage: "HW_01",
     gate: "G0",
     procurementTrack: "Rapid prototype",
@@ -7464,7 +7536,7 @@ function RecordForm({
     if (initialValues) {
       setValues((prev) => ({
         location: portal.masters.locations?.[0] || "XYZ Pvt Ltd — Noida Tech Center",
-        projectId: "HLPL-AI4T-01",
+        projectId: "",
         hwStage: "HW_01",
         gate: "G0",
         procurementTrack: "Rapid prototype",
@@ -7476,12 +7548,12 @@ function RecordForm({
   }, [initialType, initialValues, portal.masters.locations]);
   const field = (key: string) => values[key] ?? "";
   const departmentCode = findAreaDepartment(portal.departments, area)?.code.replace(/^DEMO-/, "") || areaById(area).short;
-  const selectedProject = field("projectId") || field("product") || "HLPL-AI4T-01";
+  const selectedProject = field("projectId");
   const selectedDocumentType = templateDocumentTypes.includes(type.toUpperCase()) ? type.toUpperCase() : type.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8) || "REC";
   const nextRevision = String(
     portal.records.filter((record) => record.reference.includes(`-${departmentCode}-${selectedDocumentType}-`)).length + 1,
   ).padStart(2, "0");
-  const generatedId = type === "Task"
+  const generatedId = type === "Project" ? field("projectId") : type === "Task"
     ? `TASK-${departmentCode}-${String(portal.records.filter((r) => r.type === "Task").length + 1).padStart(3, "0")}`
     : documentNumber(selectedProject, departmentCode, selectedDocumentType, nextRevision, portal.templateSettings?.prefix ?? "HLPL");
   const approvedReview = portal.records.find(
@@ -7503,14 +7575,25 @@ function RecordForm({
     { key: "dueDate", label: "Due Date", kind: "date" as const },
     { key: "controlledNumber", label: "Task ID / Reference (optional)" },
   ];
-  const visibleFields =
-    type === "Task"
-      ? taskFields
-      : type === "PRS"
-        ? spec.fields.filter((item) => item.key !== "hwStage" && item.key !== "controlledNumber")
-        : spec.fields.filter((item) => item.key !== "controlledNumber");
+  const projectOptions = portal.records.filter(record => record.type === "Project" && !record.archived).map(record => record.reference);
+  const projectFields = [
+    { key: "projectId", label: "Project code", required: true },
+    { key: "title", label: "Project title", required: true },
+    { key: "customer", label: "Customer", master: "customers" as const },
+    { key: "owner", label: "Project owner", master: "people" as const },
+    { key: "targetDate", label: "Target date", kind: "date" as const },
+    { key: "quantity", label: "Target annual volume" },
+  ];
+  const visibleFields = type === "Project" ? projectFields : type === "Task" ? taskFields : [
+    { key: "projectId", label: "Project", required: true, kind: "select" as const, options: projectOptions },
+    ...spec.fields.filter(item => item.key !== "controlledNumber" && item.key !== "projectId" && (type !== "PRS" || item.key !== "hwStage")),
+  ];
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (type !== "Task" || field("projectId")) {
+      try { validateIntakeProject(portal.records, type, field("projectId")); }
+      catch (error) { return setError(error instanceof Error ? error.message : "Choose a project."); }
+    }
     if (type === "Task") {
       const taskTitle = field("title").trim();
       if (!taskTitle) return setError("Task title is required.");
@@ -7534,7 +7617,7 @@ function RecordForm({
     if (type === "PRS" && !approvedReview) {
       return setError("PRS is generated only after an approved Contract Review HLPL/F/MKT/01.");
     }
-    const finalControlledNumber = field("controlledNumber") || generatedId;
+    const finalControlledNumber = type === "Project" ? field("projectId") : field("controlledNumber") || generatedId;
     const preparedValues = {
       ...(type === "PRS"
         ? {
@@ -7547,6 +7630,7 @@ function RecordForm({
           }
         : values),
       controlledNumber: finalControlledNumber,
+      ...(type === "Project" ? { lifecycleStage: "Stage 1", currentStage: "Stage 1" } : {}),
     };
     const missing = visibleFields.find(
       (item) => item.required && item.key !== "controlledNumber" && !field(item.key).trim(),
@@ -7593,7 +7677,7 @@ function RecordForm({
             </div>
             <Action label={copied ? "Copied" : "Copy ID"} onClick={() => { void navigator.clipboard?.writeText(field("controlledNumber") || generatedId); setCopied(true); window.setTimeout(() => setCopied(false), 1500); }} />
           </div>
-          <input aria-label="Editable document ID" value={field("controlledNumber") || generatedId} onChange={(event) => setValues({ ...values, controlledNumber: event.target.value.toUpperCase() })} className="mt-3 h-9 w-full rounded-lg border border-input bg-background px-3 font-mono text-xs" />
+          <input aria-label="Editable document ID" readOnly={type === "Project"} value={field("controlledNumber") || generatedId} onChange={(event) => setValues({ ...values, controlledNumber: event.target.value.toUpperCase() })} className="mt-3 h-9 w-full rounded-lg border border-input bg-background px-3 font-mono text-xs" />
         </section>
         {type === "PRS" && (
           <div className="rounded-lg border border-moss/30 bg-accent p-4 text-sm">

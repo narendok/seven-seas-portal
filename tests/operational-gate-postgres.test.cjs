@@ -39,8 +39,11 @@ test('real PostgreSQL migrations enforce revision approvals and atomic stage RPC
     '20260927075232_f91de181-c465-45aa-948c-2fd7979633e6.sql',
     '20260927090641_a22d2778-36cf-4d5a-9317-87ec60e24b1e.sql',
     '20260927171219_adbe39cb-1238-47c9-ba7c-69ad4ac4dc2d.sql',
+    '20260927171247_b0c6d9a3-9521-4fcb-bf96-260d6f79035d.sql',
+    '20260927171349_e3fade41-b2b3-4f0e-8a0b-12796c1261fd.sql',
     '20261020010000_operational_stage_gate_contract.sql',
     '20261020014346_bind_stage_gate_approval_revisions.sql',
+    '20261020025329_enforce_operational_gate_write_boundary.sql',
   ];
   for(const name of migrations) await db.exec(fs.readFileSync(path.join(root,'supabase/migrations',name),'utf8'));
   await db.query(`INSERT INTO auth.users VALUES ($1);`,[user]);
@@ -71,6 +74,24 @@ test('real PostgreSQL migrations enforce revision approvals and atomic stage RPC
     // The internal helper is deliberately not remotely callable by authenticated.
     return (await db.query('SELECT verify_approved_stage_deliverable($1,$2,$3,$4::jsonb,$5::jsonb,$6) AS ok',[org,project,pattern,JSON.stringify(manifest),JSON.stringify(na),allow])).rows[0].ok;
   }
+  await t.test('operational membership resolves using actual department role schema',async()=>{
+    await db.exec('SET ROLE authenticated');
+    try {
+      const rows=(await db.query('SELECT * FROM resolve_operational_membership()')).rows;
+      assert.equal(rows[0].organization_id,org);
+      assert.equal(rows[0].can_sign_stage_gates,true);
+    }finally{await db.exec('RESET ROLE');}
+  });
+  await t.test('direct authenticated stage or gate metadata writes cannot bypass the RPC',async()=>{
+    await db.exec('SET ROLE authenticated');
+    try {
+      await assert.rejects(db.query("UPDATE operational_records SET stage='Stage 9' WHERE id=$1",[project]),/STAGE_RPC_REQUIRED/);
+      await assert.rejects(db.query("UPDATE operational_records SET fields=fields || '{\"lifecycleStage\":\"Stage 9\"}'::jsonb WHERE id=$1",[project]),/STAGE_RPC_REQUIRED/);
+      await assert.rejects(db.query("UPDATE operational_records SET fields=fields || '{\"last_stage_gate\":{}}'::jsonb WHERE id=$1",[project]),/STAGE_RPC_REQUIRED/);
+      await db.query("UPDATE operational_records SET notes='Ordinary field edit remains allowed' WHERE id=$1",[project]);
+    }finally{await db.exec('RESET ROLE');}
+    assert.equal((await db.query('SELECT stage FROM operational_records WHERE id=$1',[project])).rows[0].stage,'Stage 2');
+  });
   await t.test('unbound legacy approval cannot satisfy a freeze; denial leaves no writes',async()=>{
     await approval(uuid(10),null,null);
     await assert.rejects(gate(),/GATE_FREEZE_VIOLATION/);
