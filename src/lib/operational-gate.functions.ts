@@ -1,3 +1,4 @@
+import { stageGateInputSchema } from "./operational-gate.schema";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -16,27 +17,7 @@ export interface OperationalMembership {
   canSignStageGates: boolean;
 }
 
-export const stageGateInputSchema = z.object({
-  recordId: z.string().uuid(),
-  targetStage: z.string().trim().min(1).max(50),
-  evidenceManifest: z
-    .object({
-      deliverables: z.array(z.string().trim().min(1)).default([]),
-      naRationale: z.record(z.string(), z.string()).default({}),
-      canonicalContentHash: z.string().trim().default(""),
-      notes: z.string().trim().default(""),
-      signers: z.array(z.record(z.string(), z.unknown())).default([]),
-    })
-    .default({
-      deliverables: [],
-      naRationale: {},
-      canonicalContentHash: "",
-      notes: "",
-      signers: [],
-    }),
-});
-
-export type StageGateInput = z.infer<typeof stageGateInputSchema>;
+export { stageGateInputSchema, type StageGateInput } from "./operational-gate.schema";
 
 export interface StageGateAdvanceResult {
   success: boolean;

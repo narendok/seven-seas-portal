@@ -16,6 +16,12 @@ export type Database = {
     Tables: {
       approvals: {
         Row: {
+          evidence_record_id: string | null
+          evidence_document_id: string | null
+          evidence_revision: string | null
+          evidence_checksum: string | null
+          evidence_requirement: string | null
+          evidence_is_na: boolean
           approver_id: string | null
           created_at: string
           created_by: string
@@ -31,6 +37,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          evidence_record_id?: string | null
+          evidence_document_id?: string | null
+          evidence_revision?: string | null
+          evidence_checksum?: string | null
+          evidence_requirement?: string | null
+          evidence_is_na?: boolean
           approver_id?: string | null
           created_at?: string
           created_by: string
@@ -46,6 +58,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          evidence_record_id?: string | null
+          evidence_document_id?: string | null
+          evidence_revision?: string | null
+          evidence_checksum?: string | null
+          evidence_requirement?: string | null
+          evidence_is_na?: boolean
           approver_id?: string | null
           created_at?: string
           created_by?: string
@@ -61,6 +79,8 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          { foreignKeyName: "approvals_evidence_record_id_fkey", columns: ["evidence_record_id"], isOneToOne: false, referencedRelation: "operational_records", referencedColumns: ["id"] },
+          { foreignKeyName: "approvals_evidence_document_id_fkey", columns: ["evidence_document_id"], isOneToOne: false, referencedRelation: "documents", referencedColumns: ["id"] },
           {
             foreignKeyName: "approvals_approver_id_fkey"
             columns: ["approver_id"]

@@ -15,6 +15,13 @@
       "when": 1792455600000,
       "tag": "0001_operational_stage_gate_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792460735792,
+      "tag": "0002_bind_stage_gate_approval_revisions",
+      "breakpoints": true
     }
   ]
 }
