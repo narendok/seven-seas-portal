@@ -57,6 +57,13 @@
       "when": 1792467580834,
       "tag": "0007_enforce_operational_gate_write_boundary",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792468674126,
+      "tag": "0008_shared_test_workspace",
+      "breakpoints": true
     }
   ]
 }

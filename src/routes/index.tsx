@@ -1,3 +1,4 @@
+import { SharedTestWorkspace } from "@/components/SharedTestWorkspace";
 import { evolveResponsibilityConfiguration, resolveProjectChronicles, type ResponsibilityVersion } from "@/lib/responsibility-version";
 import { DepartmentProjectWorkspace } from "@/components/DepartmentProjectWorkspace";
 import { businessDate } from "@/lib/business-date";
@@ -2305,6 +2306,7 @@ function Portal() {
   }, []);
 
   const update = async (recipe: (state: PortalState) => PortalState): Promise<boolean> => {
+    if (testMembership) { setNotice("Shared TEST writes must use the authenticated workspace."); return false; }
     try {
       const save = (state: PortalState) => window.localStorage.setItem(storeKey, JSON.stringify(state));
       const next = await commitLatestState(readPortal, save, recipe, commit => navigator.locks ? navigator.locks.request(storeKey, commit) : Promise.resolve(commit()));
@@ -3021,6 +3023,8 @@ function Portal() {
     setSelectedDocumentId(document.id);
     setModal("document");
   };
+  if (!testAuthReady) return <main className="grid min-h-screen place-items-center bg-background text-foreground">Checking authenticated session…</main>;
+  if (testMembership) return <SharedTestWorkspace membership={testMembership} onLogout={handleLogout} darkMode={darkMode} />;
   if (signedOut) return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><p className="text-[11px] font-bold uppercase text-primary">TEST ONLY</p><h1 className="mt-1 text-xl font-semibold">Signed out</h1><p className="mt-3 text-sm text-muted-foreground">Sign in with a provisioned TEST account. Browser-local demo records remain separate.</p><button type="button" disabled={!testAuthReady} onClick={() => setLoginModalOpen(true)} className="mt-5 rounded border border-border px-4 py-2 text-sm disabled:opacity-50">Sign in to TEST workspace</button></section><DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode currentPersonaId="" onClose={() => setLoginModalOpen(false)} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} /></main>;
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
