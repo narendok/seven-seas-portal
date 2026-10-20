@@ -1,3 +1,6 @@
+import { DocumentUploadPilotDialog, type UploadDraft } from "@/components/DocumentUploadPilotDialog";
+import { assertUploadContextCurrent, sourceGerberPackages, type UploadScope, type UploadType, type SourcePackage } from "@/lib/document-upload-pilot";
+import { recordsForProject, documentsForProject } from "@/lib/project-workspace";
 import { SharedTestWorkspace } from "@/components/SharedTestWorkspace";
 import { evolveResponsibilityConfiguration, resolveProjectChronicles, type ResponsibilityVersion } from "@/lib/responsibility-version";
 import { DepartmentProjectWorkspace } from "@/components/DepartmentProjectWorkspace";
@@ -272,6 +275,10 @@ type ControlledDocument = {
   approver?: string | undefined;
   history?: string[] | undefined;
   cloudDocumentId?: string | undefined;
+  projectId?: string | undefined;
+  uploadType?: UploadType | undefined;
+  uploadScope?: UploadScope | undefined;
+  sourcePackage?: SourcePackage | undefined;
   localFiles?: LocalControlledFile[] | undefined;
   draftHtml?: string | undefined;
   draftSnapshot?: ReturnType<typeof buildDocumentDraft> | undefined;
@@ -3724,13 +3731,18 @@ function Portal() {
             setSelectedDocumentId(document.id);
             setModal("document");
           }}
-          onDocumentCreated={(document) => {
-            update((state) => ({
+          uploadReadOnlyReason={testMembership ? "This view is browser-local. Use Shared TEST records for account-backed uploads; this pilot does not synchronize with Android." : undefined}
+          onDocumentCreated={async (document) => update((state) => {
+            const projects = state.records.filter(r => r.type === "Project");
+            const project = projects.find(p => p.id === document.projectId);
+            const accessibleDocuments = state.documents.filter(d => canDepartmentAccessDocument(d, persona, departmentContext));
+            assertUploadContextCurrent(document, projects, state.departments, sourceGerberPackages(accessibleDocuments, project));
+            return {
               ...state,
               documents: [document, ...state.documents],
-            }));
-            log("Controlled document created", `${document.title} · ${document.part ?? document.type}`);
-          }}
+              audit: [{ id: createId(), at: now(), action: "Draft document uploaded", detail: `${document.title} · ${document.part ?? document.type} · Browser-local` }, ...state.audit].slice(0, 100),
+            };
+          })}
           onDocumentUpdated={(document, event) => {
             update((state) => ({
               ...state,
@@ -9521,6 +9533,7 @@ function DocumentsPanel({
   onOpenCustomerRegister,
   portal,
   onDocumentCreated,
+  uploadReadOnlyReason,
   onDocumentUpdated,
 }: {
   documents: ControlledDocument[];
@@ -9535,7 +9548,8 @@ function DocumentsPanel({
   onTemplateBodiesChange: (templates: Record<string, string>) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   portal?: PortalState | undefined;
-  onDocumentCreated?: ((document: ControlledDocument) => void) | undefined;
+  onDocumentCreated?: ((document: ControlledDocument) => Promise<boolean>) | undefined;
+  uploadReadOnlyReason?: string | undefined;
   onDocumentUpdated?: ((document: ControlledDocument, event: string) => void) | undefined;
 }) {
   const approvedCount = documents.filter((d) => d.lifecycle === "Approved").length;
@@ -9585,6 +9599,7 @@ function DocumentsPanel({
         onOpenCustomerRegister={onOpenCustomerRegister}
         portal={portal}
         onDocumentCreated={onDocumentCreated}
+        uploadReadOnlyReason={uploadReadOnlyReason}
         onDocumentUpdated={onDocumentUpdated}
       />
     </Modal>
@@ -9603,7 +9618,7 @@ const formatBytes = (size: number) =>
 const formatLabel = (file: Pick<LocalControlledFile, "name" | "type">) => {
   const extension = file.name.split(".").pop()?.toUpperCase();
   if (extension === "STP" || extension === "STEP") return "CAD STEP";
-  if (extension === "ZIP") return "GERBER ZIP";
+  if (extension === "ZIP") return "ZIP archive";
   return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
 };
 
@@ -9640,6 +9655,7 @@ export const canonicalDriveGroups: { id: DriveGroup; label: string; icon: string
 ];
 
 export function driveGroupFor(document: ControlledDocument): "01 Common documents" | "02 Internal projects" | "03 Client projects" | "04 Other department work" {
+  if (document.uploadScope) return ({ common: "01 Common documents", internal: "02 Internal projects", client: "03 Client projects", department: "04 Other department work" } as const)[document.uploadScope];
   const combined = `${document.title} ${document.type} ${document.group ?? ""} ${document.part ?? ""} ${document.device ?? ""}`.toLowerCase();
   if (/governance|qms|sop|procedure|mnda|nda template|matrix|authority|handover|enquiry intake|register\.xlsx/i.test(combined)) {
     return "01 Common documents";
@@ -9683,6 +9699,7 @@ function HardwareDeliverablesDrive({
   onOpenCustomerRegister,
   portal,
   onDocumentCreated,
+  uploadReadOnlyReason,
   onDocumentUpdated,
 }: {
   documents: ControlledDocument[];
@@ -9692,17 +9709,22 @@ function HardwareDeliverablesDrive({
   onSelectDocument: (document: ControlledDocument) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   portal?: PortalState | undefined;
-  onDocumentCreated?: ((document: ControlledDocument) => void) | undefined;
+  onDocumentCreated?: ((document: ControlledDocument) => Promise<boolean>) | undefined;
+  uploadReadOnlyReason?: string | undefined;
   onDocumentUpdated?: ((document: ControlledDocument, event: string) => void) | undefined;
 }) {
   const [driveGroup, setDriveGroup] = useState<DriveGroup>("All Deliverables");
   const [folder, setFolder] = useState("00_Root_Audit_Repository");
   const [query, setQuery] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [projectFilter, setProjectFilter] = useState("all");
+  const actorDepartment = persona?.departmentId ? findAreaDepartment(departments, persona.departmentId) : undefined;
+  const uploadDepartments = departments.filter(d => d.active && (persona?.kind === "admin" || d.id === actorDepartment?.id));
+  const uploadProjects = (portal?.records ?? []).filter(r => r.type === "Project" && !r.archived);
+  const uploadDisabled = Boolean(uploadReadOnlyReason || !onDocumentCreated || !persona || persona.kind === "client" || !uploadDepartments.length);
 
   const canSee = (document: ControlledDocument) =>
     canDepartmentAccessDocument(
@@ -9717,7 +9739,9 @@ function HardwareDeliverablesDrive({
   const countByFolder = (fld: string) =>
     documents.filter((doc) => canSee(doc) && (driveGroup === "All Deliverables" || driveGroupFor(doc) === driveGroup) && (fld === "00_Root_Audit_Repository" || driveFolderFor(doc) === fld)).length;
 
-  const visible = documents.filter(
+  const selectedProject = uploadProjects.find(p => p.id === projectFilter);
+  const projectDocuments = projectFilter === "all" ? documents : selectedProject ? documentsForProject(documents, recordsForProject(portal?.records ?? [], selectedProject), selectedProject) : [];
+  const visible = projectDocuments.filter(
     (document) =>
       canSee(document) &&
       (driveGroup === "All Deliverables" || driveGroupFor(document) === driveGroup) &&
@@ -9725,74 +9749,18 @@ function HardwareDeliverablesDrive({
       `${document.title} ${document.type} ${document.part ?? ""}`.toLowerCase().includes(query.toLowerCase()),
   );
 
-  const handleFileUpload = async (file: File) => {
-    try {
-      setIsUploading(true);
-      setUploadProgress(15);
-      setUploadNotice(`Securing & computing SHA-256 for ${file.name}…`);
-      const checksum = await sha256(file);
-      setUploadProgress(55);
-
-      const id = createId();
-      await saveLocalAttachment(id, file);
-      setUploadProgress(85);
-
-      const localFile: LocalControlledFile = {
-        id,
-        name: file.name,
-        type: file.type || "application/octet-stream",
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-        uploader: "HOD Engineer · Lovable Cloud Storage",
-        revision: "01",
-        storage: "indexeddb",
-        checksum,
-      };
-
-      // Check if there is an existing matching document in this folder to attach to
-      const existingDoc = documents.find(
-        (doc) => canSee(doc) && (folder === "00_Root_Audit_Repository" || driveFolderFor(doc) === folder) && doc.title.toLowerCase().includes((file.name.split(".")[0] ?? "").toLowerCase()),
-      );
-
-      if (existingDoc) {
-        const updatedDoc: ControlledDocument = {
-          ...existingDoc,
-          localFiles: [...(existingDoc.localFiles ?? []), localFile],
-          history: [`${now()} · ${file.name} attached directly to drive folder /${folder} (SHA-256 verified)`, ...(existingDoc.history ?? [])],
-        };
-        onDocumentUpdated?.(updatedDoc, `${existingDoc.title} · ${file.name} attached`);
-      } else {
-        // Create new controlled document deliverable
-        const departmentId = departmentContext ?? departments[0]?.id ?? "ehw";
-        const newDoc: ControlledDocument = {
-          id: createId(),
-          url: "",
-          departmentId,
-          title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
-          type: formatLabel(localFile),
-          lifecycle: "Approved",
-          deliverableKind: "Technical document",
-          revision: "01",
-          part: `HLPL-AI4T-EHW-${formatLabel(localFile)}-01`,
-          device: "Tata Ace EV 4G AIS-140 Gateway",
-          group: driveGroup === "All Deliverables" ? "03 Client projects" : driveGroup,
-          phase: "HW_18 · Production Engineering Release",
-          localFiles: [localFile],
-          history: [`${now()} · Created via Direct Cloud Drive upload into /${folder}`],
-        };
-        onDocumentCreated?.(newDoc);
-      }
-
-      setUploadProgress(100);
-      setUploadNotice(`✓ Upload Verified: ${file.name} (${formatBytes(file.size)}) stored separately in this browser with SHA-256 ${checksum.slice(0, 16)}…`);
-      window.setTimeout(() => {
-        setIsUploading(false);
-      }, 1500);
-    } catch (err) {
-      setIsUploading(false);
-      setUploadProgress(0);
-      setUploadNotice(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+  const openUploadDraft = (file: File | null) => {
+    if (uploadDisabled) { setUploadNotice(uploadReadOnlyReason ?? "Select an authorized department before uploading."); return; }
+    setPendingFile(file); setUploadDialogOpen(true);
+  };
+  const saveUploadDraft = async (document: UploadDraft) => {
+    if (uploadDisabled || !onDocumentCreated) return false;
+    const saved = await onDocumentCreated(document);
+    if (saved) {
+      setUploadNotice(`${document.title} saved as a browser-local Draft. Not approved or shared.`);
+      setFolder("00_Root_Audit_Repository"); setDriveGroup("All Deliverables"); setQuery(""); setProjectFilter(document.projectId ?? "all");
     }
+    return saved;
   };
 
   return (
@@ -9808,7 +9776,7 @@ function HardwareDeliverablesDrive({
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-md border border-moss/25 bg-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase text-accent-foreground">
-              Lovable Cloud Active
+              Browser-local files
             </span>
           </div>
         </div>
@@ -9875,7 +9843,7 @@ function HardwareDeliverablesDrive({
           e.preventDefault();
           setIsDragging(false);
           const file = e.dataTransfer.files[0];
-          if (file) void handleFileUpload(file);
+          if (file) openUploadDraft(file);
         }}
         className={`rounded-lg border-2 border-dashed p-4 text-center transition-all ${
           isDragging
@@ -9890,53 +9858,20 @@ function HardwareDeliverablesDrive({
             </div>
             <div>
               <p className="text-xs font-semibold text-foreground">
-                Direct File Upload into /{driveGroup.slice(0, 11)}/{folder}
+                Upload original document · Draft only
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Drop PDF, DOCX, XLSX, CAD STEP, Gerber ZIP, or firmware hex to attach with SHA-256 verification
+                Choose a file, then confirm its project, type and revision. Stored in this browser · up to 25 MB.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="sr-only"
-              accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handleFileUpload(file);
-              }}
-            />
-            <Action
-              label="Select Deliverable File"
-              onClick={() => fileInputRef.current?.click()}
-              primary
-            />
+            <button type="button" disabled={uploadDisabled} onClick={() => openUploadDraft(null)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">Upload original</button>
           </div>
         </div>
 
-        {/* Progress Bar & Notice */}
-        {isUploading && (
-          <div className="mt-3 w-full">
-            <div className="flex items-center justify-between text-[11px] font-medium text-steel">
-              <span>{uploadNotice}</span>
-              <span>{uploadProgress}%</span>
-            </div>
-            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {!isUploading && uploadNotice && (
-          <p className="mt-2 text-center text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            {uploadNotice}
-          </p>
-        )}
+        {uploadReadOnlyReason && <p className="mt-2 text-left text-xs text-muted-foreground">{uploadReadOnlyReason}</p>}
+        {uploadNotice && <p role="status" className="mt-2 text-center text-xs text-muted-foreground">{uploadNotice}</p>}
       </section>
 
       {/* Artifact Register Table / List */}
@@ -9950,6 +9885,7 @@ function HardwareDeliverablesDrive({
               Project Artifact Register ({visible.length} Deliverables)
             </p>
           </div>
+          <select aria-label="Filter documents by project" value={projectFilter} onChange={e => setProjectFilter(e.target.value)} className="h-9 max-w-64 rounded-lg border border-input bg-background px-2 text-xs"><option value="all">All projects / common documents</option>{uploadProjects.map(p => <option key={p.id} value={p.id}>{p.reference} · {p.title}</option>)}</select>
           <input
             aria-label="Search deliverables"
             value={query}
@@ -10011,6 +9947,7 @@ function HardwareDeliverablesDrive({
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <strong className="text-sm font-semibold text-foreground">{document.title}</strong>
+                      {document.uploadType && <span className="rounded border border-amber-500/25 bg-amber-500/10 px-1.5 py-0.5 text-[10px]">{document.lifecycle ?? "Draft"} · Browser-local</span>}
                       <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-primary">
                         {docGroup}
                       </span>
@@ -10023,6 +9960,7 @@ function HardwareDeliverablesDrive({
                       {departments.find((d) => d.id === document.departmentId)?.name ?? "Engineering"}
                     </small>
 
+                    {document.sourcePackage && <p className="mt-1 text-[10px] text-muted-foreground">Source Gerber: {documents.find(d => d.id === document.sourcePackage?.documentId)?.title ?? document.sourcePackage.documentId} · Rev {document.sourcePackage.revision} · SHA-256 {document.sourcePackage.checksum.slice(0, 12)}…</p>}
                     {/* Attached Local Files List */}
                     {files.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -10065,6 +10003,7 @@ function HardwareDeliverablesDrive({
           ) : null}
         </div>
       </section>
+      {uploadDialogOpen && persona && <DocumentUploadPilotDialog initialFile={pendingFile} projects={uploadProjects} departments={uploadDepartments} documents={documents.filter(canSee)} initialScope={driveGroup === "01 Common documents" ? "common" : driveGroup === "02 Internal projects" ? "internal" : driveGroup === "04 Other department work" ? "department" : "client"} actor={{ id: persona.id, kind: persona.kind, name: persona.person, departmentId: actorDepartment?.id }} onClose={() => { setUploadDialogOpen(false); setPendingFile(null); }} onSave={saveUploadDraft} />}
     </section>
   );
 }
@@ -10144,10 +10083,11 @@ function DocumentDetail({
   const formatLabel = (file: Pick<LocalControlledFile, "name" | "type">) => {
     const extension = file.name.split(".").pop()?.toUpperCase();
     if (extension === "STP" || extension === "STEP") return "CAD STEP";
-    if (extension === "ZIP") return "GERBER ZIP";
+    if (extension === "ZIP") return "ZIP archive";
     return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
   };
   const uploadLocal = async (file: File, incrementRevision = false) => {
+    if (document.uploadType) { setFileMessage("Pilot originals are retained unchanged. Add a new draft through Documents & Deliverables."); return; }
     try {
       setFileState("uploading"); setUploadProgress(4); setFileMessage("Securing & Verifying SHA-256 Hash…");
        const checksum = await sha256(file); setUploadProgress(40);
@@ -10301,7 +10241,7 @@ function DocumentDetail({
               <div>
                 <p className="font-semibold">Private file storage</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Lovable Cloud is the active backend. Google Drive is optional and not connected.
+                  {document.uploadType ? "This pilot original is stored in this browser. It is not a shared or approved release." : "Lovable Cloud is the active backend. Google Drive is optional and not connected."}
                 </p>
               </div>
               <Status status={isCloudDocument ? "Approved" : "Draft"} />
@@ -10391,17 +10331,17 @@ function DocumentDetail({
                       className="sr-only"
                       type="file"
                        accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp,.hex,.bin,.csv,.xlsx,.docx" : ".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"}
-                      disabled={fileState === "uploading"}
+                      disabled={Boolean(document.uploadType) || fileState === "uploading"}
                       onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadLocal(file); }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                     {isHardwareDeliverable ? "Attach PDF, Gerber ZIP, STEP/STP, HEX/BIN, CSV/XLSX, or DOCX deliverables. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
+                     {document.uploadType ? "Pilot originals are retained unchanged. Add a new draft through Documents & Deliverables; shared storage and approval are separate steps." : <>{isHardwareDeliverable ? "Attach PDF, Gerber ZIP, STEP/STP, HEX/BIN, CSV/XLSX, or DOCX deliverables. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.</>}
                   </p>
                   {fileState === "uploading" && <div className="mt-3" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Securing & Verifying SHA-256 Hash… {uploadProgress}%</p></div>}
                   {fileMessage && <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-moss"}`}>{fileMessage}</p>}
                   <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-background">
-                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}{file.checksum ? ` · SHA-256 ${file.checksum.slice(0, 16)}…` : ""}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { void downloadLocalControlledFile(file).catch((error) => { setFileState("error"); setFileMessage(error instanceof Error ? error.message : "Download is unavailable."); }); }} /><label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label><Action label="Archive" onClick={() => { void removeLocalAttachment(file.id); const next = { ...document, localFiles: localFiles.filter((item) => item.id !== file.id), history: [`${now()} · ${file.name} archived from browser-local revision history`, ...(document.history ?? [])] }; onDocumentUpdated(next, `${document.title} · ${file.name} archived`); }} /></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
+                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}{file.checksum ? ` · SHA-256 ${file.checksum.slice(0, 16)}…` : ""}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { void downloadLocalControlledFile(file).catch((error) => { setFileState("error"); setFileMessage(error instanceof Error ? error.message : "Download is unavailable."); }); }} />{!document.uploadType && <label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label>}{!document.uploadType && <Action label="Archive" onClick={() => { void removeLocalAttachment(file.id); const next = { ...document, localFiles: localFiles.filter((item) => item.id !== file.id), history: [`${now()} · ${file.name} archived from browser-local revision history`, ...(document.history ?? [])] }; onDocumentUpdated(next, `${document.title} · ${file.name} archived`); }} />}</div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
                   </div>
                 </>
               )}
