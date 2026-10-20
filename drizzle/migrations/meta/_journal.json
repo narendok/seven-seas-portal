@@ -2,10 +2,61 @@
   "version": "7",
   "dialect": "postgresql",
   "entries": [
-    { "idx": 0, "version": "7", "when": 1792425722777, "tag": "0000_test_only_auth_membership_contract", "breakpoints": true },
-    { "idx": 1, "version": "7", "when": 1792429724576, "tag": "0001_harden_test_membership_resolution", "breakpoints": true },
-    { "idx": 2, "version": "7", "when": 1792455600000, "tag": "0001_operational_stage_gate_contract", "breakpoints": true },
-    { "idx": 3, "version": "7", "when": 1792460735792, "tag": "0002_bind_stage_gate_approval_revisions", "breakpoints": true },
-    { "idx": 4, "version": "7", "when": 1792464883678, "tag": "0003_enforce_operational_gate_write_boundary", "breakpoints": true }
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792425722777,
+      "tag": "0000_test_only_auth_membership_contract",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792429724576,
+      "tag": "0001_harden_test_membership_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792455600000,
+      "tag": "0001_operational_stage_gate_contract",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792460735792,
+      "tag": "0002_bind_stage_gate_approval_revisions",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792464883678,
+      "tag": "0003_enforce_operational_gate_write_boundary",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792467514239,
+      "tag": "0005_operational_stage_gate_contract",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792467553760,
+      "tag": "0006_bind_stage_gate_approval_revisions",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792467580834,
+      "tag": "0007_enforce_operational_gate_write_boundary",
+      "breakpoints": true
+    }
   ]
 }
