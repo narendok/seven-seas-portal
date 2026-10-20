@@ -1,3 +1,5 @@
+import { ResponsiveFilterBar, CompactFilterSelect } from "@/components/ResponsiveFilterBar";
+import { matchesWorkspaceDocument } from "@/lib/sidebar-selection";
 import React, { useState, useEffect } from "react";
 import { DepartmentLeadCoordinationCenter, type TaskRecord, type TeamMember } from "./DepartmentLeadCoordinationCenter";
 import type { ApprovalRecord } from "./ApprovalsFullPageView";
@@ -40,9 +42,12 @@ type Props = {
   approvals: ApprovalRecord[];
   team: TeamMember[];
   projectScope: string;
+  recordTypeFilter?: string | null | undefined;
+  onClearRecordTypeFilter?: (()=>void) | undefined;
   initialTab?: "overview" | "tasks" | "deliverables" | "approvals" | "records" | "team" | undefined;
   onProjectChange: (value: string) => void;
   onCreateRecord: () => void;
+  onCreateDeliverable?: (() => void) | undefined;
   onCreateProject?: (() => void) | undefined;
   onOpenRecord: (id: string) => void;
   onOpenDocument: (id: string) => void;
@@ -73,7 +78,7 @@ export function DepartmentProjectWorkspace(props: Props) {
   const project = projects.find((item) => item.reference === projectScope || item.id === projectScope);
   const all = projectScope === "all";
   const records = all ? props.records : recordsForProject(props.records, project);
-  const documents = all ? props.documents : project ? documentsForProject(props.documents, records, project) : [];
+  const documents = (all ? props.documents : project ? documentsForProject(props.documents, records, project) : []).filter(document => matchesWorkspaceDocument(document, props.recordTypeFilter));
   const sourceIds = new Set(records.map((record) => record.id));
   const approvals = props.approvals.filter(
     (approval) =>
@@ -116,26 +121,7 @@ export function DepartmentProjectWorkspace(props: Props) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground">
-              <FolderKanban className="size-3.5 text-muted-foreground shrink-0" />
-              <span className="font-mono text-[10px] uppercase font-semibold text-muted-foreground shrink-0">
-                Project:
-              </span>
-              <select
-                aria-label="Workspace project"
-                value={projectScope}
-                onChange={(event) => props.onProjectChange(event.target.value)}
-                className="bg-transparent font-semibold text-foreground text-xs outline-none cursor-pointer max-w-[200px] sm:max-w-[280px] truncate [&>option]:bg-background [&>option]:text-foreground"
-              >
-                <option value="all">All projects — department overview</option>
-                {!all && !project && <option value={projectScope}>Selected project unavailable</option>}
-                {projects.map((item) => (
-                  <option key={item.id} value={item.reference}>
-                    {item.reference} · {item.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div className="min-w-0 max-w-72"><CompactFilterSelect label="Workspace project" shortLabel="Project" icon={FolderKanban} value={projectScope} onChange={props.onProjectChange} options={[{value:"all",label:"All projects"},...(!all && !project ? [{value:projectScope,label:"Selected project unavailable"}] : []),...projects.map(item=>({value:item.reference,label:`${item.reference} · ${item.title}`}))]}/></div>
 
             {props.onCreateProject && <button type="button" onClick={props.onCreateProject} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold">New Project</button>}
             <button
@@ -174,7 +160,7 @@ export function DepartmentProjectWorkspace(props: Props) {
             <div className="flex items-center gap-2 text-xs">
               <span className="text-muted-foreground">Department Deliverable:</span>
               <strong className="text-foreground font-mono text-[11px]">
-                {project.fields["deliverable"] || "Schematics, Preliminary BOM & Gate Reviews"}
+                {project.fields["deliverable"] || "Not recorded"}
               </strong>
             </div>
           </div>
@@ -194,7 +180,7 @@ export function DepartmentProjectWorkspace(props: Props) {
             </div>
             <div>
               <dt className="text-[10px] uppercase font-mono text-muted-foreground">Volume Target</dt>
-              <dd className="mt-0.5 font-medium text-foreground">{project.fields["quantity"] || "50,000 units/yr"}</dd>
+              <dd className="mt-0.5 font-medium text-foreground">{project.fields["quantity"] || "Not recorded"}</dd>
             </div>
           </dl>
         </section>
@@ -430,6 +416,7 @@ export function DepartmentProjectWorkspace(props: Props) {
       {/* SUBVIEW 3: UNIFIED TECHNICAL DELIVERABLES & LIFECYCLE BOARD */}
       {activeTab === "deliverables" && (
         <section aria-label="Unified technical deliverables board" className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
+          {props.recordTypeFilter && <div className="flex items-center justify-between text-xs"><span>Document view: {props.recordTypeFilter === "SCHEMATIC" ? "Schematics & BOM" : props.recordTypeFilter === "DFMEA" ? "DFMEA & Gerber" : "Requirements / PRS"}</span><button type="button" onClick={props.onClearRecordTypeFilter} className="text-primary hover:underline">Show all document types</button></div>}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
             <div>
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -443,6 +430,7 @@ export function DepartmentProjectWorkspace(props: Props) {
             <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded">
               {documents.length} Authorized Documents
             </span>
+            {props.onCreateDeliverable && <button type="button" onClick={props.onCreateDeliverable} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Plus className="size-3.5"/>Add Deliverable</button>}
           </div>
 
           <div className="space-y-3">

@@ -26,10 +26,12 @@ export function SharedTestWorkspace({
   membership,
   onLogout,
   darkMode,
+  initialTab = "Tasks",
 }: {
   membership: TestMembership;
   onLogout: () => Promise<void>;
   darkMode: boolean;
+  initialTab?: Tab | undefined;
 }) {
   const load = useServerFn(getSharedTestWorkspace),
     write = useServerFn(mutateSharedTestWorkspace),
@@ -45,7 +47,7 @@ export function SharedTestWorkspace({
     refetchOnWindowFocus: true,
     retry: 1,
   });
-  const [tab, setTab] = useState<Tab>("Tasks"),
+  const [tab, setTab] = useState<Tab>(initialTab),
     [projectId, setProjectId] = useState("all");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),

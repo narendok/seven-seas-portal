@@ -1,3 +1,4 @@
+import { ResponsiveFilterBar, CompactFilterSelect } from "@/components/ResponsiveFilterBar";
 import React, { useState } from "react";
 import {
   ShoppingCart,
@@ -401,58 +402,11 @@ export function PurchasingBOMReviewTable({
         </div>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-64">
-            <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search MPN, description, manufacturer, supplier..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-3 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5 font-mono text-xs">
-            <span className="text-muted-foreground">Category:</span>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="h-8 rounded-md border border-border bg-background px-2 text-xs"
-            >
-              <option value="All">All Categories</option>
-              <option value="Microcontroller">Microcontrollers</option>
-              <option value="RF & Modem">RF & Modems</option>
-              <option value="Power & Protection">Power & TVS</option>
-              <option value="Connectors">Connectors</option>
-              <option value="Sensors">Sensors</option>
-              <option value="Passives">Passives</option>
-              <option value="Mechanical">Mechanical</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-1.5 font-mono text-xs">
-            <span className="text-muted-foreground">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-8 rounded-md border border-border bg-background px-2 text-xs"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Approved">Approved</option>
-              <option value="Alternate Recommended">Alternate Recommended</option>
-              <option value="Long Lead Buffer Required">Long Lead Buffer Required</option>
-              <option value="Pending R&D Clarification">Pending R&D</option>
-            </select>
-          </div>
-        </div>
-
-        <span className="font-mono text-xs text-muted-foreground">
-          Showing <strong>{filteredItems.length}</strong> of {items.length} line items
-        </span>
-      </div>
+      <ResponsiveFilterBar label="BOM filters" className="rounded-lg border border-border bg-card p-2" secondary={<CompactFilterSelect label="Category" shortLabel="Type" icon={Filter} value={categoryFilter} onChange={setCategoryFilter} options={[{value:"All",label:"All categories"}, ...["Microcontroller","RF & Modem","Power & Protection","Connectors","Sensors","Passives","Mechanical"].map(value => ({value,label:value}))]} />} activeCount={Number(categoryFilter !== "All")}>
+        <div className="filter-search"><Search /><input aria-label="Search BOM" placeholder="Search MPN, manufacturer, supplier…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
+        <CompactFilterSelect label="BOM status" shortLabel="Status" icon={Filter} value={statusFilter} onChange={setStatusFilter} options={[{value:"All",label:"All statuses"}, ...["Approved","Alternate Recommended","Long Lead Buffer Required","Pending R&D Clarification"].map(value => ({value,label:value}))]} />
+        <span className="shrink-0 text-[10px] text-muted-foreground" title="Matching line items">{filteredItems.length}/{items.length}</span>
+      </ResponsiveFilterBar>
 
       {/* Main Review Table */}
       <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">

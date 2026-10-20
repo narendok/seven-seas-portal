@@ -54,7 +54,7 @@ test('DepartmentProjectWorkspace provides compact header, sub-navigation tabs, a
 
   // Verify compact header
   assert.match(workspaceSource, /Lead:\s*<strong className="text-foreground">\{lead\}<\/strong>/, 'Lead displayed in compact context');
-  assert.match(workspaceSource, /<select[\s\S]*?aria-label="Workspace project"/, 'Compact project selector present in header');
+  assert.match(workspaceSource, /<CompactFilterSelect label="Workspace project"/, 'Searchable compact project selector present in header');
 
   // Verify sub-navigation tabs
   assert.match(workspaceSource, /activeTab === "overview"/, 'Overview subview present');
@@ -109,7 +109,8 @@ test('Theme styling consistency on select controls and options', () => {
   const purSource = fs.readFileSync(path.resolve(__dirname, '../src/components/PurchasingCommandCenter.tsx'), 'utf8');
 
   // Verify theme classes applied to options and selects
-  assert.match(workspaceSource, /\[&>option\]:bg-background\s+\[&>option\]:text-foreground/, 'Workspace project select styles options for dark theme');
+  const filterSource = fs.readFileSync(path.resolve(__dirname, '../src/components/ResponsiveFilterBar.tsx'), 'utf8');
+  assert.match(filterSource, /bg-background text-foreground/, 'Searchable project control uses current theme colors');
   assert.match(coordSource, /\[&>option\]:bg-background\s+\[&>option\]:text-foreground/, 'Coordination center select styles options for dark theme');
   assert.match(purSource, /\[&>option\]:bg-background\s+\[&>option\]:text-foreground/, 'Purchasing modals style options for dark theme');
 });

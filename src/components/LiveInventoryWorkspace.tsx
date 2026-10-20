@@ -1,3 +1,4 @@
+import { ResponsiveFilterBar, CompactFilterSelect } from "@/components/ResponsiveFilterBar";
 import React, { useMemo, useState } from "react";
 import {
   Boxes,
@@ -1976,77 +1977,11 @@ export function LiveInventoryWorkspace({
             </div>
           </div>
 
-          {/* Search & Filter Bar */}
-          <div className="flex flex-wrap items-center gap-2.5 border-b border-border bg-card/20 p-3 text-xs">
-            {/* Search Input */}
-            <div className="relative min-w-64 flex-1">
-              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by part number, description, manufacturer, bin, or project..."
-                className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            {/* Category Filter */}
-            {activeTab === "parts" && (
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-              >
-                <option value="All">All Categories</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Connectors">Connectors</option>
-                <option value="Wire and Cable">Wire & Cable</option>
-                <option value="Wire Harnesses">Wire Harnesses</option>
-                <option value="Mechanical Parts">Mechanical Parts</option>
-                <option value="Enclosures">Enclosures</option>
-                <option value="Firmware Tools">Firmware Tools</option>
-                <option value="Production Tools">Production Tools</option>
-                <option value="Packaging & Consumables">Packaging & Consumables</option>
-              </select>
-            )}
-
-            {/* Cross-Tag Filter */}
-            <select
-              value={selectedCrossTag}
-              onChange={(e) => setSelectedCrossTag(e.target.value)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-            >
-              <option value="All">All Cross-Tags</option>
-              <option value="Electrical">⚡ Electrical</option>
-              <option value="Mechanical">⚙️ Mechanical</option>
-              <option value="Automotive">🚗 Automotive</option>
-              <option value="Safety Critical">🛡️ Safety Critical</option>
-            </select>
-
-            {/* Project Filter */}
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-            >
-              <option value="All">All Linked Projects</option>
-              <option value="HLPL-AI4T-01">HLPL-AI4T-01 · Tata Ace EV</option>
-              <option value="HLPL-SLCT-01">HLPL-SLCT-01 · Select Motors</option>
-              <option value="HLPL-XLINK-03">HLPL-XLINK-03 · Dual-CAN CV</option>
-            </select>
-
-            {/* Stock State Filter */}
-            <select
-              value={stockStateFilter}
-              onChange={(e) => setStockStateFilter(e.target.value)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-            >
-              <option value="All">All Stock Statuses</option>
-              <option value="Available">Available Only (&gt;0)</option>
-              <option value="LowStock">Low Stock / Reorder Needed</option>
-              <option value="Held">With Quality-Held Lots</option>
-              <option value="Assigned">Active Project Assignment</option>
-            </select>
-          </div>
+          <ResponsiveFilterBar label="Inventory filters" className="border-b border-border bg-card/20 p-2" activeCount={Number(selectedCategory !== "All") + Number(selectedCrossTag !== "All")} secondary={<>{activeTab === "parts" && <CompactFilterSelect label="Category" shortLabel="Type" icon={Filter} value={selectedCategory} onChange={setSelectedCategory} options={[{value:"All",label:"All categories"}, ...["Electronics","Connectors","Wire and Cable","Wire Harnesses","Mechanical Parts","Enclosures","Firmware Tools","Production Tools","Packaging & Consumables"].map(value => ({value,label:value}))]} />}<CompactFilterSelect label="Cross-tag" shortLabel="Tag" icon={Filter} value={selectedCrossTag} onChange={setSelectedCrossTag} options={[{value:"All",label:"All cross-tags"}, ...["Electrical","Mechanical","Automotive","Safety Critical"].map(value => ({value,label:value}))]} /></>}>
+            <div className="filter-search"><Search /><input aria-label="Search inventory" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search part, manufacturer or bin…" /></div>
+            <CompactFilterSelect label="Project" shortLabel="Project" icon={Filter} value={selectedProject} onChange={setSelectedProject} options={[{value:"All",label:"All linked projects"}, ...Array.from(new Set(localItems.flatMap(item => item.linkedProjects ?? []))).sort().map(value => ({value,label:value}))]} />
+            <CompactFilterSelect label="Stock status" shortLabel="Stock" icon={Filter} value={stockStateFilter} onChange={setStockStateFilter} options={[{value:"All",label:"All stock statuses"},{value:"Available",label:"Available only"},{value:"LowStock",label:"Low stock / reorder"},{value:"Held",label:"Quality-held lots"},{value:"Assigned",label:"Active project assignment"}]} />
+          </ResponsiveFilterBar>
 
           {/* Table */}
           <div className="overflow-x-auto">

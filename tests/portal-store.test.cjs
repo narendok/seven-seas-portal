@@ -99,3 +99,13 @@ test('workspace project selection scopes records by code or UUID and documents b
   ];
   assert.deepEqual(documentsForProject(docs, selected, project).map(doc => doc.id), ['direct','source','uuid']);
 });
+
+ test('overdue tasks stay in Today until manually rescheduled; review and completion keep priority', () => {
+ const { taskLane } = loadSource('task-board'); const today='2026-10-20';
+ const task={status:'Open',fields:{dueDate:'2026-10-19'}};
+ assert.equal(taskLane(task,today),'today');
+ assert.equal(taskLane({...task,fields:{dueDate:'2026-10-21'}},today),'todo');
+ assert.equal(taskLane({...task,status:'In review'},today),'review');
+ assert.equal(taskLane({...task,status:'Released'},today),'completed');
+ assert.equal(task.fields.dueDate,'2026-10-19');
+});

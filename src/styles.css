@@ -263,3 +263,34 @@
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
+
+
+/* Container-based sizing follows the workspace width, including sidebar changes. */
+.responsive-filter-shell { container-type: inline-size; container-name: filters; min-width: 0; width: 100%; }
+.responsive-filter-row { display: flex; flex-wrap: nowrap; align-items: center; gap: .5rem; min-width: 0; }
+.compact-filter-select { display: inline-flex; align-items: center; gap: .375rem; height: 2rem; min-width: 2rem; max-width: 16rem; flex: 0 1 auto; overflow: hidden; white-space: nowrap; border-width: 1px; border-radius: .5rem; padding: 0 .5rem; font-size: .75rem; }
+.compact-filter-select .filter-selected-value { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.compact-filter-select .filter-full-label { flex-shrink: 0; opacity: .7; }
+.compact-filter-select .filter-short-label { display: none; }
+.filter-search { position: relative; flex: 1 1 12rem; min-width: 5rem; max-width: 28rem; }
+.filter-search input { height: 2rem; width: 100%; min-width: 0; border-width: 1px; border-radius: .5rem; background: var(--background); padding: 0 .5rem 0 1.9rem; font-size: .75rem; }
+.filter-search > svg { position: absolute; left: .55rem; top: .55rem; width: .85rem; height: .85rem; pointer-events: none; opacity: .6; }
+.filter-secondary-wide { display: contents; }
+.filter-more { display: none; }
+@container filters (max-width: 850px) {
+  .filter-secondary-wide { display: none; }
+  .filter-more { display: inline-flex; }
+  .compact-filter-select .filter-full-label { display: none; }
+  .compact-filter-select .filter-short-label { display: inline; }
+  .compact-filter-select { max-width: 12rem; }
+}
+@container filters (max-width: 570px) {
+  .compact-filter-select .filter-short-label { display: none; }
+  .compact-filter-select .filter-selected-value { max-width: 6rem; }
+}
+@container filters (max-width: 380px) {
+  .compact-filter-select .filter-selected-value { display: none; }
+  .compact-filter-select { flex: 0 0 2rem; justify-content: center; padding: 0 .35rem; position: relative; }
+  .compact-filter-select .filter-active-dot { position: absolute; top: .2rem; right: .2rem; }
+  .filter-more .filter-short-label { display: none; }
+}

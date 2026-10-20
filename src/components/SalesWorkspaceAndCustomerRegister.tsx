@@ -1,3 +1,4 @@
+import { businessDate } from "@/lib/business-date";
 import { useState, useId } from "react";
 import {
   Users,
@@ -599,8 +600,10 @@ export function SendForFeasibilityModal({
     departments: string[],
     targetDate: string,
     modularConfig?: ProjectModularConfiguration,
-  ) => void;
+  ) => Promise<boolean>;
 }) {
+  const [dispatching,setDispatching]=useState(false);
+  const [dispatchError,setDispatchError]=useState("");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([
     "EHW",
     "FW",
@@ -614,20 +617,20 @@ export function SendForFeasibilityModal({
     "SIT",
     "HR",
   ]);
-  const [dueDate, setDueDate] = useState("2026-11-05");
+  const [dueDate, setDueDate] = useState(enquiry.targetClosureDate || businessDate());
   const [notes, setNotes] = useState(
     "Please conduct comprehensive technical & commercial feasibility per IATF 16949 §8.2.3 and Master Plan §4 & §5.",
   );
 
   // Platform Modular Asset Selection (Master Plan §5 Component & Platform Reuse)
   const [archMode, setArchMode] = useState<"reusable_platform" | "hybrid_variant" | "clean_sheet">(
-    "reusable_platform",
+    enquiry.modularConfig?.architectureMode ?? "clean_sheet",
   );
-  const [selectedPcbId, setSelectedPcbId] = useState<string>("PCB-LIB-001");
-  const [secondaryPcbId, setSecondaryPcbId] = useState<string>("none");
-  const [selectedHarnessId, setSelectedHarnessId] = useState<string>("HARN-LIB-001");
-  const [selectedFirmwareId, setSelectedFirmwareId] = useState<string>("FW-LIB-001");
-  const [selectedEnclosureId, setSelectedEnclosureId] = useState<string>("ENC-LIB-001");
+  const [selectedPcbId, setSelectedPcbId] = useState<string>(enquiry.modularConfig?.selectedPcbIds[0] ?? "none");
+  const [secondaryPcbId, setSecondaryPcbId] = useState<string>(enquiry.modularConfig?.selectedPcbIds[1] ?? "none");
+  const [selectedHarnessId, setSelectedHarnessId] = useState<string>(enquiry.modularConfig?.selectedHarnessId || "none");
+  const [selectedFirmwareId, setSelectedFirmwareId] = useState<string>(enquiry.modularConfig?.selectedFirmwareId || "none");
+  const [selectedEnclosureId, setSelectedEnclosureId] = useState<string>(enquiry.modularConfig?.selectedEnclosureId || "none");
 
   const availableDepts = [
     { code: "EHW", name: "Embedded Hardware (Avery Vale)", desc: "Hardware PRS (EHW-PRS-01), MCU, schematic, RF, TVS & 4-layer PCB" },
@@ -651,7 +654,7 @@ export function SendForFeasibilityModal({
         : [selectedPcbId];
 
   const currentConfig: ProjectModularConfiguration = {
-    projectId: enquiry.linkedProjectCode || "HLPL-AI4T-01",
+    projectId: enquiry.linkedProjectCode || "",
     projectTitle: enquiry.title,
     architectureMode: archMode,
     selectedPcbIds,
@@ -672,9 +675,10 @@ export function SendForFeasibilityModal({
     }
   };
 
-  const handleConfirm = () => {
-    onDispatch(enquiry.id, selectedDepts, dueDate, currentConfig);
-    onClose();
+  const handleConfirm = async () => {
+    if(dispatching)return;setDispatching(true);setDispatchError("");
+    try {if(await onDispatch(enquiry.id,selectedDepts,dueDate,currentConfig))onClose();else setDispatchError("Feasibility was not dispatched; your selections remain open.");}
+    catch(e){setDispatchError(e instanceof Error?e.message:"Dispatch failed.");}finally{setDispatching(false);}
   };
 
   return (
@@ -694,7 +698,7 @@ export function SendForFeasibilityModal({
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Links Enquiry to Existing Qualified Hardware/Software · Fast-Tracks Feasibility Gate & Generates HLPL/F/MKT/01
+                Review the inquiry requirements, choose participating departments and confirm any proposed platform reuse.
               </p>
             </div>
           </div>
@@ -758,7 +762,7 @@ export function SendForFeasibilityModal({
               </div>
               {skipMetrics.canSkipStage4PoC && (
                 <p className="mt-1.5 text-[11px] text-emerald-800 dark:text-emerald-200">
-                  ✓ <strong>Stage 4 PoC Waived:</strong> Proven PCB & Firmware pre-certified! Bypasses breadboard PoC development; project fast-tracks straight to Stage 5 SMT Pilot Build. Project documentation will automatically reference master assets under the new project code.
+                  <strong>Potential platform reuse:</strong> These are planning estimates. Evidence and the designated approval are required before changing any PoC or stage requirement.
                 </p>
               )}
             </div>
@@ -954,10 +958,10 @@ export function SendForFeasibilityModal({
               />
             </div>
             <div>
-              <label className="mb-1 block font-medium text-foreground">Target Project Code (Auto-Reserved)</label>
+              <label className="mb-1 block font-medium text-foreground">Project association (optional)</label>
               <input
                 readOnly
-                value={enquiry.linkedProjectCode || "HLPL-AI4T-01"}
+                value={enquiry.linkedProjectCode || "No project yet — review belongs to this inquiry"}
                 className="h-9 w-full rounded-md border border-input bg-muted/40 px-3 font-mono text-xs text-muted-foreground"
               />
             </div>
@@ -974,6 +978,7 @@ export function SendForFeasibilityModal({
           </div>
         </div>
 
+        {dispatchError && <p role="alert" className="mt-2 text-xs text-destructive">{dispatchError}</p>}
         {/* Footer Actions */}
         <div className="mt-4 flex items-center justify-end gap-2.5 border-t border-border pt-4 shrink-0">
           <button
@@ -986,11 +991,11 @@ export function SendForFeasibilityModal({
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={selectedDepts.length === 0}
+            disabled={dispatching || selectedDepts.length === 0}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs transition hover:opacity-90 disabled:opacity-50"
           >
             <Send className="size-3.5" />
-            Dispatch Feasibility with Platform Linking
+            Dispatch feasibility review
           </button>
         </div>
       </div>
@@ -1574,7 +1579,7 @@ export function SalesEnquiriesAndOpportunities({
                         {onConfigureModularAssets && (
                           <button
                             type="button"
-                            onClick={() => onConfigureModularAssets(item.linkedProjectCode || "HLPL-AI4T-01")}
+                            disabled={!item.linkedProjectCode} onClick={() => item.linkedProjectCode && onConfigureModularAssets(item.linkedProjectCode)}
                             className="inline-flex items-center gap-1 rounded border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold text-primary transition hover:bg-primary/10"
                           >
                             <Layers className="size-2.5" />
@@ -1619,7 +1624,7 @@ export function SalesEnquiriesAndOpportunities({
                       {/* Primary Action Button */}
                       {isOpportunity ? (
                         <button
-                          onClick={() => onOpenFeasibilityGate(item.linkedProjectCode || "HLPL-AI4T-01")}
+                          disabled={!item.linkedProjectCode} title={!item.linkedProjectCode ? "Inquiry reviews are available in Approvals. Link a project later for its lifecycle dashboard." : undefined} onClick={() => item.linkedProjectCode && onOpenFeasibilityGate(item.linkedProjectCode)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20"
                         >
                           <Shield className="size-3.5" />
