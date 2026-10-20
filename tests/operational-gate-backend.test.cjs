@@ -593,9 +593,10 @@ test('1. Migration ledger and Drizzle journal parity for operational stage gate 
   }
 
   const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
-  const entry = journal.entries.find((e) => e.idx === 1);
-  assert.ok(entry, 'Journal entry 1 must exist');
-  assert.equal(entry.tag, '0001_operational_stage_gate_contract');
+  const entry = journal.entries.find((e) => e.tag === '0001_operational_stage_gate_contract');
+  assert.ok(entry, 'Operational stage-gate journal entry must exist');
+  assert.equal(journal.entries[entry.idx]?.tag, entry.tag, 'Journal index must point to the migration tag');
+  assert.deepEqual(journal.entries.map((item) => item.idx), journal.entries.map((_, index) => index), 'Journal indexes must remain sequential');
 });
 
 test('2. SQL Contract: Actor derivation strictly from authenticated session auth.uid(), denying caller-supplied IDs', () => {
