@@ -62,7 +62,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.resolve_operational_membership() TO authenticated;
 
--- Helper to verify approved deliverable records and revisions
+-- Helper to verify approved deliverable records and revisions with strict project isolation
 CREATE OR REPLACE FUNCTION public.verify_approved_stage_deliverable(
   p_organization_id uuid,
   p_record_id uuid,
@@ -84,7 +84,8 @@ DECLARE
   v_doc_id uuid;
   v_claimed_rev text;
 BEGIN
-  -- 1. If structured deliverables are supplied in manifest, verify each candidate item against the database
+  -- 1. If structured deliverables are supplied in manifest, verify candidate items against database
+  -- Enforces strict project isolation: candidate record/document MUST be p_record_id or linked to p_record_id
   IF p_deliverables IS NOT NULL AND jsonb_typeof(p_deliverables) = 'array' THEN
     FOR v_elem IN SELECT * FROM jsonb_array_elements(p_deliverables)
     LOOP
@@ -100,12 +101,17 @@ BEGIN
           v_doc_id := (v_elem->>'document_id')::uuid;
         END IF;
 
-        -- Verify operational record
+        -- Verify operational record with project isolation
         IF v_rec_id IS NOT NULL THEN
           SELECT EXISTS (
             SELECT 1 FROM public.operational_records r
             WHERE r.id = v_rec_id
               AND r.organization_id = p_organization_id
+              AND (
+                r.id = p_record_id
+                OR r.id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
+                OR r.id IN (SELECT source_record_id FROM public.record_links WHERE target_record_id = p_record_id)
+              )
               AND (r.reference ~* p_pattern OR r.title ~* p_pattern OR r.record_type ~* p_pattern)
               AND (r.status IN ('approved', 'released') OR EXISTS (SELECT 1 FROM public.approvals a WHERE a.record_id = r.id AND a.outcome = 'approved'))
               AND (v_claimed_rev IS NULL OR (r.fields->>'revision' IS NOT NULL AND r.fields->>'revision' = v_claimed_rev))
@@ -114,27 +120,31 @@ BEGIN
           IF v_has_approved THEN RETURN true; END IF;
         END IF;
 
-        -- Verify document and controlled files
+        -- Verify document and controlled files with project isolation & approval verification (requires active revision AND approved sign-off)
         IF v_doc_id IS NOT NULL THEN
           SELECT EXISTS (
             SELECT 1 FROM public.documents d
             WHERE d.id = v_doc_id
               AND d.organization_id = p_organization_id
-              AND (d.title ~* p_pattern OR d.document_type ~* p_pattern)
               AND (
-                EXISTS (
-                  SELECT 1 FROM public.controlled_document_files f
-                  WHERE f.document_id = d.id
-                    AND f.superseded_at IS NULL
-                    AND f.revision IS NOT NULL
-                    AND length(trim(f.revision)) > 0
-                    AND (v_claimed_rev IS NULL OR f.revision = v_claimed_rev)
-                )
-                OR EXISTS (
-                  SELECT 1 FROM public.approvals a
-                  WHERE (a.record_id = d.record_id OR a.record_id = p_record_id)
-                    AND a.outcome = 'approved'
-                )
+                d.record_id = p_record_id
+                OR d.record_id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
+                OR d.record_id IN (SELECT source_record_id FROM public.record_links WHERE target_record_id = p_record_id)
+              )
+              AND (d.title ~* p_pattern OR d.document_type ~* p_pattern)
+              AND EXISTS (
+                SELECT 1 FROM public.controlled_document_files f
+                WHERE f.document_id = d.id
+                  AND f.superseded_at IS NULL
+                  AND f.revision IS NOT NULL
+                  AND length(trim(f.revision)) > 0
+                  AND (v_claimed_rev IS NULL OR f.revision = v_claimed_rev)
+              )
+              AND EXISTS (
+                SELECT 1 FROM public.approvals a
+                WHERE (a.record_id = d.record_id OR a.record_id = p_record_id)
+                  AND a.outcome = 'approved'
+                  AND (a.title ~* p_pattern OR a.title ~* d.title OR a.title ~* d.document_type)
               )
           ) INTO v_has_approved;
           IF v_has_approved THEN RETURN true; END IF;
@@ -143,7 +153,7 @@ BEGIN
     END LOOP;
   END IF;
 
-  -- 2. Check directly in public.operational_records for an approved record with valid revision
+  -- 2. Check directly in public.operational_records for an approved record with valid revision (scoped to project or linked records)
   SELECT EXISTS (
     SELECT 1 FROM public.operational_records r
     WHERE r.organization_id = p_organization_id
@@ -151,7 +161,6 @@ BEGIN
         r.id = p_record_id
         OR r.id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
         OR r.id IN (SELECT source_record_id FROM public.record_links WHERE target_record_id = p_record_id)
-        OR r.reference ~* p_pattern
       )
       AND (r.reference ~* p_pattern OR r.title ~* p_pattern OR r.record_type ~* p_pattern)
       AND (r.status IN ('approved', 'released') OR EXISTS (SELECT 1 FROM public.approvals a WHERE a.record_id = r.id AND a.outcome = 'approved'))
@@ -160,41 +169,44 @@ BEGIN
 
   IF v_has_approved THEN RETURN true; END IF;
 
-  -- 3. Check directly in public.documents for an approved document with active revision file or approved sign-off
+  -- 3. Check directly in public.documents for an approved document with active revision file AND approved sign-off (scoped to project)
   SELECT EXISTS (
     SELECT 1 FROM public.documents d
     WHERE d.organization_id = p_organization_id
       AND (
         d.record_id = p_record_id
-        OR d.id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
-        OR d.title ~* p_pattern
+        OR d.record_id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
+        OR d.record_id IN (SELECT source_record_id FROM public.record_links WHERE target_record_id = p_record_id)
       )
       AND (d.title ~* p_pattern OR d.document_type ~* p_pattern)
-      AND (
-        EXISTS (
-          SELECT 1 FROM public.controlled_document_files f
-          WHERE f.document_id = d.id
-            AND f.superseded_at IS NULL
-            AND f.revision IS NOT NULL
-            AND length(trim(f.revision)) > 0
-        )
-        OR EXISTS (
-          SELECT 1 FROM public.approvals a
-          WHERE (a.record_id = d.record_id OR a.record_id = p_record_id)
-            AND a.outcome = 'approved'
-            AND (a.title ~* p_pattern OR a.title ~* d.title)
-        )
+      AND EXISTS (
+        SELECT 1 FROM public.controlled_document_files f
+        WHERE f.document_id = d.id
+          AND f.superseded_at IS NULL
+          AND f.revision IS NOT NULL
+          AND length(trim(f.revision)) > 0
+      )
+      AND EXISTS (
+        SELECT 1 FROM public.approvals a
+        WHERE (a.record_id = d.record_id OR a.record_id = p_record_id)
+          AND a.outcome = 'approved'
+          AND (a.title ~* p_pattern OR a.title ~* d.title OR a.title ~* d.document_type)
       )
   ) INTO v_has_approved;
 
   IF v_has_approved THEN RETURN true; END IF;
 
-  -- 4. Check for approved N/A rationale (only permitted if p_allow_na = true)
+  -- 4. Check for approved N/A rationale (only permitted if p_allow_na = true, strictly scoped to this project)
   IF p_allow_na THEN
-    -- Check if there is an approved N/A approval record in the database
+    -- Check if there is an approved N/A approval record for this project or linked record
     SELECT EXISTS (
       SELECT 1 FROM public.approvals a
-      WHERE (a.record_id = p_record_id OR a.organization_id = p_organization_id)
+      WHERE a.organization_id = p_organization_id
+        AND (
+          a.record_id = p_record_id
+          OR a.record_id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
+          OR a.record_id IN (SELECT source_record_id FROM public.record_links WHERE target_record_id = p_record_id)
+        )
         AND a.outcome = 'approved'
         AND a.title ~* p_pattern
         AND a.title ~* 'N/A'
@@ -202,7 +214,7 @@ BEGIN
 
     IF v_has_approved THEN RETURN true; END IF;
 
-    -- If manifest supplies na_rationale with approval_id, verify approval exists and is approved
+    -- If manifest supplies na_rationale with approval_id, verify approval exists, is approved, and belongs to this project
     IF p_na_rationales IS NOT NULL THEN
       FOR v_elem IN SELECT * FROM jsonb_each(p_na_rationales)
       LOOP
@@ -212,6 +224,11 @@ BEGIN
               SELECT 1 FROM public.approvals a
               WHERE a.id = (v_elem.value->>'approval_id')::uuid
                 AND a.organization_id = p_organization_id
+                AND (
+                  a.record_id = p_record_id
+                  OR a.record_id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
+                  OR a.record_id IN (SELECT source_record_id FROM public.record_links WHERE target_record_id = p_record_id)
+                )
                 AND a.outcome = 'approved'
             ) INTO v_has_approved;
             IF v_has_approved THEN RETURN true; END IF;
