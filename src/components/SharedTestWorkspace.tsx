@@ -137,6 +137,7 @@ export function SharedTestWorkspace({
       project_id: projectId === "all" ? projects[0]?.id || "" : projectId,
       department_id: ownDepartment || data.departments[0]?.id || "",
       fields: '{"revision":"01"}',
+      revision: "01",
       ...initial,
     });
   }
@@ -158,9 +159,15 @@ export function SharedTestWorkspace({
     let payload: Record<string, SharedJson> = { ...values };
     try {
       if (form === "create_record" || form === "update_record")
-        payload["fields"] = JSON.parse(values["fields"] || "{}");
+        payload["fields"] = {
+          ...JSON.parse(values["fields"] || "{}"),
+          revision: values["revision"] || "01",
+          scope: values["scope"] || "",
+          requirements: values["requirements"] || "",
+          acceptanceCriteria: values["acceptanceCriteria"] || "",
+        };
     } catch {
-      setError("Record fields must contain valid JSON.");
+      setError("The saved record fields could not be read. Reload the record before editing.");
       return;
     }
     if (values["due_at"]) payload["due_at"] = values["due_at"] + "T12:00:00+05:30";
@@ -457,6 +464,12 @@ export function SharedTestWorkspace({
                                       record_id: r.id,
                                       expected_updated_at: r.updated_at,
                                       fields: JSON.stringify(r.fields, null, 2),
+                                      revision: String(r.fields["revision"] || "01"),
+                                      scope: String(r.fields["scope"] || ""),
+                                      requirements: String(r.fields["requirements"] || ""),
+                                      acceptanceCriteria: String(
+                                        r.fields["acceptanceCriteria"] || "",
+                                      ),
                                       notes: r.notes,
                                     })
                                   }
@@ -845,14 +858,12 @@ export function SharedTestWorkspace({
                 </>
               )}
               {(form === "create_record" || form === "update_record") && (
-                <label className="grid gap-1 text-xs md:col-span-2">
-                  Structured fields with revision
-                  <textarea
-                    className={`${input} min-h-32 font-mono`}
-                    value={values["fields"] || ""}
-                    onChange={(e) => setValues((v) => ({ ...v, fields: e.target.value }))}
-                  />
-                </label>
+                <>
+                  {field("revision", "Revision")}
+                  {field("scope", "Scope")}
+                  {field("requirements", "Requirements / review findings")}
+                  {field("acceptanceCriteria", "Acceptance criteria")}
+                </>
               )}
               {(form === "create_project" ||
                 form === "create_record" ||
