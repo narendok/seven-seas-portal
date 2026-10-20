@@ -32,8 +32,8 @@ test('1. Migration ledger and Drizzle journal parity for operational stage gate 
   const supabaseSql = fs.readFileSync(supabaseSqlPath, 'utf8');
   const drizzleSql = fs.readFileSync(drizzleSqlPath, 'utf8');
 
-  // Assert both contracts define the 3 authoritative functions
-  for (const fn of ['resolve_operational_membership', 'verify_and_advance_stage_gate', 'get_controlled_file_access']) {
+  // Assert both contracts define the authoritative functions
+  for (const fn of ['resolve_operational_membership', 'verify_approved_stage_deliverable', 'verify_and_advance_stage_gate', 'get_controlled_file_access']) {
     assert.match(supabaseSql, new RegExp(`FUNCTION public\\.${fn}`), `Supabase SQL defines ${fn}`);
     assert.match(drizzleSql, new RegExp(`FUNCTION public\\.${fn}`), `Drizzle SQL defines ${fn}`);
   }
@@ -68,33 +68,35 @@ test('3. Strict active organization membership enforcement', () => {
   assert.match(sql, /IF v_member\.member_id IS NULL THEN\s*RAISE EXCEPTION 'MEMBERSHIP_DENIED/);
 });
 
-test('4. Designated signing capability denies viewer and unauthorized members', () => {
+test('4. Designated signing capability strictly checks department permission without cross-lead bypass', () => {
   const sql = fs.readFileSync(path.resolve(__dirname, '../supabase/migrations/20261020010000_operational_stage_gate_contract.sql'), 'utf8');
 
   // Viewer role is denied
   assert.match(sql, /IF v_member\.role = 'viewer' THEN\s*RAISE EXCEPTION 'PERMISSION_DENIED/);
 
-  // Non-admin without department lead or signing permission is denied
-  assert.match(sql, /IF v_member\.role <> 'admin' AND NOT v_member\.is_lead THEN/);
-  assert.match(sql, /RAISE EXCEPTION 'SIGNING_AUTHORITY_DENIED/);
+  // Non-admin without department signing permission is denied (no cross-department lead bypass)
+  assert.match(sql, /IF v_member\.role <> 'admin' THEN/);
+  assert.match(sql, /NOT public\.has_department_permission\(v_record\.organization_id, v_record\.department_id, 'approvals:decide'\)/);
+  assert.match(sql, /RAISE EXCEPTION 'SIGNING_AUTHORITY_DENIED: User lacks signing authority for department %', v_record\.department_id;/);
+  assert.doesNotMatch(sql, /IF v_member\.role <> 'admin' AND NOT v_member\.is_lead THEN/, 'Must not bypass department check via generic is_lead');
 });
 
-test('5. Stage 2 Multi-Department Feasibility Freeze requires Contract Review Record (HLPL/F/MKT/01)', () => {
+test('5. Stage 2 Multi-Department Feasibility Freeze requires verified Contract Review Record (HLPL/F/MKT/01)', () => {
   const sql = fs.readFileSync(path.resolve(__dirname, '../supabase/migrations/20261020010000_operational_stage_gate_contract.sql'), 'utf8');
 
   // Gate 2 check for target_num >= 3
   assert.match(sql, /IF v_target_num >= 3 THEN/);
   assert.match(sql, /HLPL\/F\/MKT\/01/);
-  assert.match(sql, /GATE_FREEZE_VIOLATION: Stage 2 Multi-Department Feasibility Freeze requires approved Contract Review Record \(HLPL\/F\/MKT\/01\)/);
+  assert.match(sql, /GATE_FREEZE_VIOLATION: Stage 2 Multi-Department Feasibility Freeze requires approved Contract Review Record \(HLPL\/F\/MKT\/01\) with verified revision/);
 });
 
-test('6. Stage 3 Requirements Baseline Freeze requires all domain specs (EHW-PRS, FW-FRS, SW-SRS, MECH-MRS, SAL-QUO)', () => {
+test('6. Stage 3 Requirements Baseline Freeze requires all domain specs (EHW-PRS, FW-FRS, SW-SRS, MECH-MRS, SAL-QUO) with verified revisions', () => {
   const sql = fs.readFileSync(path.resolve(__dirname, '../supabase/migrations/20261020010000_operational_stage_gate_contract.sql'), 'utf8');
 
   // Gate 3 check for target_num >= 4
   assert.match(sql, /IF v_target_num >= 4 THEN/);
   assert.match(sql, /'EHW-PRS', 'FW-FRS', 'SW-SRS', 'MECH-MRS', 'SAL-QUO'/);
-  assert.match(sql, /GATE_FREEZE_VIOLATION: Stage 3 Requirements Baseline Freeze requires all applicable domain requirement specs/);
+  assert.match(sql, /GATE_FREEZE_VIOLATION: Stage 3 Requirements Baseline Freeze requires all applicable domain requirement specs \(EHW-PRS, FW-FRS, SW-SRS, MECH-MRS, SAL-QUO\) with verified approved records and revisions\. Missing:/);
 });
 
 test('7. Stage 4 Hardware Schematics Prerequisite requires approved EHW-SCH-01 before advancing to Stage 5+', () => {
@@ -103,7 +105,7 @@ test('7. Stage 4 Hardware Schematics Prerequisite requires approved EHW-SCH-01 b
   // Gate 4 check for target_num >= 5
   assert.match(sql, /IF v_target_num >= 5 THEN/);
   assert.match(sql, /EHW-SCH/);
-  assert.match(sql, /GATE_FREEZE_VIOLATION: Stage 4 Hardware Schematics Prerequisite \(EHW-SCH-01\) must be approved before advancing to pilot or production stages/);
+  assert.match(sql, /GATE_FREEZE_VIOLATION: Stage 4 Hardware Schematics Prerequisite \(EHW-SCH-01\) must have an approved record and revision before advancing to pilot or production stages/);
 });
 
 test('8. Row locking, concurrency control, and duplicate-retry idempotency', () => {
@@ -160,4 +162,24 @@ test('11. Operational stage gate input schema validates record UUID, target stag
   assert.match(opsGateSource, /deliverables:\s*z\.array/);
   assert.match(opsGateSource, /naRationale:\s*z\.record/);
   assert.match(opsGateSource, /canonicalContentHash:\s*z\.string/);
+});
+
+test('12. Evidence verification requires approved status, active revision, and approved N/A rationales', () => {
+  const sql = fs.readFileSync(path.resolve(__dirname, '../supabase/migrations/20261020010000_operational_stage_gate_contract.sql'), 'utf8');
+
+  // Verify verify_approved_stage_deliverable function definition
+  assert.match(sql, /CREATE OR REPLACE FUNCTION public\.verify_approved_stage_deliverable/);
+
+  // Status check: must be approved or released or have approved sign-off
+  assert.match(sql, /r\.status IN \('approved', 'released'\) OR EXISTS \(SELECT 1 FROM public\.approvals/);
+
+  // Revision check: requires non-empty revision
+  assert.match(sql, /r\.fields->>'revision' IS NOT NULL AND length\(trim\(r\.fields->>'revision'\)\) > 0/);
+
+  // Controlled files check: superseded_at IS NULL and valid revision
+  assert.match(sql, /f\.superseded_at IS NULL\s*AND f\.revision IS NOT NULL/);
+
+  // N/A rationales must be backed by approved approval records
+  assert.match(sql, /p_allow_na THEN/);
+  assert.match(sql, /a\.outcome = 'approved'/);
 });

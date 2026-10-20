@@ -62,6 +62,172 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.resolve_operational_membership() TO authenticated;
 
+-- Helper to verify approved deliverable records and revisions
+CREATE OR REPLACE FUNCTION public.verify_approved_stage_deliverable(
+  p_organization_id uuid,
+  p_record_id uuid,
+  p_pattern text,
+  p_deliverables jsonb,
+  p_na_rationales jsonb,
+  p_allow_na boolean DEFAULT false
+)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_has_approved boolean := false;
+  v_elem jsonb;
+  v_rec_id uuid;
+  v_doc_id uuid;
+  v_claimed_rev text;
+BEGIN
+  -- 1. If structured deliverables are supplied in manifest, verify each candidate item against the database
+  IF p_deliverables IS NOT NULL AND jsonb_typeof(p_deliverables) = 'array' THEN
+    FOR v_elem IN SELECT * FROM jsonb_array_elements(p_deliverables)
+    LOOP
+      IF jsonb_typeof(v_elem) = 'object' THEN
+        v_rec_id := NULL;
+        v_doc_id := NULL;
+        v_claimed_rev := v_elem->>'revision';
+
+        IF (v_elem->>'record_id') ~ '^[0-9a-fA-F-]{36}$' THEN
+          v_rec_id := (v_elem->>'record_id')::uuid;
+        END IF;
+        IF (v_elem->>'document_id') ~ '^[0-9a-fA-F-]{36}$' THEN
+          v_doc_id := (v_elem->>'document_id')::uuid;
+        END IF;
+
+        -- Verify operational record
+        IF v_rec_id IS NOT NULL THEN
+          SELECT EXISTS (
+            SELECT 1 FROM public.operational_records r
+            WHERE r.id = v_rec_id
+              AND r.organization_id = p_organization_id
+              AND (r.reference ~* p_pattern OR r.title ~* p_pattern OR r.record_type ~* p_pattern)
+              AND (r.status IN ('approved', 'released') OR EXISTS (SELECT 1 FROM public.approvals a WHERE a.record_id = r.id AND a.outcome = 'approved'))
+              AND (v_claimed_rev IS NULL OR (r.fields->>'revision' IS NOT NULL AND r.fields->>'revision' = v_claimed_rev))
+              AND (r.fields->>'revision' IS NOT NULL AND length(trim(r.fields->>'revision')) > 0)
+          ) INTO v_has_approved;
+          IF v_has_approved THEN RETURN true; END IF;
+        END IF;
+
+        -- Verify document and controlled files
+        IF v_doc_id IS NOT NULL THEN
+          SELECT EXISTS (
+            SELECT 1 FROM public.documents d
+            WHERE d.id = v_doc_id
+              AND d.organization_id = p_organization_id
+              AND (d.title ~* p_pattern OR d.document_type ~* p_pattern)
+              AND (
+                EXISTS (
+                  SELECT 1 FROM public.controlled_document_files f
+                  WHERE f.document_id = d.id
+                    AND f.superseded_at IS NULL
+                    AND f.revision IS NOT NULL
+                    AND length(trim(f.revision)) > 0
+                    AND (v_claimed_rev IS NULL OR f.revision = v_claimed_rev)
+                )
+                OR EXISTS (
+                  SELECT 1 FROM public.approvals a
+                  WHERE (a.record_id = d.record_id OR a.record_id = p_record_id)
+                    AND a.outcome = 'approved'
+                )
+              )
+          ) INTO v_has_approved;
+          IF v_has_approved THEN RETURN true; END IF;
+        END IF;
+      END IF;
+    END LOOP;
+  END IF;
+
+  -- 2. Check directly in public.operational_records for an approved record with valid revision
+  SELECT EXISTS (
+    SELECT 1 FROM public.operational_records r
+    WHERE r.organization_id = p_organization_id
+      AND (
+        r.id = p_record_id
+        OR r.id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
+        OR r.id IN (SELECT source_record_id FROM public.record_links WHERE target_record_id = p_record_id)
+        OR r.reference ~* p_pattern
+      )
+      AND (r.reference ~* p_pattern OR r.title ~* p_pattern OR r.record_type ~* p_pattern)
+      AND (r.status IN ('approved', 'released') OR EXISTS (SELECT 1 FROM public.approvals a WHERE a.record_id = r.id AND a.outcome = 'approved'))
+      AND (r.fields->>'revision' IS NOT NULL AND length(trim(r.fields->>'revision')) > 0)
+  ) INTO v_has_approved;
+
+  IF v_has_approved THEN RETURN true; END IF;
+
+  -- 3. Check directly in public.documents for an approved document with active revision file or approved sign-off
+  SELECT EXISTS (
+    SELECT 1 FROM public.documents d
+    WHERE d.organization_id = p_organization_id
+      AND (
+        d.record_id = p_record_id
+        OR d.id IN (SELECT target_record_id FROM public.record_links WHERE source_record_id = p_record_id)
+        OR d.title ~* p_pattern
+      )
+      AND (d.title ~* p_pattern OR d.document_type ~* p_pattern)
+      AND (
+        EXISTS (
+          SELECT 1 FROM public.controlled_document_files f
+          WHERE f.document_id = d.id
+            AND f.superseded_at IS NULL
+            AND f.revision IS NOT NULL
+            AND length(trim(f.revision)) > 0
+        )
+        OR EXISTS (
+          SELECT 1 FROM public.approvals a
+          WHERE (a.record_id = d.record_id OR a.record_id = p_record_id)
+            AND a.outcome = 'approved'
+            AND (a.title ~* p_pattern OR a.title ~* d.title)
+        )
+      )
+  ) INTO v_has_approved;
+
+  IF v_has_approved THEN RETURN true; END IF;
+
+  -- 4. Check for approved N/A rationale (only permitted if p_allow_na = true)
+  IF p_allow_na THEN
+    -- Check if there is an approved N/A approval record in the database
+    SELECT EXISTS (
+      SELECT 1 FROM public.approvals a
+      WHERE (a.record_id = p_record_id OR a.organization_id = p_organization_id)
+        AND a.outcome = 'approved'
+        AND a.title ~* p_pattern
+        AND a.title ~* 'N/A'
+    ) INTO v_has_approved;
+
+    IF v_has_approved THEN RETURN true; END IF;
+
+    -- If manifest supplies na_rationale with approval_id, verify approval exists and is approved
+    IF p_na_rationales IS NOT NULL THEN
+      FOR v_elem IN SELECT * FROM jsonb_each(p_na_rationales)
+      LOOP
+        IF v_elem.key ~* p_pattern THEN
+          IF jsonb_typeof(v_elem.value) = 'object' AND (v_elem.value->>'approval_id') ~ '^[0-9a-fA-F-]{36}$' THEN
+            SELECT EXISTS (
+              SELECT 1 FROM public.approvals a
+              WHERE a.id = (v_elem.value->>'approval_id')::uuid
+                AND a.organization_id = p_organization_id
+                AND a.outcome = 'approved'
+            ) INTO v_has_approved;
+            IF v_has_approved THEN RETURN true; END IF;
+          END IF;
+        END IF;
+      END LOOP;
+    END IF;
+  END IF;
+
+  RETURN false;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.verify_approved_stage_deliverable(uuid, uuid, text, jsonb, jsonb, boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.verify_approved_stage_deliverable(uuid, uuid, text, jsonb, jsonb, boolean) TO authenticated, service_role;
+
 -- 2. Authoritative Atomic Operational Stage Gate Advancement Contract
 CREATE OR REPLACE FUNCTION public.verify_and_advance_stage_gate(
   p_record_id uuid,
@@ -132,9 +298,11 @@ BEGIN
     RAISE EXCEPTION 'PERMISSION_DENIED: Viewer role cannot approve stage gate transitions';
   END IF;
 
-  IF v_member.role <> 'admin' AND NOT v_member.is_lead THEN
-    IF NOT public.has_department_permission(v_record.organization_id, v_record.department_id, 'approvals:decide') THEN
-      RAISE EXCEPTION 'SIGNING_AUTHORITY_DENIED: User lacks department lead or administrative signing authority';
+  -- 4. Verify designated signing capability
+  -- Department-lead status for another department must NOT bypass the department check
+  IF v_member.role <> 'admin' THEN
+    IF v_record.department_id IS NULL OR NOT public.has_department_permission(v_record.organization_id, v_record.department_id, 'approvals:decide') THEN
+      RAISE EXCEPTION 'SIGNING_AUTHORITY_DENIED: User lacks signing authority for department %', v_record.department_id;
     END IF;
   END IF;
 
@@ -159,29 +327,18 @@ BEGIN
     v_target_num := 0;
   END IF;
 
-  -- 6. Validate gate freezes
+  -- 6. Validate gate freezes against verified approved database records & active revisions
   -- A. Stage 2 Multi-Department Feasibility Freeze (moving to Stage 3 or higher)
   IF v_target_num >= 3 THEN
-    v_has_doc := FALSE;
-    -- Check manifest deliverables
-    IF jsonb_path_exists(v_deliverables, '$[*] ? (@ like_regex "HLPL/F/MKT/01" flag "i" || @ like_regex "Contract Review" flag "i" || @ like_regex "FEASIBILITY" flag "i")') THEN
-      v_has_doc := TRUE;
-    END IF;
-    -- Check database documents or records if not in manifest
-    IF NOT v_has_doc THEN
-      SELECT EXISTS (
-        SELECT 1 FROM public.documents doc
-        WHERE doc.record_id = v_record.id
-          AND (doc.title ~* 'HLPL/F/MKT/01' OR doc.title ~* 'Contract Review' OR doc.document_type ~* 'feasibility')
-      ) INTO v_has_doc;
-    END IF;
-    -- Check N/A rationale
-    IF NOT v_has_doc AND (v_na_rationale->>'HLPL/F/MKT/01' IS NOT NULL AND length(trim(v_na_rationale->>'HLPL/F/MKT/01')) > 0) THEN
-      v_has_doc := TRUE;
-    END IF;
-
-    IF NOT v_has_doc THEN
-      RAISE EXCEPTION 'GATE_FREEZE_VIOLATION: Stage 2 Multi-Department Feasibility Freeze requires approved Contract Review Record (HLPL/F/MKT/01)';
+    IF NOT public.verify_approved_stage_deliverable(
+      v_record.organization_id,
+      v_record.id,
+      'HLPL/F/MKT/01|Contract Review|FEASIBILITY',
+      v_deliverables,
+      v_na_rationale,
+      false -- N/A is strictly disallowed for mandatory Contract Review
+    ) THEN
+      RAISE EXCEPTION 'GATE_FREEZE_VIOLATION: Stage 2 Multi-Department Feasibility Freeze requires approved Contract Review Record (HLPL/F/MKT/01) with verified revision';
     END IF;
   END IF;
 
@@ -190,53 +347,34 @@ BEGIN
     v_missing := ARRAY[]::text[];
     FOREACH v_req_item IN ARRAY ARRAY['EHW-PRS', 'FW-FRS', 'SW-SRS', 'MECH-MRS', 'SAL-QUO']
     LOOP
-      v_has_doc := FALSE;
-      -- Check manifest deliverables array
-      IF jsonb_path_exists(v_deliverables, ('$[*] ? (@ like_regex "' || v_req_item || '" flag "i")')::jsonpath) THEN
-        v_has_doc := TRUE;
-      END IF;
-      -- Check database documents
-      IF NOT v_has_doc THEN
-        SELECT EXISTS (
-          SELECT 1 FROM public.documents doc
-          WHERE doc.record_id = v_record.id
-            AND (doc.title ~* v_req_item OR doc.document_type ~* v_req_item)
-        ) INTO v_has_doc;
-      END IF;
-      -- Check approved N/A rationale
-      IF NOT v_has_doc AND (v_na_rationale->>v_req_item IS NOT NULL AND length(trim(v_na_rationale->>v_req_item)) > 0) THEN
-        v_has_doc := TRUE;
-      END IF;
-
-      IF NOT v_has_doc THEN
+      IF NOT public.verify_approved_stage_deliverable(
+        v_record.organization_id,
+        v_record.id,
+        v_req_item,
+        v_deliverables,
+        v_na_rationale,
+        true -- approved N/A rationale verified via approvals table
+      ) THEN
         v_missing := array_append(v_missing, v_req_item);
       END IF;
     END LOOP;
 
     IF array_length(v_missing, 1) > 0 THEN
-      RAISE EXCEPTION 'GATE_FREEZE_VIOLATION: Stage 3 Requirements Baseline Freeze requires all applicable domain requirement specs (EHW-PRS, FW-FRS, SW-SRS, MECH-MRS, SAL-QUO). Missing: %', array_to_string(v_missing, ', ');
+      RAISE EXCEPTION 'GATE_FREEZE_VIOLATION: Stage 3 Requirements Baseline Freeze requires all applicable domain requirement specs (EHW-PRS, FW-FRS, SW-SRS, MECH-MRS, SAL-QUO) with verified approved records and revisions. Missing: %', array_to_string(v_missing, ', ');
     END IF;
   END IF;
 
   -- C. Stage 4 Hardware Schematics Prerequisite (moving to Stage 5 or higher)
   IF v_target_num >= 5 THEN
-    v_has_doc := FALSE;
-    IF jsonb_path_exists(v_deliverables, '$[*] ? (@ like_regex "EHW-SCH" flag "i" || @ like_regex "SCH-01" flag "i")') THEN
-      v_has_doc := TRUE;
-    END IF;
-    IF NOT v_has_doc THEN
-      SELECT EXISTS (
-        SELECT 1 FROM public.documents doc
-        WHERE doc.record_id = v_record.id
-          AND (doc.title ~* 'EHW-SCH' OR doc.document_type ~* 'schematic')
-      ) INTO v_has_doc;
-    END IF;
-    IF NOT v_has_doc AND (v_na_rationale->>'EHW-SCH-01' IS NOT NULL AND length(trim(v_na_rationale->>'EHW-SCH-01')) > 0) THEN
-      v_has_doc := TRUE;
-    END IF;
-
-    IF NOT v_has_doc THEN
-      RAISE EXCEPTION 'GATE_FREEZE_VIOLATION: Stage 4 Hardware Schematics Prerequisite (EHW-SCH-01) must be approved before advancing to pilot or production stages';
+    IF NOT public.verify_approved_stage_deliverable(
+      v_record.organization_id,
+      v_record.id,
+      'EHW-SCH|SCH-01',
+      v_deliverables,
+      v_na_rationale,
+      false
+    ) THEN
+      RAISE EXCEPTION 'GATE_FREEZE_VIOLATION: Stage 4 Hardware Schematics Prerequisite (EHW-SCH-01) must have an approved record and revision before advancing to pilot or production stages';
     END IF;
   END IF;
 
