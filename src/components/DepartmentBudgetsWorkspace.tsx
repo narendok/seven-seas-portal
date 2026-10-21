@@ -1,37 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  DollarSign,
+  Wallet,
   TrendingUp,
   Receipt,
-  FileCheck2,
-  AlertCircle,
+  Clock,
+  CheckCircle2,
+  XCircle,
   Plus,
   Plane,
   Package,
-  CheckCircle2,
-  XCircle,
-  RotateCcw,
-  Clock,
-  Filter,
   Search,
-  Building,
-  ShieldCheck,
-  ChevronRight,
-  ExternalLink,
+  DollarSign,
   Lock,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   type DepartmentAllocation,
   type ExpenseRequest,
   type BudgetCategory,
-  DEFAULT_BUDGET_PERIOD,
   DEFAULT_DEPARTMENT_ALLOCATIONS,
   DEFAULT_EXPENSE_REQUESTS,
+  DEFAULT_BUDGET_PERIOD,
   calculateAvailableBudget,
   canUserApproveExpense,
   executeExpenseApproval,
+  executeExpenseSettlement,
   executeExpenseRejection,
   createExpenseRequest,
 } from "@/lib/department-budgets";
@@ -41,12 +41,31 @@ interface DepartmentBudgetsWorkspaceProps {
   persona: Persona;
   selectedProjectId?: string | null;
   onOpenProjectDetail?: (projectId: string) => void;
+  allocations?: DepartmentAllocation[];
+  expenseRequests?: ExpenseRequest[];
+  onUpdateAllocations?: (allocations: DepartmentAllocation[]) => void;
+  onUpdateRequests?: (requests: ExpenseRequest[]) => void;
+  testMembership?: {
+    organizationId?: string | undefined;
+    organizationName?: string | undefined;
+    membershipId: string;
+    displayName: string;
+    role: "admin" | "department_lead" | "member" | "viewer" | string;
+    departmentCode: string | null;
+    departmentName: string | null;
+    isClient: boolean;
+  } | null;
 }
 
 export function DepartmentBudgetsWorkspace({
   persona,
   selectedProjectId,
   onOpenProjectDetail,
+  allocations: propsAllocations,
+  expenseRequests: propsExpenseRequests,
+  onUpdateAllocations,
+  onUpdateRequests,
+  testMembership,
 }: DepartmentBudgetsWorkspaceProps) {
   if (persona.kind === "client") {
     return (
@@ -60,8 +79,22 @@ export function DepartmentBudgetsWorkspace({
     );
   }
 
-  const [allocations, setAllocations] = useState<DepartmentAllocation[]>(DEFAULT_DEPARTMENT_ALLOCATIONS);
-  const [expenseRequests, setExpenseRequests] = useState<ExpenseRequest[]>(DEFAULT_EXPENSE_REQUESTS);
+  // Canonical store-backed state (preserves data across navigation)
+  const [allocations, setAllocations] = useState<DepartmentAllocation[]>(
+    propsAllocations ?? DEFAULT_DEPARTMENT_ALLOCATIONS
+  );
+  const [expenseRequests, setExpenseRequests] = useState<ExpenseRequest[]>(
+    propsExpenseRequests ?? DEFAULT_EXPENSE_REQUESTS
+  );
+
+  useEffect(() => {
+    if (propsAllocations) setAllocations(propsAllocations);
+  }, [propsAllocations]);
+
+  useEffect(() => {
+    if (propsExpenseRequests) setExpenseRequests(propsExpenseRequests);
+  }, [propsExpenseRequests]);
+
   const [activeTab, setActiveTab] = useState<"allocations" | "requests">("requests");
   const [deptFilter, setDeptFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -72,21 +105,25 @@ export function DepartmentBudgetsWorkspace({
   const [newCategory, setNewCategory] = useState<BudgetCategory>("Consumables & Lab Supplies");
   const [newAmount, setNewAmount] = useState<string>("");
   const [newPurpose, setNewPurpose] = useState<string>("");
-  const [newProject, setNewProject] = useState<string>(selectedProjectId || "HLPL-AI4T-01");
+  const [newProject, setNewProject] = useState<string>(selectedProjectId || "");
   const [newRequiredDate, setNewRequiredDate] = useState<string>("2026-11-01");
   const [isTravel, setIsTravel] = useState(false);
   const [travelDestination, setTravelDestination] = useState("");
+  const [travelTransport, setTravelTransport] = useState("");
+  const [travelStay, setTravelStay] = useState("");
+  const [travelDaily, setTravelDaily] = useState("");
   const [travelAdvance, setTravelAdvance] = useState("");
   const [isAsset, setIsAsset] = useState(false);
   const [assetSpec, setAssetSpec] = useState("");
   const [assetQty, setAssetQty] = useState("1");
+  const [formError, setFormError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const isFinanceLead = persona.departmentId?.toLowerCase() === "fin";
   const isAdmin = persona.kind === "admin";
   const userDeptCode = persona.departmentId?.toUpperCase();
 
-  // Filtered Allocations (scoped by persona authority)
+  // Filtered Allocations (scoped by persona authority and filters)
   const filteredAllocations = allocations.filter((alloc) => {
     if (!isAdmin && !isFinanceLead) {
       if (userDeptCode && alloc.departmentCode !== userDeptCode) return false;
@@ -97,7 +134,7 @@ export function DepartmentBudgetsWorkspace({
     return true;
   });
 
-  // Financial Metrics
+  // Financial Metrics accurately reflecting filtered scope
   const totalAllocated = filteredAllocations.reduce((sum, a) => sum + a.allocatedAmount, 0);
   const totalCommitted = filteredAllocations.reduce((sum, a) => sum + a.committedAmount, 0);
   const totalSpent = filteredAllocations.reduce((sum, a) => sum + a.spentAmount, 0);
@@ -116,6 +153,7 @@ export function DepartmentBudgetsWorkspace({
       if (deptFilter !== "ALL" && req.requesterDept !== deptFilter) return false;
     }
 
+    if (selectedProjectId && req.projectId && req.projectId !== selectedProjectId) return false;
     if (statusFilter !== "ALL" && req.status !== statusFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -129,123 +167,209 @@ export function DepartmentBudgetsWorkspace({
     return true;
   });
 
-  // Handle Approve with Staged Transition & Overdraft Balance Verification
+  // Scope label for KPI display
+  const scopeLabel = !isAdmin && !isFinanceLead && userDeptCode
+    ? `${userDeptCode} Department Scope`
+    : deptFilter !== "ALL"
+    ? `${deptFilter} Department`
+    : selectedProjectId
+    ? `Project ${selectedProjectId}`
+    : "Across 11 Departments";
+
+  // Handle Approve with Staged Transition & Commitment Reservation
   const handleApprove = (reqId: string) => {
+    if (testMembership) {
+      setActionMessage("TEST shared expense synchronization is pending backend RPC deployment. Approval is disabled in TEST shared mode.");
+      return;
+    }
     const req = expenseRequests.find((r) => r.id === reqId);
     if (!req) return;
 
     const result = executeExpenseApproval(req, allocations, persona);
     setActionMessage(result.message);
     if (result.success && result.nextRequest) {
-      setExpenseRequests((prev) => prev.map((r) => (r.id === reqId ? result.nextRequest! : r)));
+      const nextRequests = expenseRequests.map((r) => (r.id === reqId ? result.nextRequest! : r));
+      setExpenseRequests(nextRequests);
+      onUpdateRequests?.(nextRequests);
       if (result.updatedAllocations) {
         setAllocations(result.updatedAllocations);
+        onUpdateAllocations?.(result.updatedAllocations);
       }
     }
   };
 
-  // Handle Reject with Reviewer Authorization Check
-  const handleReject = (reqId: string) => {
+  // Handle Verified Expense Posting / Settlement
+  const handleSettle = (reqId: string) => {
+    if (testMembership) {
+      setActionMessage("TEST shared expense settlement is pending backend RPC deployment. Settlement is disabled in TEST shared mode.");
+      return;
+    }
     const req = expenseRequests.find((r) => r.id === reqId);
     if (!req) return;
 
-    const result = executeExpenseRejection(req, persona, "Does not comply with departmental budget criteria.");
+    const postingRef = `FIN-SETTLE-${Date.now().toString().slice(-4)}`;
+    const result = executeExpenseSettlement(req, allocations, persona, postingRef);
     setActionMessage(result.message);
     if (result.success && result.nextRequest) {
-      setExpenseRequests((prev) => prev.map((r) => (r.id === reqId ? result.nextRequest! : r)));
+      const nextRequests = expenseRequests.map((r) => (r.id === reqId ? result.nextRequest! : r));
+      setExpenseRequests(nextRequests);
+      onUpdateRequests?.(nextRequests);
+      if (result.updatedAllocations) {
+        setAllocations(result.updatedAllocations);
+        onUpdateAllocations?.(result.updatedAllocations);
+      }
     }
   };
 
-  // Handle Create Request with Staged Routing
+  // Handle Reject with Reviewer Authorization Check & Commitment Release
+  const handleReject = (reqId: string) => {
+    if (testMembership) {
+      setActionMessage("TEST shared expense operations are pending backend RPC deployment. Rejection is disabled in TEST shared mode.");
+      return;
+    }
+    const req = expenseRequests.find((r) => r.id === reqId);
+    if (!req) return;
+
+    const result = executeExpenseRejection(req, persona, "Does not comply with departmental budget criteria.", allocations);
+    setActionMessage(result.message);
+    if (result.success && result.nextRequest) {
+      const nextRequests = expenseRequests.map((r) => (r.id === reqId ? result.nextRequest! : r));
+      setExpenseRequests(nextRequests);
+      onUpdateRequests?.(nextRequests);
+      if (result.updatedAllocations) {
+        setAllocations(result.updatedAllocations);
+        onUpdateAllocations?.(result.updatedAllocations);
+      }
+    }
+  };
+
+  // Handle Create Request with Staged Routing & Form Input Preservation
   const handleCreateRequest = (e: React.FormEvent) => {
     e.preventDefault();
-    const amountVal = parseFloat(newAmount);
-    if (isNaN(amountVal) || amountVal <= 0) return;
+    setFormError(null);
 
-    const newReq = createExpenseRequest(
-      {
-        category: newCategory,
-        amount: amountVal,
-        currency: "INR",
-        purpose: newPurpose,
-        projectId: newProject || null,
-        requiredDate: newRequiredDate,
-        ...(isTravel
-          ? {
-              travelDetail: {
-                destination: travelDestination,
-                startDate: newRequiredDate,
-                endDate: newRequiredDate,
-                purpose: newPurpose,
-                transportEstimate: amountVal * 0.6,
-                stayEstimate: amountVal * 0.3,
-                dailyAllowanceEstimate: amountVal * 0.1,
-                requestedAdvance: parseFloat(travelAdvance) || 0,
-                advanceSettled: false,
-              },
-            }
-          : {}),
-        ...(isAsset
-          ? {
-              assetDetail: {
-                itemSpecification: assetSpec,
-                quantity: parseInt(assetQty, 10) || 1,
-                targetLocation: "Hexense Tech Center",
-                requiredDate: newRequiredDate,
-              },
-            }
-          : {}),
-      },
-      persona
-    );
+    if (testMembership) {
+      setFormError("TEST shared expense synchronization is pending backend RPC deployment. Claims cannot be submitted in TEST shared mode.");
+      return;
+    }
 
-    setExpenseRequests((prev) => [newReq, ...prev]);
-    setIsNewRequestModalOpen(false);
-    setNewAmount("");
-    setNewPurpose("");
-    setIsTravel(false);
-    setIsAsset(false);
-    setActionMessage(`Expense claim ${newReq.reference} submitted to ${newReq.currentApproverRole}.`);
+    const transportVal = parseFloat(travelTransport) || 0;
+    const stayVal = parseFloat(travelStay) || 0;
+    const dailyVal = parseFloat(travelDaily) || 0;
+    const travelSum = transportVal + stayVal + dailyVal;
+
+    let finalAmount = parseFloat(newAmount);
+    if (isTravel && travelSum > 0) {
+      finalAmount = travelSum;
+    }
+
+    if (isNaN(finalAmount) || finalAmount <= 0) {
+      setFormError("Please enter a valid positive expense amount.");
+      return;
+    }
+
+    if (!newPurpose.trim()) {
+      setFormError("Business purpose and justification are required.");
+      return;
+    }
+
+    try {
+      const newReq = createExpenseRequest(
+        {
+          category: newCategory,
+          amount: finalAmount,
+          currency: "INR",
+          purpose: newPurpose.trim(),
+          projectId: newProject || null,
+          requiredDate: newRequiredDate,
+          ...(isTravel
+            ? {
+                travelDetail: {
+                  destination: travelDestination.trim() || "Customer / OEM Site",
+                  startDate: newRequiredDate,
+                  endDate: newRequiredDate,
+                  purpose: newPurpose.trim(),
+                  transportEstimate: transportVal,
+                  stayEstimate: stayVal,
+                  dailyAllowanceEstimate: dailyVal,
+                  requestedAdvance: parseFloat(travelAdvance) || 0,
+                  advanceSettled: false,
+                },
+              }
+            : {}),
+          ...(isAsset
+            ? {
+                assetDetail: {
+                  itemSpecification: assetSpec.trim() || "Hardware Asset",
+                  quantity: parseInt(assetQty, 10) || 1,
+                  targetLocation: "Hexense Tech Center",
+                  requiredDate: newRequiredDate,
+                },
+              }
+            : {}),
+        },
+        persona
+      );
+
+      const nextRequests = [newReq, ...expenseRequests];
+      setExpenseRequests(nextRequests);
+      onUpdateRequests?.(nextRequests);
+
+      // Reset modal only on successful save
+      setIsNewRequestModalOpen(false);
+      setNewAmount("");
+      setNewPurpose("");
+      setIsTravel(false);
+      setTravelDestination("");
+      setTravelTransport("");
+      setTravelStay("");
+      setTravelDaily("");
+      setTravelAdvance("");
+      setIsAsset(false);
+      setAssetSpec("");
+      setAssetQty("1");
+      setFormError(null);
+      setActionMessage(`Expense claim ${newReq.reference} submitted for review (${newReq.currentApproverRole}).`);
+    } catch (err: any) {
+      setFormError(err?.message || "Failed to submit request. Your entered data has been preserved.");
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Sandbox Demo Seed Notice */}
-      <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
-            DEMO / Sandbox Seed
-          </span>
-          <span>
-            Department budget allocations and ledger entries loaded in this local session. Staged approval gates and overdraft ledger checks are enforced.
-          </span>
-        </div>
-        <div className="text-[11px] font-mono text-muted-foreground">
-          Scoped Persona: <strong>{persona.person}</strong> ({persona.label})
-        </div>
-      </div>
-
-      {/* Header & Status Banner */}
+      {/* Header & Status Indicator */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-border/40">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-              IATF 16949 §7.1.3 & §8.3.4 Governed
+              Budgets & Expenses
             </span>
-            <span className="text-xs text-muted-foreground">{DEFAULT_BUDGET_PERIOD.name}</span>
+            {testMembership ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                TEST Shared
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" title="Demonstration data stored locally in session">
+                DEMO Sandbox
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground font-mono">{DEFAULT_BUDGET_PERIOD.name}</span>
           </div>
           <h2 className="text-xl font-bold tracking-tight text-foreground mt-1">
-            Department Budgets & Expense Requests
+            Budgets & Expenses
           </h2>
           <p className="text-xs text-muted-foreground">
-            Department allocations, operational expense claims, travel advances, and asset requests with atomic commitment rules.
+            Department budget allocations, operational expense claims, travel advances, and asset requests with two-step commitment and settlement.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            onClick={() => setIsNewRequestModalOpen(true)}
+            onClick={() => {
+              setFormError(null);
+              setIsNewRequestModalOpen(true);
+            }}
             className="h-8 gap-1.5 text-xs bg-primary text-primary-foreground font-semibold"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -276,7 +400,7 @@ export function DepartmentBudgetsWorkspace({
           <div className="text-xl font-black text-foreground mt-1">
             ₹{(totalAllocated / 100000).toFixed(2)} L
           </div>
-          <div className="text-[10px] text-muted-foreground mt-1">Across 11 Departments</div>
+          <div className="text-[10px] text-muted-foreground mt-1">{scopeLabel}</div>
         </div>
 
         <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
@@ -287,7 +411,7 @@ export function DepartmentBudgetsWorkspace({
           <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
             ₹{(totalCommitted / 100000).toFixed(2)} L
           </div>
-          <div className="text-[10px] text-muted-foreground mt-1">Unposted Approved POs/Claims</div>
+          <div className="text-[10px] text-muted-foreground mt-1">Reserved on Approved Claims</div>
         </div>
 
         <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
@@ -298,7 +422,7 @@ export function DepartmentBudgetsWorkspace({
           <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
             ₹{(totalSpent / 100000).toFixed(2)} L
           </div>
-          <div className="text-[10px] text-muted-foreground mt-1">Settled & Verified Invoices</div>
+          <div className="text-[10px] text-muted-foreground mt-1">Verified Settled Expenditure</div>
         </div>
 
         <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
@@ -309,11 +433,11 @@ export function DepartmentBudgetsWorkspace({
           <div className="text-xl font-black text-primary mt-1">
             ₹{(totalAvailable / 100000).toFixed(2)} L
           </div>
-          <div className="text-[10px] text-muted-foreground mt-1">Allocation − Spent − Committed</div>
+          <div className="text-[10px] text-muted-foreground mt-1">Allocation − Committed − Spent</div>
         </div>
       </div>
 
-      {/* Navigation Tabs & Filters */}
+      {/* Navigation Tabs & Scoped Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg border border-border/50 w-fit">
           <button
@@ -322,7 +446,7 @@ export function DepartmentBudgetsWorkspace({
               activeTab === "requests" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Expense & Travel Requests ({expenseRequests.length})
+            Expense & Travel Requests ({filteredRequests.length})
           </button>
           <button
             onClick={() => setActiveTab("allocations")}
@@ -330,7 +454,7 @@ export function DepartmentBudgetsWorkspace({
               activeTab === "allocations" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Department Allocations ({allocations.length})
+            Department Allocations ({filteredAllocations.length})
           </button>
         </div>
 
@@ -346,19 +470,21 @@ export function DepartmentBudgetsWorkspace({
             />
           </div>
 
-          <select
-            value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            className="h-8 px-2 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="ALL">All Departments</option>
-            <option value="EHW">EHW · Hardware</option>
-            <option value="SAL">SAL · Sales & BD</option>
-            <option value="PUR">PUR · Purchasing</option>
-            <option value="QA">QA · Quality</option>
-            <option value="FIN">FIN · Finance</option>
-            <option value="HROPS">HR · Operations</option>
-          </select>
+          {(isAdmin || isFinanceLead) && (
+            <select
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+              className="h-8 px-2 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="ALL">All Departments</option>
+              <option value="EHW">EHW · Hardware</option>
+              <option value="SAL">SAL · Sales & BD</option>
+              <option value="PUR">PUR · Purchasing</option>
+              <option value="QA">QA · Quality</option>
+              <option value="FIN">FIN · Finance</option>
+              <option value="HROPS">HR · Operations</option>
+            </select>
+          )}
 
           {activeTab === "requests" && (
             <select
@@ -372,6 +498,7 @@ export function DepartmentBudgetsWorkspace({
               <option value="Pending_Admin">Pending Admin</option>
               <option value="Approved">Approved</option>
               <option value="Settled">Settled</option>
+              <option value="Rejected">Rejected</option>
             </select>
           )}
         </div>
@@ -395,7 +522,9 @@ export function DepartmentBudgetsWorkspace({
               <tbody className="divide-y divide-border">
                 {filteredRequests.map((req) => {
                   const check = canUserApproveExpense(req, persona);
-                  const isRequesterSelf = req.requesterName.toLowerCase().includes(persona.person.toLowerCase());
+                  const isRequesterSelf =
+                    (persona.id && req.requesterId === persona.id) ||
+                    (persona.person && req.requesterName.toLowerCase().includes(persona.person.toLowerCase()));
 
                   return (
                     <tr key={req.id} className="hover:bg-muted/30 transition-colors">
@@ -463,6 +592,8 @@ export function DepartmentBudgetsWorkspace({
                         >
                           {req.status === "Approved" ? (
                             <CheckCircle2 className="w-3 h-3" />
+                          ) : req.status === "Settled" ? (
+                            <CheckCircle2 className="w-3 h-3" />
                           ) : req.status === "Rejected" ? (
                             <XCircle className="w-3 h-3" />
                           ) : (
@@ -506,6 +637,16 @@ export function DepartmentBudgetsWorkspace({
                               </span>
                             )}
                           </div>
+                        ) : req.status === "Approved" && (isFinanceLead || isAdmin) ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              size="sm"
+                              onClick={() => handleSettle(req.id)}
+                              className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                            >
+                              Post & Settle
+                            </Button>
+                          </div>
                         ) : (
                           <span className="text-[11px] font-semibold text-muted-foreground">
                             {req.status}
@@ -515,104 +656,131 @@ export function DepartmentBudgetsWorkspace({
                     </tr>
                   );
                 })}
+                {filteredRequests.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-muted-foreground text-xs">
+                      No expense or travel requests match the active filter criteria.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       ) : (
+        /* Allocations View */
         <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/60 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 <tr>
-                  <th className="py-2.5 px-3">Department & Category</th>
+                  <th className="py-2.5 px-3">Department</th>
+                  <th className="py-2.5 px-3">Budget Category</th>
                   <th className="py-2.5 px-3">Project Link</th>
-                  <th className="py-2.5 px-3">Allocated Amount</th>
-                  <th className="py-2.5 px-3">Committed Reserves</th>
-                  <th className="py-2.5 px-3">Posted Actuals</th>
-                  <th className="py-2.5 px-3">Available Balance</th>
-                  <th className="py-2.5 px-3">Authorized By</th>
+                  <th className="py-2.5 px-3">Allocated</th>
+                  <th className="py-2.5 px-3">Committed</th>
+                  <th className="py-2.5 px-3">Spent</th>
+                  <th className="py-2.5 px-3">Available</th>
+                  <th className="py-2.5 px-3 text-right">Utilization</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredAllocations.map((alloc) => {
                   const available = calculateAvailableBudget(alloc);
-                  const utilPct = Math.min(100, Math.round(((alloc.spentAmount + alloc.committedAmount) / alloc.allocatedAmount) * 100));
+                  const utilPct = Math.round(
+                    ((alloc.spentAmount + alloc.committedAmount) / alloc.allocatedAmount) * 100
+                  );
 
                   return (
                     <tr key={alloc.id} className="hover:bg-muted/30 transition-colors">
                       <td className="py-3 px-3">
-                        <div className="font-bold text-foreground">
-                          {alloc.departmentName} ({alloc.departmentCode})
+                        <span className="font-bold text-foreground">{alloc.departmentName}</span>
+                        <div className="text-[10px] font-mono text-muted-foreground">
+                          {alloc.departmentCode} · Rev {alloc.version}
                         </div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">{alloc.category}</div>
                       </td>
-
+                      <td className="py-3 px-3 font-medium text-foreground">{alloc.category}</td>
                       <td className="py-3 px-3">
                         {alloc.projectId ? (
-                          <span className="inline-block px-1.5 py-0.5 text-[10px] font-mono rounded bg-secondary text-secondary-foreground font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => onOpenProjectDetail?.(alloc.projectId!)}
+                            className="font-mono text-primary hover:underline text-[11px] font-bold"
+                          >
                             {alloc.projectId}
-                          </span>
+                          </button>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground">General Dept Scope</span>
+                          <span className="text-[10px] text-muted-foreground">Operational Spend</span>
                         )}
                       </td>
-
                       <td className="py-3 px-3 font-semibold text-foreground">
                         ₹{alloc.allocatedAmount.toLocaleString()}
                       </td>
-
-                      <td className="py-3 px-3 font-semibold text-amber-600 dark:text-amber-400">
+                      <td className="py-3 px-3 text-amber-600 dark:text-amber-400 font-medium">
                         ₹{alloc.committedAmount.toLocaleString()}
                       </td>
-
-                      <td className="py-3 px-3 font-semibold text-emerald-600 dark:text-emerald-400">
+                      <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-medium">
                         ₹{alloc.spentAmount.toLocaleString()}
                       </td>
-
-                      <td className="py-3 px-3">
-                        <div className="font-bold text-primary">₹{available.toLocaleString()}</div>
-                        <div className="w-24 bg-muted rounded-full h-1.5 mt-1 overflow-hidden">
-                          <div
-                            className={`h-full ${utilPct > 90 ? "bg-rose-500" : utilPct > 70 ? "bg-amber-500" : "bg-emerald-500"}`}
-                            style={{ width: `${utilPct}%` }}
-                          />
-                        </div>
+                      <td className="py-3 px-3 font-bold text-foreground">
+                        ₹{available.toLocaleString()}
                       </td>
-
-                      <td className="py-3 px-3 text-muted-foreground text-[11px]">
-                        {alloc.approvedBy}
+                      <td className="py-3 px-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                utilPct > 90 ? "bg-rose-500" : utilPct > 70 ? "bg-amber-500" : "bg-primary"
+                              }`}
+                              style={{ width: `${Math.min(100, utilPct)}%` }}
+                            />
+                          </div>
+                          <span className="font-mono text-[10px] font-semibold text-muted-foreground">
+                            {utilPct}%
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
+                {filteredAllocations.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground text-xs">
+                      No budget allocations found for the active filter selection.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* New Request Modal */}
+      {/* New Request Modal with Direct Inputs & Form Error Preservation */}
       <Dialog open={isNewRequestModalOpen} onOpenChange={setIsNewRequestModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold">New Expense, Travel or Asset Request</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Submitted under IATF 16949 / ISO 9001 governance. Subject to available department budget.
-            </DialogDescription>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-primary" />
+              Submit Expense / Travel Request
+            </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleCreateRequest} className="space-y-3.5 mt-2 text-xs">
+          {formError && (
+            <div className="p-2.5 text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800 rounded-lg flex items-center justify-between">
+              <span>{formError}</span>
+              <Button size="sm" variant="ghost" className="h-6 px-1.5 text-xs" onClick={() => setFormError(null)}>
+                Dismiss
+              </Button>
+            </div>
+          )}
+
+          <form onSubmit={handleCreateRequest} className="space-y-3 text-xs">
             <div>
               <label className="font-semibold block mb-1">Expense Category</label>
               <select
                 value={newCategory}
-                onChange={(e) => {
-                  const cat = e.target.value as BudgetCategory;
-                  setNewCategory(cat);
-                  setIsTravel(cat === "Travel & Transport" || cat === "Accommodation & Stay");
-                  setIsAsset(cat === "Equipment & Tools (CapEx)");
-                }}
+                onChange={(e) => setNewCategory(e.target.value as BudgetCategory)}
                 className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
               >
                 <option value="Consumables & Lab Supplies">Consumables & Lab Supplies</option>
@@ -626,28 +794,110 @@ export function DepartmentBudgetsWorkspace({
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="font-semibold block mb-1">Estimated Amount (INR)</label>
+            <div className="flex items-center gap-4 py-1">
+              <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
-                  type="number"
-                  placeholder="e.g. 25000"
-                  required
-                  value={newAmount}
-                  onChange={(e) => setNewAmount(e.target.value)}
-                  className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
+                  type="checkbox"
+                  checked={isTravel}
+                  onChange={(e) => setIsTravel(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-primary"
                 />
-              </div>
-              <div>
-                <label className="font-semibold block mb-1">Required By Date</label>
+                <span className="font-medium">Business Travel Claim</span>
+              </label>
+
+              <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
-                  type="date"
-                  value={newRequiredDate}
-                  onChange={(e) => setNewRequiredDate(e.target.value)}
-                  className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
+                  type="checkbox"
+                  checked={isAsset}
+                  onChange={(e) => setIsAsset(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-primary"
                 />
-              </div>
+                <span className="font-medium">Equipment / Asset Request</span>
+              </label>
             </div>
+
+            {isTravel ? (
+              <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 space-y-2">
+                <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
+                  <Plane className="w-3.5 h-3.5" />
+                  <span>Travel Details & Actual Estimates</span>
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Destination (e.g. Pune OEM Facility)"
+                    value={travelDestination}
+                    onChange={(e) => setTravelDestination(e.target.value)}
+                    className="w-full h-7 px-2 rounded border border-input bg-background text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] text-muted-foreground block mb-0.5">Transport (INR)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 15000"
+                      value={travelTransport}
+                      onChange={(e) => setTravelTransport(e.target.value)}
+                      className="w-full h-7 px-2 rounded border border-input bg-background text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground block mb-0.5">Stay / Hotel (INR)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 8000"
+                      value={travelStay}
+                      onChange={(e) => setTravelStay(e.target.value)}
+                      className="w-full h-7 px-2 rounded border border-input bg-background text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground block mb-0.5">Daily Allowance</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 2000"
+                      value={travelDaily}
+                      onChange={(e) => setTravelDaily(e.target.value)}
+                      className="w-full h-7 px-2 rounded border border-input bg-background text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground block mb-0.5">Advance Requested (Optional)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 10000"
+                    value={travelAdvance}
+                    onChange={(e) => setTravelAdvance(e.target.value)}
+                    className="w-full h-7 px-2 rounded border border-input bg-background text-xs"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-semibold block mb-1">Estimated Amount (INR)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 25000"
+                    required
+                    value={newAmount}
+                    onChange={(e) => setNewAmount(e.target.value)}
+                    className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Required By Date</label>
+                  <input
+                    type="date"
+                    value={newRequiredDate}
+                    onChange={(e) => setNewRequiredDate(e.target.value)}
+                    className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="font-semibold block mb-1">Linked Project (Optional)</label>
@@ -674,31 +924,6 @@ export function DepartmentBudgetsWorkspace({
                 className="w-full p-2 rounded-lg border border-input bg-background text-xs resize-none"
               />
             </div>
-
-            {isTravel && (
-              <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 space-y-2">
-                <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
-                  <Plane className="w-3.5 h-3.5" />
-                  <span>Travel Details</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    placeholder="Destination (e.g. Pune OEM)"
-                    value={travelDestination}
-                    onChange={(e) => setTravelDestination(e.target.value)}
-                    className="h-7 px-2 rounded border border-input bg-background text-xs"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Advance Requested (INR)"
-                    value={travelAdvance}
-                    onChange={(e) => setTravelAdvance(e.target.value)}
-                    className="h-7 px-2 rounded border border-input bg-background text-xs"
-                  />
-                </div>
-              </div>
-            )}
 
             {isAsset && (
               <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 space-y-2">

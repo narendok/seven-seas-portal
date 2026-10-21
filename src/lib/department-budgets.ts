@@ -108,6 +108,18 @@ export interface ExpenseRequest {
   updatedAt: string;
 }
 
+export interface ApprovalPolicy {
+  financeLeadLimit: number; // default: 100,000 INR
+  dualApprovalRequiredAbove: number; // default: 250,000 INR
+  prohibitSelfApproval: boolean;
+}
+
+export const DEFAULT_APPROVAL_POLICY: ApprovalPolicy = {
+  financeLeadLimit: 100000,
+  dualApprovalRequiredAbove: 250000,
+  prohibitSelfApproval: true,
+};
+
 /** Compute available balance: allocation - spent - committed */
 export function calculateAvailableBudget(allocation: DepartmentAllocation): number {
   return allocation.allocatedAmount - allocation.spentAmount - allocation.committedAmount;
@@ -188,7 +200,8 @@ export function canUserApproveExpense(
 export function executeExpenseApproval(
   request: ExpenseRequest,
   allocations: DepartmentAllocation[],
-  userPersona: { kind: string; person: string; departmentId?: string | undefined; id?: string | undefined }
+  userPersona: { kind: string; person: string; departmentId?: string | undefined; id?: string | undefined },
+  policy?: ApprovalPolicy
 ): {
   success: boolean;
   nextRequest?: ExpenseRequest | undefined;
@@ -227,15 +240,16 @@ export function executeExpenseApproval(
   }
   const available = calculateAvailableBudget(targetAllocation);
 
-  // Determine next stage
+  // Determine next stage using configurable policy
   let nextStatus: ExpenseRequest["status"] = "Approved";
   let nextApprover = "None (Approved)";
+  const threshold = policy?.financeLeadLimit ?? DEFAULT_APPROVAL_POLICY.financeLeadLimit;
 
   if (request.status === "Pending_Dept_Review") {
     nextStatus = "Pending_Finance";
     nextApprover = "FIN Lead";
   } else if (request.status === "Pending_Finance") {
-    if (request.amount > 100000 && userPersona.kind !== "admin") {
+    if (request.amount > threshold && userPersona.kind !== "admin") {
       nextStatus = "Pending_Admin";
       nextApprover = "Executive Admin";
     } else {
@@ -286,13 +300,95 @@ export function executeExpenseApproval(
 }
 
 /**
- * Rejects an expense request with authorization check
+ * Executes verified expense posting / settlement:
+ * - Only Finance Lead (FIN) or Executive Admin can post actual settlement
+ * - Request must be in "Approved" state
+ * - Clears committedAmount and records spentAmount atomically:
+ *   alloc.committedAmount -= request.amount;
+ *   alloc.spentAmount += actualSpent;
+ * - Marks request status as "Settled"
+ * - Prevents double counting!
+ */
+export function executeExpenseSettlement(
+  request: ExpenseRequest,
+  allocations: DepartmentAllocation[],
+  userPersona: { kind: string; person: string; departmentId?: string | undefined; id?: string | undefined },
+  postingRef: string,
+  actualSpentAmount?: number
+): {
+  success: boolean;
+  nextRequest?: ExpenseRequest | undefined;
+  updatedAllocations?: DepartmentAllocation[] | undefined;
+  message: string;
+} {
+  if (userPersona.kind === "client") {
+    return { success: false, message: "Client accounts do not have financial settlement authority." };
+  }
+  const isFin = userPersona.departmentId?.toLowerCase() === "fin";
+  const isAdmin = userPersona.kind === "admin";
+  if (!isFin && !isAdmin) {
+    return { success: false, message: "Only Finance Lead (FIN) or Executive Admin can post verified expense settlements." };
+  }
+  if (request.status !== "Approved") {
+    return { success: false, message: `Only approved claims can be posted for settlement. Current status: ${request.status}.` };
+  }
+
+  const matchingAllocationIndex = allocations.findIndex((a) => {
+    const deptMatch = a.departmentCode.toLowerCase() === request.requesterDept.toLowerCase();
+    const catMatch = a.category === request.category;
+    if (!deptMatch || !catMatch) return false;
+    if (request.projectId && a.projectId) return a.projectId === request.projectId;
+    return true;
+  });
+
+  if (matchingAllocationIndex === -1) {
+    return { success: false, message: `No matching budget allocation found to settle ${request.reference}.` };
+  }
+
+  const actualDisbursement = actualSpentAmount !== undefined && actualSpentAmount > 0 ? actualSpentAmount : request.amount;
+
+  const newAllocations = allocations.map((alloc, idx) => {
+    if (idx !== matchingAllocationIndex) return alloc;
+    return {
+      ...alloc,
+      committedAmount: Math.max(0, alloc.committedAmount - request.amount),
+      spentAmount: alloc.spentAmount + actualDisbursement,
+      version: alloc.version + 1,
+    };
+  });
+
+  const nextRequest: ExpenseRequest = {
+    ...request,
+    status: "Settled",
+    currentApproverRole: "None (Settled)",
+    claimSettlement: {
+      actualAmount: actualDisbursement,
+      advanceDeducted: request.travelDetail?.requestedAdvance ?? 0,
+      netPayable: Math.max(0, actualDisbursement - (request.travelDetail?.requestedAdvance ?? 0)),
+      financePostingRef: postingRef,
+      settledAt: new Date().toISOString(),
+    },
+    comments: `Settled and posted by ${userPersona.person} under ref ${postingRef}.`,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return {
+    success: true,
+    nextRequest,
+    updatedAllocations: newAllocations,
+    message: `Expense claim ${request.reference} successfully settled. ₹${actualDisbursement.toLocaleString()} posted to actual expenditure.`,
+  };
+}
+
+/**
+ * Rejects an expense request with authorization check and releases any committed funds
  */
 export function executeExpenseRejection(
   request: ExpenseRequest,
   userPersona: { kind: string; person: string; departmentId?: string | undefined; id?: string | undefined },
-  reason?: string
-): { success: boolean; nextRequest?: ExpenseRequest | undefined; message: string } {
+  reason?: string,
+  allocations?: DepartmentAllocation[]
+): { success: boolean; nextRequest?: ExpenseRequest | undefined; updatedAllocations?: DepartmentAllocation[] | undefined; message: string } {
   if (userPersona.kind === "client") {
     return { success: false, message: "Client accounts do not have approval or rejection authority." };
   }
@@ -306,6 +402,28 @@ export function executeExpenseRejection(
     return { success: false, message: "Unauthorized to reject this request." };
   }
 
+  // If rejecting a previously Approved request, release the commitment!
+  let newAllocations = allocations;
+  if (request.status === "Approved" && allocations) {
+    const matchingAllocationIndex = allocations.findIndex((a) => {
+      const deptMatch = a.departmentCode.toLowerCase() === request.requesterDept.toLowerCase();
+      const catMatch = a.category === request.category;
+      if (!deptMatch || !catMatch) return false;
+      if (request.projectId && a.projectId) return a.projectId === request.projectId;
+      return true;
+    });
+    if (matchingAllocationIndex !== -1) {
+      newAllocations = allocations.map((alloc, idx) => {
+        if (idx !== matchingAllocationIndex) return alloc;
+        return {
+          ...alloc,
+          committedAmount: Math.max(0, alloc.committedAmount - request.amount),
+          version: alloc.version + 1,
+        };
+      });
+    }
+  }
+
   const nextRequest: ExpenseRequest = {
     ...request,
     status: "Rejected",
@@ -317,6 +435,7 @@ export function executeExpenseRejection(
   return {
     success: true,
     nextRequest,
+    updatedAllocations: newAllocations,
     message: `Request ${request.reference} rejected.`,
   };
 }

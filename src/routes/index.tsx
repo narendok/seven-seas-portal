@@ -136,7 +136,28 @@ import {
 import { DeviceVisualSpecAndBlockDiagram } from "@/components/DeviceVisualSpecAndBlockDiagram";
 import { RoleAwareSidebar, type RoleAwareSidebarProps } from "@/components/RoleAwareSidebar";
 import { DepartmentBudgetsWorkspace } from "@/components/DepartmentBudgetsWorkspace";
+import {
+  type DepartmentAllocation,
+  type ExpenseRequest,
+  DEFAULT_DEPARTMENT_ALLOCATIONS,
+  DEFAULT_EXPENSE_REQUESTS,
+} from "@/lib/department-budgets";
 import { EmployeeSelfServiceWorkspace } from "@/components/EmployeeSelfServiceWorkspace";
+import { HRAdministrationWorkspace } from "@/components/HRAdministrationWorkspace";
+import {
+  type EmployeeLetter,
+  type AssignedPolicy,
+  type AssignedTraining,
+  type AssignedFormSurvey,
+  type EmployeeAssignedAsset,
+  DEFAULT_EMPLOYEE_LETTERS,
+  DEFAULT_ASSIGNED_POLICIES,
+  DEFAULT_ASSIGNED_TRAININGS,
+  DEFAULT_ASSIGNED_FORMS,
+  DEFAULT_EMPLOYEE_ASSETS,
+} from "@/lib/employee-services";
+import { ServiceTicketsWorkspace } from "@/components/ServiceTicketsWorkspace";
+import { type ServiceTicket, INITIAL_SERVICE_TICKETS } from "@/lib/service-tickets";
 import { TeamCommunicationWorkspace } from "@/components/TeamCommunicationWorkspace";
 import { ClientOEMPortal } from "@/components/ClientOEMPortal";
 import {
@@ -754,6 +775,14 @@ type PortalState = {
   inventory?: InventoryItem[] | undefined;
   inventoryMovements?: InventoryMovement[] | undefined;
   inventoryAssignments?: InventoryAssignment[] | undefined;
+  departmentAllocations?: DepartmentAllocation[] | undefined;
+  expenseRequests?: ExpenseRequest[] | undefined;
+  employeeLetters?: EmployeeLetter[] | undefined;
+  assignedPolicies?: AssignedPolicy[] | undefined;
+  assignedTrainings?: AssignedTraining[] | undefined;
+  assignedForms?: AssignedFormSurvey[] | undefined;
+  employeeAssets?: EmployeeAssignedAsset[] | undefined;
+  serviceTickets?: ServiceTicket[] | undefined;
 };
 type DemoAlert = {
   id: string;
@@ -1098,6 +1127,14 @@ const emptyPortal = (): PortalState => ({
   inventory: [],
   inventoryMovements: [],
   inventoryAssignments: [],
+  departmentAllocations: DEFAULT_DEPARTMENT_ALLOCATIONS,
+  expenseRequests: DEFAULT_EXPENSE_REQUESTS,
+  employeeLetters: DEFAULT_EMPLOYEE_LETTERS,
+  assignedPolicies: DEFAULT_ASSIGNED_POLICIES,
+  assignedTrainings: DEFAULT_ASSIGNED_TRAININGS,
+  assignedForms: DEFAULT_ASSIGNED_FORMS,
+  employeeAssets: DEFAULT_EMPLOYEE_ASSETS,
+    serviceTickets: INITIAL_SERVICE_TICKETS,
 });
 
 function defaultTemplateSettings(): TemplateSettings {
@@ -1967,6 +2004,13 @@ const demoPortal = (): PortalState => {
     customersRegistry: defaultCustomers,
     enquiriesOpportunities: defaultEnquiriesOpportunities,
     modularConfigs: defaultProjectModularConfigs,
+    departmentAllocations: DEFAULT_DEPARTMENT_ALLOCATIONS,
+    expenseRequests: DEFAULT_EXPENSE_REQUESTS,
+    employeeLetters: DEFAULT_EMPLOYEE_LETTERS,
+    assignedPolicies: DEFAULT_ASSIGNED_POLICIES,
+    assignedTrainings: DEFAULT_ASSIGNED_TRAININGS,
+    assignedForms: DEFAULT_ASSIGNED_FORMS,
+    employeeAssets: DEFAULT_EMPLOYEE_ASSETS,
   };
 };
 const createId = () => crypto.randomUUID();
@@ -2115,6 +2159,13 @@ const readPortal = (): PortalState => {
       inventory: Array.isArray(value.inventory) ? value.inventory : value.demoLoaded ? inventorySeed() : [],
       inventoryMovements: Array.isArray(value.inventoryMovements) ? value.inventoryMovements : [],
       inventoryAssignments: Array.isArray(value.inventoryAssignments) ? value.inventoryAssignments : [],
+      departmentAllocations: Array.isArray(value.departmentAllocations) ? value.departmentAllocations : DEFAULT_DEPARTMENT_ALLOCATIONS,
+      expenseRequests: Array.isArray(value.expenseRequests) ? value.expenseRequests : DEFAULT_EXPENSE_REQUESTS,
+      employeeLetters: Array.isArray(value.employeeLetters) ? value.employeeLetters : DEFAULT_EMPLOYEE_LETTERS,
+      assignedPolicies: Array.isArray(value.assignedPolicies) ? value.assignedPolicies : DEFAULT_ASSIGNED_POLICIES,
+      assignedTrainings: Array.isArray(value.assignedTrainings) ? value.assignedTrainings : DEFAULT_ASSIGNED_TRAININGS,
+      assignedForms: Array.isArray(value.assignedForms) ? value.assignedForms : DEFAULT_ASSIGNED_FORMS,
+      employeeAssets: Array.isArray(value.employeeAssets) ? value.employeeAssets : DEFAULT_EMPLOYEE_ASSETS,
       raciMatrix: value.raciMatrix ?? defaultRaciMatrix(),
       chronicles: Array.isArray(value.chronicles) ? value.chronicles : DEFAULT_DEPARTMENT_CHRONICLES,
     };
@@ -2267,6 +2318,8 @@ function Portal() {
     | "budgets"
     | "profile"
     | "communication"
+    | "tickets"
+    | "hr_admin"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const allTeamMembers = useMemo(() => [...(portal?.demoLoaded ? demoTeam : []), ...(portal?.teamMembers ?? [])], [portal?.demoLoaded, portal?.teamMembers]);
@@ -2395,7 +2448,7 @@ function Portal() {
     }
     if ((persona.kind === "lead" || persona.kind === "member") && persona.departmentId) {
       if (area !== persona.departmentId) {
-        announce(`Access restricted under IATF 16949 / ISO 27001: As ${persona.label}, you are confined to your assigned department workspace (${persona.departmentId.toUpperCase()}).`);
+        announce(`Access restricted: As ${persona.label}, you are confined to your assigned department workspace (${persona.departmentId.toUpperCase()}).`);
         setActiveArea(persona.departmentId);
         setView(targetView);
         setSelectedId(null);
@@ -3112,6 +3165,8 @@ function Portal() {
           onOpenBudgets={() => setView("budgets")}
           onOpenProfile={() => setView("profile")}
           onOpenCommunication={() => setView("communication")}
+          onOpenTickets={() => setView("tickets")}
+          onOpenHrAdmin={() => setView("hr_admin")}
           onOpenAlerts={() => setAlertsOpen(true)}
           onOpenHistory={() => setModal("history")}
           setupStep={portal.setupStep}
@@ -3156,16 +3211,16 @@ function Portal() {
                 {persona.kind === "client"
                   ? "Tata Motors Limited · EV Fleet Solutions Delivery Portal"
                   : (persona.kind === "lead" || persona.kind === "member")
-                  ? (portal?.departments.find((item) => item.id === (departmentContext ?? `demo-dept-${persona.departmentId}`))?.name ?? active.name)
-                  : (view === "index" ? "Unified index" : active.name)}
+                  ? (portal?.departments.find((item) => item.id === (departmentContext ?? `demo-dept-${persona.departmentId}`))?.name ?? active.name).replace(/^DEMO · /, "").replace("Purchasing & SCM", "Purchasing")
+                  : (view === "index" ? "Unified index" : active.name.replace(/^DEMO · /, "").replace("Purchasing & SCM", "Purchasing"))}
               </p>
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {persona.kind === "client"
-                  ? "Rohan Verma · Authorized External OEM Stakeholder (ISO 27001 §A.9)"
+                  ? "Rohan Verma · Client Representative"
                   : (persona.kind === "lead" || persona.kind === "member")
-                  ? `${persona.label} · Authorized Department Scope (IATF 16949 / ISO 27001)`
+                  ? `${persona.label}`
                   : departmentContext
-                  ? `${portal?.departments.find((item) => item.id === departmentContext)?.name ?? "Department"} · Administrator context`
+                  ? `${portal?.departments.find((item) => item.id === departmentContext)?.name?.replace(/^DEMO · /, "") ?? "Department"} · Admin`
                   : `All departments · ${portal?.setup.location ?? ""}`}
               </p>
             </button>
@@ -3450,14 +3505,78 @@ function Portal() {
             <DepartmentBudgetsWorkspace
               persona={persona}
               selectedProjectId={selectedProjectId}
+              allocations={portal.departmentAllocations ?? DEFAULT_DEPARTMENT_ALLOCATIONS}
+              expenseRequests={portal.expenseRequests ?? DEFAULT_EXPENSE_REQUESTS}
+              testMembership={testMembership}
+              onUpdateAllocations={(allocations) => {
+                void update((state) => ({ ...state, departmentAllocations: allocations }));
+              }}
+              onUpdateRequests={(requests) => {
+                void update((state) => ({ ...state, expenseRequests: requests }));
+              }}
               onOpenProjectDetail={(pId) => {
                 setSelectedProjectId(pId);
                 setView("project");
               }}
             />
+          ) : view === "tickets" ? (
+            <ServiceTicketsWorkspace
+              tickets={portal.serviceTickets ?? INITIAL_SERVICE_TICKETS}
+              currentUser={{
+                role: persona.kind === "admin" ? "admin" : (persona.departmentId ?? "staff"),
+                name: persona.person.split(" · ")[0] ?? persona.label,
+                email: `${persona.id.toLowerCase()}@hexenselabs.com`,
+                department: persona.departmentId,
+                organization: "Hexense Labs",
+              }}
+              onUpdateTickets={(tickets: ServiceTicket[]) => {
+                void update((state) => ({ ...state, serviceTickets: tickets }));
+              }}
+              onOpenProjectDetail={(pId: string) => {
+                setSelectedProjectId(pId);
+                setView("project");
+              }}
+              onBack={() => setView("queue")}
+            />
+          ) : view === "hr_admin" ? (
+            <HRAdministrationWorkspace
+              currentUser={{
+                role: persona.kind === "admin" ? "admin" : (persona.departmentId ?? "staff"),
+                name: persona.person.split(" · ")[0] ?? persona.label,
+                department: persona.departmentId,
+              }}
+              policies={portal.assignedPolicies ?? DEFAULT_ASSIGNED_POLICIES}
+              trainings={portal.assignedTrainings ?? DEFAULT_ASSIGNED_TRAININGS}
+              forms={portal.assignedForms ?? DEFAULT_ASSIGNED_FORMS}
+              onUpdatePolicies={(policies) => {
+                void update((state) => ({ ...state, assignedPolicies: policies }));
+              }}
+              onUpdateTrainings={(trainings) => {
+                void update((state) => ({ ...state, assignedTrainings: trainings }));
+              }}
+              onUpdateForms={(forms) => {
+                void update((state) => ({ ...state, assignedForms: forms }));
+              }}
+              onBack={() => setView("queue")}
+            />
           ) : view === "profile" ? (
             <EmployeeSelfServiceWorkspace
               persona={persona}
+              testMembership={testMembership}
+              letters={portal.employeeLetters ?? DEFAULT_EMPLOYEE_LETTERS}
+              policies={portal.assignedPolicies ?? DEFAULT_ASSIGNED_POLICIES}
+              trainings={portal.assignedTrainings ?? DEFAULT_ASSIGNED_TRAININGS}
+              forms={portal.assignedForms ?? DEFAULT_ASSIGNED_FORMS}
+              assets={portal.employeeAssets ?? DEFAULT_EMPLOYEE_ASSETS}
+              onUpdatePolicies={(policies) => {
+                void update((state) => ({ ...state, assignedPolicies: policies }));
+              }}
+              onUpdateTrainings={(trainings) => {
+                void update((state) => ({ ...state, assignedTrainings: trainings }));
+              }}
+              onUpdateForms={(forms) => {
+                void update((state) => ({ ...state, assignedForms: forms }));
+              }}
             />
           ) : view === "communication" ? (
             <TeamCommunicationWorkspace
@@ -4575,7 +4694,7 @@ function Ai4tLifecycleHub({
       <section className="ops-section overflow-hidden">
         <div className="ops-section-header flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Enterprise Automotive Lifecycle & Gate Engine (IATF 16949 / AIS-140)</p>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Lifecycle & Gate Engine</p>
             <h3 className="mt-1 text-base font-semibold">{projectId} · {activeProfile.name}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{activeProfile.customer} · {activeProfile.quantity} · {activeProfile.commercialValue}</p>
           </div>
@@ -6117,7 +6236,7 @@ function ProjectDetail({
                   <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs">
                     <div className="flex items-center gap-2 font-bold text-primary">
                       <ShieldCheck className="size-4" />
-                      <span>Automated Stage Gate &amp; Dependency Enforcement (IATF 16949 §8.3 / APQP)</span>
+                      <span>Automated Stage Gate &amp; Dependency Enforcement</span>
                     </div>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       <strong>Prerequisite Rule:</strong> Hardware Schematics (EHW-SCH-01) is the critical path gate. Box-build, mechanical manufacturing, and pilot production are programmatically locked until Schematics release is certified.
@@ -7175,7 +7294,7 @@ function DepartmentProcessMenu({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2 font-mono text-[10px] text-muted-foreground">
         <span>Drive folder · /{menu.drive}</span>
-        <span>IATF 16949:2016 §8.2 / ISO 9001:2015 Traceable</span>
+        <span>Quality Review Traceable</span>
       </div>
     </section>
   );

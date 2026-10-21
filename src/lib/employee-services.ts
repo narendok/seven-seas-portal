@@ -326,38 +326,129 @@ if (DEFAULT_EMPLOYEE_PROFILES["sit"]) DEFAULT_EMPLOYEE_PROFILES["kai.morgan@exam
 if (DEFAULT_EMPLOYEE_PROFILES["hrops"]) DEFAULT_EMPLOYEE_PROFILES["taylor.quinn@example.com"] = DEFAULT_EMPLOYEE_PROFILES["hrops"];
 
 /**
- * Resolves an authenticated internal employee profile based on persona.
+ * Resolves an authenticated internal employee profile based on persona and optional testMembership.
  * FAILS CLOSED: Returns undefined if persona is Client, unknown, or has no profile.
- * NEVER defaults to Admin!
+ * NEVER defaults to Admin or leaks a Department Lead's profile to a regular member!
  */
-export function resolveEmployeeProfile(persona: {
-  id?: string | undefined;
-  person?: string | undefined;
-  kind?: string | undefined;
-  departmentId?: string | undefined;
-}): EmployeeProfile | undefined {
-  if (!persona || persona.kind === "client") {
+export function resolveEmployeeProfile(
+  persona: {
+    id?: string | undefined;
+    person?: string | undefined;
+    kind?: string | undefined;
+    departmentId?: string | undefined;
+  },
+  testMembership?: {
+    organizationId?: string | undefined;
+    organizationName?: string | undefined;
+    membershipId: string;
+    displayName: string;
+    role: "admin" | "department_lead" | "member" | "viewer" | string;
+    departmentCode: string | null;
+    departmentName: string | null;
+    isClient: boolean;
+  } | null
+): EmployeeProfile | undefined {
+  if (!persona || persona.kind === "client" || testMembership?.isClient) {
     return undefined; // Client fails closed
   }
 
-  // 1. Match by persona.id (e.g. "admin", "ehw", "pur", "qa")
-  if (persona.id && DEFAULT_EMPLOYEE_PROFILES[persona.id]) {
-    return DEFAULT_EMPLOYEE_PROFILES[persona.id];
+  // 1. Authenticated TEST Membership takes strict priority
+  if (testMembership) {
+    if (testMembership.role === "admin") {
+      const adminBase = DEFAULT_EMPLOYEE_PROFILES["admin"];
+      if (adminBase) {
+        return {
+          ...adminBase,
+          id: testMembership.membershipId,
+          name: testMembership.displayName || adminBase.name,
+        };
+      }
+    }
+
+    if (testMembership.role === "department_lead") {
+      const deptCode = testMembership.departmentCode?.toLowerCase();
+      const leadBase = deptCode && DEFAULT_EMPLOYEE_PROFILES[deptCode]
+        ? DEFAULT_EMPLOYEE_PROFILES[deptCode]
+        : undefined;
+
+      if (leadBase) {
+        return {
+          ...leadBase,
+          id: testMembership.membershipId,
+          name: testMembership.displayName || leadBase.name,
+        };
+      }
+    }
+
+    // Authenticated regular member: NEVER return a lead profile!
+    const deptCode = (testMembership.departmentCode ?? "GEN").toUpperCase();
+    const deptName = testMembership.departmentName ?? "General";
+    return {
+      id: testMembership.membershipId,
+      employeeCode: `HLPL-EMP-${testMembership.membershipId.slice(-4).toUpperCase()}`,
+      name: testMembership.displayName || `${deptCode} Employee`,
+      email: `${testMembership.membershipId}@test.hexenselabs.internal`,
+      phone: "+91 98000 00000",
+      departmentCode: deptCode,
+      departmentName: deptName,
+      roleTitle: `${deptName} Engineer`,
+      securityClearance: "Level 1 Operational Contributor",
+      facilityLocation: "Hexense Labs Headquarters, Noida",
+      emergencyContact: "HR Department (+91 98765 43212)",
+      joiningDate: "2024-01-15",
+      status: "Active",
+    };
   }
 
-  // 2. Match by departmentId
-  if (persona.departmentId && DEFAULT_EMPLOYEE_PROFILES[persona.departmentId]) {
+  // 2. DEMO Mode
+  // If persona is a member: NEVER return the department lead!
+  if (persona.kind === "member") {
+    // If exact member profile exists in directory by ID
+    if (persona.id && DEFAULT_EMPLOYEE_PROFILES[persona.id]) {
+      return DEFAULT_EMPLOYEE_PROFILES[persona.id];
+    }
+    // If persona has no recognized department, fail closed
+    if (!persona.departmentId || !DEFAULT_EMPLOYEE_PROFILES[persona.departmentId.toLowerCase()]) {
+      return undefined;
+    }
+    // Return a scoped member profile; never substitute Avery Vale or any other lead!
+    const deptKey = persona.departmentId.toLowerCase();
+    const leadTemplate = DEFAULT_EMPLOYEE_PROFILES[deptKey];
+    if (!leadTemplate) {
+      return undefined;
+    }
+    const deptCode = leadTemplate.departmentCode;
+    const deptName = leadTemplate.departmentName;
+    return {
+      id: `demo-mem-${deptKey}-${persona.id || "01"}`,
+      employeeCode: `HLPL-EMP-DEMO-${(persona.id || "01").toUpperCase()}`,
+      name: persona.person || `${deptCode} Employee`,
+      email: `${(persona.person || "employee").toLowerCase().replace(/\s+/g, ".")}@example.com`,
+      phone: "+91 98765 00000",
+      departmentCode: deptCode,
+      departmentName: deptName,
+      roleTitle: `${deptName} Engineer`,
+      securityClearance: "Level 1 Operational Contributor",
+      facilityLocation: "Hexense Labs Headquarters, Noida",
+      emergencyContact: "HR Department (+91 98765 43212)",
+      joiningDate: "2024-01-15",
+      status: "Active",
+    };
+  }
+
+  // Admin persona
+  if (persona.kind === "admin") {
+    return DEFAULT_EMPLOYEE_PROFILES["admin"];
+  }
+
+  // Lead persona: ONLY return the lead if persona is explicitly a lead!
+  if (persona.kind === "lead" && persona.departmentId && DEFAULT_EMPLOYEE_PROFILES[persona.departmentId]) {
     return DEFAULT_EMPLOYEE_PROFILES[persona.departmentId];
   }
 
-  // 3. Match by person name substring (e.g. "Avery Vale")
-  if (persona.person) {
-    const pName = persona.person.toLowerCase();
-    for (const prof of Object.values(DEFAULT_EMPLOYEE_PROFILES)) {
-      if (prof.name && pName.includes(prof.name.toLowerCase())) {
-        return prof;
-      }
-    }
+  // If matching exact persona.id in directory
+  if (persona.id && DEFAULT_EMPLOYEE_PROFILES[persona.id]) {
+    return DEFAULT_EMPLOYEE_PROFILES[persona.id];
   }
 
   // Fail closed: unrecognized persona does not receive any employee profile
@@ -533,6 +624,7 @@ export const DEFAULT_ASSIGNED_FORMS: AssignedFormSurvey[] = [
 export const DEFAULT_EMPLOYEE_ASSETS: EmployeeAssignedAsset[] = [
   {
     id: "AST-001",
+    employeeId: "usr-ehw-avery",
     assetTag: "AST-NB-DELL-5520",
     assetName: "Dell Precision 5520 Mobile Workstation (i7 / 32GB / Quadro)",
     category: "Computing & IT",
@@ -543,6 +635,7 @@ export const DEFAULT_EMPLOYEE_ASSETS: EmployeeAssignedAsset[] = [
   },
   {
     id: "AST-002",
+    employeeId: "usr-ehw-avery",
     assetTag: "AST-LAB-OSC-RIGOL",
     assetName: "Rigol MSO5000 4-Channel 350MHz Mixed Signal Oscilloscope",
     category: "Lab & Measurement Equipment",
@@ -553,6 +646,7 @@ export const DEFAULT_EMPLOYEE_ASSETS: EmployeeAssignedAsset[] = [
   },
   {
     id: "AST-003",
+    employeeId: "usr-ehw-avery",
     assetTag: "AST-SEC-BADGE-L4",
     assetName: "Smart RFID Facility Security Keycard — Level 4 Master Access",
     category: "Access & Security Badges",

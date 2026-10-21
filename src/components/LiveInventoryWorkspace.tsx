@@ -911,6 +911,70 @@ const initialSerializedAssets: AssetRecord[] = [
     compatiblePartNumbers: ["SM5S24A-E3/2D", "LMR14050SDDAR", "TCAN1042VDRQ1"],
     lastMaintenance: "2026-05-18 (NABL certified calibration by IDEMI)",
   },
+  {
+    id: "ast-dell-ws-01",
+    assetTag: "HLPL-AST-IT-006",
+    name: "Dell Precision 5820 Workstation (Xeon W-2245, 64GB ECC, RTX A4000)",
+    assetClass: "Office & IT Assets",
+    subclass: "ECAD / Hardware Simulation Workstation",
+    serialNumber: "DELL-PR5820-99214",
+    facilityLocation: "Noida Tech Center · Hardware Lab Desk 4",
+    custodian: "Avery Vale",
+    department: "SIT",
+    calibrationDate: "2026-04-10",
+    nextCalibrationDue: "2027-04-10",
+    status: "In Service",
+    compatiblePartNumbers: [],
+    lastMaintenance: "2026-10-18 (Thermal paste repaste & BIOS v2.14.0 flashed)",
+  },
+  {
+    id: "ast-cisco-sw-01",
+    assetTag: "HLPL-AST-IT-007",
+    name: "Cisco Catalyst 9300 48-Port PoE+ L3 Managed Core Switch",
+    assetClass: "Office & IT Assets",
+    subclass: "IT Networking Infrastructure",
+    serialNumber: "CSCO-CAT9300-88102",
+    facilityLocation: "Noida Tech Center · Server Room Rack A",
+    custodian: "Sameer Khan",
+    department: "SIT",
+    calibrationDate: "2026-01-15",
+    nextCalibrationDue: "2027-01-15",
+    status: "In Service",
+    compatiblePartNumbers: [],
+    lastMaintenance: "2026-09-01 (Cisco IOS-XE 17.9.4a security patch applied)",
+  },
+  {
+    id: "ast-ups-20kva",
+    assetTag: "HLPL-AST-FAC-008",
+    name: "Schneider Electric APC Symmetra PX 20kVA Facility UPS",
+    assetClass: "Office & IT Assets",
+    subclass: "Facility Infrastructure",
+    serialNumber: "APC-SYMPX-44192",
+    facilityLocation: "Greater Noida SMT Plant 2 · Electrical Utility Room",
+    custodian: "Kunal Varma",
+    department: "HROPS",
+    calibrationDate: "2026-06-12",
+    nextCalibrationDue: "2026-12-12",
+    status: "In Service",
+    compatiblePartNumbers: [],
+    lastMaintenance: "2026-09-15 (Lead-acid battery bank impedance test passed)",
+  },
+  {
+    id: "ast-conf-av-01",
+    assetTag: "HLPL-AST-OFC-009",
+    name: "Poly Studio G9 Plus Hybrid Teams & 4K Conference AV Rig",
+    assetClass: "Office & IT Assets",
+    subclass: "Office Equipment",
+    serialNumber: "POLY-G9-77120",
+    facilityLocation: "Noida Tech Center · Executive Boardroom",
+    custodian: "Taylor Quinn",
+    department: "HROPS",
+    calibrationDate: "2026-05-01",
+    nextCalibrationDue: "2027-05-01",
+    status: "In Service",
+    compatiblePartNumbers: [],
+    lastMaintenance: "2026-08-20 (Firmware update & acoustic echo cancellation tuned)",
+  },
 ];
 
 const initialGRNRecords: GoodsReceivedNote[] = [
@@ -1082,6 +1146,32 @@ export function LiveInventoryWorkspace({
 
   const [grnList, setGrnList] = useState<GoodsReceivedNote[]>(initialGRNRecords);
   const [assetList, setAssetList] = useState<AssetRecord[]>(initialSerializedAssets);
+
+  // Department-Scoped Assets calculation (Section 7 of handoff)
+  const scopedAssets = useMemo(() => {
+    const normDept = (activeDepartment || "").toUpperCase();
+    if (normDept === "SIT") {
+      return assetList.filter(
+        (a) =>
+          a.department === "SIT" ||
+          a.assetClass === "Office & IT Assets" ||
+          a.subclass.toLowerCase().includes("workstation") ||
+          a.subclass.toLowerCase().includes("network")
+      );
+    }
+    if (normDept === "HROPS" || normDept === "HR" || normDept === "OPS") {
+      return assetList.filter(
+        (a) =>
+          a.department === "HROPS" ||
+          a.subclass.toLowerCase().includes("facility") ||
+          a.subclass.toLowerCase().includes("office")
+      );
+    }
+    if (normDept === "EHW" || normDept === "MECH" || normDept === "EMF" || normDept === "QA" || normDept === "TST") {
+      return assetList.filter((a) => a.department === normDept || a.department === "SHARED");
+    }
+    return assetList;
+  }, [assetList, activeDepartment]);
   const [localMovements, setLocalMovements] = useState<InventoryMovement[]>(movements);
   const [localAssignments, setLocalAssignments] = useState<InventoryAssignment[]>(assignments);
 
@@ -2863,7 +2953,7 @@ export function LiveInventoryWorkspace({
           </div>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {assetList.map((asset) => (
+            {scopedAssets.map((asset) => (
               <div
                 key={asset.id}
                 onClick={() => setDetailAsset(asset)}

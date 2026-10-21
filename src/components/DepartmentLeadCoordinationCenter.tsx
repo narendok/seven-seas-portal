@@ -1,5 +1,5 @@
 import { ResponsiveFilterBar, CompactFilterSelect } from "@/components/ResponsiveFilterBar";
-import { taskLane } from "@/lib/task-board";
+import { taskLane, sortTaskRecords, isTaskOverdue } from "@/lib/task-board";
 import { businessDate } from "@/lib/business-date";
 import React, { useState, useMemo } from "react";
 import {
@@ -489,21 +489,45 @@ export function DepartmentLeadCoordinationCenter({
               readOnly={readOnly}
             />
           ) : viewMode === "kanban" ? (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Department task board">
-              {([
-                { lane: "today", title: "Today / In Progress", tone: "amber" },
-                { lane: "todo", title: "Tomorrow / Planned", tone: "blue" },
-                { lane: "review", title: "Review / Approval", tone: "purple" },
-                { lane: "completed", title: "Completed & Released", tone: "green" },
-              ] as const).map(column => {
-                const tasks = filteredTasks.filter(task => taskLane(task) === column.lane);
-                return <KanbanColumn key={column.lane} title={column.title} tone={column.tone}
-                  count={tasks.length} tasks={tasks} teamMembers={teamMembers}
-                  onUpdateAssignee={onUpdateTaskAssignee} onUpdateStatus={onUpdateTaskStatus}
-                  onStartTask={onStartTask} onOpenTask={onOpenTask}
-                  departmentLead={departmentLead} readOnly={readOnly}
-                  collapsible={column.lane === "completed"} />;
-              })}
+            <div className="space-y-4" aria-label="Department task board">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {([
+                  { lane: "today", title: "Today", tone: "amber" },
+                  { lane: "todo", title: "Tomorrow / Planned", tone: "blue" },
+                ] as const).map(column => {
+                  const tasks = sortTaskRecords(filteredTasks.filter(task => {
+                    const l = taskLane(task);
+                    const due = task.fields["dueDate"] ?? "";
+                    return column.lane === "today"
+                      ? (l === "today" || (l === "review" && (due <= businessDate() || !due)))
+                      : (l === "todo" || (l === "review" && due > businessDate()));
+                  }));
+                  return <KanbanColumn key={column.lane} title={column.title} tone={column.tone}
+                    count={tasks.length} tasks={tasks} teamMembers={teamMembers}
+                    onUpdateAssignee={onUpdateTaskAssignee} onUpdateStatus={onUpdateTaskStatus}
+                    onStartTask={onStartTask} onOpenTask={onOpenTask}
+                    departmentLead={departmentLead} readOnly={readOnly} />;
+                })}
+              </div>
+              {(() => {
+                const completedTasks = filteredTasks.filter(task => taskLane(task) === "completed");
+                return (
+                  <KanbanColumn
+                    title="Completed"
+                    tone="green"
+                    count={completedTasks.length}
+                    tasks={completedTasks}
+                    teamMembers={teamMembers}
+                    onUpdateAssignee={onUpdateTaskAssignee}
+                    onUpdateStatus={onUpdateTaskStatus}
+                    onStartTask={onStartTask}
+                    onOpenTask={onOpenTask}
+                    departmentLead={departmentLead}
+                    readOnly={readOnly}
+                    collapsible
+                  />
+                );
+              })()}
             </div>
           ) : (
             /* DENSE TABLE VIEW */
@@ -1076,14 +1100,35 @@ function TaskChecklistView({
   readOnly?: boolean | undefined;
 }) {
   const [completedExpanded, setCompletedExpanded] = useState<boolean>(false);
+  const today = businessDate();
+
+  const todayItems = sortTaskRecords(
+    tasks.filter((t) => {
+      const l = taskLane(t, today);
+      const due = t.fields["dueDate"] ?? "";
+      return l === "today" || (l === "review" && (due <= today || !due));
+    }),
+    today
+  );
+
+  const plannedItems = sortTaskRecords(
+    tasks.filter((t) => {
+      const l = taskLane(t, today);
+      const due = t.fields["dueDate"] ?? "";
+      return l === "todo" || (l === "review" && due > today);
+    }),
+    today
+  );
+
+  const completedItems = tasks.filter((t) => taskLane(t, today) === "completed");
 
   const sections = [
     {
       lane: "today" as const,
-      title: "Today / In Progress",
+      title: "Today",
       tone: "amber" as const,
       borderTone: "border-amber-500/30 bg-amber-500/5 text-amber-600 dark:text-amber-400",
-      items: tasks.filter((t) => taskLane(t) === "today"),
+      items: todayItems,
       collapsible: false,
     },
     {
@@ -1091,15 +1136,7 @@ function TaskChecklistView({
       title: "Tomorrow / Planned",
       tone: "blue" as const,
       borderTone: "border-blue-500/30 bg-blue-500/5 text-blue-600 dark:text-blue-400",
-      items: tasks.filter((t) => taskLane(t) === "todo"),
-      collapsible: false,
-    },
-    {
-      lane: "review" as const,
-      title: "Review / Approval",
-      tone: "purple" as const,
-      borderTone: "border-purple-500/30 bg-purple-500/5 text-purple-600 dark:text-purple-400",
-      items: tasks.filter((t) => taskLane(t) === "review"),
+      items: plannedItems,
       collapsible: false,
     },
     {
@@ -1107,20 +1144,20 @@ function TaskChecklistView({
       title: "Completed",
       tone: "green" as const,
       borderTone: "border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400",
-      items: tasks.filter((t) => taskLane(t) === "completed"),
+      items: completedItems,
       collapsible: true,
     },
   ];
 
   return (
-    <div className="grid gap-3 lg:grid-cols-3" aria-label="Department task checklist">
+    <div className="grid gap-4 lg:grid-cols-2" aria-label="Department task checklist">
       {sections.map((section) => {
         const isCollapsed = section.collapsible && !completedExpanded;
 
         return (
           <div
             key={section.lane}
-            className={`rounded-xl border border-border/70 bg-card/60 shadow-xs overflow-hidden ${section.collapsible ? "lg:col-span-3" : ""}`}
+            className={`rounded-xl border border-border/70 bg-card/60 shadow-xs overflow-hidden ${section.collapsible ? "lg:col-span-2" : ""}`}
           >
             {/* Section Header */}
             <div

@@ -44,11 +44,40 @@ import type { Persona } from "@/components/RoleAwareSidebar";
 
 interface EmployeeSelfServiceWorkspaceProps {
   persona: Persona;
+  testMembership?: {
+    organizationId?: string | undefined;
+    organizationName?: string | undefined;
+    membershipId: string;
+    displayName: string;
+    role: "admin" | "department_lead" | "member" | "viewer" | string;
+    departmentCode: string | null;
+    departmentName: string | null;
+    isClient: boolean;
+  } | null;
+  letters?: EmployeeLetter[];
+  policies?: AssignedPolicy[];
+  trainings?: AssignedTraining[];
+  forms?: AssignedFormSurvey[];
+  assets?: EmployeeAssignedAsset[];
+  onUpdatePolicies?: (policies: AssignedPolicy[]) => void;
+  onUpdateTrainings?: (trainings: AssignedTraining[]) => void;
+  onUpdateForms?: (forms: AssignedFormSurvey[]) => void;
 }
 
-export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWorkspaceProps) {
-  // Resolve profile based on authenticated persona. FAILS CLOSED if unrecognized or Client!
-  const profile = resolveEmployeeProfile(persona);
+export function EmployeeSelfServiceWorkspace({
+  persona,
+  testMembership,
+  letters: initialLetters,
+  policies: initialPolicies,
+  trainings: initialTrainings,
+  forms: initialForms,
+  assets: initialAssets,
+  onUpdatePolicies,
+  onUpdateTrainings,
+  onUpdateForms,
+}: EmployeeSelfServiceWorkspaceProps) {
+  // Resolve profile based on authenticated persona and TEST membership. FAILS CLOSED if unrecognized or Client!
+  const profile = resolveEmployeeProfile(persona, testMembership);
 
   if (!profile || persona.kind === "client") {
     return (
@@ -66,14 +95,18 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
     "details" | "letters" | "policies" | "training" | "forms" | "assets"
   >("details");
 
-  const [letters, setLetters] = useState<EmployeeLetter[]>(DEFAULT_EMPLOYEE_LETTERS);
-  const [policies, setPolicies] = useState<AssignedPolicy[]>(DEFAULT_ASSIGNED_POLICIES);
-  const [trainings, setTrainings] = useState<AssignedTraining[]>(DEFAULT_ASSIGNED_TRAININGS);
-  const [forms, setForms] = useState<AssignedFormSurvey[]>(DEFAULT_ASSIGNED_FORMS);
-  const [assets, setAssets] = useState<EmployeeAssignedAsset[]>(DEFAULT_EMPLOYEE_ASSETS);
+  const [letters] = useState<EmployeeLetter[]>(initialLetters ?? DEFAULT_EMPLOYEE_LETTERS);
+  const [policies, setPolicies] = useState<AssignedPolicy[]>(initialPolicies ?? DEFAULT_ASSIGNED_POLICIES);
+  const [trainings, setTrainings] = useState<AssignedTraining[]>(initialTrainings ?? DEFAULT_ASSIGNED_TRAININGS);
+  const [forms, setForms] = useState<AssignedFormSurvey[]>(initialForms ?? DEFAULT_ASSIGNED_FORMS);
+  const [assets] = useState<EmployeeAssignedAsset[]>(initialAssets ?? DEFAULT_EMPLOYEE_ASSETS);
 
-  // Scoped Letters for the authenticated employee
+  // Scoped Items strictly for the authenticated employee
   const employeeLetters = letters.filter((l) => l.employeeId === profile.id);
+  const employeeAssets = assets.filter((a) => a.employeeId === profile.id);
+  const employeePolicies = policies.filter((p) => !p.employeeId || p.employeeId === profile.id);
+  const employeeTrainings = trainings.filter((t) => !t.employeeId || t.employeeId === profile.id);
+  const employeeForms = forms.filter((f) => !f.employeeId || f.employeeId === profile.id);
 
   // Modal State for Letter / Policy / Quiz / Form
   const [selectedLetter, setSelectedLetter] = useState<EmployeeLetter | null>(null);
@@ -160,29 +193,23 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
 
   return (
     <div className="space-y-6">
-      {/* Sandbox Demo Seed Notice */}
-      <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
-            DEMO / Sandbox Seed
-          </span>
-          <span>
-            Self-service HR profile, letters, compliance acknowledgments, and asset custody loaded for active persona.
-          </span>
-        </div>
-        <div className="text-[11px] font-mono text-muted-foreground">
-          Employee ID: <strong>{profile.employeeCode}</strong> · {profile.name}
-        </div>
-      </div>
-
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-border/40">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              Employee Self-Service (ESS)
+              Employee Self-Service
             </span>
-            <span className="text-xs text-muted-foreground">{profile.employeeCode}</span>
+            {testMembership ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                TEST Shared
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" title="Demonstration data stored locally">
+                DEMO Sandbox
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground font-mono">{profile.employeeCode}</span>
           </div>
           <h2 className="text-xl font-bold tracking-tight text-foreground mt-1">
             My Profile & Personnel Records
@@ -231,7 +258,7 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
-          My Letters ({letters.length})
+          My Letters ({employeeLetters.length})
         </button>
         <button
           onClick={() => setActiveTab("policies")}
@@ -240,7 +267,7 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
           }`}
         >
           <ShieldCheck className="w-3.5 h-3.5" />
-          My Policies ({policies.filter((p) => p.status === "Pending").length} Pending)
+          My Policies ({employeePolicies.filter((p) => p.status === "Pending").length} Pending)
         </button>
         <button
           onClick={() => setActiveTab("training")}
@@ -249,7 +276,7 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
           }`}
         >
           <GraduationCap className="w-3.5 h-3.5" />
-          My Training & Quizzes ({trainings.length})
+          My Training & Quizzes ({employeeTrainings.length})
         </button>
         <button
           onClick={() => setActiveTab("forms")}
@@ -258,7 +285,7 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
           }`}
         >
           <ClipboardList className="w-3.5 h-3.5" />
-          Forms & Surveys ({forms.length})
+          Forms & Surveys ({employeeForms.length})
         </button>
         <button
           onClick={() => setActiveTab("assets")}
@@ -267,7 +294,7 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
           }`}
         >
           <Laptop className="w-3.5 h-3.5" />
-          My Equipment & Assets ({assets.length})
+          My Equipment & Assets ({employeeAssets.length})
         </button>
       </div>
 
@@ -351,7 +378,7 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
         <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm">
           <div className="p-4 border-b border-border bg-muted/30">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Official Company Employment Letters & Notices (IATF 16949 / ISO 9001 Governed)
+              Official Company Employment Letters & Notices
             </h3>
           </div>
           <div className="divide-y divide-border text-xs">
@@ -405,49 +432,49 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
             </h3>
           </div>
           <div className="divide-y divide-border text-xs">
-            {policies.map((pol) => (
-              <div key={pol.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-muted/20 transition-colors">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-foreground">{pol.title}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">
-                      {pol.revision}
-                    </span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        pol.status === "Acknowledged"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                      }`}
-                    >
-                      {pol.status}
-                    </span>
+            {employeePolicies.length > 0 ? (
+              employeePolicies.map((pol) => (
+                <div key={pol.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-muted/20 transition-colors">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground">{pol.title}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-secondary text-secondary-foreground font-semibold">
+                        {pol.policyCode} · {pol.revision}
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          pol.status === "Acknowledged"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                        }`}
+                      >
+                        {pol.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-2xl">{pol.summary}</p>
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      Due: {pol.deadline} · Document Ref: {pol.documentRef}
+                      {pol.acknowledgedAt && ` · Acknowledged: ${new Date(pol.acknowledgedAt).toLocaleDateString()}`}
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-2xl">{pol.summary}</p>
-                  <div className="text-[10px] text-muted-foreground mt-1">
-                    Compliance Category: {pol.category} · Deadline: {pol.deadline}
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  {pol.status === "Pending" ? (
+                  <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      onClick={() => handleAcknowledgePolicy(pol.id)}
-                      className="h-7 text-xs bg-primary text-primary-foreground font-semibold gap-1"
+                      variant={pol.status === "Acknowledged" ? "outline" : "default"}
+                      onClick={() => setSelectedPolicy(pol)}
+                      className="h-7 text-xs gap-1"
                     >
-                      <Check className="w-3.5 h-3.5" />
-                      Acknowledge Policy
+                      {pol.status === "Acknowledged" ? "View Policy" : "Review & Acknowledge"}
                     </Button>
-                  ) : (
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Acknowledged
-                    </span>
-                  )}
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No policy acknowledgments assigned for {profile.name} ({profile.employeeCode}).
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -455,61 +482,67 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
       {/* Training View */}
       {activeTab === "training" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {trainings.map((trn) => (
-            <div key={trn.id} className="p-5 rounded-xl bg-card border border-border shadow-sm space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                    {trn.courseCode} · {trn.category}
-                  </span>
-                  <h4 className="font-bold text-sm text-foreground mt-0.5">{trn.title}</h4>
-                </div>
-                <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    trn.status === "Completed"
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                  }`}
-                >
-                  {trn.status.replace(/_/g, " ")}
-                </span>
-              </div>
-
-              <div className="text-xs text-muted-foreground space-y-1">
-                <div>Instructor / Lead: <span className="font-semibold text-foreground">{trn.trainer}</span></div>
-                <div>Duration: <span className="font-semibold text-foreground">{trn.durationHours} Hours</span></div>
-                {trn.scorePct !== undefined && (
-                  <div>Assessment Score: <span className="font-bold text-emerald-600 dark:text-emerald-400">{trn.scorePct}%</span></div>
-                )}
-                {trn.certificateRef && (
-                  <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-medium">
-                    <Award className="w-3.5 h-3.5" />
-                    <span>Certificate ID: {trn.certificateRef}</span>
+          {employeeTrainings.length > 0 ? (
+            employeeTrainings.map((trn) => (
+              <div key={trn.id} className="p-5 rounded-xl bg-card border border-border shadow-sm space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                      {trn.courseCode} · {trn.category}
+                    </span>
+                    <h4 className="font-bold text-sm text-foreground mt-0.5">{trn.title}</h4>
                   </div>
-                )}
-              </div>
-
-              <div className="pt-2 border-t border-border flex items-center justify-end">
-                {trn.status !== "Completed" ? (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedTraining(trn);
-                      setQuizSubmitted(false);
-                      setQuizAnswers({});
-                    }}
-                    className="h-7 text-xs bg-primary text-primary-foreground font-semibold"
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      trn.status === "Completed"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                        : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                    }`}
                   >
-                    Take Assessment Quiz
-                  </Button>
-                ) : (
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4" /> Passed & Certified
+                    {trn.status.replace(/_/g, " ")}
                   </span>
-                )}
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>Instructor / Lead: <span className="font-semibold text-foreground">{trn.trainer}</span></div>
+                  <div>Duration: <span className="font-semibold text-foreground">{trn.durationHours} Hours</span></div>
+                  {trn.scorePct !== undefined && (
+                    <div>Assessment Score: <span className="font-bold text-emerald-600 dark:text-emerald-400">{trn.scorePct}%</span></div>
+                  )}
+                  {trn.certificateRef && (
+                    <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-medium">
+                      <Award className="w-3.5 h-3.5" />
+                      <span>Certificate ID: {trn.certificateRef}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-border flex items-center justify-end">
+                  {trn.status !== "Completed" ? (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTraining(trn);
+                        setQuizSubmitted(false);
+                        setQuizAnswers({});
+                      }}
+                      className="h-7 text-xs bg-primary text-primary-foreground font-semibold"
+                    >
+                      Take Assessment Quiz
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4" /> Passed & Certified
+                    </span>
+                  )}
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="col-span-2 p-8 text-center text-xs text-muted-foreground border border-dashed border-border rounded-xl">
+              No training courses currently assigned for {profile.name} ({profile.employeeCode}).
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -522,27 +555,33 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
             </h3>
           </div>
           <div className="divide-y divide-border text-xs">
-            {assets.map((ast) => (
-              <div key={ast.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
-                <div>
+            {employeeAssets.length > 0 ? (
+              employeeAssets.map((ast) => (
+                <div key={ast.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground">{ast.assetName}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-semibold">
+                        {ast.assetTag}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-1">
+                      Category: {ast.category} · Serial No: {ast.serialNumber} · Assigned: {ast.assignedDate}
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-foreground">{ast.assetName}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-semibold">
-                      {ast.assetTag}
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      Condition: {ast.condition}
                     </span>
                   </div>
-                  <div className="text-[11px] text-muted-foreground mt-1">
-                    Category: {ast.category} · Serial No: {ast.serialNumber} · Assigned: {ast.assignedDate}
-                  </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                    Condition: {ast.condition}
-                  </span>
-                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No equipment or tools currently in your custody ({profile.employeeCode}).
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -556,51 +595,57 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
             </h3>
           </div>
           <div className="divide-y divide-border text-xs">
-            {forms.map((frm) => (
-              <div key={frm.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-foreground">{frm.title}</span>
-                    {frm.isAnonymous && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                        100% Anonymous
+            {employeeForms.length > 0 ? (
+              employeeForms.map((frm) => (
+                <div key={frm.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground">{frm.title}</span>
+                      {frm.isAnonymous && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                          100% Anonymous
+                        </span>
+                      )}
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          frm.status === "Submitted"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                        }`}
+                      >
+                        {frm.status}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-1">
+                      Code: {frm.formCode} · Due Date: {frm.dueDate}
+                    </div>
+                  </div>
+
+                  <div>
+                    {frm.status !== "Submitted" ? (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedForm(frm);
+                          setFormAnswers({});
+                        }}
+                        className="h-7 text-xs bg-primary text-primary-foreground font-semibold"
+                      >
+                        Open & Fill Form
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" /> Submitted
                       </span>
                     )}
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        frm.status === "Submitted"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                          : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                      }`}
-                    >
-                      {frm.status}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-1">
-                    Code: {frm.formCode} · Due Date: {frm.dueDate}
                   </div>
                 </div>
-
-                <div>
-                  {frm.status !== "Submitted" ? (
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setSelectedForm(frm);
-                        setFormAnswers(frm.answers || {});
-                      }}
-                      className="h-7 text-xs bg-primary text-primary-foreground font-semibold"
-                    >
-                      Fill & Submit
-                    </Button>
-                  ) : (
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Response Logged
-                    </span>
-                  )}
-                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No active forms or surveys assigned for {profile.name} ({profile.employeeCode}).
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

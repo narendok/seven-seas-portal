@@ -1,0 +1,3389 @@
+{
+  "source": "C:\\Users\\Test\\Downloads\\Smart Company document management system audit checklist .xlsx",
+  "source_sha256": "c69eb31c1d17e94e7d3794c025201ad7822951e7bbce5191275da94ff820092c",
+  "status": "Feasibility mapping; no generated/approved documents or deployments",
+  "project_name_rule": "VTU and XLC are example project names, not document types. Original VCU wording retained only in source metadata; do not rename live project identifiers.",
+  "reusable_external_upload_types": [
+    {
+      "type": "Schematic",
+      "formats": "EDA native package and PDF export",
+      "origin": "Electronics design software or outsourced design provider"
+    },
+    {
+      "type": "PCB layout",
+      "formats": "EDA native package, manufacturing exports and PDF preview",
+      "origin": "PCB layout software or outsourced design provider"
+    },
+    {
+      "type": "PCB fabrication - Gerber package",
+      "formats": "Gerber ZIP with fabrication outputs supplied by the design tool/provider",
+      "origin": "PCB design/CAM software or outsourced fabrication provider"
+    },
+    {
+      "type": "PCB fabrication - panelized Gerber package",
+      "formats": "Panel Gerber ZIP derived from the approved board Gerber revision",
+      "origin": "Panelization/CAM software or outsourced fabrication provider"
+    },
+    {
+      "type": "PCB fabrication - stencil package",
+      "formats": "Stencil fabrication file/package in the supplied format, with paste-layer Gerber files where applicable",
+      "origin": "PCB/CAM or stencil software, or outsourced stencil provider"
+    },
+    {
+      "type": "Certification / external report",
+      "formats": "Issuer original, usually PDF",
+      "origin": "Certification body, calibration/test laboratory or outsourced provider"
+    },
+    {
+      "type": "Mechanical drawing",
+      "formats": "Drawing-tool native file and PDF drawing",
+      "origin": "Mechanical CAD software or outsourced design provider"
+    },
+    {
+      "type": "Mechanical 3D model",
+      "formats": "STEP / STP and applicable native CAD file",
+      "origin": "Mechanical CAD software or outsourced design provider"
+    },
+    {
+      "type": "Prototype mesh",
+      "formats": "STL",
+      "origin": "CAD/prototyping software or outsourced prototype provider"
+    },
+    {
+      "type": "Prototype / fabrication profile",
+      "formats": "DXF",
+      "origin": "CAD/fabrication software or outsourced prototype provider"
+    }
+  ],
+  "inventory_count": 146,
+  "mode_counts": {
+    "H": 82,
+    "G": 57,
+    "U": 7
+  },
+  "inventory": [
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 2,
+      "source_cell": "C2",
+      "source_department": "Admin",
+      "source_format": "Excel",
+      "document_name": "Risk Register",
+      "proposed_owner": "Admin / QA",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D30",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Risk Register "
+      },
+      "reusable_document_type": "Risk Register"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 3,
+      "source_cell": "C3",
+      "source_department": "Admin",
+      "source_format": "Excel",
+      "document_name": "KPI framwork",
+      "proposed_owner": "Admin / QA",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "KPI framwork"
+      },
+      "reusable_document_type": "KPI framwork"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 5,
+      "source_cell": "C5",
+      "source_department": "Operations",
+      "source_format": "Word",
+      "document_name": "Standard Operating Procedure - Operations",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Operations",
+        "B": "Word",
+        "C": "Standard Operating Procedure - Operations"
+      },
+      "reusable_document_type": "Standard Operating Procedure - Operations"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 6,
+      "source_cell": "C6",
+      "source_department": "Operations",
+      "source_format": "Word",
+      "document_name": "Business Plan (Roles and Responsibility)",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Business Plan (Roles and Responsibility)"
+      },
+      "reusable_document_type": "Business Plan (Roles and Responsibility)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 7,
+      "source_cell": "C7",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Aggregated_Monthly Report_April 2026",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Aggregated_Monthly Report_April 2026"
+      },
+      "reusable_document_type": "Aggregated_Monthly Report_April 2026"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 8,
+      "source_cell": "C8",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Legal Record Tracker",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D31",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Legal Record Tracker"
+      },
+      "reusable_document_type": "Legal Record Tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 9,
+      "source_cell": "C9",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Licence / certification tracker",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D31",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Licence / certification tracker"
+      },
+      "reusable_document_type": "Licence / certification tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 10,
+      "source_cell": "C10",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Aggregated_Monthly Report_May 2026",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Aggregated_Monthly Report_May 2026"
+      },
+      "reusable_document_type": "Aggregated_Monthly Report_May 2026"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 11,
+      "source_cell": "C11",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Aggregated_Monthly Report_June 2026",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Aggregated_Monthly Report_June 2026"
+      },
+      "reusable_document_type": "Aggregated_Monthly Report_June 2026"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 12,
+      "source_cell": "C12",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Aggregated_Monthly Report_July 2026",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Aggregated_Monthly Report_July 2026"
+      },
+      "reusable_document_type": "Aggregated_Monthly Report_July 2026"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 13,
+      "source_cell": "C13",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Aggregated_Monthly Report_Aug 2026",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Aggregated_Monthly Report_Aug 2026"
+      },
+      "reusable_document_type": "Aggregated_Monthly Report_Aug 2026"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 14,
+      "source_cell": "C14",
+      "source_department": "Operations",
+      "source_format": "Word",
+      "document_name": "System Implementation Plan",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D32",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "System Implementation Plan"
+      },
+      "reusable_document_type": "System Implementation Plan"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 15,
+      "source_cell": "C15",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Daily Toilet Cleaning checklist",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D37",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Daily Toilet Cleaning checklist"
+      },
+      "reusable_document_type": "Daily Toilet Cleaning checklist"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 16,
+      "source_cell": "C16",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Cleaning and maintenance checklist",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D37",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Cleaning and maintenance checklist"
+      },
+      "reusable_document_type": "Cleaning and maintenance checklist"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 17,
+      "source_cell": "C17",
+      "source_department": "Operations",
+      "source_format": "Word",
+      "document_name": "Change Management SOP",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Change Management SOP"
+      },
+      "reusable_document_type": "Change Management SOP"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 18,
+      "source_cell": "C18",
+      "source_department": "Operations",
+      "source_format": "Word",
+      "document_name": "E-waste Managment SOP",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D37",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "E-waste Managment SOP"
+      },
+      "reusable_document_type": "E-waste Managment SOP"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 19,
+      "source_cell": "C19",
+      "source_department": "Operations",
+      "source_format": "Excel",
+      "document_name": "Asset Record",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D34",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Asset Record "
+      },
+      "reusable_document_type": "Asset Record"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 20,
+      "source_cell": "C20",
+      "source_department": "Operations",
+      "source_format": "Register",
+      "document_name": "Shift roster",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D27",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Register",
+        "C": "Shift roster"
+      },
+      "reusable_document_type": "Shift roster"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 21,
+      "source_cell": "C21",
+      "source_department": "Operations",
+      "source_format": "Register",
+      "document_name": "Attendance log Registor",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D27",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Register",
+        "C": "Attendance log Registor"
+      },
+      "reusable_document_type": "Attendance log Registor"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 22,
+      "source_cell": "C22",
+      "source_department": "Operations",
+      "source_format": "Register",
+      "document_name": "Visitor / access log Registor",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D37",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Register",
+        "C": "Visitor / access log Registor"
+      },
+      "reusable_document_type": "Visitor / access log Registor"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 23,
+      "source_cell": "C23",
+      "source_department": "Operations",
+      "source_format": "Register",
+      "document_name": "Maintenance register",
+      "proposed_owner": "HR/OPS; SIT for IT assets",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D37",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Register",
+        "C": "Maintenance register"
+      },
+      "reusable_document_type": "Maintenance register"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 26,
+      "source_cell": "C26",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "Master Hiring Tracker",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D27",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "HR",
+        "B": "Excel",
+        "C": "Master Hiring Tracker"
+      },
+      "reusable_document_type": "Master Hiring Tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 27,
+      "source_cell": "C27",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "Employee Attrition & Retention Report",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D27",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Employee Attrition & Retention Report"
+      },
+      "reusable_document_type": "Employee Attrition & Retention Report"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 28,
+      "source_cell": "C28",
+      "source_department": "HR",
+      "source_format": "Word",
+      "document_name": "Standard Operating Procedure - Human Resource",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Standard Operating Procedure - Human Resource"
+      },
+      "reusable_document_type": "Standard Operating Procedure - Human Resource"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 29,
+      "source_cell": "C29",
+      "source_department": "HR",
+      "source_format": "Pdf",
+      "document_name": "Employee Handbook",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature. Checklist PDF is treated as a rendition, not proof the document must be externally issued.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Pdf",
+        "C": "Employee Handbook"
+      },
+      "reusable_document_type": "Employee Handbook"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 30,
+      "source_cell": "C30",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "HR Skill Matrix",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D27",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "HR Skill Matrix"
+      },
+      "reusable_document_type": "HR Skill Matrix"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 31,
+      "source_cell": "C31",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "Manpower Requisition Register",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D27",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Manpower Requisition Register"
+      },
+      "reusable_document_type": "Manpower Requisition Register"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 32,
+      "source_cell": "C32",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "Employee Statisfaction Survey Report",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D27",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Employee Statisfaction Survey Report"
+      },
+      "reusable_document_type": "Employee Statisfaction Survey Report"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 33,
+      "source_cell": "C33",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "Stakeholder Record Tracker",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D01",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Stakeholder Record Tracker"
+      },
+      "reusable_document_type": "Stakeholder Record Tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 34,
+      "source_cell": "C34",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "HR Query Tracker",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D29",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "HR Query Tracker"
+      },
+      "reusable_document_type": "HR Query Tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 35,
+      "source_cell": "C35",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "Grievance Register",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D29",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Grievance Register"
+      },
+      "reusable_document_type": "Grievance Register"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 36,
+      "source_cell": "C36",
+      "source_department": "HR",
+      "source_format": "Excel",
+      "document_name": "KPI and KRA",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "KPI and KRA"
+      },
+      "reusable_document_type": "KPI and KRA"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 37,
+      "source_cell": "C37",
+      "source_department": "HR",
+      "source_format": "PPT",
+      "document_name": "Employee Handbook",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "U",
+      "editable_source": "Original PPT",
+      "catalogue_family": "D01",
+      "rule": "Existing handbook presentation (PPT): manual/native upload; use approved DOCX handbook as canonical narrative if supplied. Presentation content may need its own PPTX template later.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "PPT",
+        "C": "Employee Handbook"
+      },
+      "reusable_document_type": "Employee Handbook"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 38,
+      "source_cell": "C38",
+      "source_department": "HR",
+      "source_format": "PDF",
+      "document_name": "Organisation Chart",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals. Checklist PDF is treated as a rendition, not proof the document must be externally issued.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "PDF",
+        "C": "Organisation Chart"
+      },
+      "reusable_document_type": "Organisation Chart"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 39,
+      "source_cell": "C39",
+      "source_department": "HR",
+      "source_format": "PDF",
+      "document_name": "Anti-Bribery Policy",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature. Checklist PDF is treated as a rendition, not proof the document must be externally issued.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "PDF",
+        "C": "Anti-Bribery Policy"
+      },
+      "reusable_document_type": "Anti-Bribery Policy"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 40,
+      "source_cell": "C40",
+      "source_department": "HR",
+      "source_format": "PDF",
+      "document_name": "Whistleblower Policy",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature. Checklist PDF is treated as a rendition, not proof the document must be externally issued.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "PDF",
+        "C": "Whistleblower Policy"
+      },
+      "reusable_document_type": "Whistleblower Policy"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 41,
+      "source_cell": "C41",
+      "source_department": "HR",
+      "source_format": "PDF",
+      "document_name": "Quality Policy",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature. Checklist PDF is treated as a rendition, not proof the document must be externally issued.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "PDF",
+        "C": "Quality Policy"
+      },
+      "reusable_document_type": "Quality Policy"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 42,
+      "source_cell": "C42",
+      "source_department": "HR",
+      "source_format": "PDF",
+      "document_name": "Employee Satisfaction SOP",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D27",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature. Checklist PDF is treated as a rendition, not proof the document must be externally issued.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "PDF ",
+        "C": "Employee Satisfaction SOP"
+      },
+      "reusable_document_type": "Employee Satisfaction SOP"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 43,
+      "source_cell": "C43",
+      "source_department": "HR",
+      "source_format": "PDF",
+      "document_name": "Cyber Security Awareness",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D36",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals. Checklist PDF is treated as a rendition, not proof the document must be externally issued.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "PDF",
+        "C": "Cyber Security Awareness"
+      },
+      "reusable_document_type": "Cyber Security Awareness"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 44,
+      "source_cell": "C44",
+      "source_department": "HR",
+      "source_format": "Word",
+      "document_name": "Emergency Notice",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Emergency Notice"
+      },
+      "reusable_document_type": "Emergency Notice"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 45,
+      "source_cell": "C45",
+      "source_department": "HR",
+      "source_format": "Word",
+      "document_name": "Vision & Mission Statement",
+      "proposed_owner": "HR/OPS; QA for Quality Policy; SIT for cyber content",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Vision & Mission Statement"
+      },
+      "reusable_document_type": "Vision & Mission Statement"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 47,
+      "source_cell": "C47",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "Standard Operating Procedure (SOP)",
+      "proposed_owner": "FW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Firmware",
+        "B": "Word",
+        "C": "Standard Operating Procedure (SOP)"
+      },
+      "reusable_document_type": "Standard Operating Procedure (SOP)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 48,
+      "source_cell": "C48",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "Software Development Plan (SDP)",
+      "proposed_owner": "FW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D32",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "2.0",
+        "B": "Word",
+        "C": "Software Development Plan (SDP)"
+      },
+      "reusable_document_type": "Software Development Plan (SDP)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 49,
+      "source_cell": "C49",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "Software Arch-Design Document (SADD)",
+      "proposed_owner": "FW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D09",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "3.0",
+        "B": "Word",
+        "C": "Software Arch-Design Document (SADD)"
+      },
+      "reusable_document_type": "Software Arch-Design Document (SADD)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 50,
+      "source_cell": "C50",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "Design Review checklist (DRC)",
+      "proposed_owner": "FW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "4.0",
+        "B": "Word",
+        "C": "Design Review checklist (DRC)"
+      },
+      "reusable_document_type": "Design Review checklist (DRC)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 51,
+      "source_cell": "C51",
+      "source_department": "Firmware",
+      "source_format": "Excel",
+      "document_name": "Software Requirement Spec (SWRS)",
+      "proposed_owner": "FW",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D08",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "5.0",
+        "B": "Excel",
+        "C": "Software Requirement Spec (SWRS)"
+      },
+      "reusable_document_type": "Software Requirement Spec (SWRS)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 52,
+      "source_cell": "C52",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "Code Review Checklist (CRC)",
+      "proposed_owner": "FW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "6.0",
+        "B": "Word",
+        "C": "Code Review Checklist (CRC)"
+      },
+      "reusable_document_type": "Code Review Checklist (CRC)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 53,
+      "source_cell": "C53",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "Key Performance Indicator (KPI)",
+      "proposed_owner": "FW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "7.0",
+        "B": "Word",
+        "C": "Key Performance Indicator (KPI)"
+      },
+      "reusable_document_type": "Key Performance Indicator (KPI)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 54,
+      "source_cell": "C54",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "Configuration Management (CM)",
+      "proposed_owner": "FW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D14",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "8.0",
+        "B": "Word",
+        "C": "Configuration Management (CM)"
+      },
+      "reusable_document_type": "Configuration Management (CM)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 55,
+      "source_cell": "C55",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "VCU SDP",
+      "proposed_owner": "FW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D32",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "9.0",
+        "B": "Word",
+        "C": "VCU SDP"
+      },
+      "reusable_document_type": "SDP"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 56,
+      "source_cell": "C56",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "VCU SADD",
+      "proposed_owner": "FW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D09",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "10.0",
+        "B": "Word",
+        "C": "VCU SADD"
+      },
+      "reusable_document_type": "SADD"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 57,
+      "source_cell": "C57",
+      "source_department": "Firmware",
+      "source_format": "Excel",
+      "document_name": "VCU SWRS",
+      "proposed_owner": "FW",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D08",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "11.0",
+        "B": "Excel",
+        "C": "VCU SWRS"
+      },
+      "reusable_document_type": "SWRS"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 58,
+      "source_cell": "C58",
+      "source_department": "Firmware",
+      "source_format": "Excel",
+      "document_name": "VCU SmokeTest Spec (ST)",
+      "proposed_owner": "FW",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D13",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "12.0",
+        "B": "Excel",
+        "C": "VCU SmokeTest Spec (ST)"
+      },
+      "reusable_document_type": "SmokeTest Spec (ST)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 59,
+      "source_cell": "C59",
+      "source_department": "Firmware",
+      "source_format": "JPG",
+      "document_name": "VCU SADD-FlowDiagram (SADD-02-FD)",
+      "proposed_owner": "FW",
+      "mode": "U",
+      "editable_source": "Original JPG",
+      "catalogue_family": "D09",
+      "rule": "Architecture diagram image from engineering tool; upload original, generate document/index around it only.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "13.0",
+        "B": "JPG",
+        "C": "VCU SADD-FlowDiagram (SADD-02-FD)"
+      },
+      "reusable_document_type": "Architecture flow diagram"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 60,
+      "source_cell": "C60",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "X-Link SDP",
+      "proposed_owner": "FW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D32",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "14.0",
+        "B": "Word",
+        "C": "X-Link SDP"
+      },
+      "reusable_document_type": "X-Link SDP"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 61,
+      "source_cell": "C61",
+      "source_department": "Firmware",
+      "source_format": "Word",
+      "document_name": "X-Link SADD",
+      "proposed_owner": "FW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D09",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "15.0",
+        "B": "Word",
+        "C": "X-Link SADD"
+      },
+      "reusable_document_type": "X-Link SADD"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 62,
+      "source_cell": "C62",
+      "source_department": "Firmware",
+      "source_format": "Excel",
+      "document_name": "X-Link SWRS",
+      "proposed_owner": "FW",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D08",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "16.0",
+        "B": "Excel",
+        "C": "X-Link SWRS"
+      },
+      "reusable_document_type": "X-Link SWRS"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 63,
+      "source_cell": "C63",
+      "source_department": "Firmware",
+      "source_format": "Excel",
+      "document_name": "X-Link SmokeTest Spec (ST)",
+      "proposed_owner": "FW",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D13",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "17.0",
+        "B": "Excel",
+        "C": "X-Link SmokeTest Spec (ST)"
+      },
+      "reusable_document_type": "X-Link SmokeTest Spec (ST)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 64,
+      "source_cell": "C64",
+      "source_department": "Firmware",
+      "source_format": "JPG",
+      "document_name": "X-Link SADD-FlowDiagram (SADD-02-FD)",
+      "proposed_owner": "FW",
+      "mode": "U",
+      "editable_source": "Original JPG",
+      "catalogue_family": "D09",
+      "rule": "Architecture diagram image from engineering tool; upload original, generate document/index around it only.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "18.0",
+        "B": "JPG",
+        "C": "X-Link SADD-FlowDiagram (SADD-02-FD)"
+      },
+      "reusable_document_type": "Architecture flow diagram"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 66,
+      "source_cell": "C66",
+      "source_department": "Hardware",
+      "source_format": "Excel",
+      "document_name": "SSM-DFMEA-EHW-005 - XLC DFMEA",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D12",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Hardware",
+        "B": "Excel ",
+        "C": "SSM-DFMEA-EHW-005 - XLC DFMEA"
+      },
+      "reusable_document_type": "DFMEA"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 67,
+      "source_cell": "C67",
+      "source_department": "Hardware",
+      "source_format": "Excel",
+      "document_name": "SSM-DVP-EHW-006 - VCU_DVP",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D13",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "SSM-DVP-EHW-006 - VCU_DVP"
+      },
+      "reusable_document_type": "DVP"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 68,
+      "source_cell": "C68",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-KPA-EHW-003 - VCU Key Part Analysis",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D16",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-KPA-EHW-003 - VCU Key Part Analysis"
+      },
+      "reusable_document_type": "Key Part Analysis"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 69,
+      "source_cell": "C69",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-PRS-EHW-001 - VCU Product Requirement Specification",
+      "proposed_owner": "EHW; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-PRS-EHW-001 - VCU Product Requirement Specification "
+      },
+      "reusable_document_type": "Product Requirement Specification"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 70,
+      "source_cell": "C70",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-HSI-EHW-009 - VCU HSI Document",
+      "proposed_owner": "EHW; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D09",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-HSI-EHW-009 - VCU HSI Document"
+      },
+      "reusable_document_type": "HSI Document"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 71,
+      "source_cell": "C71",
+      "source_department": "Hardware",
+      "source_format": "Excel",
+      "document_name": "SSM-CKL-EHW-007 - VCU HARDWARE DESIGN VERIFICATION CHECKLIST",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D16",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "SSM-CKL-EHW-007 - VCU HARDWARE DESIGN VERIFICATION CHECKLIST"
+      },
+      "reusable_document_type": "HARDWARE DESIGN VERIFICATION CHECKLIST"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 72,
+      "source_cell": "C72",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-PRS-EHW-001 - XLC Product Requirement Specification",
+      "proposed_owner": "EHW; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-PRS-EHW-001 - XLC Product Requirement Specification "
+      },
+      "reusable_document_type": "Product Requirement Specification"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 73,
+      "source_cell": "C73",
+      "source_department": "Hardware",
+      "source_format": "Excel",
+      "document_name": "SSM-ECN-EHW-011 - XLC Engg Change Note (ECN)",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D14",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "SSM-ECN-EHW-011 - XLC Engg Change Note (ECN)"
+      },
+      "reusable_document_type": "Engg Change Note (ECN)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 74,
+      "source_cell": "C74",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-KPA-EHW-003 - XLC Key Part Analysis",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D16",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-KPA-EHW-003 - XLC Key Part Analysis"
+      },
+      "reusable_document_type": "Key Part Analysis"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 75,
+      "source_cell": "C75",
+      "source_department": "Hardware",
+      "source_format": "Excel",
+      "document_name": "SSM-DVP-EHW-006 - XLC_DVP",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D13",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "SSM-DVP-EHW-006 - XLC_DVP"
+      },
+      "reusable_document_type": "DVP"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 76,
+      "source_cell": "C76",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-CKL-EHW-007 - XLC SYSTEM ARCHITECTURE REPORT",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D09",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-CKL-EHW-007 - XLC SYSTEM ARCHITECTURE REPORT"
+      },
+      "reusable_document_type": "SYSTEM ARCHITECTURE REPORT"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 77,
+      "source_cell": "C77",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-ECN-EHW-011 - VCU Engineering Change Note",
+      "proposed_owner": "EHW; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D14",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-ECN-EHW-011 - VCU Engineering Change Note"
+      },
+      "reusable_document_type": "Engineering Change Note"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 78,
+      "source_cell": "C78",
+      "source_department": "Hardware",
+      "source_format": "pdf",
+      "document_name": "XLC - Schematic",
+      "proposed_owner": "EHW; QA review",
+      "mode": "U",
+      "editable_source": "Original pdf",
+      "catalogue_family": "D10",
+      "rule": "Schematic exported by EDA tool; upload PDF plus controlled native design package where available.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "pdf",
+        "C": "XLC - Schematic  "
+      },
+      "reusable_document_type": "Schematic"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 79,
+      "source_cell": "C79",
+      "source_department": "Hardware",
+      "source_format": "pdf",
+      "document_name": "VCU - Schematic",
+      "proposed_owner": "EHW; QA review",
+      "mode": "U",
+      "editable_source": "Original pdf",
+      "catalogue_family": "D10",
+      "rule": "Schematic exported by EDA tool; upload PDF plus controlled native design package where available.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "pdf",
+        "C": "VCU - Schematic  "
+      },
+      "reusable_document_type": "Schematic"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 80,
+      "source_cell": "C80",
+      "source_department": "Hardware",
+      "source_format": "pdf",
+      "document_name": "VCU - Layout",
+      "proposed_owner": "EHW; QA review",
+      "mode": "U",
+      "editable_source": "Original pdf",
+      "catalogue_family": "D10",
+      "rule": "PCB layout exported by EDA tool; upload PDF plus controlled native design package where available.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "pdf",
+        "C": "VCU - Layout "
+      },
+      "reusable_document_type": "PCB layout"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 81,
+      "source_cell": "C81",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-SAR-EHW-002 - VCU SYSTEM ARCHITECTURE REPORT",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D09",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-SAR-EHW-002 - VCU SYSTEM ARCHITECTURE REPORT"
+      },
+      "reusable_document_type": "SYSTEM ARCHITECTURE REPORT"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 82,
+      "source_cell": "C82",
+      "source_department": "Hardware",
+      "source_format": "pdf",
+      "document_name": "XLC - Layout",
+      "proposed_owner": "EHW; QA review",
+      "mode": "U",
+      "editable_source": "Original pdf",
+      "catalogue_family": "D10",
+      "rule": "PCB layout exported by EDA tool; upload PDF plus controlled native design package where available.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "pdf",
+        "C": "XLC - Layout "
+      },
+      "reusable_document_type": "PCB layout"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 83,
+      "source_cell": "C83",
+      "source_department": "Hardware",
+      "source_format": "Excel",
+      "document_name": "SSM-CKL-EHW-007 - XLC HARDWARE DESIGN VERIFICATION CHECKLIST",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D16",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "SSM-CKL-EHW-007 - XLC HARDWARE DESIGN VERIFICATION CHECKLIST"
+      },
+      "reusable_document_type": "HARDWARE DESIGN VERIFICATION CHECKLIST"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 84,
+      "source_cell": "C84",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "SSM-HSI-EHW-009 -XLC HSI Document",
+      "proposed_owner": "EHW; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D09",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM-HSI-EHW-009 -XLC HSI Document"
+      },
+      "reusable_document_type": "HSI Document"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 85,
+      "source_cell": "C85",
+      "source_department": "Hardware",
+      "source_format": "Excel & Word",
+      "document_name": "SSM-DFMEA-EHW-005 - VCU DFMEA",
+      "proposed_owner": "EHW; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D12",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence. Source lists Excel & Word; propose XLSX as the one canonical editable master, with PDF as final rendition, subject to actual template review.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel & Word",
+        "C": "SSM-DFMEA-EHW-005 - VCU DFMEA"
+      },
+      "reusable_document_type": "DFMEA"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 86,
+      "source_cell": "C86",
+      "source_department": "Hardware",
+      "source_format": "Word",
+      "document_name": "Standard Operating Procedure (SOP)",
+      "proposed_owner": "EHW; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Standard Operating Procedure (SOP)"
+      },
+      "reusable_document_type": "Standard Operating Procedure (SOP)"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 88,
+      "source_cell": "C88",
+      "source_department": "Finance",
+      "source_format": "Word",
+      "document_name": "Standard Operating Procedure - Fianance",
+      "proposed_owner": "FIN",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Finance",
+        "B": "Word",
+        "C": "Standard Operating Procedure - Fianance"
+      },
+      "reusable_document_type": "Standard Operating Procedure - Fianance"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 89,
+      "source_cell": "C89",
+      "source_department": "Finance",
+      "source_format": "Excel",
+      "document_name": "Financial Data",
+      "proposed_owner": "FIN",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D26",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Financial Data"
+      },
+      "reusable_document_type": "Financial Data"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 90,
+      "source_cell": "C90",
+      "source_department": "Finance",
+      "source_format": "Excel",
+      "document_name": "Shareholder Patter",
+      "proposed_owner": "FIN",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D26",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Shareholder Patter"
+      },
+      "reusable_document_type": "Shareholder Patter"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 91,
+      "source_cell": "C91",
+      "source_department": "Finance",
+      "source_format": "Excel",
+      "document_name": "Trend of spent on R&D",
+      "proposed_owner": "FIN",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D26",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Trend of spent on R&D"
+      },
+      "reusable_document_type": "Trend of spent on R&D"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 92,
+      "source_cell": "C92",
+      "source_department": "Finance",
+      "source_format": "Excel",
+      "document_name": "Trend of spent on Capex",
+      "proposed_owner": "FIN",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D26",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Trend of spent on Capex"
+      },
+      "reusable_document_type": "Trend of spent on Capex"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 94,
+      "source_cell": "C94",
+      "source_department": "Sales",
+      "source_format": "Word",
+      "document_name": "Standard Operating Procedure - Sales",
+      "proposed_owner": "SAL",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Sales",
+        "B": "Word",
+        "C": "Standard Operating Procedure - Sales"
+      },
+      "reusable_document_type": "Standard Operating Procedure - Sales"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 95,
+      "source_cell": "C95",
+      "source_department": "Sales",
+      "source_format": "Excel",
+      "document_name": "Contract Review Record",
+      "proposed_owner": "SAL",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D05",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Contract Review Record"
+      },
+      "reusable_document_type": "Contract Review Record"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 96,
+      "source_cell": "C96",
+      "source_department": "Sales",
+      "source_format": "Excel",
+      "document_name": "Order Monitoring Tracker",
+      "proposed_owner": "SAL",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D26",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Order Monitoring Tracker"
+      },
+      "reusable_document_type": "Order Monitoring Tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 98,
+      "source_cell": "C98",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Word",
+      "document_name": "Supplier Management",
+      "proposed_owner": "PUR; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D18",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Purchase SCM / Product Delivery",
+        "B": "Word",
+        "C": "Supplier Management"
+      },
+      "reusable_document_type": "Supplier Management"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 99,
+      "source_cell": "C99",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Word",
+      "document_name": "Supplier Selection",
+      "proposed_owner": "PUR; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D18",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Supplier Selection"
+      },
+      "reusable_document_type": "Supplier Selection"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 100,
+      "source_cell": "C100",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Word",
+      "document_name": "Supplier Performance Monitoring Rating",
+      "proposed_owner": "PUR; QA review",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D18",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Supplier Performance Monitoring Rating"
+      },
+      "reusable_document_type": "Supplier Performance Monitoring Rating"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 101,
+      "source_cell": "C101",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Word",
+      "document_name": "Supplier Claim Corrective Action SCAR",
+      "proposed_owner": "PUR; QA review",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D18",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Supplier Claim Corrective Action SCAR"
+      },
+      "reusable_document_type": "Supplier Claim Corrective Action SCAR"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 102,
+      "source_cell": "C102",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Word",
+      "document_name": "Supplier Audit Procedure",
+      "proposed_owner": "PUR; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D18",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Supplier Audit Procedure"
+      },
+      "reusable_document_type": "Supplier Audit Procedure"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 103,
+      "source_cell": "C103",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Word",
+      "document_name": "Supplier PPAP Procedure",
+      "proposed_owner": "PUR; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D19",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Supplier PPAP Procedure"
+      },
+      "reusable_document_type": "Supplier PPAP Procedure"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 104,
+      "source_cell": "C104",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Word",
+      "document_name": "Supplier Capacity Assessment Procedure",
+      "proposed_owner": "PUR; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D18",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Supplier Capacity Assessment Procedure"
+      },
+      "reusable_document_type": "Supplier Capacity Assessment Procedure"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 105,
+      "source_cell": "C105",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Excel",
+      "document_name": "Supplier Evaluation Electronics Semiconductors",
+      "proposed_owner": "PUR; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D18",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Supplier Evaluation Electronics Semiconductors"
+      },
+      "reusable_document_type": "Supplier Evaluation Electronics Semiconductors"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 106,
+      "source_cell": "C106",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Excel",
+      "document_name": "Supplier Performance & Rating Scorecard",
+      "proposed_owner": "PUR; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D18",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Supplier Performance & Rating Scorecard"
+      },
+      "reusable_document_type": "Supplier Performance & Rating Scorecard"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 107,
+      "source_cell": "C107",
+      "source_department": "Purchase SCM / Product Delivery",
+      "source_format": "Excel",
+      "document_name": "Supplier Audit Plan Checklist.xlsx",
+      "proposed_owner": "PUR; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D18",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Excel",
+        "C": "Supplier Audit Plan Checklist.xlsx"
+      },
+      "reusable_document_type": "Supplier Audit Plan Checklist.xlsx"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 109,
+      "source_cell": "C109",
+      "source_department": "Store",
+      "source_format": "Doc",
+      "document_name": "IQC Sop",
+      "proposed_owner": "PUR / configured Stores owner; QA",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Store",
+        "B": "Doc",
+        "C": "IQC Sop"
+      },
+      "reusable_document_type": "IQC Sop"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 112,
+      "source_cell": "C112",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Standard Operation Procedure – Software",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Software",
+        "B": "Word",
+        "C": "Standard Operation Procedure – Software"
+      },
+      "reusable_document_type": "Standard Operation Procedure – Software"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 113,
+      "source_cell": "C113",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Standard Operation Procedure – Infrastructure Change Control",
+      "proposed_owner": "SIT + SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D14",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Standard Operation Procedure – Infrastructure Change Control"
+      },
+      "reusable_document_type": "Standard Operation Procedure – Infrastructure Change Control"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 114,
+      "source_cell": "C114",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Standard Operation Procedure – Incident Management",
+      "proposed_owner": "SIT + SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Standard Operation Procedure – Incident Management"
+      },
+      "reusable_document_type": "Standard Operation Procedure – Incident Management"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 115,
+      "source_cell": "C115",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "KPI Framework – Software Engineering",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D38",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "KPI Framework – Software Engineering"
+      },
+      "reusable_document_type": "KPI Framework – Software Engineering"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 116,
+      "source_cell": "C116",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Software Requirement Sheet - Fleet App",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Software Requirement Sheet - Fleet App"
+      },
+      "reusable_document_type": "Software Requirement Sheet - Fleet App"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 117,
+      "source_cell": "C117",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Product Requirements Document - Fleet App",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Product Requirements Document - Fleet App"
+      },
+      "reusable_document_type": "Product Requirements Document - Fleet App"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 118,
+      "source_cell": "C118",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Functional Documentation – Fleet App",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Functional Documentation – Fleet App"
+      },
+      "reusable_document_type": "Functional Documentation – Fleet App"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 119,
+      "source_cell": "C119",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Testing & Verification Document – Fleet App",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Testing & Verification Document – Fleet App"
+      },
+      "reusable_document_type": "Testing & Verification Document – Fleet App"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 120,
+      "source_cell": "C120",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Software Requirement Sheet - SutraLog",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Software Requirement Sheet - SutraLog"
+      },
+      "reusable_document_type": "Software Requirement Sheet - SutraLog"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 121,
+      "source_cell": "C121",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Product Requirements Document – Sutralog",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Product Requirements Document – Sutralog"
+      },
+      "reusable_document_type": "Product Requirements Document – Sutralog"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 122,
+      "source_cell": "C122",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Testing & Verification - SutraLog",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Testing & Verification - SutraLog"
+      },
+      "reusable_document_type": "Testing & Verification - SutraLog"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 123,
+      "source_cell": "C123",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Software Requirement Sheet - Helios",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Software Requirement Sheet - Helios"
+      },
+      "reusable_document_type": "Software Requirement Sheet - Helios"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 124,
+      "source_cell": "C124",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Product Requirements Document - Helios",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Product Requirements Document - Helios"
+      },
+      "reusable_document_type": "Product Requirements Document - Helios"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 125,
+      "source_cell": "C125",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Functional Documentation – Helios",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Functional Documentation – Helios"
+      },
+      "reusable_document_type": "Functional Documentation – Helios"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 126,
+      "source_cell": "C126",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Software Requirement Sheet - Amatya",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Software Requirement Sheet - Amatya"
+      },
+      "reusable_document_type": "Software Requirement Sheet - Amatya"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 127,
+      "source_cell": "C127",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Product Requirements Document - Amatya",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Product Requirements Document - Amatya"
+      },
+      "reusable_document_type": "Product Requirements Document - Amatya"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 128,
+      "source_cell": "C128",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Testing & Verification Document - Helios",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Testing & Verification Document - Helios"
+      },
+      "reusable_document_type": "Testing & Verification Document - Helios"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 129,
+      "source_cell": "C129",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Testing & Verification - Amatya",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Testing & Verification - Amatya"
+      },
+      "reusable_document_type": "Testing & Verification - Amatya"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 130,
+      "source_cell": "C130",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Software Requirement Sheet - Garuda",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Software Requirement Sheet - Garuda"
+      },
+      "reusable_document_type": "Software Requirement Sheet - Garuda"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 131,
+      "source_cell": "C131",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Product Requirements Document - Garuda",
+      "proposed_owner": "SW",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Draft narrative/requirements from the supplied approved template and actual project inputs; diagrams or execution evidence remain attached originals.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Product Requirements Document - Garuda"
+      },
+      "reusable_document_type": "Product Requirements Document - Garuda"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 132,
+      "source_cell": "C132",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Software Requirements Sheet - Asset Tracker",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Software Requirements Sheet - Asset Tracker"
+      },
+      "reusable_document_type": "Software Requirements Sheet - Asset Tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 133,
+      "source_cell": "C133",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Product Requirements Document – Asset Tracker",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D08",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Product Requirements Document – Asset Tracker"
+      },
+      "reusable_document_type": "Product Requirements Document – Asset Tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 134,
+      "source_cell": "C134",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Testing & Verification Document – Garuda",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Testing & Verification Document – Garuda"
+      },
+      "reusable_document_type": "Testing & Verification Document – Garuda"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 135,
+      "source_cell": "C135",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Software FMEA – Internal Web Applications",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Software FMEA – Internal Web Applications"
+      },
+      "reusable_document_type": "Software FMEA – Internal Web Applications"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 136,
+      "source_cell": "C136",
+      "source_department": "Software",
+      "source_format": "Word",
+      "document_name": "Testing & Verification - Asset Tracker",
+      "proposed_owner": "SW",
+      "mode": "H",
+      "editable_source": "DOCX",
+      "catalogue_family": "D15",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Testing & Verification - Asset Tracker"
+      },
+      "reusable_document_type": "Testing & Verification - Asset Tracker"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 141,
+      "source_cell": "C141",
+      "source_department": "Service & Support",
+      "source_format": "Word",
+      "document_name": "SSM/SS/00001 - Standard Operating Procedure - Service & Support",
+      "proposed_owner": "SIT; SW for cybersecurity",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "Service & Support",
+        "B": "Word",
+        "C": "SSM/SS/00001 - Standard Operating Procedure - Service & Support"
+      },
+      "reusable_document_type": "SSM/SS/00001 - Standard Operating Procedure - Service & Support"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 142,
+      "source_cell": "C142",
+      "source_department": "Service & Support",
+      "source_format": "Word",
+      "document_name": "SSM/SS/00002 - Escalation Matrix - Service & Support",
+      "proposed_owner": "SIT; SW for cybersecurity",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "SSM/SS/00002 - Escalation Matrix - Service & Support"
+      },
+      "reusable_document_type": "SSM/SS/00002 - Escalation Matrix - Service & Support"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 143,
+      "source_cell": "C143",
+      "source_department": "Service & Support",
+      "source_format": "Word",
+      "document_name": "Standard Operating Procedure - Cyber Security",
+      "proposed_owner": "SIT; SW for cybersecurity",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D36",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Standard Operating Procedure - Cyber Security"
+      },
+      "reusable_document_type": "Standard Operating Procedure - Cyber Security"
+    },
+    {
+      "source_sheet": "Design Devlopment Support",
+      "source_row": 144,
+      "source_cell": "C144",
+      "source_department": "Service & Support",
+      "source_format": "Word",
+      "document_name": "Service Warranty Policy",
+      "proposed_owner": "SIT; SW for cybersecurity",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "B": "Word",
+        "C": "Service Warranty Policy"
+      },
+      "reusable_document_type": "Service Warranty Policy"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 2,
+      "source_cell": "C2",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "PFD",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D21",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "1.0",
+        "B": "Excel",
+        "C": "PFD",
+        "G": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "PFD"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 3,
+      "source_cell": "C3",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "Control Plan",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D22",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "2.0",
+        "B": "Excel",
+        "C": "Control Plan",
+        "G": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "Control Plan"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 4,
+      "source_cell": "C4",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "PFMEA",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D22",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "3.0",
+        "B": "Excel",
+        "C": "PFMEA",
+        "G": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "PFMEA"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 5,
+      "source_cell": "C5",
+      "source_department": "Production & Assembly",
+      "source_format": "PDF",
+      "document_name": "EM & MM Quality (SOP)",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "G",
+      "editable_source": "DOCX",
+      "catalogue_family": "D01",
+      "rule": "Populate the approved template from controlled company/process inputs; owner reviews narrative and applicable requirements. No fabricated execution/signature. Checklist PDF is treated as a rendition, not proof the document must be externally issued.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "4.0",
+        "B": "PDF",
+        "C": "EM & MM Quality (SOP)",
+        "G": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "EM & MM Quality (SOP)"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 6,
+      "source_cell": "C6",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "FIFO Matrix",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D01",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "5.0",
+        "B": "Excel",
+        "C": "FIFO Matrix",
+        "G": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "FIFO Matrix"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 7,
+      "source_cell": "C7",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "FIFO WI",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D01",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "6.0",
+        "B": "Excel",
+        "C": "FIFO WI",
+        "G": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "FIFO WI"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 8,
+      "source_cell": "C8",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "VCU WI",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D01",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "7.0",
+        "B": "Excel",
+        "C": "VCU WI",
+        "G": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "WI"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 9,
+      "source_cell": "C9",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "Lesson Learn",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D25",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "8.0",
+        "B": "Excel",
+        "C": "Lesson Learn",
+        "H": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "Lesson Learn"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 10,
+      "source_cell": "C10",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "FQC",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D23",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "9.0",
+        "B": "Excel",
+        "C": "FQC",
+        "H": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "FQC"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 11,
+      "source_cell": "C11",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "PDI",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D23",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "10.0",
+        "B": "Excel",
+        "C": "PDI",
+        "H": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "PDI"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 12,
+      "source_cell": "C12",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "Calibration List",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D20",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "11.0",
+        "B": "Excel",
+        "C": "Calibration List",
+        "H": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "Calibration List"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 13,
+      "source_cell": "C13",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "Process Rej. PPM",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D24",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "12.0",
+        "B": "Excel",
+        "C": "Process Rej. PPM",
+        "H": "Yes",
+        "I": "EM & MM"
+      },
+      "reusable_document_type": "Process Rej. PPM"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 14,
+      "source_cell": "C14",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "5S Monthly Chk.",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D24",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "13.0",
+        "B": "Excel",
+        "C": "5S Monthly Chk.",
+        "H": "Yes",
+        "I": "E & M Manufacturing"
+      },
+      "reusable_document_type": "5S Monthly Chk."
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 15,
+      "source_cell": "C15",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "Assembly Line Capacity",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D21",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "14.0",
+        "B": "Excel",
+        "C": "Assembly Line Capacity",
+        "G": "Yes",
+        "I": "E & M Manufacturing"
+      },
+      "reusable_document_type": "Assembly Line Capacity"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 16,
+      "source_cell": "C16",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "NC (Rework & Non conf0rming Product)",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D25",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "15.0",
+        "B": "Excel",
+        "C": "NC (Rework & Non conf0rming Product)",
+        "H": "Yes",
+        "I": "E & M Manufacturing"
+      },
+      "reusable_document_type": "NC (Rework & Non conf0rming Product)"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 17,
+      "source_cell": "C17",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "Pre Manufacturing.startup master Chk.",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D21",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "16.0",
+        "B": "Excel",
+        "C": "Pre Manufacturing.startup master Chk.",
+        "G": "Yes",
+        "I": "E & M Manufacturing"
+      },
+      "reusable_document_type": "Pre Manufacturing.startup master Chk."
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 18,
+      "source_cell": "C18",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "Preventive Maintenance Plan",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D34",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "17.0",
+        "B": "Excel",
+        "C": "Preventive Maintenance Plan",
+        "G": "Yes",
+        "I": "E & M Manufacturing"
+      },
+      "reusable_document_type": "Preventive Maintenance Plan"
+    },
+    {
+      "source_sheet": "Production & Assembly",
+      "source_row": 19,
+      "source_cell": "C19",
+      "source_department": "Production & Assembly",
+      "source_format": "Excel",
+      "document_name": "Production Anual KPI",
+      "proposed_owner": "EMF / MMF; QA review",
+      "mode": "H",
+      "editable_source": "XLSX",
+      "catalogue_family": "D24",
+      "rule": "Generate editable structure/prefill and calculations from verified records; people supply/verify observations, findings, scores or actual results and attach source evidence.",
+      "template_status": "Actual document template not supplied in this workbook",
+      "coverage": "Candidate family match; exact subtype/template and live workflow not verified",
+      "source_cells": {
+        "A": "18.0",
+        "B": "Excel",
+        "C": "Production Anual KPI",
+        "H": "Yes",
+        "I": "E & M Manufacturing"
+      },
+      "reusable_document_type": "Production Anual KPI"
+    }
+  ],
+  "agenda": [
+    {
+      "source_row": 4,
+      "topic": "A short presentation about the SEM and how it will be conducted.",
+      "source_requirement": "All process owners/dept representatives",
+      "proposed_mode": "U / activity",
+      "families": "D32",
+      "required_action": "OEM presentation/scoring/conclusion is authored by the actual issuer/auditor. Upload issued result; portal may draft agenda, minutes and action tracker only."
+    },
+    {
+      "source_row": 5,
+      "topic": "Facility to be audited and group information",
+      "source_requirement": "Can cover chapter 1 info. like ownership , ownership structure, supplier locations, customers, segments etc..",
+      "proposed_mode": "H",
+      "families": "D32",
+      "required_action": "Controlled draft/index plus actual approved records and evidence links; audit coverage not verified."
+    },
+    {
+      "source_row": 6,
+      "topic": "Visit the production/similar line production process",
+      "source_requirement": "Plant tour - overview of processes from incoming to packaging & dispatch. \nCovering Production management and Production support in SEM chapter 7",
+      "proposed_mode": "H",
+      "families": "D32",
+      "required_action": "Controlled draft/index plus actual approved records and evidence links; audit coverage not verified."
+    },
+    {
+      "source_row": 8,
+      "topic": "Ownership",
+      "source_requirement": "- Share holding pattern of plant & JV partners individually if any at micro level. \nE.g. Citi bank Pension fund - 7.5%; Person A - 30% etc. \n- If any company holds major share, need share holding pattern for that company as well.\n- Joint Venture if any scope/responsibilities\n- Succession planning when few persons own the business\n- Business plan, Investment made in plant/company for the past 3 years",
+      "proposed_mode": "H",
+      "families": "D01 / D26 / D32 / D38",
+      "required_action": "Generate profile/business/KPI summaries from verified masters and actual financial records; attach corporate/JV/ownership originals and restrict financial details."
+    },
+    {
+      "source_row": 9,
+      "topic": "Global ability",
+      "source_requirement": "Location of plants including parent company with scope of responsibilities, warehouse, dealer/distributor etc across the globe & their scope of activities",
+      "proposed_mode": "H",
+      "families": "D01 / D26 / D32 / D38",
+      "required_action": "Generate profile/business/KPI summaries from verified masters and actual financial records; attach corporate/JV/ownership originals and restrict financial details."
+    },
+    {
+      "source_row": 10,
+      "topic": "Dependency.",
+      "source_requirement": " % of contribution by your current customers in your turnover for the last 2 years;  Existing supplier needs to provide OEM's share as well.\ne.g. Turnover USD 100;Customer A -10%, Customer B - 12% up to top 5 customers including OEM\n- Group level (Overall Level) ",
+      "proposed_mode": "H",
+      "families": "D01 / D26 / D32 / D38",
+      "required_action": "Generate profile/business/KPI summaries from verified masters and actual financial records; attach corporate/JV/ownership originals and restrict financial details."
+    },
+    {
+      "source_row": 11,
+      "topic": "Management",
+      "source_requirement": "- Business plan/strategy (3-5 years) & % investment on plant/company\n- Organization chart\n- Roles & responsibilities of personnel participating making business plan\n- Modern systems implementation - 6 Sigma,Lean,TQM,TPM etc                                    \n- Company KPIs summary (balanced scorecard or similar)",
+      "proposed_mode": "H",
+      "families": "D01 / D26 / D32 / D38",
+      "required_action": "Generate profile/business/KPI summaries from verified masters and actual financial records; attach corporate/JV/ownership originals and restrict financial details."
+    },
+    {
+      "source_row": 12,
+      "topic": "Customer satisfaction",
+      "source_requirement": "- Trend for 2 -3 years - parameter wise as well as customer wise & improvement action plan\n- Filled in questionnaire\n- If no questioners are sent out to customers, how is customer satisfaction data received and what actions are taken?",
+      "proposed_mode": "H",
+      "families": "D01 / D25 / D26",
+      "required_action": "Generate support/communication/service report and trends from verified tickets, deliveries, warranty and financial sources; upload signed OEM agreements and actual feedback. Confirm remanufacturing applicability."
+    },
+    {
+      "source_row": 13,
+      "topic": "Cyber Security",
+      "source_requirement": "- Cyber Security risk analysis and what protection system exist today\n- Appointment person responsible for Cyber security\n- Process in place to prevent phishing\n- Awareness of ISO270000 Known recognized anti-virus program in use\n- Password rules (Complexity of password and how often to change) \n- Training program in place\n-  Mitigation plan in case of Cyber attack\n- Backup system (Servers: Virtual, different locations, Safe area)\n- External support (Specialist company)\n- VPN (Working out of office) guidelines \n- Policy\n- Scanning on regular basis and how to use the information from scanning",
+      "proposed_mode": "H",
+      "families": "D36 / D27",
+      "required_action": "Draft cyber policies, risk/review and training templates. Upload actual scan results, backup/recovery evidence and third-party support agreement. A policy is not proof a control is operating."
+    },
+    {
+      "source_row": 14,
+      "topic": "Risk management",
+      "source_requirement": " -Procedure for risk management functions involved\n-Risk assessment (Review of current risk assessment. (Evidence of regular updates)\n- Mitigation plan connected to the risk assessment.\nExamples of risks to be reviewed: Fire protection natural hazards, insurances, alternative production, facility security, liability coverage, environmental risks, own and customer owned tooling's, power supply and energy risks, supplier risks etc.",
+      "proposed_mode": "H",
+      "families": "D30 / D31 / D37",
+      "required_action": "Risk and mitigation register from owner assessments; upload insurance, facility/emergency/vendor evidence. No invented risk scores."
+    },
+    {
+      "source_row": 15,
+      "topic": "Customer support /communication",
+      "source_requirement": "List All Personal for customer Contact/support - Sales, Quality, Delivery, Engineering, Operations (OEM Team Review)",
+      "proposed_mode": "H",
+      "families": "D01 / D25 / D26",
+      "required_action": "Generate support/communication/service report and trends from verified tickets, deliveries, warranty and financial sources; upload signed OEM agreements and actual feedback. Confirm remanufacturing applicability."
+    },
+    {
+      "source_row": 16,
+      "topic": "Employee satisfaction rate",
+      "source_requirement": "- Employee Turnover last three yrs.\n- Employee satisfaction reports including participation rate\n- Evidence of action plan",
+      "proposed_mode": "H",
+      "families": "D27 / D28",
+      "required_action": "Restricted HR skill/training/turnover/satisfaction reports from actual employee, attendance and survey responses; retain participation denominator and evidence."
+    },
+    {
+      "source_row": 17,
+      "topic": "Environmental certification",
+      "source_requirement": "- ISO 14001 Certificate copy / Time plan to achieve\n- Previous audit observations / NC details\n- KPIs tracked ",
+      "proposed_mode": "U + H",
+      "families": "D31 / D32",
+      "required_action": "Upload authentic certificate if issued; otherwise record actual certification plan. Generate expiry/status tracker only. Never create a certificate or claim certification."
+    },
+    {
+      "source_row": 18,
+      "topic": "Quality system,",
+      "source_requirement": "QMS Certificate / Time plan to achieve",
+      "proposed_mode": "U + H",
+      "families": "D31 / D32",
+      "required_action": "Upload authentic certificate if issued; otherwise record actual certification plan. Generate expiry/status tracker only. Never create a certificate or claim certification."
+    },
+    {
+      "source_row": 19,
+      "topic": "Quality planning (APQP)",
+      "source_requirement": "- RFQ review process\n- Quality Targets setting for new projects,\n- Lessons learnt (Things Gone Right & Things Gone Wrong),\n- APQP, controls & reviews\n- PFMEA, guidelines\n- Control Plan, guidelines\n- Pre Production Controls check,PPAP file\n- Ramp up procedure, process audit plan & report, Safety stock",
+      "proposed_mode": "H",
+      "families": "D05 / D12 / D13 / D19 / D22 / D25 / D32",
+      "required_action": "Generate linked APQP/FMEA/control-plan/problem-solving drafts. Require actual reviews, measurements, action effectiveness, PPAP and current revision evidence."
+    },
+    {
+      "source_row": 20,
+      "topic": "Quality performance (PPM)",
+      "source_requirement": "- Customer PPM (0 KM) and trend Vs Customer target for last 3 years",
+      "proposed_mode": "H",
+      "families": "D21 / D23 / D24",
+      "required_action": "Generate production/capacity/delivery/PPM trend reports from actual counts and dates. Define denominators/time windows; upload actual inspections/calibration/production evidence."
+    },
+    {
+      "source_row": 21,
+      "topic": "Reliability (Warranty)",
+      "source_requirement": "- Fault frequency calculation\n- Warranty cost/cost of poor quality result and trend\n- Support on field issues, past recall, action taken if any",
+      "proposed_mode": "H",
+      "families": "D01 / D25 / D26",
+      "required_action": "Generate support/communication/service report and trends from verified tickets, deliveries, warranty and financial sources; upload signed OEM agreements and actual feedback. Confirm remanufacturing applicability."
+    },
+    {
+      "source_row": 22,
+      "topic": "Problem solving (8D)",
+      "source_requirement": "- Customer complaint data base review\n- Procedure to make root cause analyses + example from complaints picked by auditor\n- Efficiency of actions (repeated problems?)\n- Updates of documents like P-FMEA, control plan, work instructions etc.\n- Rules for answering time of customer complaints and result",
+      "proposed_mode": "H",
+      "families": "D05 / D12 / D13 / D19 / D22 / D25 / D32",
+      "required_action": "Generate linked APQP/FMEA/control-plan/problem-solving drafts. Require actual reviews, measurements, action effectiveness, PPAP and current revision evidence."
+    },
+    {
+      "source_row": 23,
+      "topic": "Management of special characteristics",
+      "source_requirement": "- Determination of special characteristics\n- Identification of special characteristics, drawings, FMEA, control plan, work instructions\n- Internal rules for a capable process, Cp, Cpk \n- Management of supplier special characteristics",
+      "proposed_mode": "H",
+      "families": "D05 / D12 / D13 / D19 / D22 / D25 / D32",
+      "required_action": "Generate linked APQP/FMEA/control-plan/problem-solving drafts. Require actual reviews, measurements, action effectiveness, PPAP and current revision evidence."
+    },
+    {
+      "source_row": 24,
+      "topic": "Capacity management,",
+      "source_requirement": "- Long term capacity forecast\n- Production planning. Review how production planning is done with tools used\n- Capacity calculation model (OEE or similar calculation)\n- Bottleneck analyses and action on short and long term",
+      "proposed_mode": "H",
+      "families": "D21 / D23 / D24",
+      "required_action": "Generate production/capacity/delivery/PPM trend reports from actual counts and dates. Define denominators/time windows; upload actual inspections/calibration/production evidence."
+    },
+    {
+      "source_row": 25,
+      "topic": "Delivery performance,",
+      "source_requirement": "Trend for 2-3 years for major customer, with customer targets",
+      "proposed_mode": "H",
+      "families": "D21 / D23 / D24",
+      "required_action": "Generate production/capacity/delivery/PPM trend reports from actual counts and dates. Define denominators/time windows; upload actual inspections/calibration/production evidence."
+    },
+    {
+      "source_row": 26,
+      "topic": "Electronic communication.",
+      "source_requirement": "EDI as per OEM's requirements",
+      "proposed_mode": "H",
+      "families": "D03 / D26 / D36",
+      "required_action": "Record actual OEM EDI requirement/confirmation and transmission evidence. A generated document cannot substitute for EDI integration."
+    },
+    {
+      "source_row": 28,
+      "topic": "Strategy, Co-operation and support.",
+      "source_requirement": "- Policy on spare part support (duration & pricing) after serial production ends \n- Production methods that will be used\n- Any agreement signed with OEM? (Framework, general conditions, price agreement)\n- Delivery/Quality performance trend",
+      "proposed_mode": "H",
+      "families": "D01 / D25 / D26",
+      "required_action": "Generate support/communication/service report and trends from verified tickets, deliveries, warranty and financial sources; upload signed OEM agreements and actual feedback. Confirm remanufacturing applicability."
+    },
+    {
+      "source_row": 29,
+      "topic": "Service literature",
+      "source_requirement": "Policy to create service literature and examples if applicable as start the sentence.",
+      "proposed_mode": "H",
+      "families": "D01 / D25 / D26",
+      "required_action": "Generate support/communication/service report and trends from verified tickets, deliveries, warranty and financial sources; upload signed OEM agreements and actual feedback. Confirm remanufacturing applicability."
+    },
+    {
+      "source_row": 30,
+      "topic": "Remanufacturing",
+      "source_requirement": "- Procedure for remanufacturing if applicable, visit to reman area\n- Policy on reman parts (warranty)\n- Any trend of performance remanufactured parts",
+      "proposed_mode": "H",
+      "families": "D01 / D25 / D26",
+      "required_action": "Generate support/communication/service report and trends from verified tickets, deliveries, warranty and financial sources; upload signed OEM agreements and actual feedback. Confirm remanufacturing applicability."
+    },
+    {
+      "source_row": 31,
+      "topic": "Training and competence",
+      "source_requirement": "- Target for training, target Vs actual for last 3 years\n- How training needs are identified\n- Effectiveness of trainings\n- Qualification process for special process\n- Skill matrix, training need identification, and sufficient back-up in place",
+      "proposed_mode": "H",
+      "families": "D27 / D28",
+      "required_action": "Restricted HR skill/training/turnover/satisfaction reports from actual employee, attendance and survey responses; retain participation denominator and evidence."
+    },
+    {
+      "source_row": 32,
+      "topic": "Production management",
+      "source_requirement": "- Incoming inspection Process including FIFO management\n- WIP Management\n- Work Instructions & Daily start up checks\n- Final inspection, Packaging/final storage including FIFO management",
+      "proposed_mode": "H",
+      "families": "D21 / D23 / D24",
+      "required_action": "Generate production/capacity/delivery/PPM trend reports from actual counts and dates. Define denominators/time windows; upload actual inspections/calibration/production evidence."
+    },
+    {
+      "source_row": 33,
+      "topic": "Production Support",
+      "source_requirement": "- Defect/NC part management process on shop floor\n- Poka yokes implemented and check for effectiveness\n- In house ppm trend product wise for 3 years\n- Gage Calibration Program and floor Review \n- Visual management + daily meeting structure \n- Housekeeping (5S audits?)",
+      "proposed_mode": "H",
+      "families": "D21 / D23 / D24",
+      "required_action": "Generate production/capacity/delivery/PPM trend reports from actual counts and dates. Define denominators/time windows; upload actual inspections/calibration/production evidence."
+    },
+    {
+      "source_row": 34,
+      "topic": "Maintenance.",
+      "source_requirement": "- Preventive & Predictive Maintenance Plan Vs actual\n- Review of maintenance instructions\n- External maintenance records and agreements\n- Spare part identification & stock monitoring",
+      "proposed_mode": "H",
+      "families": "D34",
+      "required_action": "Generate maintenance schedule and plan-versus-actual from actual assets/work orders; upload external maintenance reports/agreements and evidence."
+    },
+    {
+      "source_row": 35,
+      "topic": "Change management with focus on process changes",
+      "source_requirement": "- Procedure of change management with focus on process changes and customer communication\n- Traceability of implemented process changes\n- Process change planning and how well in advance customer is informed\n- Team approach, which functions are involved\n- Procedure how sub supplier changes are managed",
+      "proposed_mode": "H",
+      "families": "D14 / D32",
+      "required_action": "Controlled process-change draft and implementation traceability; attach actual customer notification/approval and supplier-change evidence."
+    },
+    {
+      "source_row": 36,
+      "topic": "Product development process (If design is in your scope)",
+      "source_requirement": "- Project Management process including milestones and gate reviews- \n- List of customers, Industrial segments served\n- Technology roadmap\n- Project tracking and KPIs",
+      "proposed_mode": "H",
+      "families": "D08 / D09 / D10 / D12 / D13 / D32",
+      "required_action": "Generate project/spec/review/prototype summaries from actual records. Upload EDA/CAD/simulation/test-tool artifacts, supplier/lab evidence and original requirements."
+    },
+    {
+      "source_row": 37,
+      "topic": "Product engineering technology (If design is in your scope)",
+      "source_requirement": "- List of computer aided systems \n- Risk analysis tools - e.g. DFMEA\n- Simulations and virtual verification capabilities\n- Document control, security of transmission",
+      "proposed_mode": "H",
+      "families": "D08 / D09 / D10 / D12 / D13 / D32",
+      "required_action": "Generate project/spec/review/prototype summaries from actual records. Upload EDA/CAD/simulation/test-tool artifacts, supplier/lab evidence and original requirements."
+    },
+    {
+      "source_row": 38,
+      "topic": "Prototypes",
+      "source_requirement": "- Process of making prototypes - methods,inhouse/outsourced/Rapid Prototyping, production line/offline\n- Delivery performance trend of prototypes\n- Description test facilities in-house & outsourced",
+      "proposed_mode": "H",
+      "families": "D08 / D09 / D10 / D12 / D13 / D32",
+      "required_action": "Generate project/spec/review/prototype summaries from actual records. Upload EDA/CAD/simulation/test-tool artifacts, supplier/lab evidence and original requirements."
+    },
+    {
+      "source_row": 39,
+      "topic": "R&D (If design is in your scope)",
+      "source_requirement": "- Trend of Spent on R & D as a % of turnover for the last 3 years\n- Benchmarking (technical and cost benchmarking)",
+      "proposed_mode": "H",
+      "families": "D26",
+      "required_action": "Generate verified R&D-spend ratios with period/denominator reconciliation; OEM financial score remains externally authored. Historical actuals must be supplied."
+    },
+    {
+      "source_row": 40,
+      "topic": "Financial score card",
+      "source_requirement": "Explanation on OEM' score card\n(Supplier finance data evaluated by OEM finance expert team, based on the data submitted during Short SEM)",
+      "proposed_mode": "H",
+      "families": "D26",
+      "required_action": "Generate verified R&D-spend ratios with period/denominator reconciliation; OEM financial score remains externally authored. Historical actuals must be supplied."
+    },
+    {
+      "source_row": 41,
+      "topic": "Continual improvement",
+      "source_requirement": "- Continuous Improvement Leader and Cross Functional Team Development                                      \n - Continual improvement activities including process description\n- Trend for last 3 years - Target Vs actual\n- Management involvement in CI activities",
+      "proposed_mode": "H",
+      "families": "D25 / D33 / D38",
+      "required_action": "Generate improvement charter/action/trend drafts from actual baselines, targets and results; human validation and source periods required."
+    },
+    {
+      "source_row": 42,
+      "topic": "Sourcing process",
+      "source_requirement": " - Supplier evaluation process (for new potential suppliers)\n- Supplier selection process & agreements\n- APQP and PPAP procedure for suppliers\n- Tier2 supplier capacity management",
+      "proposed_mode": "H",
+      "families": "D18 / D19 / D25",
+      "required_action": "Generate supplier selection/evaluation/performance/SCAR templates and calculations from actual records; upload supplier agreements, audit evidence and supplied PPAP."
+    },
+    {
+      "source_row": 43,
+      "topic": "Suppliers performance.",
+      "source_requirement": "- Supplier performance monitoring process\n- Consolidated performance for all suppliers for 1-2 years\n- Supplier audits, plan Vs actual\n- Supplier PPM trend for 2 years\n- Claim management procedure for suppliers and reporting\n- Low performance suppliers' management process",
+      "proposed_mode": "H",
+      "families": "D18 / D19 / D25",
+      "required_action": "Generate supplier selection/evaluation/performance/SCAR templates and calculations from actual records; upload supplier agreements, audit evidence and supplied PPAP."
+    },
+    {
+      "source_row": 44,
+      "topic": "Lead Auditor reflect scoring with OEM evaluation group",
+      "source_requirement": "OEM Team",
+      "proposed_mode": "U / activity",
+      "families": "D32",
+      "required_action": "OEM presentation/scoring/conclusion is authored by the actual issuer/auditor. Upload issued result; portal may draft agenda, minutes and action tracker only."
+    },
+    {
+      "source_row": 45,
+      "topic": "Lead Auditor to present result",
+      "source_requirement": "All process owners/dept representatives",
+      "proposed_mode": "U / activity",
+      "families": "D32",
+      "required_action": "OEM presentation/scoring/conclusion is authored by the actual issuer/auditor. Upload issued result; portal may draft agenda, minutes and action tracker only."
+    }
+  ]
+}

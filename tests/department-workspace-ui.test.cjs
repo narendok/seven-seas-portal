@@ -87,7 +87,7 @@ test('RoleAwareSidebar separates Demo Lifecycle Walkthrough to Reference & Train
 
   // Verify demo walkthrough is in Reference & Training
   assert.match(sidebarSource, /id:\s*"dept-ref-training-lifecycle"/, 'Training walkthrough in Reference & Training');
-  assert.match(sidebarSource, /label:\s*"Help & Training: AI4T Lifecycle Walkthrough"/, 'Help & Training label used');
+  assert.match(sidebarSource, /label:\s*"(?:Knowledge Base|Help & Training: AI4T Lifecycle Walkthrough)"/, 'Knowledge Base label used');
 
   // Verify dept_projects does not embed demo lifecycle
   const deptProjectsSection = sidebarSource.match(/id:\s*"dept_projects"[\s\S]*?items:\s*\[([\s\S]*?)\]/);

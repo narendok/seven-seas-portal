@@ -17,6 +17,7 @@ import {
   UsersRound,
   Bell,
   PlayCircle,
+  LifeBuoy,
   Wrench,
   Terminal,
   Box,
@@ -134,6 +135,8 @@ export type RoleAwareSidebarProps = {
       | "budgets"
       | "profile"
       | "communication"
+      | "tickets"
+      | "hr_admin"
   ) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   onOpenAi4tLifecycle?: (() => void) | undefined;
@@ -150,6 +153,8 @@ export type RoleAwareSidebarProps = {
   onOpenBudgets?: (() => void) | undefined;
   onOpenProfile?: (() => void) | undefined;
   onOpenCommunication?: (() => void) | undefined;
+  onOpenTickets?: (() => void) | undefined;
+  onOpenHrAdmin?: (() => void) | undefined;
   onOpenAlerts?: (() => void) | undefined;
   onOpenHistory?: (() => void) | undefined;
   setupStep?: number | undefined;
@@ -216,6 +221,8 @@ export function RoleAwareSidebar({
   onOpenBudgets,
   onOpenProfile,
   onOpenCommunication,
+  onOpenTickets,
+  onOpenHrAdmin,
   onOpenAlerts,
   onOpenHistory,
   setupStep = 0,
@@ -416,8 +423,8 @@ export function RoleAwareSidebar({
           {id:"adm-analysis",label:"Project Analysis",shortLabel:"Analysis",icon:Layers,isActive:view === "analysis",onClick:()=>handleItemClick(()=>onOpenProjectAnalysis?.())},
           {
             id: "adm-lifecycle",
-            label: "Help & Training: AI4T Lifecycle Walkthrough",
-            shortLabel: "Training",
+            label: "Knowledge Base",
+            shortLabel: "Knowledge Base",
             icon: PlayCircle,
             isActive: false,
             onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
@@ -428,8 +435,16 @@ export function RoleAwareSidebar({
             shortLabel: "SIT",
             icon: Bell,
             badge: openTaskCounts["sit"],
-            isActive: activeArea === "sit",
+            isActive: activeArea === "sit" && view !== "tickets",
             onClick: () => handleItemClick(() => onNavigate("sit")),
+          },
+          {
+            id: "adm-service-tickets",
+            label: "Service Tickets",
+            shortLabel: "Tickets",
+            icon: LifeBuoy,
+            isActive: view === "tickets",
+            onClick: () => handleItemClick(() => onOpenTickets ? onOpenTickets() : onNavigate("sit", "tickets")),
           },
         ],
       },
@@ -676,7 +691,7 @@ export function RoleAwareSidebar({
           },
           {
             id: "adm-budgets",
-            label: "Department Budgets & Expenses",
+            label: "Budgets & Expenses",
             shortLabel: "Budgets",
             icon: Wallet,
             isActive: view === "budgets",
@@ -684,16 +699,16 @@ export function RoleAwareSidebar({
           },
           {
             id: "adm-profile",
-            label: "Employee Self-Service (My Profile)",
-            shortLabel: "My Profile",
+            label: "My Profile",
+            shortLabel: "Profile",
             icon: UserCheck,
             isActive: view === "profile",
             onClick: () => handleItemClick(() => onOpenProfile?.()),
           },
           {
             id: "adm-communication",
-            label: "Team Communication & Polls",
-            shortLabel: "Chat & Polls",
+            label: "Team Chat",
+            shortLabel: "Chat",
             icon: MessageSquare,
             isActive: view === "communication",
             onClick: () => handleItemClick(() => onOpenCommunication?.()),
@@ -706,6 +721,14 @@ export function RoleAwareSidebar({
             badge: openTaskCounts["hrops"],
             isActive: activeArea === "hrops",
             onClick: () => handleItemClick(() => onNavigate("hrops")),
+          },
+          {
+            id: "adm-hrops-admin",
+            label: "HR Administration Hub",
+            shortLabel: "HR Admin",
+            icon: UserCheck,
+            isActive: view === "hr_admin",
+            onClick: () => handleItemClick(() => onOpenHrAdmin ? onOpenHrAdmin() : onNavigate("hrops", "hr_admin")),
           },
           {
             id: "adm-fin",
@@ -1001,6 +1024,33 @@ export function RoleAwareSidebar({
               onClick: () => handleItemClick(() => onNavigate("qa")),
             },
           ];
+        case "sit":
+          return [
+            {
+              id: "sit-hub",
+              label: "Service and IT Infrastructure Hub",
+              shortLabel: "SIT Hub",
+              icon: Bell,
+              isActive: activeArea === "sit" && view === "queue",
+              onClick: () => handleItemClick(() => onNavigate("sit", "queue")),
+            },
+            {
+              id: "sit-tickets",
+              label: "Service and Support Tickets",
+              shortLabel: "Tickets",
+              icon: LifeBuoy,
+              isActive: view === "tickets",
+              onClick: () => handleItemClick(() => onOpenTickets ? onOpenTickets() : onNavigate("sit", "tickets")),
+            },
+            {
+              id: "sit-assets",
+              label: "Governed IT Assets Register",
+              shortLabel: "IT Assets",
+              icon: Laptop,
+              isActive: view === "inventory",
+              onClick: () => handleItemClick(() => onNavigate("sit", "inventory")),
+            },
+          ];
         case "mech":
           return [
             {
@@ -1087,8 +1137,16 @@ export function RoleAwareSidebar({
               label: "OEM Delivery Dashboard",
               shortLabel: "Dashboard",
               icon: CheckCircle2,
-              isActive: activeArea === "home",
+              isActive: activeArea === "home" && view !== "tickets",
               onClick: () => handleItemClick(() => onNavigate("home")),
+            },
+            {
+              id: "client-tickets",
+              label: "Service and Support Tickets",
+              shortLabel: "Tickets",
+              icon: LifeBuoy,
+              isActive: view === "tickets",
+              onClick: () => handleItemClick(() => onOpenTickets ? onOpenTickets() : onNavigate("home", "tickets")),
             },
           ],
         },
@@ -1212,7 +1270,7 @@ export function RoleAwareSidebar({
           },
           {
             id: "adm-budgets",
-            label: "Department Budgets & Expenses",
+            label: "Budgets & Expenses",
             shortLabel: "Budgets",
             icon: Wallet,
             isActive: view === "budgets",
@@ -1220,24 +1278,24 @@ export function RoleAwareSidebar({
           },
           {
             id: "adm-profile",
-            label: "Employee Self-Service (My Profile)",
-            shortLabel: "My Profile",
+            label: "My Profile",
+            shortLabel: "Profile",
             icon: UserCheck,
             isActive: view === "profile",
             onClick: () => handleItemClick(() => onOpenProfile?.()),
           },
           {
             id: "adm-communication",
-            label: "Team Communication & Polls",
-            shortLabel: "Chat & Polls",
+            label: "Team Chat",
+            shortLabel: "Chat",
             icon: MessageSquare,
             isActive: view === "communication",
             onClick: () => handleItemClick(() => onOpenCommunication?.()),
           },
           {
             id: "dept-ref-training-lifecycle",
-            label: "Help & Training: AI4T Lifecycle Walkthrough",
-            shortLabel: "Training",
+            label: "Knowledge Base",
+            shortLabel: "Knowledge Base",
             icon: PlayCircle,
             isActive: false,
             onClick: () => handleItemClick(() => onOpenAi4tLifecycle?.()),
