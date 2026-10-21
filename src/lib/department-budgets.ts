@@ -87,23 +87,23 @@ export interface ExpenseRequest {
   amount: number;
   currency: string;
   purpose: string;
-  projectId?: string | null; // optional
+  projectId?: string | null | undefined; // optional
   requiredDate: string;
   status: "Draft" | "Pending_Dept_Review" | "Pending_Finance" | "Pending_Admin" | "Approved" | "Rejected" | "Returned" | "Settled";
   currentApproverRole: string; // e.g. "FIN Lead", "Executive Admin"
-  alternateApprover?: string;  // designated when requester is lead or Admin
-  iatfClause?: string;        // e.g. "IATF 16949 §8.3.4"
-  receiptEvidence?: string[];  // uploaded receipts or attachment filenames
-  travelDetail?: TravelDetail;
-  assetDetail?: AssetRequestDetail;
+  alternateApprover?: string | undefined;  // designated when requester is lead or Admin
+  iatfClause?: string | undefined;        // e.g. "IATF 16949 §8.3.4"
+  receiptEvidence?: string[] | undefined;  // uploaded receipts or attachment filenames
+  travelDetail?: TravelDetail | undefined;
+  assetDetail?: AssetRequestDetail | undefined;
   claimSettlement?: {
     actualAmount: number;
     advanceDeducted: number;
     netPayable: number;
     financePostingRef: string;
     settledAt: string;
-  };
-  comments?: string;
+  } | undefined;
+  comments?: string | undefined;
   createdAt: string;
   updatedAt: string;
 }
@@ -113,15 +113,16 @@ export function calculateAvailableBudget(allocation: DepartmentAllocation): numb
   return allocation.allocatedAmount - allocation.spentAmount - allocation.committedAmount;
 }
 
-/** Check if user can approve the request, enforcing no self-approval */
+/** Check if user can approve the request, enforcing no self-approval and stage requirements */
 export function canUserApproveExpense(
   request: ExpenseRequest,
-  userPersona: { kind: string; person: string; departmentId?: string; id?: string }
-): { canApprove: boolean; reason?: string } {
-  // Rule 1: No requester approves their own request
+  userPersona: { kind: string; person: string; departmentId?: string | undefined; id?: string | undefined }
+): { canApprove: boolean; reason?: string | undefined } {
+  // Rule 1: No requester approves their own request (stable ID + person name comparison)
   if (
+    (userPersona.id && request.requesterId === userPersona.id) ||
     request.requesterName.toLowerCase().includes(userPersona.person.toLowerCase()) ||
-    request.requesterId === userPersona.id
+    (userPersona.person && request.requesterName.toLowerCase() === userPersona.person.toLowerCase())
   ) {
     return {
       canApprove: false,
@@ -134,26 +135,252 @@ export function canUserApproveExpense(
     return { canApprove: false, reason: "Client accounts do not have internal budget authority." };
   }
 
-  // Rule 3: Admin has universal approval authority (except for own requests)
+  // Rule 3: Terminal states
+  if (request.status === "Approved" || request.status === "Rejected" || request.status === "Settled") {
+    return { canApprove: false, reason: `Request is already ${request.status}.` };
+  }
+
+  // Rule 4: Admin has universal approval authority (except for own requests)
   if (userPersona.kind === "admin") {
     return { canApprove: true };
   }
 
-  // Rule 4: Finance Lead can approve at Pending_Finance stage
-  if (userPersona.departmentId === "fin" && request.status === "Pending_Finance") {
-    return { canApprove: true };
+  // Rule 5: Department Lead can approve for their own department at Pending_Dept_Review
+  if (request.status === "Pending_Dept_Review") {
+    if (
+      userPersona.kind === "lead" &&
+      userPersona.departmentId?.toLowerCase() === request.requesterDept.toLowerCase()
+    ) {
+      return { canApprove: true };
+    }
+    return { canApprove: false, reason: `Requires ${request.requesterDept} Lead approval.` };
   }
 
-  // Rule 5: Department Lead can approve for their own department at Pending_Dept_Review
-  if (
-    userPersona.kind === "lead" &&
-    userPersona.departmentId?.toLowerCase() === request.requesterDept.toLowerCase() &&
-    request.status === "Pending_Dept_Review"
-  ) {
-    return { canApprove: true };
+  // Rule 6: Finance Lead can approve at Pending_Finance stage
+  if (request.status === "Pending_Finance") {
+    if (
+      (userPersona.kind === "lead" || userPersona.kind === "admin") &&
+      userPersona.departmentId?.toLowerCase() === "fin"
+    ) {
+      return { canApprove: true };
+    }
+    return { canApprove: false, reason: "Requires Finance Lead (FIN) sign-off." };
+  }
+
+  // Rule 7: Admin review stage
+  if (request.status === "Pending_Admin") {
+    if (userPersona.kind === "admin") {
+      return { canApprove: true };
+    }
+    return { canApprove: false, reason: "Requires Executive Admin sign-off." };
   }
 
   return { canApprove: false, reason: `Requires ${request.currentApproverRole} approval.` };
+}
+
+/**
+ * Executes a transactional expense state transition and ledger commitment:
+ * - Checks approval authority & non-self approval
+ * - Staged transition: Pending_Dept_Review -> Pending_Finance -> (Pending_Admin if > 100k) -> Approved
+ * - Ledger check: if transitioning to Approved, verifies available balance in exact allocation
+ * - Rejects with overdraft error if amount > available
+ */
+export function executeExpenseApproval(
+  request: ExpenseRequest,
+  allocations: DepartmentAllocation[],
+  userPersona: { kind: string; person: string; departmentId?: string | undefined; id?: string | undefined }
+): {
+  success: boolean;
+  nextRequest?: ExpenseRequest | undefined;
+  updatedAllocations?: DepartmentAllocation[] | undefined;
+  message: string;
+} {
+  const check = canUserApproveExpense(request, userPersona);
+  if (!check.canApprove) {
+    return { success: false, message: `Approval Denied: ${check.reason}` };
+  }
+
+  // Find exact allocation
+  const matchingAllocationIndex = allocations.findIndex((a) => {
+    const deptMatch = a.departmentCode.toLowerCase() === request.requesterDept.toLowerCase();
+    const catMatch = a.category === request.category;
+    if (!deptMatch || !catMatch) return false;
+    if (request.projectId && a.projectId) {
+      return a.projectId === request.projectId;
+    }
+    return true;
+  });
+
+  if (matchingAllocationIndex === -1) {
+    return {
+      success: false,
+      message: `Approval Denied: No budget allocation found for department ${request.requesterDept} and category "${request.category}".`,
+    };
+  }
+
+  const targetAllocation = allocations[matchingAllocationIndex];
+  if (!targetAllocation) {
+    return {
+      success: false,
+      message: `Approval Denied: Target allocation not found for ${request.requesterDept} - ${request.category}.`,
+    };
+  }
+  const available = calculateAvailableBudget(targetAllocation);
+
+  // Determine next stage
+  let nextStatus: ExpenseRequest["status"] = "Approved";
+  let nextApprover = "None (Approved)";
+
+  if (request.status === "Pending_Dept_Review") {
+    nextStatus = "Pending_Finance";
+    nextApprover = "FIN Lead";
+  } else if (request.status === "Pending_Finance") {
+    if (request.amount > 100000 && userPersona.kind !== "admin") {
+      nextStatus = "Pending_Admin";
+      nextApprover = "Executive Admin";
+    } else {
+      nextStatus = "Approved";
+      nextApprover = "None (Approved)";
+    }
+  } else if (request.status === "Pending_Admin") {
+    nextStatus = "Approved";
+    nextApprover = "None (Approved)";
+  }
+
+  // If next status is Approved, check budget balance and commit atomically
+  let newAllocations = allocations;
+  if (nextStatus === "Approved") {
+    if (request.amount > available) {
+      return {
+        success: false,
+        message: `Approval Denied: Overdraft. Requested amount (₹${request.amount.toLocaleString()}) exceeds available budget (₹${available.toLocaleString()}) for ${targetAllocation.departmentCode} - ${targetAllocation.category}.`,
+      };
+    }
+
+    newAllocations = allocations.map((alloc, idx) => {
+      if (idx !== matchingAllocationIndex) return alloc;
+      return {
+        ...alloc,
+        committedAmount: alloc.committedAmount + request.amount,
+        version: alloc.version + 1,
+      };
+    });
+  }
+
+  const nextRequest: ExpenseRequest = {
+    ...request,
+    status: nextStatus,
+    currentApproverRole: nextApprover,
+    comments: `Advanced to ${nextStatus} by ${userPersona.person} (${userPersona.kind}).`,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return {
+    success: true,
+    nextRequest,
+    updatedAllocations: newAllocations,
+    message: nextStatus === "Approved"
+      ? `Request ${request.reference} approved. ₹${request.amount.toLocaleString()} committed to ${targetAllocation.departmentCode} allocation.`
+      : `Request ${request.reference} advanced to ${nextStatus} (${nextApprover}).`,
+  };
+}
+
+/**
+ * Rejects an expense request with authorization check
+ */
+export function executeExpenseRejection(
+  request: ExpenseRequest,
+  userPersona: { kind: string; person: string; departmentId?: string | undefined; id?: string | undefined },
+  reason?: string
+): { success: boolean; nextRequest?: ExpenseRequest | undefined; message: string } {
+  if (userPersona.kind === "client") {
+    return { success: false, message: "Client accounts do not have approval or rejection authority." };
+  }
+
+  const canReview =
+    userPersona.kind === "admin" ||
+    (userPersona.kind === "lead" && userPersona.departmentId?.toLowerCase() === request.requesterDept.toLowerCase()) ||
+    (userPersona.kind === "lead" && userPersona.departmentId?.toLowerCase() === "fin");
+
+  if (!canReview) {
+    return { success: false, message: "Unauthorized to reject this request." };
+  }
+
+  const nextRequest: ExpenseRequest = {
+    ...request,
+    status: "Rejected",
+    currentApproverRole: "None",
+    comments: `Rejected by ${userPersona.person}: ${reason || "Does not meet policy criteria."}`,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return {
+    success: true,
+    nextRequest,
+    message: `Request ${request.reference} rejected.`,
+  };
+}
+
+/**
+ * Creates a new expense request with staged approver routing
+ */
+export function createExpenseRequest(
+  input: {
+    category: BudgetCategory;
+    amount: number;
+    currency?: string | undefined;
+    purpose: string;
+    projectId?: string | null | undefined;
+    requiredDate: string;
+    travelDetail?: TravelDetail | undefined;
+    assetDetail?: AssetRequestDetail | undefined;
+    receiptEvidence?: string[] | undefined;
+  },
+  requesterPersona: { kind: string; person: string; departmentId?: string | undefined; id?: string | undefined }
+): ExpenseRequest {
+  const dept = requesterPersona.departmentId?.toUpperCase() || "OPS";
+  const isLead = requesterPersona.kind === "lead";
+  const isFin = requesterPersona.departmentId?.toLowerCase() === "fin";
+  const isAdmin = requesterPersona.kind === "admin";
+
+  let initialStatus: ExpenseRequest["status"] = "Pending_Dept_Review";
+  let currentApprover = `${dept} Lead`;
+  let alternateApprover = "Executive Admin";
+
+  if (isAdmin) {
+    initialStatus = "Pending_Finance";
+    currentApprover = "FIN Lead";
+  } else if (isFin) {
+    initialStatus = "Pending_Admin";
+    currentApprover = "Executive Admin";
+  } else if (isLead) {
+    initialStatus = "Pending_Finance";
+    currentApprover = "FIN Lead";
+    alternateApprover = "Executive Admin";
+  }
+
+  return {
+    id: `EXP-2026-${Date.now().toString().slice(-4)}`,
+    reference: `EXP-${dept}-2026-${Math.floor(100 + Math.random() * 900)}`,
+    requesterId: requesterPersona.id || "usr-current",
+    requesterName: requesterPersona.person,
+    requesterDept: dept,
+    category: input.category,
+    amount: input.amount,
+    currency: input.currency || "INR",
+    purpose: input.purpose,
+    projectId: input.projectId || null,
+    requiredDate: input.requiredDate,
+    status: initialStatus,
+    currentApproverRole: currentApprover,
+    alternateApprover,
+    iatfClause: "IATF 16949 §8.3.4",
+    ...(input.travelDetail ? { travelDetail: input.travelDetail } : {}),
+    ...(input.assetDetail ? { assetDetail: input.assetDetail } : {}),
+    ...(input.receiptEvidence ? { receiptEvidence: input.receiptEvidence } : {}),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 /** Default Active Budget Period */

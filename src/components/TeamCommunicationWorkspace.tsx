@@ -24,6 +24,8 @@ import {
   type SharedChatPoll,
   DEFAULT_CHANNELS,
   DEFAULT_CHAT_MESSAGES,
+  canUserAccessChannel,
+  voteOnChatPoll,
 } from "@/lib/team-communication";
 import type { Persona } from "@/components/RoleAwareSidebar";
 
@@ -38,8 +40,21 @@ export function TeamCommunicationWorkspace({
   onOpenProjectDetail,
   onOpenDocument,
 }: TeamCommunicationWorkspaceProps) {
-  const [channels] = useState<TeamChannel[]>(DEFAULT_CHANNELS);
-  const [activeChannelId, setActiveChannelId] = useState<string>("chan-general");
+  if (persona.kind === "client") {
+    return (
+      <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-900/60 dark:bg-rose-950/20">
+        <Lock className="mx-auto size-8 text-rose-600 dark:text-rose-400 mb-2" />
+        <h3 className="text-sm font-bold text-foreground">Access Restricted — Internal Channels</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+          Team communication channels, engineering threads, and live polls are restricted to internal employees and leads. Client communication occurs through the OEM Delivery Dashboard.
+        </p>
+      </div>
+    );
+  }
+
+  // Scope channels by authenticated persona membership
+  const accessibleChannels = DEFAULT_CHANNELS.filter((c) => canUserAccessChannel(c, persona));
+  const [activeChannelId, setActiveChannelId] = useState<string>(() => accessibleChannels[0]?.id || "chan-general");
   const [messages, setMessages] = useState<SharedChatMessage[]>(DEFAULT_CHAT_MESSAGES);
   const [inputText, setInputText] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
@@ -53,17 +68,17 @@ export function TeamCommunicationWorkspace({
   const [pollOpt2, setPollOpt2] = useState("");
   const [pollOpt3, setPollOpt3] = useState("");
 
-  const activeChannel = channels.find((c) => c.id === activeChannelId) || channels[0];
-  const channelMessages = messages.filter((m) => m.channelId === activeChannelId);
+  const activeChannel = accessibleChannels.find((c) => c.id === activeChannelId) || accessibleChannels[0];
+  const channelMessages = messages.filter((m) => m.channelId === (activeChannel?.id || activeChannelId));
 
   // Send Message
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !activeChannel) return;
 
     const newMsg: SharedChatMessage = {
       id: `MSG-${Date.now().toString().slice(-4)}`,
-      channelId: activeChannelId,
+      channelId: activeChannel.id,
       senderId: persona.id || "usr-current",
       senderName: persona.person,
       senderDept: persona.departmentId?.toUpperCase() || "ADMIN",
@@ -107,7 +122,7 @@ export function TeamCommunicationWorkspace({
     setReplyingToMessageId(null);
   };
 
-  // Vote on Poll
+  // Vote on Poll with strict closed-poll guard
   const handleVote = (messageId: string, optionId: string) => {
     const userId = persona.id || persona.person;
 
@@ -115,23 +130,12 @@ export function TeamCommunicationWorkspace({
       prev.map((m) => {
         if (m.id !== messageId || !m.poll) return m;
 
-        const currentVote = m.poll.voters[userId];
-        if (currentVote === optionId) return m; // Already voted for this option
-
-        const updatedOptions = m.poll.options.map((opt) => {
-          let delta = 0;
-          if (opt.id === optionId) delta += 1;
-          if (opt.id === currentVote) delta -= 1;
-          return { ...opt, votes: Math.max(0, opt.votes + delta) };
-        });
+        const result = voteOnChatPoll(m.poll, optionId, userId);
+        if (!result.success || !result.poll) return m;
 
         return {
           ...m,
-          poll: {
-            ...m.poll,
-            options: updatedOptions,
-            voters: { ...m.poll.voters, [userId]: optionId },
-          },
+          poll: result.poll,
         };
       })
     );
@@ -183,6 +187,21 @@ export function TeamCommunicationWorkspace({
 
   return (
     <div className="space-y-4">
+      {/* Sandbox Demo Seed Notice */}
+      <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+            DEMO / Sandbox Seed
+          </span>
+          <span>
+            Team communication channels, technical threads, and live polls loaded for active persona. Channel membership rules are enforced.
+          </span>
+        </div>
+        <div className="text-[11px] font-mono text-muted-foreground">
+          Scoped Persona: <strong>{persona.person}</strong> ({persona.label})
+        </div>
+      </div>
+
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-3 border-b border-border/40">
         <div>
@@ -211,12 +230,12 @@ export function TeamCommunicationWorkspace({
         {/* Left: Channels List */}
         <div className="p-3 rounded-xl bg-card border border-border shadow-sm space-y-3">
           <div className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider px-2">
-            <span>Channels ({channels.length})</span>
+            <span>Channels ({accessibleChannels.length})</span>
             <Users className="w-3.5 h-3.5" />
           </div>
 
           <div className="space-y-1">
-            {channels.map((chan) => (
+            {accessibleChannels.map((chan) => (
               <button
                 key={chan.id}
                 onClick={() => setActiveChannelId(chan.id)}
@@ -247,15 +266,16 @@ export function TeamCommunicationWorkspace({
             <div>
               <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
                 <Hash className="w-4 h-4 text-primary" />
-                <span>{activeChannel.name}</span>
+                <span>{activeChannel?.name ?? "General"}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">{activeChannel.topic}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{activeChannel?.topic ?? ""}</p>
             </div>
 
             <Button
               size="sm"
               variant="outline"
               onClick={() => setIsPollModalOpen(true)}
+              disabled={!activeChannel}
               className="h-7 text-xs gap-1.5 font-semibold text-primary"
             >
               <BarChart2 className="w-3.5 h-3.5" />
@@ -399,12 +419,13 @@ export function TeamCommunicationWorkspace({
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                placeholder={`Message in ${activeChannel.name}...`}
+                placeholder={`Message in ${activeChannel?.name ?? "channel"}...`}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
+                disabled={!activeChannel}
                 className="flex-1 h-9 px-3 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
               />
-              <Button type="submit" size="sm" className="h-9 px-3.5 bg-primary text-primary-foreground font-semibold gap-1.5">
+              <Button type="submit" size="sm" disabled={!activeChannel} className="h-9 px-3.5 bg-primary text-primary-foreground font-semibold gap-1.5">
                 <Send className="w-3.5 h-3.5" />
                 Send
               </Button>

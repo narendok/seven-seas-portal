@@ -21,6 +21,7 @@ import {
   Mail,
   MapPin,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,6 +38,7 @@ import {
   DEFAULT_ASSIGNED_TRAININGS,
   DEFAULT_ASSIGNED_FORMS,
   DEFAULT_EMPLOYEE_ASSETS,
+  resolveEmployeeProfile,
 } from "@/lib/employee-services";
 import type { Persona } from "@/components/RoleAwareSidebar";
 
@@ -45,19 +47,20 @@ interface EmployeeSelfServiceWorkspaceProps {
 }
 
 export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWorkspaceProps) {
-  // Resolve profile based on persona email or fallback
-  const userEmail = persona.person.toLowerCase().includes("avery")
-    ? "avery.vale@example.com"
-    : persona.person.toLowerCase().includes("priya sharma")
-    ? "priya.sharma@example.com"
-    : persona.person.toLowerCase().includes("jordan")
-    ? "jordan.blake@example.com"
-    : persona.person.toLowerCase().includes("morgan")
-    ? "morgan.reed@example.com"
-    : "admin@example.com";
+  // Resolve profile based on authenticated persona. FAILS CLOSED if unrecognized or Client!
+  const profile = resolveEmployeeProfile(persona);
 
-  const profile: EmployeeProfile =
-    DEFAULT_EMPLOYEE_PROFILES[userEmail] || DEFAULT_EMPLOYEE_PROFILES["admin@example.com"];
+  if (!profile || persona.kind === "client") {
+    return (
+      <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-900/60 dark:bg-rose-950/20">
+        <Lock className="mx-auto size-8 text-rose-600 dark:text-rose-400 mb-2" />
+        <h3 className="text-sm font-bold text-foreground">Access Restricted — No Linked Employee Profile</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+          Self-service HR letters, training compliance, and asset custody are restricted to authenticated internal employees. Unrecognized accounts and client personas fail closed.
+        </p>
+      </div>
+    );
+  }
 
   const [activeTab, setActiveTab] = useState<
     "details" | "letters" | "policies" | "training" | "forms" | "assets"
@@ -69,10 +72,15 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
   const [forms, setForms] = useState<AssignedFormSurvey[]>(DEFAULT_ASSIGNED_FORMS);
   const [assets, setAssets] = useState<EmployeeAssignedAsset[]>(DEFAULT_EMPLOYEE_ASSETS);
 
-  // Modal State for Letter / Policy / Quiz
+  // Scoped Letters for the authenticated employee
+  const employeeLetters = letters.filter((l) => l.employeeId === profile.id);
+
+  // Modal State for Letter / Policy / Quiz / Form
   const [selectedLetter, setSelectedLetter] = useState<EmployeeLetter | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<AssignedPolicy | null>(null);
   const [selectedTraining, setSelectedTraining] = useState<AssignedTraining | null>(null);
+  const [selectedForm, setSelectedForm] = useState<AssignedFormSurvey | null>(null);
+  const [formAnswers, setFormAnswers] = useState<Record<string, any>>({});
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
@@ -87,7 +95,7 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
       )
     );
     setSelectedPolicy(null);
-    setNoticeMessage(`Policy revision successfully acknowledged and bound to your employee record.`);
+    setNoticeMessage(`Policy revision successfully acknowledged and bound to employee ${profile.employeeCode}.`);
   };
 
   // Submit Quiz
@@ -112,17 +120,61 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
               status: scorePct >= 80 ? "Completed" : "In_Progress",
               scorePct,
               completedAt: new Date().toISOString(),
-              certificateRef: scorePct >= 80 ? `CERT-${Date.now().toString().slice(-4)}` : undefined,
+              certificateRef: scorePct >= 80 ? `CERT-${profile.employeeCode}-${t.courseCode}-2026` : undefined,
             }
           : t
       )
     );
     setQuizSubmitted(true);
-    setNoticeMessage(`Assessment completed with score: ${scorePct}%. Training status updated.`);
+    setNoticeMessage(`Assessment completed with score: ${scorePct}%. Training status updated for ${profile.name}.`);
+  };
+
+  // Handle Form Survey Submission with Actual Answer Collection
+  const handleSubmitForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedForm) return;
+
+    // Validate that required questions have answers
+    const missing = selectedForm.questions.filter((q) => q.required && !formAnswers[q.id]);
+    if (missing.length > 0) {
+      setNoticeMessage(`Please answer all required questions: ${missing.map((m) => m.label).join(", ")}`);
+      return;
+    }
+
+    setForms((prev) =>
+      prev.map((f) =>
+        f.id === selectedForm.id
+          ? {
+              ...f,
+              status: "Submitted",
+              submittedAt: new Date().toISOString(),
+              answers: formAnswers,
+            }
+          : f
+      )
+    );
+    setNoticeMessage(`Survey ${selectedForm.formCode} answers recorded and bound to ${profile.employeeCode}.`);
+    setSelectedForm(null);
+    setFormAnswers({});
   };
 
   return (
     <div className="space-y-6">
+      {/* Sandbox Demo Seed Notice */}
+      <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+            DEMO / Sandbox Seed
+          </span>
+          <span>
+            Self-service HR profile, letters, compliance acknowledgments, and asset custody loaded for active persona.
+          </span>
+        </div>
+        <div className="text-[11px] font-mono text-muted-foreground">
+          Employee ID: <strong>{profile.employeeCode}</strong> · {profile.name}
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-border/40">
         <div>
@@ -303,37 +355,43 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
             </h3>
           </div>
           <div className="divide-y divide-border text-xs">
-            {letters.map((ltr) => (
-              <div key={ltr.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-muted/20 transition-colors">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-foreground">{ltr.title}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-secondary text-secondary-foreground font-semibold">
-                      {ltr.referenceNumber}
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      {ltr.status}
-                    </span>
+            {employeeLetters.length > 0 ? (
+              employeeLetters.map((ltr) => (
+                <div key={ltr.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-muted/20 transition-colors">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground">{ltr.title}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-secondary text-secondary-foreground font-semibold">
+                        {ltr.referenceNumber}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        {ltr.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-2xl">{ltr.summary}</p>
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      Effective: {ltr.effectiveDate} · Authorized Signer: {ltr.signerName}
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-2xl">{ltr.summary}</p>
-                  <div className="text-[10px] text-muted-foreground mt-1">
-                    Effective: {ltr.effectiveDate} · Authorized Signer: {ltr.signerName}
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedLetter(ltr)}
-                    className="h-7 text-xs gap-1"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    Inspect Letter
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedLetter(ltr)}
+                      className="h-7 text-xs gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Inspect Letter
+                    </Button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No official letters currently recorded for {profile.name} ({profile.employeeCode}).
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -528,10 +586,8 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
                     <Button
                       size="sm"
                       onClick={() => {
-                        setForms((prev) =>
-                          prev.map((f) => (f.id === frm.id ? { ...f, status: "Submitted" } : f))
-                        );
-                        setNoticeMessage(`Survey ${frm.formCode} submitted successfully.`);
+                        setSelectedForm(frm);
+                        setFormAnswers(frm.answers || {});
                       }}
                       className="h-7 text-xs bg-primary text-primary-foreground font-semibold"
                     >
@@ -639,6 +695,82 @@ export function EmployeeSelfServiceWorkspace({ persona }: EmployeeSelfServiceWor
                 Close
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Form / Survey Response Modal */}
+      {selectedForm && (
+        <Dialog open={!!selectedForm} onOpenChange={() => setSelectedForm(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-sm font-bold">{selectedForm.title}</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Code: {selectedForm.formCode} · {selectedForm.isAnonymous ? "100% Anonymous" : `Bound to ${profile.employeeCode}`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSubmitForm} className="space-y-4 mt-2 text-xs">
+              {selectedForm.questions.map((q) => (
+                <div key={q.id} className="space-y-1.5">
+                  <label className="font-semibold text-foreground flex items-center justify-between">
+                    <span>{q.label}</span>
+                    {q.required && <span className="text-[10px] text-rose-500 font-bold">*Required</span>}
+                  </label>
+
+                  {q.type === "choice" && q.options ? (
+                    <select
+                      value={formAnswers[q.id] || ""}
+                      onChange={(e) => setFormAnswers({ ...formAnswers, [q.id]: e.target.value })}
+                      required={q.required}
+                      className="w-full h-8 px-2 rounded border border-input bg-background text-xs"
+                    >
+                      <option value="">Select option...</option>
+                      {q.options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : q.type === "rating" ? (
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setFormAnswers({ ...formAnswers, [q.id]: val })}
+                          className={`w-8 h-8 rounded border text-xs font-bold transition-all ${
+                            formAnswers[q.id] === val
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "border-border hover:bg-muted/40"
+                          }`}
+                        >
+                          {val}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={formAnswers[q.id] || ""}
+                      onChange={(e) => setFormAnswers({ ...formAnswers, [q.id]: e.target.value })}
+                      required={q.required}
+                      placeholder="Your response..."
+                      className="w-full h-8 px-2.5 rounded border border-input bg-background text-xs"
+                    />
+                  )}
+                </div>
+              ))}
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <Button type="button" size="sm" variant="outline" onClick={() => setSelectedForm(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" className="bg-primary text-primary-foreground font-semibold">
+                  Submit Responses
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       )}

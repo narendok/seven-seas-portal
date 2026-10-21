@@ -28,6 +28,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Award,
+  Wallet,
+  MessageSquare,
   FileSpreadsheet,
   Scale,
   UserCheck,
@@ -126,6 +128,12 @@ export type RoleAwareSidebarProps = {
       | "ingestion_gate"
       | "records"
       | "deliverables"
+      | "vault"
+      | "analysis"
+      | "approvals"
+      | "budgets"
+      | "profile"
+      | "communication"
   ) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   onOpenAi4tLifecycle?: (() => void) | undefined;
@@ -667,6 +675,30 @@ export function RoleAwareSidebar({
             onClick: () => handleItemClick(() => onOpenDirectory?.()),
           },
           {
+            id: "adm-budgets",
+            label: "Department Budgets & Expenses",
+            shortLabel: "Budgets",
+            icon: Wallet,
+            isActive: view === "budgets",
+            onClick: () => handleItemClick(() => onOpenBudgets?.()),
+          },
+          {
+            id: "adm-profile",
+            label: "Employee Self-Service (My Profile)",
+            shortLabel: "My Profile",
+            icon: UserCheck,
+            isActive: view === "profile",
+            onClick: () => handleItemClick(() => onOpenProfile?.()),
+          },
+          {
+            id: "adm-communication",
+            label: "Team Communication & Polls",
+            shortLabel: "Chat & Polls",
+            icon: MessageSquare,
+            isActive: view === "communication",
+            onClick: () => handleItemClick(() => onOpenCommunication?.()),
+          },
+          {
             id: "adm-hrops",
             label: "HR & Operations (HR/OPS)",
             shortLabel: "HR/OPS",
@@ -1177,6 +1209,30 @@ export function RoleAwareSidebar({
             icon: Users,
             isActive: false,
             onClick: () => handleItemClick(() => onOpenDirectory?.()),
+          },
+          {
+            id: "adm-budgets",
+            label: "Department Budgets & Expenses",
+            shortLabel: "Budgets",
+            icon: Wallet,
+            isActive: view === "budgets",
+            onClick: () => handleItemClick(() => onOpenBudgets?.()),
+          },
+          {
+            id: "adm-profile",
+            label: "Employee Self-Service (My Profile)",
+            shortLabel: "My Profile",
+            icon: UserCheck,
+            isActive: view === "profile",
+            onClick: () => handleItemClick(() => onOpenProfile?.()),
+          },
+          {
+            id: "adm-communication",
+            label: "Team Communication & Polls",
+            shortLabel: "Chat & Polls",
+            icon: MessageSquare,
+            isActive: view === "communication",
+            onClick: () => handleItemClick(() => onOpenCommunication?.()),
           },
           {
             id: "dept-ref-training-lifecycle",

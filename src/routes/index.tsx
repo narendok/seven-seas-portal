@@ -2264,6 +2264,9 @@ function Portal() {
     | "deliverables"
     | "vault"
     | "analysis"
+    | "budgets"
+    | "profile"
+    | "communication"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const allTeamMembers = useMemo(() => [...(portal?.demoLoaded ? demoTeam : []), ...(portal?.teamMembers ?? [])], [portal?.demoLoaded, portal?.teamMembers]);
@@ -3463,7 +3466,12 @@ function Portal() {
                 setSelectedProjectId(pId);
                 setView("project");
               }}
-              onOpenDocument={openDocument}
+              onOpenDocument={(docId: string) => {
+                const doc = portal.documents.find(
+                  (d) => d.id === docId || d.title === docId || d.part === docId
+                );
+                if (doc) openDocument(doc);
+              }}
             />
 
           ) : effectiveArea === "home" && view === "assignee" && selectedAssignee ? (
@@ -11067,6 +11075,9 @@ function MobileMenu({
   onOpenWizard,
   onOpenAssetCatalog,
   onOpenApprovals,
+  onOpenBudgets,
+  onOpenProfile,
+  onOpenCommunication,
   onOpenAlerts,
   onOpenHistory,
   setupStep,
@@ -11097,6 +11108,9 @@ function MobileMenu({
   onOpenWizard?: (() => void) | undefined;
   onOpenAssetCatalog?: (() => void) | undefined;
   onOpenApprovals?: (() => void) | undefined;
+  onOpenBudgets?: (() => void) | undefined;
+  onOpenProfile?: (() => void) | undefined;
+  onOpenCommunication?: (() => void) | undefined;
   onOpenAlerts?: (() => void) | undefined;
   onOpenHistory?: (() => void) | undefined;
   setupStep?: number | undefined;
@@ -11131,9 +11145,9 @@ function MobileMenu({
           onOpenWizard={onOpenWizard}
           onOpenAssetCatalog={onOpenAssetCatalog}
           onOpenApprovals={onOpenApprovals}
-          onOpenBudgets={() => { setView("budgets"); onClose(); }}
-          onOpenProfile={() => { setView("profile"); onClose(); }}
-          onOpenCommunication={() => { setView("communication"); onClose(); }}
+          onOpenBudgets={onOpenBudgets}
+          onOpenProfile={onOpenProfile}
+          onOpenCommunication={onOpenCommunication}
           onOpenAlerts={onOpenAlerts}
           onOpenHistory={onOpenHistory}
           setupStep={setupStep}

@@ -31,6 +31,9 @@ import {
   DEFAULT_EXPENSE_REQUESTS,
   calculateAvailableBudget,
   canUserApproveExpense,
+  executeExpenseApproval,
+  executeExpenseRejection,
+  createExpenseRequest,
 } from "@/lib/department-budgets";
 import type { Persona } from "@/components/RoleAwareSidebar";
 
@@ -45,6 +48,18 @@ export function DepartmentBudgetsWorkspace({
   selectedProjectId,
   onOpenProjectDetail,
 }: DepartmentBudgetsWorkspaceProps) {
+  if (persona.kind === "client") {
+    return (
+      <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center dark:border-rose-900/60 dark:bg-rose-950/20">
+        <Lock className="mx-auto size-8 text-rose-600 dark:text-rose-400 mb-2" />
+        <h3 className="text-sm font-bold text-foreground">Access Restricted — Internal Budgets</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+          Department budgets and expense claims are internal operational controls. Client accounts do not have access to internal company finances.
+        </p>
+      </div>
+    );
+  }
+
   const [allocations, setAllocations] = useState<DepartmentAllocation[]>(DEFAULT_DEPARTMENT_ALLOCATIONS);
   const [expenseRequests, setExpenseRequests] = useState<ExpenseRequest[]>(DEFAULT_EXPENSE_REQUESTS);
   const [activeTab, setActiveTab] = useState<"allocations" | "requests">("requests");
@@ -67,9 +82,17 @@ export function DepartmentBudgetsWorkspace({
   const [assetQty, setAssetQty] = useState("1");
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  // Filtered Allocations
+  const isFinanceLead = persona.departmentId?.toLowerCase() === "fin";
+  const isAdmin = persona.kind === "admin";
+  const userDeptCode = persona.departmentId?.toUpperCase();
+
+  // Filtered Allocations (scoped by persona authority)
   const filteredAllocations = allocations.filter((alloc) => {
-    if (deptFilter !== "ALL" && alloc.departmentCode !== deptFilter) return false;
+    if (!isAdmin && !isFinanceLead) {
+      if (userDeptCode && alloc.departmentCode !== userDeptCode) return false;
+    } else {
+      if (deptFilter !== "ALL" && alloc.departmentCode !== deptFilter) return false;
+    }
     if (selectedProjectId && alloc.projectId && alloc.projectId !== selectedProjectId) return false;
     return true;
   });
@@ -80,9 +103,19 @@ export function DepartmentBudgetsWorkspace({
   const totalSpent = filteredAllocations.reduce((sum, a) => sum + a.spentAmount, 0);
   const totalAvailable = totalAllocated - totalCommitted - totalSpent;
 
-  // Filtered Requests
+  // Filtered Requests (scoped by persona authority)
   const filteredRequests = expenseRequests.filter((req) => {
-    if (deptFilter !== "ALL" && req.requesterDept !== deptFilter) return false;
+    if (persona.kind === "member") {
+      const isSelf =
+        (persona.id && req.requesterId === persona.id) ||
+        (persona.person && req.requesterName.toLowerCase().includes(persona.person.toLowerCase()));
+      if (!isSelf) return false;
+    } else if (!isAdmin && !isFinanceLead) {
+      if (userDeptCode && req.requesterDept !== userDeptCode) return false;
+    } else {
+      if (deptFilter !== "ALL" && req.requesterDept !== deptFilter) return false;
+    }
+
     if (statusFilter !== "ALL" && req.status !== statusFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -96,106 +129,102 @@ export function DepartmentBudgetsWorkspace({
     return true;
   });
 
-  // Handle Approve
+  // Handle Approve with Staged Transition & Overdraft Balance Verification
   const handleApprove = (reqId: string) => {
     const req = expenseRequests.find((r) => r.id === reqId);
     if (!req) return;
 
-    const check = canUserApproveExpense(req, persona);
-    if (!check.canApprove) {
-      setActionMessage(`Approval Denied: ${check.reason}`);
-      return;
+    const result = executeExpenseApproval(req, allocations, persona);
+    setActionMessage(result.message);
+    if (result.success && result.nextRequest) {
+      setExpenseRequests((prev) => prev.map((r) => (r.id === reqId ? result.nextRequest! : r)));
+      if (result.updatedAllocations) {
+        setAllocations(result.updatedAllocations);
+      }
     }
-
-    setExpenseRequests((prev) =>
-      prev.map((r) => {
-        if (r.id !== reqId) return r;
-        return {
-          ...r,
-          status: "Approved",
-          comments: `Approved by ${persona.person} (${persona.label}) under IATF 16949 rules.`,
-          updatedAt: new Date().toISOString(),
-        };
-      })
-    );
-
-    // Atomically commit to department budget
-    setAllocations((prev) =>
-      prev.map((a) => {
-        if (a.departmentCode === req.requesterDept && a.category === req.category) {
-          return { ...a, committedAmount: a.committedAmount + req.amount };
-        }
-        return a;
-      })
-    );
-
-    setActionMessage(`Request ${req.reference} approved. ₹${req.amount.toLocaleString()} committed to ${req.requesterDept} budget.`);
   };
 
-  // Handle Reject
+  // Handle Reject with Reviewer Authorization Check
   const handleReject = (reqId: string) => {
-    setExpenseRequests((prev) =>
-      prev.map((r) => (r.id === reqId ? { ...r, status: "Rejected", updatedAt: new Date().toISOString() } : r))
-    );
-    setActionMessage(`Request rejected.`);
+    const req = expenseRequests.find((r) => r.id === reqId);
+    if (!req) return;
+
+    const result = executeExpenseRejection(req, persona, "Does not comply with departmental budget criteria.");
+    setActionMessage(result.message);
+    if (result.success && result.nextRequest) {
+      setExpenseRequests((prev) => prev.map((r) => (r.id === reqId ? result.nextRequest! : r)));
+    }
   };
 
-  // Handle Create Request
+  // Handle Create Request with Staged Routing
   const handleCreateRequest = (e: React.FormEvent) => {
     e.preventDefault();
     const amountVal = parseFloat(newAmount);
     if (isNaN(amountVal) || amountVal <= 0) return;
 
-    const newReq: ExpenseRequest = {
-      id: `EXP-2026-${Date.now().toString().slice(-4)}`,
-      reference: `EXP-${persona.departmentId?.toUpperCase() || "OPS"}-2026-${Math.floor(100 + Math.random() * 900)}`,
-      requesterId: persona.id || "usr-current",
-      requesterName: persona.person,
-      requesterDept: (persona.departmentId?.toUpperCase() || "EHW"),
-      category: newCategory,
-      amount: amountVal,
-      currency: "INR",
-      purpose: newPurpose,
-      projectId: newProject || null,
-      requiredDate: newRequiredDate,
-      status: "Pending_Finance",
-      currentApproverRole: "FIN Lead",
-      alternateApprover: "Executive Admin",
-      iatfClause: "IATF 16949 §8.3.4",
-      travelDetail: isTravel
-        ? {
-            destination: travelDestination,
-            startDate: newRequiredDate,
-            endDate: newRequiredDate,
-            purpose: newPurpose,
-            transportEstimate: amountVal * 0.6,
-            stayEstimate: amountVal * 0.3,
-            dailyAllowanceEstimate: amountVal * 0.1,
-            requestedAdvance: parseFloat(travelAdvance) || 0,
-            advanceSettled: false,
-          }
-        : undefined,
-      assetDetail: isAsset
-        ? {
-            itemSpecification: assetSpec,
-            quantity: parseInt(assetQty, 10) || 1,
-            targetLocation: "Hexense Tech Center",
-            requiredDate: newRequiredDate,
-          }
-        : undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    const newReq = createExpenseRequest(
+      {
+        category: newCategory,
+        amount: amountVal,
+        currency: "INR",
+        purpose: newPurpose,
+        projectId: newProject || null,
+        requiredDate: newRequiredDate,
+        ...(isTravel
+          ? {
+              travelDetail: {
+                destination: travelDestination,
+                startDate: newRequiredDate,
+                endDate: newRequiredDate,
+                purpose: newPurpose,
+                transportEstimate: amountVal * 0.6,
+                stayEstimate: amountVal * 0.3,
+                dailyAllowanceEstimate: amountVal * 0.1,
+                requestedAdvance: parseFloat(travelAdvance) || 0,
+                advanceSettled: false,
+              },
+            }
+          : {}),
+        ...(isAsset
+          ? {
+              assetDetail: {
+                itemSpecification: assetSpec,
+                quantity: parseInt(assetQty, 10) || 1,
+                targetLocation: "Hexense Tech Center",
+                requiredDate: newRequiredDate,
+              },
+            }
+          : {}),
+      },
+      persona
+    );
 
-    setExpenseRequests([newReq, ...expenseRequests]);
+    setExpenseRequests((prev) => [newReq, ...prev]);
     setIsNewRequestModalOpen(false);
     setNewAmount("");
     setNewPurpose("");
-    setActionMessage(`Expense request ${newReq.reference} submitted for approval.`);
+    setIsTravel(false);
+    setIsAsset(false);
+    setActionMessage(`Expense claim ${newReq.reference} submitted to ${newReq.currentApproverRole}.`);
   };
 
   return (
     <div className="space-y-6">
+      {/* Sandbox Demo Seed Notice */}
+      <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+            DEMO / Sandbox Seed
+          </span>
+          <span>
+            Department budget allocations and ledger entries loaded in this local session. Staged approval gates and overdraft ledger checks are enforced.
+          </span>
+        </div>
+        <div className="text-[11px] font-mono text-muted-foreground">
+          Scoped Persona: <strong>{persona.person}</strong> ({persona.label})
+        </div>
+      </div>
+
       {/* Header & Status Banner */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-border/40">
         <div>

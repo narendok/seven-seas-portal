@@ -35,20 +35,21 @@ export interface EmployeeLetter {
   version: number;
   status: "Draft" | "Review" | "Approved" | "Issued";
   signerName: string;
-  issuedAt?: string;
-  previewUrl?: string;
+  issuedAt?: string | undefined;
+  previewUrl?: string | undefined;
   summary: string;
 }
 
 export interface AssignedPolicy {
   id: string;
+  employeeId?: string | undefined;
   policyCode: string; // e.g. "POL-IATF-08", "POL-IT-SEC-01"
   title: string;
   category: "Quality (IATF 16949)" | "Information Security (ISO 27001)" | "Workplace Health & Safety" | "Code of Conduct";
   revision: string; // e.g. "Rev 2.1"
   effectiveDate: string;
   status: "Pending" | "Acknowledged";
-  acknowledgedAt?: string;
+  acknowledgedAt?: string | undefined;
   deadline: string;
   documentRef: string;
   summary: string;
@@ -63,16 +64,17 @@ export interface QuizQuestion {
 
 export interface AssignedTraining {
   id: string;
+  employeeId?: string | undefined;
   courseCode: string; // e.g. "TRN-ESD-01", "TRN-CAN-02"
   title: string;
   category: "Automotive Standards" | "ESD & Manufacturing" | "Functional Safety (ISO 26262)" | "Software & Security";
   trainer: string;
   durationHours: number;
   status: "Assigned" | "In_Progress" | "Completed" | "Refresher_Due";
-  scorePct?: number;
-  completedAt?: string;
-  expiryDate?: string;
-  certificateRef?: string;
+  scorePct?: number | undefined;
+  completedAt?: string | undefined;
+  expiryDate?: string | undefined;
+  certificateRef?: string | undefined;
   quizQuestions: QuizQuestion[];
 }
 
@@ -80,24 +82,27 @@ export interface FormQuestion {
   id: string;
   label: string;
   type: "text" | "number" | "choice" | "rating" | "boolean";
-  options?: string[];
+  options?: string[] | undefined;
   required: boolean;
 }
 
 export interface AssignedFormSurvey {
   id: string;
+  employeeId?: string | undefined;
   formCode: string;
   title: string;
   type: "Operational_Form" | "Pulse_Survey" | "Health_Check";
   isAnonymous: boolean;
   status: "Pending" | "Submitted";
   dueDate: string;
-  submittedAt?: string;
+  submittedAt?: string | undefined;
   questions: FormQuestion[];
+  answers?: Record<string, any> | undefined;
 }
 
 export interface EmployeeAssignedAsset {
   id: string;
+  employeeId?: string | undefined;
   assetTag: string; // e.g. "AST-IT-NB-2041"
   assetName: string;
   category: "Computing & IT" | "Lab & Measurement Equipment" | "Access & Security Badges" | "Tooling & Jigs";
@@ -109,67 +114,7 @@ export interface EmployeeAssignedAsset {
 
 /** Directory of Active Internal Personas for My Profile */
 export const DEFAULT_EMPLOYEE_PROFILES: Record<string, EmployeeProfile> = {
-  "priya.sharma@example.com": {
-    id: "usr-sal-priya",
-    employeeCode: "HLPL-EMP-102",
-    name: "Priya Sharma",
-    email: "priya.sharma@example.com",
-    phone: "+91 98765 43201",
-    departmentCode: "SAL",
-    departmentName: "Sales & Business Development",
-    roleTitle: "Sales & BD Lead",
-    securityClearance: "Level 3 Commercial Executive",
-    facilityLocation: "Noida Tech Center — Corporate Wing",
-    emergencyContact: "Raj Sharma (+91 98765 00101)",
-    joiningDate: "2023-04-15",
-    status: "Active",
-  },
-  "avery.vale@example.com": {
-    id: "usr-ehw-avery",
-    employeeCode: "HLPL-EMP-103",
-    name: "Avery Vale",
-    email: "avery.vale@example.com",
-    phone: "+91 98765 43202",
-    departmentCode: "EHW",
-    departmentName: "Hardware Engineering",
-    roleTitle: "Hardware Lead",
-    securityClearance: "Level 4 Engineering Master",
-    facilityLocation: "Noida Tech Center — R&D Lab 1",
-    emergencyContact: "Elena Vale (+91 98765 00102)",
-    joiningDate: "2022-08-01",
-    status: "Active",
-  },
-  "morgan.reed@example.com": {
-    id: "usr-pur-morgan",
-    employeeCode: "HLPL-EMP-106",
-    name: "Morgan Reed",
-    email: "morgan.reed@example.com",
-    phone: "+91 98765 43206",
-    departmentCode: "PUR",
-    departmentName: "Purchasing & SCM",
-    roleTitle: "Purchasing Lead",
-    securityClearance: "Level 3 Commercial Executive",
-    facilityLocation: "Greater Noida SMT Plant 2 — Supply Base",
-    emergencyContact: "David Reed (+91 98765 00106)",
-    joiningDate: "2023-01-10",
-    status: "Active",
-  },
-  "jordan.blake@example.com": {
-    id: "usr-qa-jordan",
-    employeeCode: "HLPL-EMP-107",
-    name: "Jordan Blake",
-    email: "jordan.blake@example.com",
-    phone: "+91 98765 43207",
-    departmentCode: "QA",
-    departmentName: "Quality Assurance & APQP",
-    roleTitle: "Quality Assurance Lead",
-    securityClearance: "Level 4 Quality Lead",
-    facilityLocation: "Greater Noida SMT Plant 2 — Reliability Lab",
-    emergencyContact: "Sarah Blake (+91 98765 00107)",
-    joiningDate: "2022-11-20",
-    status: "Active",
-  },
-  "admin@example.com": {
+  "admin": {
     id: "usr-admin-exec",
     employeeCode: "HLPL-EXEC-001",
     name: "Executive Admin",
@@ -184,7 +129,240 @@ export const DEFAULT_EMPLOYEE_PROFILES: Record<string, EmployeeProfile> = {
     joiningDate: "2021-01-01",
     status: "Active",
   },
+  "sales": {
+    id: "usr-sal-priya",
+    employeeCode: "HLPL-EMP-102",
+    name: "Priya Sharma",
+    email: "priya.sharma@example.com",
+    phone: "+91 98765 43201",
+    departmentCode: "SAL",
+    departmentName: "Sales & Business Development",
+    roleTitle: "Sales & BD Lead",
+    securityClearance: "Level 3 Commercial Executive",
+    facilityLocation: "Noida Tech Center — Corporate Wing",
+    emergencyContact: "Raj Sharma (+91 98765 00101)",
+    joiningDate: "2023-04-15",
+    status: "Active",
+  },
+  "ehw": {
+    id: "usr-ehw-avery",
+    employeeCode: "HLPL-EMP-103",
+    name: "Avery Vale",
+    email: "avery.vale@example.com",
+    phone: "+91 98765 43202",
+    departmentCode: "EHW",
+    departmentName: "Hardware Engineering",
+    roleTitle: "Hardware Lead",
+    securityClearance: "Level 4 Engineering Master",
+    facilityLocation: "Noida Tech Center — R&D Lab 1",
+    emergencyContact: "Elena Vale (+91 98765 00102)",
+    joiningDate: "2022-08-01",
+    status: "Active",
+  },
+  "fw": {
+    id: "usr-fw-devon",
+    employeeCode: "HLPL-EMP-104",
+    name: "Devon Lane",
+    email: "devon.lane@example.com",
+    phone: "+91 98765 43203",
+    departmentCode: "FW",
+    departmentName: "Firmware Engineering",
+    roleTitle: "Firmware Lead",
+    securityClearance: "Level 3 Technical Specialist",
+    facilityLocation: "Noida Tech Center — Embedded Lab",
+    emergencyContact: "Claire Lane (+91 98765 00103)",
+    joiningDate: "2023-02-15",
+    status: "Active",
+  },
+  "sw": {
+    id: "usr-sw-siddharth",
+    employeeCode: "HLPL-EMP-105",
+    name: "Siddharth Roy",
+    email: "siddharth.roy@example.com",
+    phone: "+91 98765 43204",
+    departmentCode: "SW",
+    departmentName: "Cloud & Software",
+    roleTitle: "Software Lead",
+    securityClearance: "Level 3 Technical Specialist",
+    facilityLocation: "Noida Tech Center — Software Wing",
+    emergencyContact: "Ananya Roy (+91 98765 00104)",
+    joiningDate: "2023-03-01",
+    status: "Active",
+  },
+  "mech": {
+    id: "usr-mech-samira",
+    employeeCode: "HLPL-EMP-106",
+    name: "Samira Holt",
+    email: "samira.holt@example.com",
+    phone: "+91 98765 43205",
+    departmentCode: "MECH",
+    departmentName: "Mechanical Engineering",
+    roleTitle: "Mechanical Lead",
+    securityClearance: "Level 3 Technical Specialist",
+    facilityLocation: "Noida Tech Center — Prototyping Bay",
+    emergencyContact: "Zain Holt (+91 98765 00105)",
+    joiningDate: "2023-05-10",
+    status: "Active",
+  },
+  "pur": {
+    id: "usr-pur-morgan",
+    employeeCode: "HLPL-EMP-107",
+    name: "Morgan Reed",
+    email: "morgan.reed@example.com",
+    phone: "+91 98765 43206",
+    departmentCode: "PUR",
+    departmentName: "Purchasing & SCM",
+    roleTitle: "Purchasing Lead",
+    securityClearance: "Level 3 Commercial Executive",
+    facilityLocation: "Greater Noida SMT Plant 2 — Supply Base",
+    emergencyContact: "David Reed (+91 98765 00106)",
+    joiningDate: "2023-01-10",
+    status: "Active",
+  },
+  "qa": {
+    id: "usr-qa-jordan",
+    employeeCode: "HLPL-EMP-108",
+    name: "Jordan Blake",
+    email: "jordan.blake@example.com",
+    phone: "+91 98765 43207",
+    departmentCode: "QA",
+    departmentName: "Quality Assurance & APQP",
+    roleTitle: "Quality Assurance Lead",
+    securityClearance: "Level 4 Quality Lead",
+    facilityLocation: "Greater Noida SMT Plant 2 — Reliability Lab",
+    emergencyContact: "Sarah Blake (+91 98765 00107)",
+    joiningDate: "2022-11-20",
+    status: "Active",
+  },
+  "emf": {
+    id: "usr-emf-casey",
+    employeeCode: "HLPL-EMP-109",
+    name: "Casey Rowan",
+    email: "casey.rowan@example.com",
+    phone: "+91 98765 43208",
+    departmentCode: "EMF",
+    departmentName: "Electronics Manufacturing",
+    roleTitle: "Manufacturing Lead",
+    securityClearance: "Level 3 Operations Specialist",
+    facilityLocation: "Greater Noida SMT Plant 2 — Production Floor",
+    emergencyContact: "Alex Rowan (+91 98765 00108)",
+    joiningDate: "2023-06-01",
+    status: "Active",
+  },
+  "mmf": {
+    id: "usr-mmf-lead",
+    employeeCode: "HLPL-EMP-110",
+    name: "Mechanical Manufacturing Lead",
+    email: "mmf.lead@example.com",
+    phone: "+91 98765 43209",
+    departmentCode: "MMF",
+    departmentName: "Mechanical Manufacturing",
+    roleTitle: "Mechanical Manufacturing Lead",
+    securityClearance: "Level 3 Operations Specialist",
+    facilityLocation: "Greater Noida Plant — CNC & Tooling Bay",
+    emergencyContact: "Facility Admin (+91 98765 00109)",
+    joiningDate: "2023-07-15",
+    status: "Active",
+  },
+  "fin": {
+    id: "usr-fin-priya",
+    employeeCode: "HLPL-EMP-111",
+    name: "Priya Voss",
+    email: "priya.voss@example.com",
+    phone: "+91 98765 43210",
+    departmentCode: "FIN",
+    departmentName: "Finance & Accounts",
+    roleTitle: "Finance Lead",
+    securityClearance: "Level 4 Financial Controller",
+    facilityLocation: "Hexense Labs Headquarters, Noida",
+    emergencyContact: "Vikram Voss (+91 98765 00110)",
+    joiningDate: "2022-09-01",
+    status: "Active",
+  },
+  "sit": {
+    id: "usr-sit-kai",
+    employeeCode: "HLPL-EMP-112",
+    name: "Kai Morgan",
+    email: "kai.morgan@example.com",
+    phone: "+91 98765 43211",
+    departmentCode: "SIT",
+    departmentName: "Service & IT Infrastructure",
+    roleTitle: "Service & IT Lead",
+    securityClearance: "Level 4 Infrastructure Administrator",
+    facilityLocation: "Hexense Labs Headquarters, Noida",
+    emergencyContact: "Taylor Morgan (+91 98765 00111)",
+    joiningDate: "2023-08-20",
+    status: "Active",
+  },
+  "hrops": {
+    id: "usr-hrops-taylor",
+    employeeCode: "HLPL-EMP-113",
+    name: "Taylor Quinn",
+    email: "taylor.quinn@example.com",
+    phone: "+91 98765 43212",
+    departmentCode: "HROPS",
+    departmentName: "HR & Operations",
+    roleTitle: "HR & Operations Manager",
+    securityClearance: "Level 4 Personnel Administrator",
+    facilityLocation: "Hexense Labs Headquarters, Noida",
+    emergencyContact: "Jordan Quinn (+91 98765 00112)",
+    joiningDate: "2022-05-15",
+    status: "Active",
+  },
 };
+
+// Aliases for backwards compatibility with email keys
+if (DEFAULT_EMPLOYEE_PROFILES["admin"]) DEFAULT_EMPLOYEE_PROFILES["admin@example.com"] = DEFAULT_EMPLOYEE_PROFILES["admin"];
+if (DEFAULT_EMPLOYEE_PROFILES["sales"]) DEFAULT_EMPLOYEE_PROFILES["priya.sharma@example.com"] = DEFAULT_EMPLOYEE_PROFILES["sales"];
+if (DEFAULT_EMPLOYEE_PROFILES["ehw"]) DEFAULT_EMPLOYEE_PROFILES["avery.vale@example.com"] = DEFAULT_EMPLOYEE_PROFILES["ehw"];
+if (DEFAULT_EMPLOYEE_PROFILES["fw"]) DEFAULT_EMPLOYEE_PROFILES["devon.lane@example.com"] = DEFAULT_EMPLOYEE_PROFILES["fw"];
+if (DEFAULT_EMPLOYEE_PROFILES["sw"]) DEFAULT_EMPLOYEE_PROFILES["siddharth.roy@example.com"] = DEFAULT_EMPLOYEE_PROFILES["sw"];
+if (DEFAULT_EMPLOYEE_PROFILES["mech"]) DEFAULT_EMPLOYEE_PROFILES["samira.holt@example.com"] = DEFAULT_EMPLOYEE_PROFILES["mech"];
+if (DEFAULT_EMPLOYEE_PROFILES["pur"]) DEFAULT_EMPLOYEE_PROFILES["morgan.reed@example.com"] = DEFAULT_EMPLOYEE_PROFILES["pur"];
+if (DEFAULT_EMPLOYEE_PROFILES["qa"]) DEFAULT_EMPLOYEE_PROFILES["jordan.blake@example.com"] = DEFAULT_EMPLOYEE_PROFILES["qa"];
+if (DEFAULT_EMPLOYEE_PROFILES["emf"]) DEFAULT_EMPLOYEE_PROFILES["casey.rowan@example.com"] = DEFAULT_EMPLOYEE_PROFILES["emf"];
+if (DEFAULT_EMPLOYEE_PROFILES["fin"]) DEFAULT_EMPLOYEE_PROFILES["priya.voss@example.com"] = DEFAULT_EMPLOYEE_PROFILES["fin"];
+if (DEFAULT_EMPLOYEE_PROFILES["sit"]) DEFAULT_EMPLOYEE_PROFILES["kai.morgan@example.com"] = DEFAULT_EMPLOYEE_PROFILES["sit"];
+if (DEFAULT_EMPLOYEE_PROFILES["hrops"]) DEFAULT_EMPLOYEE_PROFILES["taylor.quinn@example.com"] = DEFAULT_EMPLOYEE_PROFILES["hrops"];
+
+/**
+ * Resolves an authenticated internal employee profile based on persona.
+ * FAILS CLOSED: Returns undefined if persona is Client, unknown, or has no profile.
+ * NEVER defaults to Admin!
+ */
+export function resolveEmployeeProfile(persona: {
+  id?: string | undefined;
+  person?: string | undefined;
+  kind?: string | undefined;
+  departmentId?: string | undefined;
+}): EmployeeProfile | undefined {
+  if (!persona || persona.kind === "client") {
+    return undefined; // Client fails closed
+  }
+
+  // 1. Match by persona.id (e.g. "admin", "ehw", "pur", "qa")
+  if (persona.id && DEFAULT_EMPLOYEE_PROFILES[persona.id]) {
+    return DEFAULT_EMPLOYEE_PROFILES[persona.id];
+  }
+
+  // 2. Match by departmentId
+  if (persona.departmentId && DEFAULT_EMPLOYEE_PROFILES[persona.departmentId]) {
+    return DEFAULT_EMPLOYEE_PROFILES[persona.departmentId];
+  }
+
+  // 3. Match by person name substring (e.g. "Avery Vale")
+  if (persona.person) {
+    const pName = persona.person.toLowerCase();
+    for (const prof of Object.values(DEFAULT_EMPLOYEE_PROFILES)) {
+      if (prof.name && pName.includes(prof.name.toLowerCase())) {
+        return prof;
+      }
+    }
+  }
+
+  // Fail closed: unrecognized persona does not receive any employee profile
+  return undefined;
+}
 
 /** Default Letters for Employee */
 export const DEFAULT_EMPLOYEE_LETTERS: EmployeeLetter[] = [

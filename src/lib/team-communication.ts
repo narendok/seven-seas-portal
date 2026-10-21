@@ -54,8 +54,8 @@ export interface SharedChatMessage {
   isUrgent: boolean;
   mentions: string[]; // e.g. ["@Avery", "@Jordan"]
   replies: ChatThreadReply[];
-  recordLink?: ChatRecordLink;
-  poll?: SharedChatPoll;
+  recordLink?: ChatRecordLink | undefined;
+  poll?: SharedChatPoll | undefined;
 }
 
 export interface TeamChannel {
@@ -63,9 +63,76 @@ export interface TeamChannel {
   name: string; // e.g. "#general", "#engineering-hw"
   topic: string;
   isPrivate: boolean;
-  deptScope?: string; // e.g. "ALL" or specific dept
+  deptScope?: string | undefined; // e.g. "ALL" or specific dept
   memberCount: number;
-  unreadCount?: number;
+  unreadCount?: number | undefined;
+}
+
+/** Check if a persona is authorized to view and participate in a channel */
+export function canUserAccessChannel(
+  channel: TeamChannel,
+  persona: { kind: string; departmentId?: string | undefined; id?: string | undefined }
+): boolean {
+  // Clients are completely isolated from internal team communication
+  if (persona.kind === "client") return false;
+
+  // Admin has universal channel access
+  if (persona.kind === "admin") return true;
+
+  // Company-wide channels are accessible to all internal employees & leads
+  if (!channel.deptScope || channel.deptScope === "ALL") return true;
+
+  const userDept = persona.departmentId?.toLowerCase();
+  const channelDept = channel.deptScope.toLowerCase();
+
+  // Direct department match
+  if (userDept && userDept === channelDept) return true;
+
+  // Cross-engineering access for hardware, firmware and software
+  if (channelDept === "ehw" && (userDept === "fw" || userDept === "sw" || userDept === "mech")) return true;
+
+  // Finance and Purchasing cross-collaboration
+  if (channelDept === "pur" && userDept === "fin") return true;
+  if (channelDept === "fin" && (userDept === "pur" || userDept === "sales")) return true;
+
+  // Quality and Manufacturing cross-collaboration
+  if (channelDept === "qa" && (userDept === "emf" || userDept === "mmf")) return true;
+
+  return false;
+}
+
+/** Safely vote on a poll, strictly preventing voting on closed polls */
+export function voteOnChatPoll(
+  poll: SharedChatPoll,
+  optionId: string,
+  voterId: string
+): { success: boolean; poll?: SharedChatPoll | undefined; reason?: string | undefined } {
+  if (poll.isClosed) {
+    return { success: false, reason: "Voting closed. Poll results are finalized." };
+  }
+
+  const currentVote = poll.voters[voterId];
+  if (currentVote === optionId) {
+    return { success: true, poll }; // No change
+  }
+
+  const updatedOptions = poll.options.map((opt) => {
+    let delta = 0;
+    if (opt.id === optionId) delta += 1;
+    if (opt.id === currentVote) delta -= 1;
+    return { ...opt, votes: Math.max(0, opt.votes + delta) };
+  });
+
+  const updatedPoll: SharedChatPoll = {
+    ...poll,
+    options: updatedOptions,
+    voters: {
+      ...poll.voters,
+      [voterId]: optionId,
+    },
+  };
+
+  return { success: true, poll: updatedPoll };
 }
 
 /** Default Channels matching Web and App */
