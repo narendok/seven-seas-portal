@@ -29,6 +29,8 @@ This records the implemented local web changes. It is not a claim that the whole
 - Browser created explicitly labelled local DEMO inquiries `HLPL-SAL-ENQ-0001` and `HLPL-SAL-ENQ-0002`. The second has clean fields, was dispatched to QA without a project, and was approved by the QA lead. Sales then explicitly associated it with HLPL-SLCT-01 through the edit popup; the original enquiry number was retained. These are local test records, not shared TEST organization data.
 - GitHub `origin/main` checked: `9a6085a`; no newer main commit was present at the check.
 
+- All twelve department DEMO role URLs were independently opened in the browser; each displayed its expected lead identity and department workspace. Admin Command Center and Client portal navigation also passed (14 roles total); the client view exposed no internal Add Record or Request Gate Approval controls. These checks validate local UI routing, not authenticated production role grants.
+
 ## Boundaries and remaining phases
 
 - No database migration, RLS/storage policy, approval RPC, server membership, Android source or live Lovable deployment changed here.
