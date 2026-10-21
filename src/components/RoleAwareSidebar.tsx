@@ -139,6 +139,9 @@ export type RoleAwareSidebarProps = {
   onOpenWizard?: (() => void) | undefined;
   onOpenAssetCatalog?: (() => void) | undefined;
   onOpenApprovals?: (() => void) | undefined;
+  onOpenBudgets?: (() => void) | undefined;
+  onOpenProfile?: (() => void) | undefined;
+  onOpenCommunication?: (() => void) | undefined;
   onOpenAlerts?: (() => void) | undefined;
   onOpenHistory?: (() => void) | undefined;
   setupStep?: number | undefined;
@@ -202,6 +205,9 @@ export function RoleAwareSidebar({
   onOpenWizard,
   onOpenAssetCatalog,
   onOpenApprovals,
+  onOpenBudgets,
+  onOpenProfile,
+  onOpenCommunication,
   onOpenAlerts,
   onOpenHistory,
   setupStep = 0,
@@ -722,6 +728,9 @@ export function RoleAwareSidebar({
     recordTypeFilter, onRecordTypeFilterChange,
     onNavigate,
     onOpenApprovals,
+  onOpenBudgets,
+  onOpenProfile,
+  onOpenCommunication,
     onOpenHistory,
     onOpenCustomerRegister,
     onOpenProjectAnalysis,
@@ -1190,6 +1199,9 @@ export function RoleAwareSidebar({
     recordTypeFilter, onRecordTypeFilterChange,
     onNavigate,
     onOpenApprovals,
+  onOpenBudgets,
+  onOpenProfile,
+  onOpenCommunication,
     onOpenAlerts,
     onOpenProjectAnalysis,
     onOpenAi4tLifecycle,

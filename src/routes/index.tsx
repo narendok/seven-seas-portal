@@ -135,6 +135,9 @@ import {
 } from "@/components/ModularProductArchitectureAndPcbCatalog";
 import { DeviceVisualSpecAndBlockDiagram } from "@/components/DeviceVisualSpecAndBlockDiagram";
 import { RoleAwareSidebar, type RoleAwareSidebarProps } from "@/components/RoleAwareSidebar";
+import { DepartmentBudgetsWorkspace } from "@/components/DepartmentBudgetsWorkspace";
+import { EmployeeSelfServiceWorkspace } from "@/components/EmployeeSelfServiceWorkspace";
+import { TeamCommunicationWorkspace } from "@/components/TeamCommunicationWorkspace";
 import { ClientOEMPortal } from "@/components/ClientOEMPortal";
 import {
   DepartmentLeadLoginModal,
@@ -3103,6 +3106,9 @@ function Portal() {
           onOpenWizard={() => setModal("wizard")}
           onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
           onOpenApprovals={() => setView("approvals")}
+          onOpenBudgets={() => setView("budgets")}
+          onOpenProfile={() => setView("profile")}
+          onOpenCommunication={() => setView("communication")}
           onOpenAlerts={() => setAlertsOpen(true)}
           onOpenHistory={() => setModal("history")}
           setupStep={portal.setupStep}
@@ -3437,6 +3443,28 @@ function Portal() {
               persona={persona}
               onRequestApproval={handleCreateApprovalRequest}
             />
+          ) : view === "budgets" ? (
+            <DepartmentBudgetsWorkspace
+              persona={persona}
+              selectedProjectId={selectedProjectId}
+              onOpenProjectDetail={(pId) => {
+                setSelectedProjectId(pId);
+                setView("project");
+              }}
+            />
+          ) : view === "profile" ? (
+            <EmployeeSelfServiceWorkspace
+              persona={persona}
+            />
+          ) : view === "communication" ? (
+            <TeamCommunicationWorkspace
+              persona={persona}
+              onOpenProjectDetail={(pId) => {
+                setSelectedProjectId(pId);
+                setView("project");
+              }}
+              onOpenDocument={openDocument}
+            />
 
           ) : effectiveArea === "home" && view === "assignee" && selectedAssignee ? (
             <AssigneeWorkload
@@ -3693,6 +3721,9 @@ function Portal() {
           onOpenWizard={() => setModal("wizard")}
           onOpenAssetCatalog={() => setAssetCatalogOpen(true)}
           onOpenApprovals={() => setView("approvals")}
+          onOpenBudgets={() => setView("budgets")}
+          onOpenProfile={() => setView("profile")}
+          onOpenCommunication={() => setView("communication")}
           onOpenAlerts={() => setAlertsOpen(true)}
           onOpenHistory={() => setModal("history")}
           setupStep={portal.setupStep}
@@ -11100,6 +11131,9 @@ function MobileMenu({
           onOpenWizard={onOpenWizard}
           onOpenAssetCatalog={onOpenAssetCatalog}
           onOpenApprovals={onOpenApprovals}
+          onOpenBudgets={() => { setView("budgets"); onClose(); }}
+          onOpenProfile={() => { setView("profile"); onClose(); }}
+          onOpenCommunication={() => { setView("communication"); onClose(); }}
           onOpenAlerts={onOpenAlerts}
           onOpenHistory={onOpenHistory}
           setupStep={setupStep}
