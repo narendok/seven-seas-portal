@@ -1,8 +1,21 @@
+import { scopeRecordDefaults } from "@/lib/record-form-defaults";
+import { assertDecisionSubmission } from "@/lib/decision-log-policy";
+import { taskLane } from "@/lib/task-board";
+import { defaultDecisionLogs, type DecisionRecord } from "@/components/CompanyDirectoryAndLegalHub";
+import { ProjectAnalysisOverview } from "@/components/ProjectAnalysisOverview";
+import { useId } from "react";
+import { ResponsiveFilterBar, CompactFilterSelect } from "@/components/ResponsiveFilterBar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { searchVisibleItems } from "@/lib/portal-search";
+import { suggestProjectCode } from "@/lib/project-code";
+import { DocumentUploadPilotDialog, type UploadDraft } from "@/components/DocumentUploadPilotDialog";
+import { assertUploadContextCurrent, sourceGerberPackages, type UploadScope, type UploadType, type SourcePackage } from "@/lib/document-upload-pilot";
+import { recordsForProject, documentsForProject } from "@/lib/project-workspace";
 import { SharedTestWorkspace } from "@/components/SharedTestWorkspace";
 import { evolveResponsibilityConfiguration, resolveProjectChronicles, type ResponsibilityVersion } from "@/lib/responsibility-version";
 import { DepartmentProjectWorkspace } from "@/components/DepartmentProjectWorkspace";
 import { businessDate } from "@/lib/business-date";
-import { salesEnquiryFromRecord, validateIntakeProject } from "@/lib/portal-intake";
+import { feasibilityIntakeContext, linkIntakeProject, isPreProjectIntake, suggestIntakeReference, salesEnquiryFromRecord, validateIntakeProject } from "@/lib/portal-intake";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -272,6 +285,10 @@ type ControlledDocument = {
   approver?: string | undefined;
   history?: string[] | undefined;
   cloudDocumentId?: string | undefined;
+  projectId?: string | undefined;
+  uploadType?: UploadType | undefined;
+  uploadScope?: UploadScope | undefined;
+  sourcePackage?: SourcePackage | undefined;
   localFiles?: LocalControlledFile[] | undefined;
   draftHtml?: string | undefined;
   draftSnapshot?: ReturnType<typeof buildDocumentDraft> | undefined;
@@ -718,6 +735,7 @@ type PortalState = {
   roles: DepartmentRole[];
   approvals: ApprovalRecord[];
   documents: ControlledDocument[];
+  decisionLogs?: DecisionRecord[];
   audit: AuditEvent[];
   notifications: string[];
   alerts: DemoAlert[];
@@ -2151,6 +2169,7 @@ function Portal() {
   const [testMembership, setTestMembership] = useState<TestMembership | null>(null);
   const [testAuthReady, setTestAuthReady] = useState(false);
   const [showSharedTestWorkspace, setShowSharedTestWorkspace] = useState(false);
+  const [sharedTestInitialTab, setSharedTestInitialTab] = useState<"Tasks" | "Documents">("Tasks");
 
   const isInvalidUrlRole =
     typeof window !== "undefined" &&
@@ -2215,7 +2234,7 @@ function Portal() {
 
   const [activeArea, setActiveArea] = useState<AreaId>(() => ((initialPersona.kind === "lead" || initialPersona.kind === "member") && initialPersona.departmentId ? initialPersona.departmentId : "home"));
   const [clientDeliverablesFocus, setClientDeliverablesFocus] = useState(0);
-  const openDocuments = () => { setModal(null); if (persona.kind === "client") { setView("queue"); setClientDeliverablesFocus(value => value + 1); } else setModal("documents"); };
+  const openDocuments = () => { setModal(null); if (persona.kind === "client") { setView("queue"); setClientDeliverablesFocus(value => value + 1); } else setView("vault"); };
   const [signedOut, setSignedOut] = useState(() => {
     if (typeof window === "undefined") return false;
     if (mustPromptRole) return true;
@@ -2240,6 +2259,8 @@ function Portal() {
     | "approvals"
     | "records"
     | "deliverables"
+    | "vault"
+    | "analysis"
   >("queue");
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const allTeamMembers = useMemo(() => [...(portal?.demoLoaded ? demoTeam : []), ...(portal?.teamMembers ?? [])], [portal?.demoLoaded, portal?.teamMembers]);
@@ -2254,6 +2275,9 @@ function Portal() {
   const [notice, setNotice] = useState<string | null>(null);
   const [departmentContext, setDepartmentContext] = useState<string | null>(() => ((initialPersona.kind === "lead" || initialPersona.kind === "member") && initialPersona.departmentId ? `demo-dept-${initialPersona.departmentId}` : null));
   const [persona, setPersona] = useState<Persona>(() => initialPersona);
+  const [recordTypeFilter, setRecordTypeFilter] = useState<string|null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
@@ -2286,7 +2310,8 @@ function Portal() {
     window.addEventListener("storage", refresh);
     return () => window.removeEventListener("storage", refresh);
   }, []);
-  useEffect(() => { setDirectoryOpen(false); setDraftHubOpen(false); setModal(null); setPrintTemplate(null); setAi4tOpen(false); setCustomerRegisterOpen(false); }, [persona.id]);
+  useEffect(() => { setSearchOpen(false); setGlobalSearchQuery(""); setDirectoryOpen(false); setDraftHubOpen(false); setModal(null); setPrintTemplate(null); setAi4tOpen(false); setCustomerRegisterOpen(false); }, [persona.id]);
+  useEffect(() => { setSearchOpen(false); setGlobalSearchQuery(""); }, [departmentContext]);
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("XYZ Pvt Ltd-scms-theme");
     setDarkMode(savedTheme !== "light");
@@ -2349,6 +2374,7 @@ function Portal() {
       | "records"
       | "deliverables" = "queue",
   ) => {
+    setRecordTypeFilter(null);
     if (persona.kind === "client") {
       if (area !== "home") {
         announce("Access restricted under ISO 27001 §A.9: External OEM Clients are contained within the Client Delivery Portal.");
@@ -2521,17 +2547,18 @@ function Portal() {
       const existingEnqs = state.enquiriesOpportunities ?? defaultEnquiriesOpportunities;
       const target = existingEnqs.find((e) => e.id === enquiryId);
       if (!target) throw new Error("Enquiry not found.");
-      if (!target.linkedProjectCode || !state.records.some(record => record.type === "Project" && record.reference === target.linkedProjectCode && !record.archived)) throw new Error("Link this enquiry to an existing project first.");
+      if(persona.kind !== "admin" && !(persona.kind === "lead" && persona.departmentId === "sales")) throw new Error("The Sales lead must dispatch cross-department feasibility.");
+      const intakeContext=feasibilityIntakeContext(state.records,target);
       if (!["Pending Enquiry", "Internal Review"].includes(target.status)) throw new Error("This enquiry has already been dispatched.");
       if (!departments.length || new Set(departments).size !== departments.length) throw new Error("Choose at least one distinct review department.");
-      const contractRef = target.linkedProjectCode + "-SAL-CONTRACT-01";
-      if (state.records.some(record => record.reference === contractRef)) throw new Error("A contract review already exists for this project.");
+      const contractRef = intakeContext.contractReference;
+      if (state.records.some(record => record.reference === contractRef)) throw new Error("A contract review already exists for this inquiry.");
       const at = now();
       const contract: RecordItem = {
-        id: createId(), reference: contractRef, area: "sales", type: "Contract review",
+        id: createId(), reference: contractRef, area: "sales", departmentId: findAreaDepartment(state.departments,"sales")?.id, type: "Contract review",
         title: "Contract Review · " + target.title, status: "In review", priority: "High", createdAt: at, updatedAt: at,
         notes: "Participating department sign-offs are required; no engineering results are presumed.",
-        fields: { projectId: target.linkedProjectCode, enquiryId: target.id, revision: "01", formCode: "HLPL/F/MKT/01", requiredDepartments: departments.join(",") },
+        fields: { projectId: intakeContext.projectCode, enquiryId: target.id, revision: "01", formCode: "HLPL/F/MKT/01", requiredDepartments: departments.join(",") },
       };
       const requests: ApprovalRecord[] = [];
       const tasks: RecordItem[] = [];
@@ -2544,10 +2571,10 @@ function Portal() {
           project: target.linkedProjectCode, requester: persona.label, riskLevel: "High", iatfClause: "Contract Review HLPL/F/MKT/01",
           description: target.scopeSummary,
         });
-        tasks.push({ id: createId(), reference: contractRef + "-" + code, area: area.id,
+        tasks.push({ id: createId(), reference: contractRef + "-" + code, area: area.id, departmentId: findAreaDepartment(state.departments,area.id)?.id,
           type: "Task", title: code + " feasibility review · " + target.title, status: "In review", priority: "High",
           createdAt: at, updatedAt: at, notes: target.scopeSummary,
-          fields: { projectId: target.linkedProjectCode, linkedRecords: contractRef, dueDate: targetDate,
+          fields: { projectId: intakeContext.projectCode, linkedRecords: contractRef, dueDate: targetDate,
             feasibilityApprovalId: requestId, assignee: personas.find(person => person.departmentId === area.id)?.person.split(" · ")[0] ?? "Unassigned" },
         });
       }
@@ -2611,8 +2638,9 @@ function Portal() {
         ],
       };
     });
-    if (!committed) return;
-    announce(`Enquiry converted to Opportunity and dispatched for multi-department feasibility with platform linking.`);
+    if (!committed) return false;
+    announce("Inquiry dispatched for multi-department feasibility. Its project link remains optional until a project is selected.");
+    return true;
   };
   const addRecord = async (input: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => {
     if (input.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
@@ -2645,6 +2673,8 @@ function Portal() {
     };
     const saved = await update((state) => {
       if (state.records.some(existing => existing.reference.toUpperCase() === record.reference.toUpperCase())) throw new Error("This controlled number already exists.");
+      if (input.type === "Project") validateIntakeProject(state.records, "Project", record.reference);
+      if (input.area === "sales" && isPreProjectIntake(input.type)) validateIntakeProject(state.records,input.type,input.fields["projectId"] ?? "");
       const enquiry = input.area === "sales" && ["Enquiry", "Opportunity", "Enquiry & Opportunity"].includes(input.type);
       return { ...state, records: [record, ...state.records],
         ...(input.type === "Project" ? { masters: { ...state.masters, products: Array.from(new Set([...state.masters.products, record.reference])) } } : {}),
@@ -2667,18 +2697,19 @@ function Portal() {
   const updateTask = async (taskId: string, patch: Partial<RecordItem>, action: string) => {
     if (persona.kind === "client") {
       announce("Clients have read-only access and cannot modify engineering tasks.");
-      return;
+      return false;
     }
     const task = portal.records.find((record) => record.id === taskId);
-    if (!task) return;
-    if (task.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
+    if (!task) return false;
+    if (task.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return false; }
     if ((persona.kind === "lead" || persona.kind === "member") && persona.departmentId && task.area !== persona.departmentId) {
       announce("Department leads can only modify tasks in their own department.");
-      return;
+      return false;
     }
     const committed = await update((state) => {
       const current = state.records.find(record => record.id === taskId);
       if (!current || ((persona.kind === "lead" || persona.kind === "member") && current.area !== persona.departmentId)) throw new Error("This task is outside your department.");
+      if ((patch.status === "Approved" || patch.status === "Released") && current.status === "In review") throw new Error("Use the designated approval action for a task in review.");
       if ((patch.status === "Approved" || patch.status === "Released") && state.approvals.some(approval => approval.outcome === "Pending" && [current.id, current.reference].includes(approval.recordId))) throw new Error("Wait for the designated approval before completing this task.");
       return ({
       ...state,
@@ -2687,9 +2718,10 @@ function Portal() {
       ),
     });
     });
-    if (!committed) return;
+    if (!committed) return false;
     log(action, `${task.reference} · ${task.title}`);
     announce(`${task.title} updated.`);
+    return true;
   };
   const handleApproveGate = async (id: string, notes?: string) => {
     if (persona.kind === "client") {
@@ -2986,7 +3018,7 @@ function Portal() {
   const activeRecords = portal.records.filter((record) => !record.archived);
   const leadRecords = activeRecords.filter(record => record.area === persona.departmentId);
   const leadTasks = leadRecords.filter(record => record.type === "Task");
-  const leadName = persona.person.split(" · ")[0] ?? "";
+  const leadName = persona.kind === "member" ? findAreaDepartment(portal.departments, persona.departmentId ?? activeArea)?.lead || "Lead not recorded" : persona.person.split(" · ")[0] ?? "";
   const leadProjectCodes = new Set(leadRecords.flatMap(projectReferences));
   const leadProjects = activeRecords.filter(record => record.type === "Project" && (leadProjectCodes.has(record.reference) || leadProjectCodes.has(record.id)));
   const scopedAlerts = portal.alerts.filter(alert => persona.kind === "admin" || ((persona.kind === "lead" || persona.kind === "member") && [persona.departmentId, departmentContext].includes(alert.departmentId)));
@@ -3036,7 +3068,7 @@ function Portal() {
     <div className="border-b border-border bg-card px-4 py-2 text-foreground">
       <button type="button" onClick={() => setShowSharedTestWorkspace(false)} className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-secondary">Back to portal</button>
     </div>
-    <SharedTestWorkspace membership={testMembership} onLogout={handleLogout} darkMode={darkMode} />
+    <SharedTestWorkspace initialTab={sharedTestInitialTab} membership={testMembership} onLogout={handleLogout} darkMode={darkMode} />
   </div>;
   if (signedOut) return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><p className="text-[11px] font-bold uppercase text-primary">TEST ONLY</p><h1 className="mt-1 text-xl font-semibold">Signed out</h1><p className="mt-3 text-sm text-muted-foreground">Sign in with a provisioned TEST account. Browser-local demo records remain separate.</p><button type="button" disabled={!testAuthReady} onClick={() => setLoginModalOpen(true)} className="mt-5 rounded border border-border px-4 py-2 text-sm disabled:opacity-50">Sign in to TEST workspace</button></section><DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode currentPersonaId="" onClose={() => setLoginModalOpen(false)} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} /></main>;
   return (
@@ -3046,6 +3078,8 @@ function Portal() {
           persona={persona}
           activeArea={activeArea as any}
           view={view}
+          recordTypeFilter={recordTypeFilter}
+          onRecordTypeFilterChange={setRecordTypeFilter}
           sidebarExpanded={sidebarExpanded}
           onToggleExpanded={() => setSidebarExpanded((value) => !value)}
           purchasingSubView={purchasingSubView}
@@ -3059,9 +3093,7 @@ function Portal() {
           }}
           onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
           onOpenAi4tLifecycle={() => setAi4tOpen(true)}
-          onOpenProjectAnalysis={() => {
-            navigate("rnd", "index");
-          }}
+          onOpenProjectAnalysis={() => setView("analysis")}
           onOpenDrive={openDocuments}
           onOpenDraftHub={() => setDraftHubOpen(true)}
           onOpenDirectory={() => setDirectoryOpen(true)}
@@ -3128,7 +3160,7 @@ function Portal() {
                   : `All departments · ${portal?.setup.location ?? ""}`}
               </p>
             </button>
-            {testMembership && <HeaderAction label="Shared TEST records" icon={Layers} onClick={() => setShowSharedTestWorkspace(true)} />}
+            {testMembership && <HeaderAction label="Shared TEST records" icon={Layers} onClick={() => {setSharedTestInitialTab("Tasks"); setShowSharedTestWorkspace(true);}} />}
             <PersonaSwitcher
               persona={persona}
               onSelect={switchPersona}
@@ -3161,16 +3193,10 @@ function Portal() {
                 }}
               />
             )}
-            {persona.kind !== "client" && (
-              <HeaderAction
-                label="Search"
-                icon={Search}
-                onClick={() => {
-                  setView("index");
-                  setMobileMenu(false);
-                }}
-              />
-            )}
+            {persona.kind !== "client" && <>
+              <div className="relative hidden w-44 shrink xl:block 2xl:w-56"><Search className="pointer-events-none absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" /><input aria-label="Search portal" placeholder="Search…" value={globalSearchQuery} onFocus={() => setSearchOpen(true)} onChange={event => { setGlobalSearchQuery(event.target.value); setSearchOpen(true); }} className="h-9 w-full rounded-lg border border-border bg-card pl-8 pr-2 text-xs" /></div>
+              <button type="button" aria-label="Search portal" title="Search" onClick={() => { setSearchOpen(true); setMobileMenu(false); }} className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-secondary xl:hidden"><Search className="size-4" /></button>
+            </>}
             {persona.kind === "client" ? (
               <HeaderAction
                 label="Released Deliverables"
@@ -3181,14 +3207,14 @@ function Portal() {
               <HeaderAction
                 label="Documents"
                 icon={FileText}
-                onClick={() => setModal("documents")}
+                onClick={openDocuments}
               />
             )}
             {(persona.id === "admin" || persona.id === "pur") && (
               <HeaderAction label="Live Inventory" icon={PackageSearch} onClick={() => navigate("pur")} />
             )}
             {persona.id === "admin" && (
-              <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={() => setModal("documents")} />
+              <HeaderAction label="Hardware Deliverables Drive" icon={FolderOpen} onClick={openDocuments} />
             )}
             {persona.kind !== "client" && (
               <HeaderAction label="Directory" icon={Users} onClick={() => setDirectoryOpen(true)} />
@@ -3199,15 +3225,11 @@ function Portal() {
             {persona.id === "admin" && (
               <HeaderAction label="Legal Hub" icon={Shield} onClick={() => setLegalHubOpen(true)} />
             )}
-            {persona.id === "admin" && (
-              <HeaderAction label="Platform Asset Library" icon={Cpu} onClick={() => setAssetCatalogOpen(true)} />
-            )}
-            {persona.id === "admin" && (
-              <HeaderAction label="Template Settings" icon={Settings2} onClick={() => setTemplateSettingsOpen(true)} />
-            )}
+
+
             {persona.id === "admin" && (
               <HeaderAction
-                label="Administration"
+                label="Settings"
                 icon={Settings2}
                 onClick={() => {
                   setAdminTab("company");
@@ -3215,23 +3237,14 @@ function Portal() {
                 }}
               />
             )}
-            {persona.id === "admin" && (
-              <HeaderAction
-                label="Cloud & Supabase Sync"
-                icon={Cloud}
-                onClick={() => {
-                  setAdminTab("cloud");
-                  setModal("admin");
-                }}
-              />
-            )}
+
             <HeaderAction
               label={`Notifications (${scopedAlerts.filter((alert) => !alert.resolved).length})`}
               icon={Bell}
               badge={scopedAlerts.filter((alert) => !alert.resolved).length}
               onClick={() => setAlertsOpen(true)}
             />
-            <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} />
+
           </div>
         </header>
         <div className="mx-auto max-w-[1600px] space-y-6 px-6 py-6 pb-28 lg:pb-10">
@@ -3259,6 +3272,7 @@ function Portal() {
           ) : (persona.kind === "lead" || persona.kind === "member") && (view === "project" || view === "queue" || view === "summary" || view === "records" || view === "deliverables") ? (
             <DepartmentProjectWorkspace key={`${persona.id}:${view}`}
               initialTab={view === "records" ? "records" : view === "deliverables" ? "deliverables" : undefined}
+              recordTypeFilter={recordTypeFilter} onClearRecordTypeFilter={() => setRecordTypeFilter(null)}
               departmentCode={active.short} departmentName={active.name} lead={leadName}
               records={leadRecords} projects={leadProjects} documents={scopedDocuments}
               approvals={portal.approvals.map(approvalScope).filter(approval => approvalInDepartment(approval, persona.departmentId))}
@@ -3266,7 +3280,8 @@ function Portal() {
               projectScope={projectScopes[active.id] ?? "all"}
               onProjectChange={scope => setProjectScopes(current => ({ ...current, [active.id]: scope as ProjectScope }))}
               onCreateProject={persona.departmentId === "sales" ? () => handleOpenCreate("Project") : undefined}
-              onCreateRecord={() => handleOpenCreate(active.recordType, (projectScopes[active.id] ?? "all") === "all" ? undefined : { projectCode: projectScopes[active.id] as string })}
+              onCreateRecord={() => handleOpenCreate(active.recordType, (projectScopes[active.id] ?? "all") === "all" ? undefined : { projectCode: projectScopes[active.id] as string, projectId: projectScopes[active.id] as string })}
+              onCreateDeliverable={() => setDraftHubOpen(true)}
               onOpenRecord={id => { const record = leadRecords.find(item => item.id === id); if (record) openRecord(record); }}
               onOpenDocument={id => { const document = scopedDocuments.find(item => item.id === id); if (document) openDocument(document); }}
               onUpdateTask={(id,patch,action) => { void updateTask(id, { ...(patch.fields ? { fields: patch.fields } : {}), ...(patch.status ? { status: patch.status } : {}) }, action); }}
@@ -3292,12 +3307,16 @@ function Portal() {
               }
               onLog={log}
             />
+          ) : view === "analysis" ? (
+            <ProjectAnalysisOverview key={persona.id} projects={(persona.kind === "lead" || persona.kind === "member") ? leadProjects : activeRecords.filter(r=>r.type === "Project")} records={(persona.kind === "lead" || persona.kind === "member") ? leadRecords : activeRecords} documents={scopedDocuments} onOpenProject={project => {setSelectedProjectId(project.reference); if(persona.kind === "admin") setSelectedId(project.id); else setProjectScopes(current=>({...current,[effectiveArea]:project.reference})); setView("project");}} />
+          ) : view === "vault" ? (
+            <><div className="flex items-center justify-between"><div><h1 className="text-lg font-semibold">Documents & Vault</h1><p className="text-xs text-muted-foreground">Original documents and project-linked files within your department access.</p></div><div className="flex gap-2">{testMembership && <Action label="Shared documents & uploads" primary onClick={() => {setSharedTestInitialTab("Documents"); setShowSharedTestWorkspace(true);}} />}<Action label="Back to workspace" onClick={() => navigate(effectiveArea)} /></div></div><HardwareDeliverablesDrive documents={scopedDocuments} departments={portal.departments} departmentContext={departmentContext} persona={persona} portal={portal} onSelectDocument={openDocument} onOpenCustomerRegister={() => setCustomerRegisterOpen(true)} uploadReadOnlyReason={testMembership ? "This view is browser-local. Shared TEST uploads remain in Shared TEST records until the shared document contract is verified." : undefined} onDocumentCreated={async document => update(state => { const ownWork = state.records.filter(r=>!r.archived && r.area === persona.departmentId); const keys = new Set([...ownWork.flatMap(projectReferences),...state.documents.filter(d=>canDepartmentAccessDocument(d,persona,departmentContext)).flatMap(d=>d.linkedRecordRefs ?? [])]); const projects = state.records.filter(r => r.type === "Project" && (persona.kind === "admin" || keys.has(r.id) || keys.has(r.reference))); const selected = projects.find(p => p.id === document.projectId); assertUploadContextCurrent(document, projects, state.departments, sourceGerberPackages(state.documents.filter(d => canDepartmentAccessDocument(d, persona, departmentContext)), selected)); return { ...state, documents:[document,...state.documents], audit:[{id:createId(),at:now(),action:"Draft document uploaded",detail:`${document.title} · Browser-local`},...state.audit].slice(0,100) }; })} /></>
           ) : view === "index" ? (
             <>
-            {persona.kind === "admin" && activeArea === "rnd" && <div className="mb-4 flex items-center justify-between"><h1 className="text-xl font-semibold">Project Register</h1><Action label="New Project" primary onClick={() => handleOpenCreate("Project")} /></div>}
-            <IndexWorkspace
+            {persona.kind === "admin" && activeArea === "rnd" && <div className="mb-4 flex items-center justify-between"><h1 className="text-xl font-semibold">Manage Projects</h1><Action label="New Project" primary onClick={() => handleOpenCreate("Project")} /></div>}
+            <IndexWorkspace projectsOnly={activeArea === "rnd"}
               records={(persona.kind === "lead" || persona.kind === "member") ? [...leadRecords, ...leadProjects] : activeArea === "rnd" ? activeRecords.filter(record => record.type === "Project") : activeRecords}
-              documents={scopedDocuments}
+              documents={activeArea === "rnd" ? [] : scopedDocuments}
               allowedProjectIds={(persona.kind === "lead" || persona.kind === "member") ? leadProjects.map(project => project.id) : []}
               departments={portal.departments}
               departmentContext={departmentContext}
@@ -3486,17 +3505,22 @@ function Portal() {
           ) : view === "detail" && selected ? (
             <RecordDetail
               record={selected}
+              projects={activeRecords.filter(record=>record.type === "Project")}
+              onSendForFeasibility={(persona.kind === "admin" || (persona.kind === "lead" && persona.departmentId === "sales")) && (portal.enquiriesOpportunities ?? []).some(enquiry=>enquiry.id === selected.id && ["Pending Enquiry","Internal Review"].includes(enquiry.status)) ? ()=>{const enquiry=(portal.enquiriesOpportunities ?? []).find(item=>item.id===selected.id);if(enquiry)setFeasibilityDispatchEnquiry(enquiry);} : undefined}
               onBack={() => setView("queue")}
-              onSave={(patch) => {
-                if (selected.area === "tst") { announce("Legacy TST is read-only pending an approved ownership mapping."); return; }
-                if (selected.type === "Task") { void updateTask(selected.id, patch, "Task updated"); return; }
-                update((state) => ({
-                  ...state,
-                  records: state.records.map((record) =>
-                    record.id === selected.id ? { ...record, ...patch, updatedAt: now() } : record,
-                  ),
-                }));
-                log("Record updated", `${selected.reference} updated`);
+              onSave={async patch => {
+                if(selected.type === "Task") return updateTask(selected.id, patch, "Task updated");
+                return update(state=>{
+                  const current=state.records.find(r=>r.id === selected.id && !r.archived);
+                  if(!current || current.updatedAt !== selected.updatedAt) throw new Error("This record changed. Reopen it before saving.");
+                  if(current.area === "tst") throw new Error("Legacy TST is read-only pending ownership review.");
+                  if(persona.kind === "client" || (persona.kind !== "admin" && current.area !== persona.departmentId)) throw new Error("Record is outside your department scope.");
+                  if(current.status === "Approved" || current.status === "Released") throw new Error("Create a revised draft before changing an approved record.");
+                  if(patch.status && patch.status !== current.status && !["Draft","Open","In review"].includes(patch.status)) throw new Error("Use the designated approval workflow for final approval.");
+                  if(patch.fields && (patch.fields["projectId"] ?? "") !== (current.fields["projectId"] ?? "") && state.records.some(record=>record.fields["enquiryId"] === current.id) && persona.kind !== "admin" && persona.kind !== "lead") throw new Error("A department lead must associate a dispatched inquiry with its project.");
+                  const related=isPreProjectIntake(current.type) && patch.fields ? linkIntakeProject(state.records,state.enquiriesOpportunities ?? [],state.approvals,current.id,patch.fields["projectId"] ?? "") : {records:state.records,enquiries:state.enquiriesOpportunities ?? [],approvals:state.approvals};
+                  return {...state,records:related.records.map(r=>r.id===current.id ? {...r,...patch,updatedAt:now()} : r),enquiriesOpportunities:related.enquiries.map(enquiry=>enquiry.id===current.id ? {...enquiry,...(patch.title ? {title:patch.title} : {}),...(patch.notes !== undefined ? {scopeSummary:patch.notes} : {})} : enquiry),approvals:related.approvals,audit:[{id:createId(),at:now(),action:"Record updated locally",detail:`${current.reference} · ${persona.person}`},...state.audit].slice(0,100)};
+                });
               }}
               onArchive={() => {
                 if (selected.area === "tst") { announce("Preserve legacy TST records until ownership review is complete."); return; }
@@ -3589,7 +3613,7 @@ function Portal() {
               <span>{active.short}</span>
             </button>
             <button
-              onClick={() => setModal("documents")}
+              onClick={openDocuments}
               className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] text-muted-foreground"
             >
               <FileText className="size-4" />
@@ -3641,6 +3665,7 @@ function Portal() {
       </nav>
       {mobileMenu && (
         <MobileMenu
+          recordTypeFilter={recordTypeFilter} onRecordTypeFilterChange={setRecordTypeFilter}
           onClose={() => setMobileMenu(false)}
           onNavigate={(area, targetView) => {
             navigate(area as AreaId, (targetView as any) ?? "queue");
@@ -3658,10 +3683,7 @@ function Portal() {
           view={view}
           onOpenCustomerRegister={() => setCustomerRegisterOpen(true)}
           onOpenAi4tLifecycle={() => setAi4tOpen(true)}
-          onOpenProjectAnalysis={() => {
-            setView("project");
-            navigate("home");
-          }}
+          onOpenProjectAnalysis={() => setView("analysis")}
           onOpenDrive={openDocuments}
           onOpenDraftHub={() => setDraftHubOpen(true)}
           onOpenDirectory={() => setDirectoryOpen(true)}
@@ -3692,6 +3714,7 @@ function Portal() {
           portal={portal}
           initialType={createType}
           initialValues={createInitialValues}
+          defaultAssignee={persona.person.split(" · ")[0] ?? ""}
           onClose={() => { setCreateType(null); setCreateInitialValues(null); setModal(null); }}
           onSave={addRecord}
           onAddCustomer={handleCustomerCreated}
@@ -3724,13 +3747,18 @@ function Portal() {
             setSelectedDocumentId(document.id);
             setModal("document");
           }}
-          onDocumentCreated={(document) => {
-            update((state) => ({
+          uploadReadOnlyReason={testMembership ? "This view is browser-local. Use Shared TEST records for account-backed uploads; this pilot does not synchronize with Android." : undefined}
+          onDocumentCreated={async (document) => update((state) => {
+            const projects = state.records.filter(r => r.type === "Project");
+            const project = projects.find(p => p.id === document.projectId);
+            const accessibleDocuments = state.documents.filter(d => canDepartmentAccessDocument(d, persona, departmentContext));
+            assertUploadContextCurrent(document, projects, state.departments, sourceGerberPackages(accessibleDocuments, project));
+            return {
               ...state,
               documents: [document, ...state.documents],
-            }));
-            log("Controlled document created", `${document.title} · ${document.part ?? document.type}`);
-          }}
+              audit: [{ id: createId(), at: now(), action: "Draft document uploaded", detail: `${document.title} · ${document.part ?? document.type} · Browser-local` }, ...state.audit].slice(0, 100),
+            };
+          })}
           onDocumentUpdated={(document, event) => {
             update((state) => ({
               ...state,
@@ -3796,6 +3824,7 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
+      {searchOpen && persona.kind !== "client" && <Dialog open onOpenChange={setSearchOpen}><DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Search</DialogTitle><DialogDescription>Search permitted documents, projects, tasks and process records. Your workspace stays open behind this popup.</DialogDescription></DialogHeader><SharedIndex compact queryValue={globalSearchQuery} onQueryChange={setGlobalSearchQuery} records={(persona.kind === "lead" || persona.kind === "member") ? [...leadRecords, ...leadProjects] : activeRecords} documents={scopedDocuments} allowedProjectIds={(persona.kind === "lead" || persona.kind === "member") ? leadProjects.map(project => project.id) : []} departments={portal.departments} departmentContext={departmentContext} onSelect={record => { setSearchOpen(false); if (record.type === "Project") { setSelectedProjectId(record.reference); if (persona.kind === "admin") setSelectedId(record.id); else setProjectScopes(current => ({ ...current, [effectiveArea]: record.reference })); setView("project"); } else openRecord(record); }} onSelectDocument={document => { setSearchOpen(false); openDocument(document); }} /></DialogContent></Dialog>}
       <DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode onClose={() => setLoginModalOpen(false)} currentPersonaId={testMembership?.role === "member" ? "" : persona.id} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} />
       {customerRegisterOpen && (
         <CustomerRegisterModal
@@ -3851,8 +3880,10 @@ function Portal() {
           onClose={() => setDraftHubOpen(false)}
           departmentScope={(persona.kind === "lead" || persona.kind === "member") ? departmentCode(persona.departmentId) : undefined}
           projects={(persona.kind === "lead" || persona.kind === "member") ? leadProjects : activeRecords.filter(record => record.type === "Project")}
+          initialProject={(projectScopes[effectiveArea] ?? "all") !== "all" ? projectScopes[effectiveArea] : view === "project" ? selectedProjectId : undefined}
+          readOnlyReason={testMembership ? "Save drafts through the authenticated shared document workflow. This template preview does not write into TEST storage." : undefined}
           onSaveDraft={(draft, body) => {
-            update(state => {
+            return update(state => {
               const draftOwner = (persona.kind === "lead" || persona.kind === "member") ? departmentContext || persona.departmentId || "" : state.departments.find(department => departmentCode(department.code.replace(/^DEMO-/, "")) === departmentCode(draft.department))?.id || "";
               const existing = state.documents.find(document => document.part === draft.documentId && document.lifecycle === "Draft" && document.departmentId === draftOwner);
               const saved: ControlledDocument = { ...(existing ?? {}), id: existing?.id ?? createId(), title: draft.title, type: draft.title, url: existing?.url ?? "", part: draft.documentId, revision: "00", draftSnapshot: buildDocumentDraft(draft.title, draft.documentId, { reference: draft.documentId, fields: {}, notes: body }, state.records.find(record => record.type === "Project" && record.reference === draft.project), draft.templateType), departmentId: draftOwner, lifecycle: "Draft", classification: "Internal", linkedRecordRefs: draft.project ? [draft.project] : [], releaseNotes: body, history: [...(existing?.history ?? []), now() + " · Browser-local draft saved by " + persona.label] };
@@ -4109,11 +4140,22 @@ function Portal() {
       {directoryOpen && persona.kind !== "client" && (
         <CompanyDirectoryModal key={persona.id} onClose={() => setDirectoryOpen(false)} initialDepartment={(persona.kind === "lead" || persona.kind === "member") ? departmentCode(persona.departmentId) : undefined} lockedDepartment={(persona.kind === "lead" || persona.kind === "member") ? departmentCode(persona.departmentId) : undefined} contacts={(persona.kind === "lead" || persona.kind === "member") ? allTeamMembers.filter(member => member.area === persona.departmentId).map((member, index) => ({ id: String(index), name: member.name, departmentCode: departmentCode(member.area), departmentName: areaById(member.area).name, designation: member.role, reportingManager: "Department lead", workEmail: "", deskExtension: "Not provided", facilityLocation: "Not provided", primarySkills: member.skills, avatarInitial: member.name.split(" ").map(part => part[0]).join("").slice(0,2) })) : undefined} />
       )}
-      {decisionLogOpen && persona.kind === "admin" && (
-        <OfficialDecisionLogModal
-          onClose={() => setDecisionLogOpen(false)}
-          activeProject={selectedProjectId}
-        />
+      {decisionLogOpen && persona.kind !== "client" && (
+        <OfficialDecisionLogModal key={persona.id} onClose={() => setDecisionLogOpen(false)} activeProject={view === "project" ? selectedProjectId : undefined} persona={persona} authorId={testMembership?.membershipId ?? persona.id} decisions={portal.decisionLogs ?? (portal.demoLoaded ? defaultDecisionLogs : [])} projects={(persona.kind === "lead" || persona.kind === "member") ? leadProjects : activeRecords.filter(r=>r.type === "Project")} stageOptions={Array.from(new Set((portal.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES).filter(c=>persona.kind === "admin" || departmentCode(c.departmentCode) === departmentCode(persona.departmentId)).sort((a,b)=>a.stageIndex-b.stageIndex).map(c=>c.stageName)))} readOnlyReason={testMembership ? "This register contains browser-local examples. Shared decision submission and review will be enabled through a verified account-backed workflow." : undefined} onSave={async entry => update(state => {
+          const actorId=testMembership?.membershipId ?? persona.id;
+          const permittedProjects = state.records.filter(r=>r.type === "Project" && !r.archived && (persona.kind === "admin" || leadProjects.some(p=>p.id === r.id))).map(r=>r.reference);
+          const stages = (state.chronicles ?? DEFAULT_DEPARTMENT_CHRONICLES).filter(c=>persona.kind === "admin" || departmentCode(c.departmentCode) === departmentCode(persona.departmentId)).map(c=>c.stageName);
+          assertDecisionSubmission(entry, {id:actorId,kind:persona.kind,name:persona.person,role:persona.label,department:departmentCode(persona.departmentId) || "ADMIN"}, permittedProjects, stages);
+          const entries=state.decisionLogs ?? (state.demoLoaded ? defaultDecisionLogs : []);
+          if(entries.some(d=>d.id === entry.id)) throw new Error("This decision has already been recorded.");
+          return {...state,decisionLogs:[entry,...entries],audit:[{id:createId(),at:now(),action:"Decision recorded locally",detail:`${entry.title} · ${persona.person}`},...state.audit].slice(0,100)};
+        })} onApprove={async id => update(state => {
+          if(persona.kind !== "admin" && persona.kind !== "lead") throw new Error("A designated department lead must review this submission.");
+          const entries=state.decisionLogs ?? (state.demoLoaded ? defaultDecisionLogs : []);
+          const entry=entries.find(d=>d.id === id);
+          if(!entry || entry.status !== "Pending lead review" || (persona.kind !== "admin" && departmentCode(entry.departmentCode) !== departmentCode(persona.departmentId))) throw new Error("This submission is unavailable for your department review.");
+          return {...state,decisionLogs:entries.map(d=>d.id === id ? {...d,status:"Approved" as const,approvedBy:persona.person,approvedAt:new Date().toISOString()} : d),audit:[{id:createId(),at:now(),action:"Decision reviewed locally",detail:`${entry.title} · ${persona.person}`},...state.audit].slice(0,100)};
+        })} />
       )}
       {legalHubOpen && persona.kind === "admin" && (
         <OperationsLegalAndLetterheadModal onClose={() => setLegalHubOpen(false)} />
@@ -4836,6 +4878,8 @@ function AutoDraftHub({
   departmentScope,
   projects,
   onSaveDraft,
+  initialProject,
+  readOnlyReason,
   settings = defaultTemplateSettings(),
   onOpenPrintable,
   onOpenSettings,
@@ -4845,17 +4889,21 @@ function AutoDraftHub({
   onClose: () => void;
   departmentScope?: string | undefined;
   projects: RecordItem[];
-  onSaveDraft: (draft: PrintableDocument, body: string) => void;
+  onSaveDraft: (draft: PrintableDocument, body: string) => Promise<boolean>;
+  initialProject?: string | undefined;
+  readOnlyReason?: string | undefined;
   settings?: TemplateSettings;
   onOpenPrintable?: (document: PrintableDocument) => void;
   onOpenSettings?: () => void;
   templateBodies: Record<string, string>;
   onTemplateBodiesChange: (templates: Record<string, string>) => void;
 }) {
+  const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [savedDraft, setSavedDraft] = useState<string | null>(null);
   const scopedTemplates = autoDraftTemplates.filter(template => !departmentScope || departmentCode(template[2].split("/")[0]) === departmentScope);
   const [selected, setSelected] = useState<(typeof autoDraftTemplates)[number] | null>(null);
-  const [project, setProject] = useState(projects[0]?.reference ?? "");
+  const [project, setProject] = useState(projects.some(p => p.reference === initialProject) ? initialProject! : projects[0]?.reference ?? "");
   const projectRecord = projects.find(record => record.reference === project);
   const profile = { customer: projectRecord?.fields["customer"] || "Customer not provided", quantity: projectRecord?.fields["quantity"] || "Quantity not provided", techSpec: projectRecord?.fields["scope"] || "Requirements not provided", commercialValue: projectRecord?.fields["commercialValue"] || "Commercial baseline not provided" };
   return (
@@ -4874,7 +4922,9 @@ function AutoDraftHub({
           </button>
         ))}
       </div>
-      <div className="mt-5 max-w-md"><SelectField label="Project document baseline" value={project} onChange={setProject} options={projects.map(record => record.reference)} /></div>
+      <div className="mt-5 max-w-md"><CompactFilterSelect label="Project document baseline" shortLabel="Project" icon={Layers} value={project} onChange={value=>{setProject(value);setSavedDraft(null);}} options={projects.map(record=>({value:record.reference,label:`${record.reference} · ${record.title}`}))} /></div>
+      {readOnlyReason && <p role="status" className="mt-3 text-xs text-muted-foreground">{readOnlyReason}</p>}
+      {saveError && <p role="alert" className="mt-3 text-xs text-destructive">{saveError}</p>}
       {savedDraft && <p role="status" className="mt-4 text-sm">Local draft saved: {savedDraft}. Available in department documents after refresh; not issued or cloud-synced.</p>}
       {selected && (
         <section className="mt-5 border border-steel/35 bg-panel p-5">
@@ -4888,7 +4938,7 @@ function AutoDraftHub({
           </div>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">{profile.customer} · {profile.quantity} · {profile.techSpec} · {profile.commercialValue}. Validate all technical and commercial information before any controlled release.</p>
           <label className="mt-4 block font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Editable template content<textarea value={templateBodies[selected[0]] ?? templateBlueprint(selected[0], selected[1])} onChange={(event) => onTemplateBodiesChange({ ...templateBodies, [selected[0]]: event.target.value })} className="mt-2 min-h-28 w-full rounded-lg border border-input bg-background p-3 text-sm font-normal normal-case text-foreground" /></label>
-          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save local draft" primary onClick={() => { const draft = createPrintableDocument(selected, settings, project); onSaveDraft(draft, templateBodies[selected[0]] ?? templateBlueprint(selected[0], selected[1])); setSavedDraft(draft.documentId); }} /><Action label="Full Document Viewer & Print" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
+          <div className="mt-5 flex flex-wrap gap-2"><Action label="Save local draft" primary onClick={async () => { if (saving) return; setSaveError(""); setSavedDraft(null); if (readOnlyReason) { setSaveError(readOnlyReason); return; } if (!projectRecord) { setSaveError("Choose an existing permitted project."); return; } setSaving(true); try { const draft = createPrintableDocument(selected, settings, project); const saved = await onSaveDraft(draft, templateBodies[selected[0]] ?? templateBlueprint(selected[0], selected[1])); if (saved) setSavedDraft(draft.documentId); else setSaveError("Draft was not saved; your preview remains open."); } catch (e) { setSaveError(e instanceof Error ? e.message : "Draft could not be saved."); } finally { setSaving(false); } }} /><Action label="Full Document Viewer & Print" onClick={() => { if (onOpenPrintable) onOpenPrintable(createPrintableDocument(selected, settings, project)); }} />{onOpenSettings && <Action label="Customize header & footer" onClick={onOpenSettings} />}</div>
         </section>
       )}
     </Modal>
@@ -4920,12 +4970,10 @@ function TodayChecklist({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [expandAll, setExpandAll] = useState(false);
   const [inspectionOpen, setInspectionOpen] = useState(false);
-  const todayTasks = tasks.filter(
-    (task) => task.fields["dueDate"] === today && task.status !== "Released",
-  );
-  const pendingTasks = tasks.filter(
-    (task) => task.fields["dueDate"] === tomorrow && task.status !== "Released",
-  );
+  const todayTasks = tasks.filter(task => taskLane(task, today) === "today");
+  const pendingTasks = tasks.filter(task => taskLane(task, today) === "todo");
+  const reviewTasks = tasks.filter(task => taskLane(task, today) === "review");
+  const completedTasks = tasks.filter(task => taskLane(task, today) === "completed");
   const move = (task: RecordItem, dueDate: string, action: string) =>
     onUpdateTask(task.id, { fields: { ...task.fields, dueDate } }, action);
   return (
@@ -4934,7 +4982,7 @@ function TodayChecklist({
         <div><p className="text-sm font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
         <div className="flex shrink-0 gap-2"><Action label={expandAll ? "Collapse all" : "Expand all"} onClick={() => setExpandAll((value) => !value)} /><Action label="Open expanded modal" onClick={() => setInspectionOpen(true)} /></div>
       </div>
-    <div className="grid gap-6 p-4 lg:grid-cols-2">
+    <div className="grid gap-6 p-4 lg:grid-cols-3">
       <ChecklistLane
         title="Today"
         description="Short department-wise checklist"
@@ -4942,7 +4990,7 @@ function TodayChecklist({
         departments={departments}
         onDrop={() => {
           const task = tasks.find((item) => item.id === draggedId);
-          if (task) move(task, tomorrow, "Task moved to pending / tomorrow");
+          if (task && taskLane(task, today) !== "review") move(task, today, "Task reprioritized to today");
           setDraggedId(null);
         }}
         onDragStart={setDraggedId}
@@ -4953,13 +5001,13 @@ function TodayChecklist({
         expandAll={expandAll}
       />
       <ChecklistLane
-        title="Pending / Tomorrow"
+        title="Tomorrow / Planned"
         description="Tomorrow’s tasks; drag back to today to reprioritize"
         tasks={pendingTasks}
         departments={departments}
         onDrop={() => {
           const task = tasks.find((item) => item.id === draggedId);
-          if (task) move(task, today, "Task reprioritized to today");
+          if (task && taskLane(task, today) !== "review") move(task, tomorrow, "Task moved to planned / tomorrow");
           setDraggedId(null);
         }}
         onDragStart={setDraggedId}
@@ -4969,7 +5017,9 @@ function TodayChecklist({
         onOpenAssignee={onOpenAssignee}
         expandAll={expandAll}
       />
+      <ChecklistLane title="Review / Approval" description="Awaiting the designated review; complete through Approvals" tasks={reviewTasks} departments={departments} onDrop={() => setDraggedId(null)} onDragStart={() => {}} onDone={() => {}} onMove={() => {}} onOpenProject={onOpenProject} onOpenAssignee={onOpenAssignee} expandAll={expandAll}/>
     </div>
+    <details className="mx-4 mb-4 rounded-lg border border-border/70"><summary className="cursor-pointer px-3 py-2 text-xs font-semibold">Completed ({completedTasks.length})</summary><div>{completedTasks.map(task=><TaskCard key={task.id} task={task} department={departments.find(d=>d.id===task.departmentId)} onDragStart={()=>{}} onDone={()=>{}} onMove={()=>{}} onOpenProject={onOpenProject} onOpenAssignee={onOpenAssignee} expanded={false}/>)}</div></details>
     {inspectionOpen && <TaskInspectionModal tasks={[...todayTasks, ...pendingTasks]} departments={departments} onClose={() => setInspectionOpen(false)} onDone={(task) => onUpdateTask(task.id, { status: "Released" }, "Task marked done from inspection")} />}
     </section>
   );
@@ -5058,7 +5108,7 @@ function TaskCard({
   const assignee = task.fields["assignee"] ?? "Unassigned";
   return (
     <article
-      draggable
+      draggable={task.status !== "In review" && task.status !== "Approved" && task.status !== "Released"}
       onDragStart={() => onDragStart(task.id)}
       className="border-b border-border last:border-0"
     >
@@ -5068,7 +5118,7 @@ function TaskCard({
         <p className="truncate text-sm font-medium">{task.title}</p>
         <span className="grid size-6 place-items-center rounded-full border border-border bg-panel font-mono text-[9px] text-muted-foreground" title={assignee}>{assignee.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span>
         <span className="hidden font-mono text-[10px] text-muted-foreground sm:block">{task.fields["dueDate"] || "Unscheduled"}</span>
-        <div className="flex items-center gap-1"><button aria-label={`Mark ${task.title} done`} onClick={(event) => { event.stopPropagation(); onDone(task); }} className="grid size-7 place-items-center rounded border border-moss/35 text-moss hover:bg-accent"><Check className="size-3.5" /></button><ChevronRight className={`size-4 text-muted-foreground transition-transform motion-reduce:transition-none ${open ? "rotate-90" : ""}`} /></div>
+        <div className="flex items-center gap-1"><button disabled={task.status === "In review" || task.status === "Approved" || task.status === "Released"} title={task.status === "In review" ? "Complete through the designated approval" : "Mark done"} aria-label={`Mark ${task.title} done`} onClick={(event) => { event.stopPropagation(); onDone(task); }} className="grid size-7 place-items-center rounded border border-moss/35 text-moss hover:bg-accent"><Check className="size-3.5" /></button><ChevronRight className={`size-4 text-muted-foreground transition-transform motion-reduce:transition-none ${open ? "rotate-90" : ""}`} /></div>
       </div>
       {open && <div className="task-disclosure grid px-4 pb-4"><div className="min-h-0 overflow-hidden border-l-2 border-steel/35 pl-3">
       <p className="text-sm leading-6 text-muted-foreground">{task.notes || "No further task description recorded."}</p>
@@ -5090,15 +5140,15 @@ function TaskCard({
         </button>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Action onClick={() => onDone(task)} label="Mark done" />
-        <Action
+        {task.status !== "In review" && task.status !== "Approved" && task.status !== "Released" && <Action onClick={() => onDone(task)} label="Mark done" />}
+        {task.status !== "In review" && task.status !== "Approved" && task.status !== "Released" && <Action
           onClick={() => onMove(task)}
           label={
             task.fields["dueDate"] === businessDate()
               ? "Move to Pending / Tomorrow"
               : "Move to Today"
           }
-        />
+        />}
       </div></div></div>}
     </article>
   );
@@ -7123,26 +7173,34 @@ function AreaSummary({ records }: { records: RecordItem[] }) {
 
 function RecordDetail({
   record,
+  projects = [],
   onBack,
   onSave,
   onArchive,
   onOpenPrintable,
+  onSendForFeasibility,
 }: {
   record: RecordItem;
+  projects?: RecordItem[];
+  onSendForFeasibility?: (()=>void) | undefined;
   onBack: () => void;
-  onSave: (patch: Partial<RecordItem>) => void;
+  onSave: (patch: Partial<RecordItem>) => Promise<boolean>;
   onArchive: () => void;
   onOpenPrintable: (document: PrintableDocument) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [title, setTitle] = useState(record.title);
   const [notes, setNotes] = useState(record.notes);
+  const [linkedProject, setLinkedProject] = useState(record.fields["projectId"] ?? "");
   const [status, setStatus] = useState<RecordStatus>(record.status);
   useEffect(() => {
     setEditing(false);
     setTitle(record.title);
     setNotes(record.notes);
     setStatus(record.status);
+    setLinkedProject(record.fields["projectId"] ?? "");
   }, [record.id, record.title, record.notes, record.status]);
   return (
     <>
@@ -7162,41 +7220,13 @@ function RecordDetail({
             <h1 className="mt-2 text-3xl font-semibold">{record.title}</h1>
           </div>
           <div className="flex gap-2">
+            {onSendForFeasibility && <Action label="Send for feasibility" primary onClick={onSendForFeasibility} />}
             <Action onClick={() => onOpenPrintable(recordPrintable(record))} label="Open full document" primary />
-            <Action onClick={() => { setTitle(record.title); setNotes(record.notes); setStatus(record.status); setEditing(!editing); }} label={editing ? "Cancel" : "Edit"} />
+            <Action onClick={() => { setTitle(record.title); setNotes(record.notes); setStatus(record.status); setLinkedProject(record.fields["projectId"] ?? ""); setSaveError(""); setEditing(true); }} label={editing ? "Cancel" : "Edit"} />
             <Action onClick={onArchive} label="Archive" />
           </div>
         </div>
         <div className="grid gap-6 p-5 md:grid-cols-[minmax(0,1fr)_15rem]">
-          {editing ? (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (title.trim()) {
-                  onSave({ title: title.trim(), notes, status });
-                  setEditing(false);
-                }
-              }}
-              className="space-y-4"
-            >
-              <TextField label="Title" value={title} onChange={setTitle} required />
-              <SelectField
-                label="Status"
-                value={status}
-                options={["Draft", "Open", "In review", "Approved", "Released"]}
-                onChange={(value) => setStatus(value as RecordStatus)}
-              />
-              <label className="block text-sm font-medium">
-                Notes
-                <textarea
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value.slice(0, 2000))}
-                  className="mt-1.5 min-h-28 w-full border border-input bg-background p-3 text-sm"
-                />
-              </label>
-              <Action label="Save changes" primary submit />
-            </form>
-          ) : (
             <div>
               <h2 className="font-semibold">Controlled fields</h2>
               <dl className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -7216,7 +7246,6 @@ function RecordDetail({
                 {record.notes || "No scope added."}
               </p>
             </div>
-          )}
           <aside className="border-l border-border pl-5">
             <Status status={record.status} />
             <p className="mt-6 font-mono text-[10px] uppercase text-muted-foreground">Priority</p>
@@ -7229,6 +7258,37 @@ function RecordDetail({
           </aside>
         </div>
       </section>
+      {editing && <Dialog open onOpenChange={open=>{if(!open && !saving)setEditing(false);}}><DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg"><DialogHeader><DialogTitle>Edit {record.type}</DialogTitle><DialogDescription>{record.reference} · Changes apply to this browser-local record.</DialogDescription></DialogHeader>            <form
+              onSubmit={async event => {
+                event.preventDefault(); if(saving || !title.trim()) return;
+                setSaving(true); setSaveError("");
+                try { if(await onSave({title:title.trim(),notes,status,...(isPreProjectIntake(record.type) ? {fields:{...record.fields,projectId:linkedProject,projectCode:linkedProject}} : {})})) setEditing(false); else setSaveError("Changes were not saved; your edit remains open."); }
+                catch(e){setSaveError(e instanceof Error ? e.message : "Changes could not be saved.");}
+                finally { setSaving(false); }
+              }}
+              className="space-y-4"
+            >
+              <TextField label="Title" value={title} onChange={setTitle} required />
+              {isPreProjectIntake(record.type) && <div className="space-y-1"><p className="text-xs">Project association</p><CompactFilterSelect label="Inquiry project association" shortLabel="Project" icon={Layers} value={linkedProject} onChange={setLinkedProject} options={[{value:"",label:"No project yet"},...projects.map(project=>({value:project.reference,label:`${project.reference} · ${project.title}`}))]}/><p className="text-xs text-muted-foreground">Link a real project when available. Existing inquiry and review references stay unchanged.</p></div>}
+              <SelectField
+                label="Status"
+                value={status}
+                options={record.status === "Approved" || record.status === "Released" || record.status === "In review" ? [record.status] : ["Draft", "Open", "In review"]}
+                onChange={(value) => setStatus(value as RecordStatus)}
+              />
+              <label className="block text-sm font-medium">
+                Notes
+                <textarea
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value.slice(0, 2000))}
+                  className="mt-1.5 min-h-28 w-full border border-input bg-background p-3 text-sm"
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">Final approvals and released revisions are managed through their review workflow.</p>
+              {saveError && <p role="alert" className="text-xs text-destructive">{saveError}</p>}
+              <div className="flex justify-end gap-2"><button type="button" disabled={saving} onClick={()=>setEditing(false)} className="rounded-lg border border-border px-3 py-2 text-xs">Cancel</button><button type="submit" disabled={saving} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Save changes"}</button></div>
+            </form>
+</DialogContent></Dialog>}
     </>
   );
 }
@@ -7520,6 +7580,7 @@ function RecordForm({
   portal,
   initialType,
   initialValues,
+  defaultAssignee,
   onClose,
   onSave,
   onAddCustomer,
@@ -7528,6 +7589,7 @@ function RecordForm({
   portal: PortalState;
   initialType: string | null;
   initialValues?: Record<string, string> | null;
+  defaultAssignee: string;
   onClose: () => void;
   onSave: (record: Omit<RecordItem, "id" | "reference" | "createdAt" | "updatedAt">) => void;
   onAddCustomer?: (customer: CustomerRecord) => void;
@@ -7537,8 +7599,9 @@ function RecordForm({
   const availableTypes = Array.from(new Set(["Task", ...(area === "sales" || area === "rnd" ? ["Project"] : []), ...(spec.types ?? []), ...(initialType ? [initialType] : [])]));
   const [type, setType] = useState(initialType ?? spec.types[0] ?? "Record");
   const [values, setValues] = useState<Record<string, string>>(() => ({
+    assignee: defaultAssignee,
     location: portal.masters.locations?.[0] || "XYZ Pvt Ltd — Noida Tech Center",
-    projectId: "",
+    projectId: initialType === "Project" ? suggestProjectCode(portal.records, portal.templateSettings?.prefix) : "",
     hwStage: "HW_01",
     gate: "G0",
     procurementTrack: "Rapid prototype",
@@ -7573,7 +7636,7 @@ function RecordForm({
   ).padStart(2, "0");
   const generatedId = type === "Project" ? field("projectId") : type === "Task"
     ? `TASK-${departmentCode}-${String(portal.records.filter((r) => r.type === "Task").length + 1).padStart(3, "0")}`
-    : documentNumber(selectedProject, departmentCode, selectedDocumentType, nextRevision, portal.templateSettings?.prefix ?? "HLPL");
+    : isPreProjectIntake(type) && !selectedProject ? suggestIntakeReference(portal.records,type) : documentNumber(selectedProject, departmentCode, selectedDocumentType, nextRevision, portal.templateSettings?.prefix ?? "HLPL");
   const approvedReview = portal.records.find(
     (record) =>
       record.type === "Contract review" &&
@@ -7603,11 +7666,12 @@ function RecordForm({
     { key: "quantity", label: "Target annual volume" },
   ];
   const visibleFields = type === "Project" ? projectFields : type === "Task" ? taskFields : [
-    { key: "projectId", label: "Project", required: true, kind: "select" as const, options: projectOptions },
+    { key: "projectId", label: isPreProjectIntake(type) ? "Existing project (optional)" : "Project", required: !isPreProjectIntake(type), kind: "select" as const, options: projectOptions },
     ...spec.fields.filter(item => item.key !== "controlledNumber" && item.key !== "projectId" && (type !== "PRS" || item.key !== "hwStage")),
   ];
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const scopedValues = scopeRecordDefaults(values, visibleFields.map(item => item.key));
     if (type !== "Task" || field("projectId")) {
       try { validateIntakeProject(portal.records, type, field("projectId")); }
       catch (error) { return setError(error instanceof Error ? error.message : "Choose a project."); }
@@ -7623,9 +7687,9 @@ function RecordForm({
         priority: (field("priority") as Priority) || "Normal",
         notes: field("scope"),
         fields: {
-          ...values,
+          ...scopedValues,
           dueDate: field("dueDate") || businessDate(),
-          assignee: field("assignee") || (area === "sales" ? "Priya Sharma" : "Avery Vale"),
+          assignee: field("assignee") || defaultAssignee,
           projectId: field("projectId") || selectedProject,
           controlledNumber: field("controlledNumber") || generatedId,
         },
@@ -7639,14 +7703,14 @@ function RecordForm({
     const preparedValues = {
       ...(type === "PRS"
         ? {
-            ...values,
+            ...scopedValues,
             controlledNumber: finalControlledNumber || "HLPL-SLCT-EHW-PRS-01",
             projectId: values["projectId"] || "HLPL-SLCT-01",
             lifecycleStage: "Stage 3 · Requirement Freeze & Commercial Confirmation",
             generatedFrom: "Generated automatically from approved Contract Review HLPL/F/MKT/01",
             baseline: "Frozen · automated baseline · changes require PMSS amendment",
           }
-        : values),
+        : scopedValues),
       controlledNumber: finalControlledNumber,
       ...(type === "Project" ? { lifecycleStage: "Stage 1", currentStage: "Stage 1" } : {}),
     };
@@ -7683,19 +7747,20 @@ function RecordForm({
         <p className="rounded-lg border border-border bg-panel px-3 py-2 text-xs text-muted-foreground">
           {type === "Task"
             ? `Create a tracked operational task assigned within ${areaById(area).name}. Tasks are automatically integrated into Today Checklist, Priority metrics, and department queues.`
+            : isPreProjectIntake(type) ? "Capture the customer requirement first. A new inquiry can be saved without a project; link an existing project only when relevant." : type === "Project" ? "Create a project with a unique code and a separate descriptive title. The suggested code can be changed before saving; existing projects are not renamed."
             : `This ${areaById(area).name} record is linked to a managed project, people, suppliers, customers, and locations where applicable. The portal generates an HLPL document number when you leave the controlled number blank.`}
         </p>
-        <SelectField label="Record type" value={type} options={availableTypes} onChange={setType} />
+        <SelectField label="Record type" value={type} options={availableTypes} onChange={next => { setType(next); setValues(previous => ({ ...previous, controlledNumber: "", projectId: next === "Project" ? suggestProjectCode(portal.records, portal.templateSettings?.prefix) : type === "Project" ? "" : previous["projectId"] ?? "" })); }} />
         <section className="rounded-lg border border-steel/35 bg-panel p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">Automatic document number</p>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">{type === "Project" ? "Project identifier" : "Automatic document number"}</p>
               <p className="mt-1 font-mono text-sm font-semibold text-foreground">{field("controlledNumber") || generatedId}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{portal.templateSettings?.prefix ?? "HLPL"} · Project · Department · Document type · Revision</p>
+              <p className="mt-1 text-xs text-muted-foreground">{type === "Project" ? "This code identifies the project; Project title is its display name." : isPreProjectIntake(type) && !selectedProject ? "Standalone sales inquiry number; this is not a project code." : `${portal.templateSettings?.prefix ?? "HLPL"} · Project · Department · Document type · Revision`}</p>
             </div>
             <Action label={copied ? "Copied" : "Copy ID"} onClick={() => { void navigator.clipboard?.writeText(field("controlledNumber") || generatedId); setCopied(true); window.setTimeout(() => setCopied(false), 1500); }} />
           </div>
-          <input aria-label="Editable document ID" readOnly={type === "Project"} value={field("controlledNumber") || generatedId} onChange={(event) => setValues({ ...values, controlledNumber: event.target.value.toUpperCase() })} className="mt-3 h-9 w-full rounded-lg border border-input bg-background px-3 font-mono text-xs" />
+          <input aria-label={type === "Project" ? "Project identifier preview" : "Editable document ID"} readOnly={type === "Project"} value={type === "Project" ? generatedId : field("controlledNumber") || generatedId} onChange={(event) => setValues({ ...values, controlledNumber: event.target.value.toUpperCase() })} className="mt-3 h-9 w-full rounded-lg border border-input bg-background px-3 font-mono text-xs" />
         </section>
         {type === "PRS" && (
           <div className="rounded-lg border border-moss/30 bg-accent p-4 text-sm">
@@ -7716,16 +7781,18 @@ function RecordForm({
                 item={item}
                 value={field(item.key)}
                 options={portal.masters[item.master] ?? []}
-                onChange={(value) => setValues({ ...values, [item.key]: value })}
+                onChange={(value) => setValues({ ...values, [item.key]: type === "Project" && item.key === "projectId" ? value.trim().toUpperCase() : value })}
                 onAddCustomer={item.master === "customers" ? () => setShowAddCustomerModal(true) : undefined}
               />
+            ) : item.key === "projectId" && isPreProjectIntake(type) ? (
+              <div key={item.key} className="space-y-1"><p className="text-sm font-medium">Existing project (optional)</p><CompactFilterSelect label="Inquiry project link" shortLabel="Project" icon={Layers} value={selectedProject} onChange={value=>setValues(previous=>({...previous,projectId:value,controlledNumber:""}))} options={[{value:"",label:"New requirement — no project yet"},...portal.records.filter(record=>record.type === "Project" && !record.archived).map(record=>({value:record.reference,label:`${record.reference} · ${record.title}`}))]}/><p className="text-xs text-muted-foreground">Link an existing project only for a change, extension or repeat requirement. No project is created by saving this inquiry.</p></div>
             ) : item.kind === "select" ? (
               <SelectField
                 key={item.key}
                 label={`${item.label}${item.required ? " *" : ""}`}
                 value={field(item.key)}
                 options={["", ...(item.options ?? [])]}
-                onChange={(value) => setValues({ ...values, [item.key]: value })}
+                onChange={(value) => setValues({ ...values, [item.key]: type === "Project" && item.key === "projectId" ? value.trim().toUpperCase() : value })}
               />
             ) : (
               <TextField
@@ -7734,7 +7801,7 @@ function RecordForm({
                 type={item.kind === "date" ? "date" : "text"}
                 required={item.required === true}
                 value={field(item.key)}
-                onChange={(value) => setValues({ ...values, [item.key]: value })}
+                onChange={(value) => setValues({ ...values, [item.key]: type === "Project" && item.key === "projectId" ? value.trim().toUpperCase() : value })}
               />
             ),
           )}
@@ -7782,14 +7849,15 @@ function ManagedField({
   onChange: (value: string) => void;
   onAddCustomer?: (() => void) | undefined;
 }) {
+  const fieldId = useId();
   const isCustomer = item.label.toLowerCase().includes("customer");
   return (
-    <label className="block text-sm font-medium">
+    <div className="block text-sm font-medium">
       <div className="flex items-center justify-between">
-        <span>
+        <label htmlFor={fieldId}>
           {item.label}
           {item.required ? " *" : ""}
-        </span>
+        </label>
         {isCustomer && onAddCustomer && (
           <button
             type="button"
@@ -7802,13 +7870,14 @@ function ManagedField({
         )}
       </div>
       <input
-        list={`options-${item.label}`}
+        id={fieldId}
+        list={`${fieldId}-options`}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={`Search ${item.label.toLowerCase()}`}
         className="mt-1.5 h-11 w-full border border-input bg-background px-3 text-sm"
       />
-      <datalist id={`options-${item.label}`}>
+      <datalist id={`${fieldId}-options`}>
         {options.map((option) => (
           <option key={option} value={option} />
         ))}
@@ -7818,7 +7887,7 @@ function ManagedField({
           ? "Select a registered customer or click [+ Add Customer] inline."
           : "Manage options in Administration."}
       </span>
-    </label>
+    </div>
   );
 }
 
@@ -9137,7 +9206,9 @@ function SharedIndex({
   allowedProjectIds = [],
   onSelect,
   onSelectDocument,
+  compact = false, queryValue, onQueryChange,
 }: {
+  compact?: boolean; queryValue?: string; onQueryChange?: (query: string) => void;
   records: RecordItem[];
   documents: ControlledDocument[];
   departments: Department[];
@@ -9146,67 +9217,24 @@ function SharedIndex({
   onSelect: (record: RecordItem) => void;
   onSelectDocument: (document: ControlledDocument) => void;
 }) {
-  const [query, setQuery] = useState("");
+  const [internalQuery, setInternalQuery] = useState("");
+  const query = queryValue ?? internalQuery;
+  const setQuery = onQueryChange ?? setInternalQuery;
   const [kind, setKind] = useState("All");
   const [department, setDepartment] = useState(departmentContext ?? "All departments");
   const allowedDepartments = departmentContext
     ? departments.filter((item) => item.id === departmentContext)
     : departments;
-  const matches = (value: string) => value.toLowerCase().includes(query.toLowerCase());
-  const matchingRecordKind = (record: RecordItem) =>
-    kind === "All" ||
-    (kind === "Clients" && /^(Customer|Client)$/i.test(record.type)) ||
-    (kind === "Projects" && record.type === "Project") ||
-    (kind === "Audits" && /audit|inspection|ncr|capa|review/i.test(record.type));
-  const scopedRecords = records.filter(
-    (record) =>
-      (department === "All departments" || record.departmentId === department || (record.type === "Project" && allowedProjectIds.includes(record.id))) &&
-      matches(`${record.reference} ${record.title} ${record.type} ${record.notes}`) &&
-      matchingRecordKind(record),
-  );
-  const scopedDocuments = documents.filter(
-    (document) =>
-      (department === "All departments" || document.departmentId === department) &&
-      matches(
-        `${document.title} ${document.type} ${document.group ?? ""} ${document.device ?? ""} ${document.part ?? ""}`,
-      ) &&
-      (kind === "All" || kind === "Documents"),
-  );
+  const found = searchVisibleItems(records, documents, query, kind, department, allowedProjectIds);
+  const scopedRecords = compact ? found.records.slice(0, 30) : found.records;
+  const scopedDocuments = compact ? found.documents.slice(0, 30) : found.documents;
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_11rem_13rem]">
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search clients, projects, audits or documents"
-          className="h-11 border border-input bg-background px-3 text-sm"
-        />
-        <select
-          aria-label="Index type"
-          value={kind}
-          onChange={(event) => setKind(event.target.value)}
-          className="h-11 border border-input bg-background px-3 text-sm"
-        >
-          <option>All</option>
-          <option>Clients</option>
-          <option>Projects</option>
-          <option>Audits</option>
-          <option>Documents</option>
-        </select>
-        <select
-          aria-label="Index department"
-          value={department}
-          onChange={(event) => setDepartment(event.target.value)}
-          className="h-11 border border-input bg-background px-3 text-sm"
-        >
-          {!departmentContext && <option>All departments</option>}
-          {allowedDepartments.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <ResponsiveFilterBar label="Search filters" secondary={!departmentContext ? <CompactFilterSelect label="Department" shortLabel="Dept" icon={Users} value={department} onChange={setDepartment} options={[{value:"All departments",label:"All departments"}, ...allowedDepartments.map(d => ({value:d.id,label:d.name}))]} /> : undefined} activeCount={department !== (departmentContext ?? "All departments") ? 1 : 0}>
+        <div className="filter-search"><Search /><input autoFocus={compact} aria-label="Search records and documents" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search documents, tasks, projects…" /></div>
+        <CompactFilterSelect label="Record type" shortLabel="Type" icon={Layers} value={kind} onChange={setKind} options={["All","Documents","Projects","Tasks","Processes","Clients","Audits"].map(value => ({value,label:value}))} />
+      </ResponsiveFilterBar>
+      {compact && <p className="text-xs text-muted-foreground">{found.records.length + found.documents.length} matching items{found.records.length > 30 || found.documents.length > 30 ? " · Narrow your search to see more specific results" : ""}</p>}
       <div className="border border-border bg-card">
         <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3 border-b border-border px-4 py-3 font-mono text-[10px] uppercase text-muted-foreground">
           <span>Record</span>
@@ -9214,7 +9242,7 @@ function SharedIndex({
         </div>
         {scopedRecords.map((record) => (
           <button
-            key={record.id}
+            key={`record-${record.id}`}
             onClick={() => onSelect(record)}
             className="grid w-full grid-cols-[minmax(0,1fr)_7rem] gap-3 border-b border-border px-4 py-3 text-left last:border-0"
           >
@@ -9231,7 +9259,7 @@ function SharedIndex({
         ))}
         {scopedDocuments.map((document) => (
           <button
-            key={document.id}
+            key={`document-${document.id}`}
             onClick={() => onSelectDocument(document)}
             className="grid w-full grid-cols-[minmax(0,1fr)_7rem] gap-3 border-b border-border px-4 py-3 text-left last:border-0"
           >
@@ -9362,6 +9390,7 @@ function PMSSWorkspace({
 
 function IndexWorkspace({
   records,
+  projectsOnly = false,
   documents,
   departments,
   departmentContext,
@@ -9370,6 +9399,7 @@ function IndexWorkspace({
   onSelect,
   onSelectDocument,
 }: {
+  projectsOnly?: boolean;
   records: RecordItem[];
   documents: ControlledDocument[];
   departments: Department[];
@@ -9390,8 +9420,8 @@ function IndexWorkspace({
       </button>
       <PageHeader
         eyebrow="Access-checked shared view"
-        title="Unified index"
-        description="Find clients, projects, department audit records and controlled documents without leaving the page."
+        title={projectsOnly ? "Manage Projects" : "Records index"}
+        description={projectsOnly ? "Select a project to open its existing information, lifecycle and permitted work." : "Find permitted clients, projects, department records and documents."}
         actions={null}
       />
       <section className="border border-border bg-panel p-4 md:p-5">
@@ -9521,6 +9551,7 @@ function DocumentsPanel({
   onOpenCustomerRegister,
   portal,
   onDocumentCreated,
+  uploadReadOnlyReason,
   onDocumentUpdated,
 }: {
   documents: ControlledDocument[];
@@ -9535,7 +9566,8 @@ function DocumentsPanel({
   onTemplateBodiesChange: (templates: Record<string, string>) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   portal?: PortalState | undefined;
-  onDocumentCreated?: ((document: ControlledDocument) => void) | undefined;
+  onDocumentCreated?: ((document: ControlledDocument) => Promise<boolean>) | undefined;
+  uploadReadOnlyReason?: string | undefined;
   onDocumentUpdated?: ((document: ControlledDocument, event: string) => void) | undefined;
 }) {
   const approvedCount = documents.filter((d) => d.lifecycle === "Approved").length;
@@ -9585,6 +9617,7 @@ function DocumentsPanel({
         onOpenCustomerRegister={onOpenCustomerRegister}
         portal={portal}
         onDocumentCreated={onDocumentCreated}
+        uploadReadOnlyReason={uploadReadOnlyReason}
         onDocumentUpdated={onDocumentUpdated}
       />
     </Modal>
@@ -9603,7 +9636,7 @@ const formatBytes = (size: number) =>
 const formatLabel = (file: Pick<LocalControlledFile, "name" | "type">) => {
   const extension = file.name.split(".").pop()?.toUpperCase();
   if (extension === "STP" || extension === "STEP") return "CAD STEP";
-  if (extension === "ZIP") return "GERBER ZIP";
+  if (extension === "ZIP") return "ZIP archive";
   return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
 };
 
@@ -9635,11 +9668,12 @@ export const canonicalDriveGroups: { id: DriveGroup; label: string; icon: string
   { id: "All Deliverables", label: "All Deliverables", icon: "📂", description: "Complete multi-department engineering and audit repository" },
   { id: "01 Common documents", label: "01 Common documents", icon: "📄", description: "SOPs, QMS procedures, authority matrices, customer registers and templates" },
   { id: "02 Internal projects", label: "02 Internal projects", icon: "🔬", description: "Internal R&D, automated test jigs, golden units and platform baselines" },
-  { id: "03 Client projects", label: "03 Client projects", icon: "🚗", description: "Customer programs (HLPL-AI4T-01, HLPL-SLCT-01, HLPL-XLINK-03) deliverables" },
+  { id: "03 Client projects", label: "03 Client projects", icon: "🚗", description: "Deliverables linked to customer projects" },
   { id: "04 Other department work", label: "04 Other department work", icon: "🛡️", description: "Supplier PPAPs, calibration certs, DVP&R environmental logs and 8D CAPA" },
 ];
 
 export function driveGroupFor(document: ControlledDocument): "01 Common documents" | "02 Internal projects" | "03 Client projects" | "04 Other department work" {
+  if (document.uploadScope) return ({ common: "01 Common documents", internal: "02 Internal projects", client: "03 Client projects", department: "04 Other department work" } as const)[document.uploadScope];
   const combined = `${document.title} ${document.type} ${document.group ?? ""} ${document.part ?? ""} ${document.device ?? ""}`.toLowerCase();
   if (/governance|qms|sop|procedure|mnda|nda template|matrix|authority|handover|enquiry intake|register\.xlsx/i.test(combined)) {
     return "01 Common documents";
@@ -9683,6 +9717,7 @@ function HardwareDeliverablesDrive({
   onOpenCustomerRegister,
   portal,
   onDocumentCreated,
+  uploadReadOnlyReason,
   onDocumentUpdated,
 }: {
   documents: ControlledDocument[];
@@ -9692,17 +9727,25 @@ function HardwareDeliverablesDrive({
   onSelectDocument: (document: ControlledDocument) => void;
   onOpenCustomerRegister?: (() => void) | undefined;
   portal?: PortalState | undefined;
-  onDocumentCreated?: ((document: ControlledDocument) => void) | undefined;
+  onDocumentCreated?: ((document: ControlledDocument) => Promise<boolean>) | undefined;
+  uploadReadOnlyReason?: string | undefined;
   onDocumentUpdated?: ((document: ControlledDocument, event: string) => void) | undefined;
 }) {
   const [driveGroup, setDriveGroup] = useState<DriveGroup>("All Deliverables");
   const [folder, setFolder] = useState("00_Root_Audit_Repository");
   const [query, setQuery] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [projectFilter, setProjectFilter] = useState("all");
+  const actorDepartment = persona?.departmentId ? findAreaDepartment(departments, persona.departmentId) : undefined;
+  const uploadDepartments = departments.filter(d => d.active && (persona?.kind === "admin" || d.id === actorDepartment?.id));
+  const ownWork = (portal?.records ?? []).filter(r => !r.archived && (persona?.kind === "admin" ? !departmentContext || r.departmentId === departmentContext : r.area === persona?.departmentId));
+  const permittedProjectKeys = new Set([...ownWork.flatMap(projectReferences), ...documents.filter(canDepartmentAccessForChoice).flatMap(d => d.linkedRecordRefs ?? [])]);
+  function canDepartmentAccessForChoice(document: ControlledDocument) { return Boolean(persona && canDepartmentAccessDocument(document, persona, departmentContext)); }
+  const uploadProjects = (portal?.records ?? []).filter(r => r.type === "Project" && !r.archived && (persona?.kind === "admin" && !departmentContext || permittedProjectKeys.has(r.id) || permittedProjectKeys.has(r.reference)));
+  const uploadDisabled = Boolean(uploadReadOnlyReason || !onDocumentCreated || !persona || persona.kind === "client" || !uploadDepartments.length);
 
   const canSee = (document: ControlledDocument) =>
     canDepartmentAccessDocument(
@@ -9717,7 +9760,9 @@ function HardwareDeliverablesDrive({
   const countByFolder = (fld: string) =>
     documents.filter((doc) => canSee(doc) && (driveGroup === "All Deliverables" || driveGroupFor(doc) === driveGroup) && (fld === "00_Root_Audit_Repository" || driveFolderFor(doc) === fld)).length;
 
-  const visible = documents.filter(
+  const selectedProject = uploadProjects.find(p => p.id === projectFilter);
+  const projectDocuments = projectFilter === "all" ? documents : selectedProject ? documentsForProject(documents, recordsForProject(portal?.records ?? [], selectedProject), selectedProject) : [];
+  const visible = projectDocuments.filter(
     (document) =>
       canSee(document) &&
       (driveGroup === "All Deliverables" || driveGroupFor(document) === driveGroup) &&
@@ -9725,74 +9770,18 @@ function HardwareDeliverablesDrive({
       `${document.title} ${document.type} ${document.part ?? ""}`.toLowerCase().includes(query.toLowerCase()),
   );
 
-  const handleFileUpload = async (file: File) => {
-    try {
-      setIsUploading(true);
-      setUploadProgress(15);
-      setUploadNotice(`Securing & computing SHA-256 for ${file.name}…`);
-      const checksum = await sha256(file);
-      setUploadProgress(55);
-
-      const id = createId();
-      await saveLocalAttachment(id, file);
-      setUploadProgress(85);
-
-      const localFile: LocalControlledFile = {
-        id,
-        name: file.name,
-        type: file.type || "application/octet-stream",
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-        uploader: "HOD Engineer · Lovable Cloud Storage",
-        revision: "01",
-        storage: "indexeddb",
-        checksum,
-      };
-
-      // Check if there is an existing matching document in this folder to attach to
-      const existingDoc = documents.find(
-        (doc) => canSee(doc) && (folder === "00_Root_Audit_Repository" || driveFolderFor(doc) === folder) && doc.title.toLowerCase().includes((file.name.split(".")[0] ?? "").toLowerCase()),
-      );
-
-      if (existingDoc) {
-        const updatedDoc: ControlledDocument = {
-          ...existingDoc,
-          localFiles: [...(existingDoc.localFiles ?? []), localFile],
-          history: [`${now()} · ${file.name} attached directly to drive folder /${folder} (SHA-256 verified)`, ...(existingDoc.history ?? [])],
-        };
-        onDocumentUpdated?.(updatedDoc, `${existingDoc.title} · ${file.name} attached`);
-      } else {
-        // Create new controlled document deliverable
-        const departmentId = departmentContext ?? departments[0]?.id ?? "ehw";
-        const newDoc: ControlledDocument = {
-          id: createId(),
-          url: "",
-          departmentId,
-          title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
-          type: formatLabel(localFile),
-          lifecycle: "Approved",
-          deliverableKind: "Technical document",
-          revision: "01",
-          part: `HLPL-AI4T-EHW-${formatLabel(localFile)}-01`,
-          device: "Tata Ace EV 4G AIS-140 Gateway",
-          group: driveGroup === "All Deliverables" ? "03 Client projects" : driveGroup,
-          phase: "HW_18 · Production Engineering Release",
-          localFiles: [localFile],
-          history: [`${now()} · Created via Direct Cloud Drive upload into /${folder}`],
-        };
-        onDocumentCreated?.(newDoc);
-      }
-
-      setUploadProgress(100);
-      setUploadNotice(`✓ Upload Verified: ${file.name} (${formatBytes(file.size)}) stored separately in this browser with SHA-256 ${checksum.slice(0, 16)}…`);
-      window.setTimeout(() => {
-        setIsUploading(false);
-      }, 1500);
-    } catch (err) {
-      setIsUploading(false);
-      setUploadProgress(0);
-      setUploadNotice(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+  const openUploadDraft = (file: File | null) => {
+    if (uploadDisabled) { setUploadNotice(uploadReadOnlyReason ?? "Select an authorized department before uploading."); return; }
+    setPendingFile(file); setUploadDialogOpen(true);
+  };
+  const saveUploadDraft = async (document: UploadDraft) => {
+    if (uploadDisabled || !onDocumentCreated) return false;
+    const saved = await onDocumentCreated(document);
+    if (saved) {
+      setUploadNotice(`${document.title} saved as a browser-local Draft. Not approved or shared.`);
+      setFolder("00_Root_Audit_Repository"); setDriveGroup("All Deliverables"); setQuery(""); setProjectFilter(document.projectId ?? "all");
     }
+    return saved;
   };
 
   return (
@@ -9802,13 +9791,13 @@ function HardwareDeliverablesDrive({
         <div className="ops-section-header flex flex-wrap items-center justify-between gap-3 border-b border-border">
           <div>
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-steel">
-              Symmetrical Cloud Drive Architecture (§7)
+              Department documents
             </p>
-            <p className="mt-1 text-sm font-semibold">Departmental Cloud Drive & Logical Work Registers</p>
+            <p className="mt-1 text-sm font-semibold">Files & controlled records</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-md border border-moss/25 bg-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase text-accent-foreground">
-              Lovable Cloud Active
+              Browser-local files
             </span>
           </div>
         </div>
@@ -9875,7 +9864,7 @@ function HardwareDeliverablesDrive({
           e.preventDefault();
           setIsDragging(false);
           const file = e.dataTransfer.files[0];
-          if (file) void handleFileUpload(file);
+          if (file) openUploadDraft(file);
         }}
         className={`rounded-lg border-2 border-dashed p-4 text-center transition-all ${
           isDragging
@@ -9890,53 +9879,20 @@ function HardwareDeliverablesDrive({
             </div>
             <div>
               <p className="text-xs font-semibold text-foreground">
-                Direct File Upload into /{driveGroup.slice(0, 11)}/{folder}
+                Upload original document · Draft only
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Drop PDF, DOCX, XLSX, CAD STEP, Gerber ZIP, or firmware hex to attach with SHA-256 verification
+                Choose a file, then confirm its project, type and revision. Stored in this browser · up to 25 MB.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="sr-only"
-              accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handleFileUpload(file);
-              }}
-            />
-            <Action
-              label="Select Deliverable File"
-              onClick={() => fileInputRef.current?.click()}
-              primary
-            />
+            <button type="button" disabled={uploadDisabled} onClick={() => openUploadDraft(null)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">Upload original</button>
           </div>
         </div>
 
-        {/* Progress Bar & Notice */}
-        {isUploading && (
-          <div className="mt-3 w-full">
-            <div className="flex items-center justify-between text-[11px] font-medium text-steel">
-              <span>{uploadNotice}</span>
-              <span>{uploadProgress}%</span>
-            </div>
-            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {!isUploading && uploadNotice && (
-          <p className="mt-2 text-center text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            {uploadNotice}
-          </p>
-        )}
+        {uploadReadOnlyReason && <p className="mt-2 text-left text-xs text-muted-foreground">{uploadReadOnlyReason}</p>}
+        {uploadNotice && <p role="status" className="mt-2 text-center text-xs text-muted-foreground">{uploadNotice}</p>}
       </section>
 
       {/* Artifact Register Table / List */}
@@ -9950,13 +9906,7 @@ function HardwareDeliverablesDrive({
               Project Artifact Register ({visible.length} Deliverables)
             </p>
           </div>
-          <input
-            aria-label="Search deliverables"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search deliverables or ID…"
-            className="h-9 min-w-56 rounded-lg border border-input bg-background px-3 text-xs"
-          />
+          <ResponsiveFilterBar label="Document filters"><div className="filter-search"><Search/><input aria-label="Search deliverables" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Search deliverables or ID…"/></div><CompactFilterSelect label="Filter documents by project" shortLabel="Project" icon={Layers} value={projectFilter} onChange={setProjectFilter} options={[{value:"all",label:"All projects / common documents"},...uploadProjects.map(p=>({value:p.id,label:`${p.reference} · ${p.title}`}))]}/></ResponsiveFilterBar>
         </div>
 
         <div className="divide-y divide-border">
@@ -9983,10 +9933,10 @@ function HardwareDeliverablesDrive({
                       </span>
                     </div>
                     <small className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
-                      Sales Master Directory · IATF 16949:2016 §8.2.1 · Auto-Synchronized
+                      Sales Master Directory · Browser-local register
                     </small>
                     <small className="mt-0.5 block text-xs text-muted-foreground">
-                      {portal?.customersRegistry?.length ?? defaultCustomers.length} Registered Accounts · Last synced: Today, Live
+                      {portal?.customersRegistry?.length ?? defaultCustomers.length} Registered Accounts · Managed in this browser
                     </small>
                   </div>
                 </div>
@@ -10011,6 +9961,7 @@ function HardwareDeliverablesDrive({
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <strong className="text-sm font-semibold text-foreground">{document.title}</strong>
+                      {document.uploadType && <span className="rounded border border-amber-500/25 bg-amber-500/10 px-1.5 py-0.5 text-[10px]">{document.lifecycle ?? "Draft"} · Browser-local</span>}
                       <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-primary">
                         {docGroup}
                       </span>
@@ -10023,6 +9974,7 @@ function HardwareDeliverablesDrive({
                       {departments.find((d) => d.id === document.departmentId)?.name ?? "Engineering"}
                     </small>
 
+                    {document.sourcePackage && <p className="mt-1 text-[10px] text-muted-foreground">Source Gerber: {documents.find(d => d.id === document.sourcePackage?.documentId)?.title ?? document.sourcePackage.documentId} · Rev {document.sourcePackage.revision} · SHA-256 {document.sourcePackage.checksum.slice(0, 12)}…</p>}
                     {/* Attached Local Files List */}
                     {files.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -10065,6 +10017,7 @@ function HardwareDeliverablesDrive({
           ) : null}
         </div>
       </section>
+      {uploadDialogOpen && persona && <DocumentUploadPilotDialog initialFile={pendingFile} projects={uploadProjects} departments={uploadDepartments} documents={documents.filter(canSee)} initialScope={driveGroup === "01 Common documents" ? "common" : driveGroup === "02 Internal projects" ? "internal" : driveGroup === "04 Other department work" ? "department" : "client"} actor={{ id: persona.id, kind: persona.kind, name: persona.person, departmentId: actorDepartment?.id }} onClose={() => { setUploadDialogOpen(false); setPendingFile(null); }} onSave={saveUploadDraft} />}
     </section>
   );
 }
@@ -10144,10 +10097,11 @@ function DocumentDetail({
   const formatLabel = (file: Pick<LocalControlledFile, "name" | "type">) => {
     const extension = file.name.split(".").pop()?.toUpperCase();
     if (extension === "STP" || extension === "STEP") return "CAD STEP";
-    if (extension === "ZIP") return "GERBER ZIP";
+    if (extension === "ZIP") return "ZIP archive";
     return extension || file.type.split("/").pop()?.toUpperCase() || "FILE";
   };
   const uploadLocal = async (file: File, incrementRevision = false) => {
+    if (document.uploadType) { setFileMessage("Pilot originals are retained unchanged. Add a new draft through Documents & Deliverables."); return; }
     try {
       setFileState("uploading"); setUploadProgress(4); setFileMessage("Securing & Verifying SHA-256 Hash…");
        const checksum = await sha256(file); setUploadProgress(40);
@@ -10301,7 +10255,7 @@ function DocumentDetail({
               <div>
                 <p className="font-semibold">Private file storage</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Lovable Cloud is the active backend. Google Drive is optional and not connected.
+                  {document.uploadType ? "This pilot original is stored in this browser. It is not a shared or approved release." : "Lovable Cloud is the active backend. Google Drive is optional and not connected."}
                 </p>
               </div>
               <Status status={isCloudDocument ? "Approved" : "Draft"} />
@@ -10391,17 +10345,17 @@ function DocumentDetail({
                       className="sr-only"
                       type="file"
                        accept={isHardwareDeliverable ? ".pdf,.zip,.step,.stp,.hex,.bin,.csv,.xlsx,.docx" : ".pdf,.docx,.xlsx,.step,.stp,.zip,.json,.csv,.txt"}
-                      disabled={fileState === "uploading"}
+                      disabled={Boolean(document.uploadType) || fileState === "uploading"}
                       onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadLocal(file); }}
                     />
                   </label>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                     {isHardwareDeliverable ? "Attach PDF, Gerber ZIP, STEP/STP, HEX/BIN, CSV/XLSX, or DOCX deliverables. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.
+                     {document.uploadType ? "Pilot originals are retained unchanged. Add a new draft through Documents & Deliverables; shared storage and approval are separate steps." : <>{isHardwareDeliverable ? "Attach PDF, Gerber ZIP, STEP/STP, HEX/BIN, CSV/XLSX, or DOCX deliverables. " : "Drop PDF, DOCX, XLSX, STEP/STP, Gerber ZIP, JSON, or CSV here. "}Attachments persist in this browser session; secure Cloud transfer activates automatically when this document is organization-linked.</>}
                   </p>
                   {fileState === "uploading" && <div className="mt-3" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Securing & Verifying SHA-256 Hash… {uploadProgress}%</p></div>}
                   {fileMessage && <p className={`mt-3 text-sm ${fileState === "error" ? "text-danger" : "text-moss"}`}>{fileMessage}</p>}
                   <div className="mt-4 divide-y divide-border rounded-lg border border-border bg-background">
-                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}{file.checksum ? ` · SHA-256 ${file.checksum.slice(0, 16)}…` : ""}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { void downloadLocalControlledFile(file).catch((error) => { setFileState("error"); setFileMessage(error instanceof Error ? error.message : "Download is unavailable."); }); }} /><label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label><Action label="Archive" onClick={() => { void removeLocalAttachment(file.id); const next = { ...document, localFiles: localFiles.filter((item) => item.id !== file.id), history: [`${now()} · ${file.name} archived from browser-local revision history`, ...(document.history ?? [])] }; onDocumentUpdated(next, `${document.title} · ${file.name} archived`); }} /></div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
+                    {localFiles.length ? localFiles.map((file) => <div key={file.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-semibold">{file.name}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{formatBytes(file.size)} · {formatLabel(file)} · Rev {file.revision} · {file.uploadedAt}</p><p className="mt-1 text-xs text-muted-foreground">Uploaded by {file.uploader}{file.checksum ? ` · SHA-256 ${file.checksum.slice(0, 16)}…` : ""}</p></div><div className="flex flex-wrap gap-2"><Action label="View / Preview" onClick={() => setPreviewFile(file)} /><Action label="Download file" onClick={() => { void downloadLocalControlledFile(file).catch((error) => { setFileState("error"); setFileMessage(error instanceof Error ? error.message : "Download is unavailable."); }); }} />{!document.uploadType && <label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold"><span>Replace / New Revision</span><input className="sr-only" type="file" accept=".pdf,.docx,.xlsx,.step,.stp,.zip,.hex,.bin,.json,.csv,.txt" onChange={(event) => { const replacement = event.target.files?.[0]; if (replacement) void uploadLocal(replacement, true); }} /></label>}{!document.uploadType && <Action label="Archive" onClick={() => { void removeLocalAttachment(file.id); const next = { ...document, localFiles: localFiles.filter((item) => item.id !== file.id), history: [`${now()} · ${file.name} archived from browser-local revision history`, ...(document.history ?? [])] }; onDocumentUpdated(next, `${document.title} · ${file.name} archived`); }} />}</div></div>) : <p className="p-4 text-sm text-muted-foreground">No browser-local attachments yet.</p>}
                   </div>
                 </>
               )}
@@ -11068,6 +11022,8 @@ function MobileMenu({
   persona,
   activeArea,
   view,
+  recordTypeFilter,
+  onRecordTypeFilterChange,
   onOpenCustomerRegister,
   onOpenAi4tLifecycle,
   onOpenProjectAnalysis,
@@ -11096,6 +11052,8 @@ function MobileMenu({
   persona: Persona;
   activeArea: AreaId;
   view: string;
+  recordTypeFilter?: RoleAwareSidebarProps["recordTypeFilter"];
+  onRecordTypeFilterChange?: RoleAwareSidebarProps["onRecordTypeFilterChange"];
   onOpenCustomerRegister?: (() => void) | undefined;
   onOpenAi4tLifecycle?: (() => void) | undefined;
   onOpenProjectAnalysis?: (() => void) | undefined;
@@ -11122,6 +11080,7 @@ function MobileMenu({
           persona={persona}
           activeArea={activeArea}
           view={view}
+          recordTypeFilter={recordTypeFilter} onRecordTypeFilterChange={onRecordTypeFilterChange}
           sidebarExpanded={true}
           isMobile={true}
           onCloseMobile={onClose}

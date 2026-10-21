@@ -1,3 +1,4 @@
+import { ResponsiveFilterBar, CompactFilterSelect } from "@/components/ResponsiveFilterBar";
 import { taskLane } from "@/lib/task-board";
 import { businessDate } from "@/lib/business-date";
 import React, { useState, useMemo } from "react";
@@ -181,6 +182,9 @@ export function DepartmentLeadCoordinationCenter({
   const [newTaskPriority, setNewTaskPriority] = useState<"Low" | "Normal" | "High" | "Critical">("Normal");
   const [newTaskDueDate, setNewTaskDueDate] = useState<string>(businessDate());
   const [newTaskNotes, setNewTaskNotes] = useState<string>("");
+  const [savingTask, setSavingTask] = useState(false);
+  const [taskSaveError, setTaskSaveError] = useState("");
+  const taskSaveLock = React.useRef(false);
 
   // New team member form state
   const [newMemberName, setNewMemberName] = useState<string>("");
@@ -256,13 +260,15 @@ export function DepartmentLeadCoordinationCenter({
     setNewTaskPriority("Normal");
     setNewTaskDueDate(businessDate());
     setNewTaskNotes("");
+    setTaskSaveError("");
     setIsCreateTaskOpen(true);
   };
 
   const handleSaveNewTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim() || !newTaskAssignee) return;
-    const saved = await onCreateTask({
+    if (!newTaskTitle.trim() || !newTaskAssignee || taskSaveLock.current) return;
+    taskSaveLock.current = true; setSavingTask(true); setTaskSaveError("");
+    try { const saved = await onCreateTask({
       title: newTaskTitle.trim(),
       priority: newTaskPriority,
       assignee: newTaskAssignee,
@@ -270,8 +276,9 @@ export function DepartmentLeadCoordinationCenter({
       dueDate: newTaskDueDate,
       notes: newTaskNotes.trim(),
     });
-    if (saved === false) return;
+    if (saved === false) { setTaskSaveError("Task was not saved; your draft remains open."); return; }
     setIsCreateTaskOpen(false);
+    } catch (e) { setTaskSaveError(e instanceof Error ? e.message : "Task could not be saved."); } finally { taskSaveLock.current = false; setSavingTask(false); }
   };
 
   const handleSaveNewMember = (e: React.FormEvent) => {
@@ -420,6 +427,7 @@ export function DepartmentLeadCoordinationCenter({
           )}
         </div>
 
+        {hideHeader && activeTab === "tasks" && !readOnly && <Button type="button" size="sm" onClick={() => handleOpenCreateTask()} className="h-8 gap-1.5 text-xs"><Plus className="size-3.5"/>Add Task</Button>}
         {/* View Mode Toggle when on Tasks tab */}
         {activeTab === "tasks" && (
           <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1">
@@ -463,78 +471,10 @@ export function DepartmentLeadCoordinationCenter({
       {/* TAB 1: TEAMS TASKS */}
       {activeTab === "tasks" && (
         <div className="space-y-4">
-          {/* Filter Bar */}
-          <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Status filter buttons */}
-              <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/30 p-1">
-                <button
-                  onClick={() => setStatusFilter("ALL")}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                    statusFilter === "ALL" ? "bg-background text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  All ({deptTasks.length})
-                </button>
-                <button
-                  onClick={() => setStatusFilter("OPEN")}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                    statusFilter === "OPEN" ? "bg-background text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Open / In Progress
-                </button>
-                <button
-                  onClick={() => setStatusFilter("IN_REVIEW")}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                    statusFilter === "IN_REVIEW" ? "bg-background text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Under Review
-                </button>
-                <button
-                  onClick={() => setStatusFilter("APPROVED")}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                    statusFilter === "APPROVED" ? "bg-background text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Completed
-                </button>
-              </div>
-
-              {/* Assignee filter dropdown */}
-              <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1 text-xs">
-                <Users className="size-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground font-medium">Assignee:</span>
-                <select
-                  value={assigneeFilter}
-                  onChange={(e) => setAssigneeFilter(e.target.value)}
-                  className="bg-transparent font-semibold text-foreground outline-none cursor-pointer [&>option]:bg-background [&>option]:text-foreground"
-                >
-                  <option value="ALL">All Team Members</option>
-                  {teamMembers.map((m) => (
-                    <option key={m.name} value={m.name}>
-                      {m.name} ({memberWorkloads[m.name] ?? 0} tasks)
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <select aria-label="Sort tasks" value={sortBy} onChange={event => setSortBy(event.target.value as "due" | "priority")} className="h-8 rounded-lg border border-border bg-background px-2 text-xs text-foreground [&>option]:bg-background [&>option]:text-foreground"><option value="due">Due date first</option><option value="priority">Priority first</option></select>
-            {/* Search box */}
-            <div className="relative min-w-60">
-              <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                aria-label="Search department tasks"
-                placeholder="Search tasks, reference, or assignee..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-xs outline-none focus:ring-1 focus:ring-primary text-foreground"
-              />
-            </div>
-          </div>
+          <ResponsiveFilterBar label="Task filters" className="rounded-xl border border-border/70 bg-card p-2" activeCount={Number(assigneeFilter !== "ALL") + Number(sortBy !== "due")} secondary={<><CompactFilterSelect label="Assignee" shortLabel="Person" icon={Users} value={assigneeFilter} onChange={setAssigneeFilter} options={[{value:"ALL",label:"All team members"}, ...teamMembers.map(m => ({value:m.name,label:m.name}))]} /><CompactFilterSelect label="Sort tasks" shortLabel="Sort" icon={ArrowUpDown} value={sortBy} onChange={value => setSortBy(value as "due" | "priority")} options={[{value:"due",label:"Due date first"},{value:"priority",label:"Priority first"}]} /></>}>
+            <div className="filter-search"><Search /><input aria-label="Search department tasks" placeholder="Search tasks…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
+            <CompactFilterSelect label="Task status" shortLabel="Status" icon={CheckSquare} value={statusFilter} onChange={value => setStatusFilter(value as typeof statusFilter)} options={[{value:"ALL",label:"All tasks"},{value:"OPEN",label:"Open / In Progress"},{value:"IN_REVIEW",label:"Under Review"},{value:"APPROVED",label:"Completed"}]} />
+          </ResponsiveFilterBar>
 
           {/* TASK VIEWS: CHECKLIST, KANBAN, OR TABLE */}
           {viewMode === "checklist" ? (
@@ -552,8 +492,8 @@ export function DepartmentLeadCoordinationCenter({
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Department task board">
               {([
                 { lane: "today", title: "Today / In Progress", tone: "amber" },
-                { lane: "review", title: "Under Review / Gate", tone: "purple" },
-                { lane: "todo", title: "To Do", tone: "blue" },
+                { lane: "todo", title: "Tomorrow / Planned", tone: "blue" },
+                { lane: "review", title: "Review / Approval", tone: "purple" },
                 { lane: "completed", title: "Completed & Released", tone: "green" },
               ] as const).map(column => {
                 const tasks = filteredTasks.filter(task => taskLane(task) === column.lane);
@@ -653,7 +593,7 @@ export function DepartmentLeadCoordinationCenter({
                               <option value="Open">To Do</option>
                               <option value="IN_PROGRESS">In Progress</option>
                               <option value="In review">Review</option>
-                              <option value="Approved">Complete</option>
+                              <option value="Approved" disabled={task.status === "In review"}>Complete</option>
                             </select>
                           </td>
                         </tr>
@@ -926,37 +866,14 @@ export function DepartmentLeadCoordinationCenter({
                   <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Project
                   </label>
-                  <select
-                    aria-label="Task project"
-                    value={newTaskProject}
-                    onChange={(e) => setNewTaskProject(e.target.value)}
-                    className="mt-1 h-9 w-full rounded-xl border border-border bg-background px-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                  >
-                    <option value="">Department task — no project</option>
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.id} · {p.name.split(" ")[0]}
-                      </option>
-                    ))}
-                  </select>
+                  <CompactFilterSelect label="Task project" icon={FolderKanban} value={newTaskProject} onChange={setNewTaskProject} options={[{value:"",label:"Department task — no project"},...projects.map(p=>({value:p.id,label:`${p.id} · ${p.name}`}))]}/>
                 </div>
 
                 <div>
                   <label className="block font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Assignee Team Member *
                   </label>
-                  <select
-                    aria-label="Task assignee"
-                    value={newTaskAssignee}
-                    onChange={(e) => setNewTaskAssignee(e.target.value)}
-                    className="mt-1 h-9 w-full rounded-xl border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                  >
-                    {teamMembers.map((m) => (
-                      <option key={m.name} value={m.name}>
-                        {m.name} ({m.role.split(" ")[0]})
-                      </option>
-                    ))}
-                  </select>
+                  <CompactFilterSelect label="Task assignee" icon={Users} value={newTaskAssignee} onChange={setNewTaskAssignee} options={teamMembers.map(m=>({value:m.name,label:m.name}))}/>
                 </div>
               </div>
 
@@ -1006,6 +923,7 @@ export function DepartmentLeadCoordinationCenter({
                 />
               </div>
 
+              {taskSaveError && <p role="alert" className="text-xs text-destructive">{taskSaveError}</p>}
               <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-4">
                 <Button
                   type="button"
@@ -1016,8 +934,8 @@ export function DepartmentLeadCoordinationCenter({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" className="text-xs font-semibold">
-                  Create & Assign Task
+                <Button type="submit" disabled={savingTask} size="sm" className="text-xs font-semibold">
+                  {savingTask ? "Saving…" : "Create & Assign Task"}
                 </Button>
               </div>
             </form>
@@ -1169,24 +1087,24 @@ function TaskChecklistView({
       collapsible: false,
     },
     {
-      lane: "review" as const,
-      title: "Under Review / Gate",
-      tone: "purple" as const,
-      borderTone: "border-purple-500/30 bg-purple-500/5 text-purple-600 dark:text-purple-400",
-      items: tasks.filter((t) => taskLane(t) === "review"),
-      collapsible: false,
-    },
-    {
       lane: "todo" as const,
-      title: "To Do",
+      title: "Tomorrow / Planned",
       tone: "blue" as const,
       borderTone: "border-blue-500/30 bg-blue-500/5 text-blue-600 dark:text-blue-400",
       items: tasks.filter((t) => taskLane(t) === "todo"),
       collapsible: false,
     },
     {
+      lane: "review" as const,
+      title: "Review / Approval",
+      tone: "purple" as const,
+      borderTone: "border-purple-500/30 bg-purple-500/5 text-purple-600 dark:text-purple-400",
+      items: tasks.filter((t) => taskLane(t) === "review"),
+      collapsible: false,
+    },
+    {
       lane: "completed" as const,
-      title: "Completed & Released",
+      title: "Completed",
       tone: "green" as const,
       borderTone: "border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400",
       items: tasks.filter((t) => taskLane(t) === "completed"),
@@ -1195,14 +1113,14 @@ function TaskChecklistView({
   ];
 
   return (
-    <div className="space-y-4" aria-label="Department task checklist">
+    <div className="grid gap-3 lg:grid-cols-3" aria-label="Department task checklist">
       {sections.map((section) => {
         const isCollapsed = section.collapsible && !completedExpanded;
 
         return (
           <div
             key={section.lane}
-            className="rounded-xl border border-border bg-card/60 shadow-xs overflow-hidden"
+            className={`rounded-xl border border-border/70 bg-card/60 shadow-xs overflow-hidden ${section.collapsible ? "lg:col-span-3" : ""}`}
           >
             {/* Section Header */}
             <div
@@ -1262,7 +1180,7 @@ function TaskChecklistView({
                     return (
                       <div
                         key={task.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-2.5 transition-colors hover:bg-muted/30"
+                        className="flex min-w-0 flex-col gap-2 px-3 py-2.5 transition-colors hover:bg-muted/30"
                       >
                         {/* Left: Check action, Reference, Title, Project */}
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -1277,11 +1195,13 @@ function TaskChecklistView({
                                   ? `Task ${task.title} in review`
                                   : `Mark ${task.title} complete`
                               }
+                              disabled={isReview}
+                              title={isReview ? "Awaiting the designated approval" : undefined}
                               onClick={() => {
                                 if (isCompleted) {
                                   onUpdateStatus(task.id, "Open");
                                 } else if (isReview) {
-                                  onUpdateStatus(task.id, "Approved");
+                                  return;
                                 } else {
                                   onUpdateStatus(task.id, "Approved");
                                 }
@@ -1298,14 +1218,14 @@ function TaskChecklistView({
                             </button>
                           )}
 
-                          <span className="font-mono text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0">
+                          <span title={task.reference} className="hidden font-mono text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0">
                             {task.reference}
                           </span>
 
                           <button
                             type="button"
                             onClick={() => onOpenTask?.(task)}
-                            className={`text-left text-xs font-semibold hover:underline hover:text-primary truncate ${
+                            title={task.title} className={`min-w-0 flex-1 text-left text-xs font-semibold hover:underline hover:text-primary truncate ${
                               isCompleted
                                 ? "line-through text-muted-foreground"
                                 : "text-foreground"
@@ -1315,14 +1235,14 @@ function TaskChecklistView({
                           </button>
 
                           {projectRef && (
-                            <span className="hidden md:inline-block rounded bg-secondary/80 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-secondary-foreground shrink-0 max-w-28 truncate">
+                            <span title={projectRef} className="hidden rounded bg-secondary/80 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-secondary-foreground shrink-0 max-w-28 truncate">
                               {projectRef}
                             </span>
                           )}
                         </div>
 
                         {/* Right: Priority, Assignee, Due Date, Status Changer */}
-                        <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto pl-6 sm:pl-0">
+                        <div className="flex flex-wrap items-center gap-1.5 pl-6">
                           <PriorityBadge priority={task.priority} />
 
                           {/* 1-Click Assignee Switcher */}
@@ -1340,7 +1260,7 @@ function TaskChecklistView({
                           </select>
 
                           {/* Due Date */}
-                          <span className="hidden lg:flex items-center gap-1 font-mono text-[10px] text-muted-foreground shrink-0">
+                          <span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground shrink-0">
                             <Calendar className="size-3" />
                             {task.fields["dueDate"] || "No due"}
                           </span>
@@ -1364,7 +1284,7 @@ function TaskChecklistView({
                             <option value="Open">To Do</option>
                             <option value="IN_PROGRESS">In Progress</option>
                             <option value="In review">Review</option>
-                            <option value="Approved">Complete</option>
+                            <option value="Approved" disabled={task.status === "In review"}>Complete</option>
                           </select>
                         </div>
                       </div>

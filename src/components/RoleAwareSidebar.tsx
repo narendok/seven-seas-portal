@@ -1,3 +1,4 @@
+import { singleActiveDestination } from "@/lib/sidebar-selection";
 import {
   ChevronDown,
   ChevronRight,
@@ -100,6 +101,8 @@ export type RoleAwareSidebarProps = {
   persona: Persona;
   activeArea: AreaId;
   view: string;
+  recordTypeFilter?: string | null | undefined;
+  onRecordTypeFilterChange?: ((filter:string|null)=>void) | undefined;
   sidebarExpanded: boolean;
   onToggleExpanded: () => void;
   purchasingSubView?: "recordage" | "smart_bom" | "ingestion_gate" | "quotations" | "orders" | "suppliers" | undefined;
@@ -181,6 +184,7 @@ export function RoleAwareSidebar({
   persona,
   activeArea,
   view,
+  recordTypeFilter, onRecordTypeFilterChange,
   sidebarExpanded,
   onToggleExpanded,
   purchasingSubView = "recordage",
@@ -334,7 +338,7 @@ export function RoleAwareSidebar({
             label: "Dashboard / Command Center",
             shortLabel: "Overview",
             icon: LayoutDashboard,
-            isActive: activeArea === "home" && view !== "queue",
+            isActive: activeArea === "home" && ["index","summary"].includes(view),
             onClick: () => handleItemClick(() => onNavigate("home", "index")),
           },
           {
@@ -389,12 +393,13 @@ export function RoleAwareSidebar({
           },
           {
             id: "adm-projects",
-            label: "Projects & Analysis",
+            label: "Manage Projects",
             shortLabel: "Projects",
             icon: Briefcase,
-            isActive: view === "project",
-            onClick: () => handleItemClick(() => onOpenProjectAnalysis?.()),
+            isActive: activeArea === "rnd" && ["index","project"].includes(view),
+            onClick: () => handleItemClick(() => onNavigate("rnd", "index")),
           },
+          {id:"adm-analysis",label:"Project Analysis",shortLabel:"Analysis",icon:Layers,isActive:view === "analysis",onClick:()=>handleItemClick(()=>onOpenProjectAnalysis?.())},
           {
             id: "adm-lifecycle",
             label: "Help & Training: AI4T Lifecycle Walkthrough",
@@ -613,7 +618,7 @@ export function RoleAwareSidebar({
             label: "Document Drive & Vault",
             shortLabel: "Drive",
             icon: FolderOpen,
-            isActive: false,
+            isActive: view === "vault",
             onClick: () => handleItemClick(() => onOpenDrive?.()),
           },
           {
@@ -685,7 +690,7 @@ export function RoleAwareSidebar({
       },
       {
         id: "administration",
-        title: "Administration",
+        title: "Settings",
         icon: Sliders,
         items: [
           {
@@ -714,6 +719,7 @@ export function RoleAwareSidebar({
     openTaskCounts,
     approvalCounts,
     purchasingSubView,
+    recordTypeFilter, onRecordTypeFilterChange,
     onNavigate,
     onOpenApprovals,
     onOpenHistory,
@@ -853,24 +859,24 @@ export function RoleAwareSidebar({
               label: "PRS & Technical Specs",
               shortLabel: "PRS",
               icon: FileText,
-              isActive: activeArea === "ehw" && view === "deliverables",
-              onClick: () => handleItemClick(() => onNavigate("ehw", "deliverables")),
+              isActive: activeArea === "ehw" && view === "deliverables" && recordTypeFilter === "PRS",
+              onClick: () => handleItemClick(() => { onNavigate("ehw", "deliverables"); onRecordTypeFilterChange?.("PRS"); }),
             },
             {
               id: "ehw-schematics",
               label: "Schematics & Preliminary BOM",
               shortLabel: "Schematics",
               icon: Cpu,
-              isActive: activeArea === "ehw" && view === "deliverables",
-              onClick: () => handleItemClick(() => onNavigate("ehw", "deliverables")),
+              isActive: activeArea === "ehw" && view === "deliverables" && recordTypeFilter === "SCHEMATIC",
+              onClick: () => handleItemClick(() => { onNavigate("ehw", "deliverables"); onRecordTypeFilterChange?.("SCHEMATIC"); }),
             },
             {
               id: "ehw-gerber",
               label: "DFMEA & Gerber Gates",
               shortLabel: "DFMEA",
               icon: Layers,
-              isActive: activeArea === "ehw" && (view === "project" || view === "deliverables"),
-              onClick: () => handleItemClick(() => onNavigate("ehw", "deliverables")),
+              isActive: activeArea === "ehw" && view === "deliverables" && recordTypeFilter === "DFMEA",
+              onClick: () => handleItemClick(() => { onNavigate("ehw", "deliverables"); onRecordTypeFilterChange?.("DFMEA"); }),
             },
           ];
         case "sales":
@@ -1093,7 +1099,7 @@ export function RoleAwareSidebar({
         id: "dept_projects",
         title: "Projects & Records",
         icon: Briefcase,
-        items: [
+        items: [{id:"dept-analysis",label:"Project Analysis",shortLabel:"Analysis",icon:Layers,isActive:view === "analysis",onClick:()=>handleItemClick(()=>onOpenProjectAnalysis?.())},
           {
             id: "dept-projects",
             label: "Department Project Workspace",
@@ -1115,7 +1121,7 @@ export function RoleAwareSidebar({
             label: "Project Documents & Vault",
             shortLabel: "Vault",
             icon: FolderOpen,
-            isActive: false,
+            isActive: view === "vault",
             onClick: () => handleItemClick(() => onOpenDrive?.()),
           },
         ],
@@ -1130,7 +1136,7 @@ export function RoleAwareSidebar({
         id: "dept_reference",
         title: "Reference & Training",
         icon: BookOpen,
-        items: [
+        items: [{id:"dept-decisions",label:persona.kind === "member" ? "My Decision Submissions" : "Decision & Deviation Log",shortLabel:"Decisions",icon:BookOpen,isActive:false,onClick:()=>handleItemClick(()=>onOpenDecisionLog?.())},
           ...(deptId === "pur"
             ? [
                 {
@@ -1181,6 +1187,7 @@ export function RoleAwareSidebar({
     openTaskCounts,
     approvalCounts,
     purchasingSubView,
+    recordTypeFilter, onRecordTypeFilterChange,
     onNavigate,
     onOpenApprovals,
     onOpenAlerts,
@@ -1189,13 +1196,14 @@ export function RoleAwareSidebar({
     onOpenDrive,
     onOpenDraftHub,
     onOpenDirectory,
+    onOpenDecisionLog,
     onOpenCustomerRegister,
     onSelectPurchasingSubView,
     isMobile,
     onCloseMobile,
   ]);
 
-  const activeWorkGroups = isAdmin ? adminWorkGroups : deptWorkGroups;
+  const activeWorkGroups = useMemo(() => singleActiveDestination(isAdmin ? adminWorkGroups : deptWorkGroups), [isAdmin, adminWorkGroups, deptWorkGroups]);
 
   // Auto-expand group containing active item
   useEffect(() => {
@@ -1221,7 +1229,7 @@ export function RoleAwareSidebar({
     const list: SidebarMenuItem[] = [];
     for (const id of favoriteIds) {
       const item = allAvailableItems.get(id);
-      if (item) list.push(item);
+      if (item) list.push({ ...item, isActive: false });
     }
     return list;
   }, [favoriteIds, allAvailableItems]);
@@ -1319,16 +1327,7 @@ export function RoleAwareSidebar({
           })}
         </div>
 
-        {/* Bottom: Setup Wizard Button (Admin only) */}
-        {persona.kind === "admin" && (
-          <button
-            title="Portal setup wizard"
-            onClick={() => onOpenWizard?.()}
-            className="grid size-9 place-items-center rounded-lg border border-sidebar-border bg-card text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-          >
-            <Settings2 className="size-4" />
-          </button>
-        )}
+
       </div>
     );
   }
@@ -1535,22 +1534,7 @@ export function RoleAwareSidebar({
         </div>
       </nav>
 
-      {/* Sidebar Footer: Portal Setup Wizard (Admin only) */}
-      {persona.kind === "admin" && (
-        <div className="pt-2 border-t border-sidebar-border/60">
-          <button
-            title="Portal setup wizard"
-            onClick={() => handleItemClick(() => onOpenWizard?.())}
-            className="flex h-9 w-full items-center gap-2.5 rounded-lg border border-sidebar-border bg-card px-2.5 text-left text-xs font-semibold text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-          >
-            <Settings2 className="size-3.5 text-steel shrink-0" />
-            <span className="truncate flex-1">Portal setup</span>
-            <span className="font-mono text-[10px] text-muted-foreground shrink-0">
-              {setupStep + 1}/{totalSetupSteps}
-            </span>
-          </button>
-        </div>
-      )}
+
     </div>
   );
 }

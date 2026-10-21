@@ -1,3 +1,4 @@
+import { ResponsiveFilterBar, CompactFilterSelect } from "@/components/ResponsiveFilterBar";
 import React, { useState } from "react";
 import {
   ShieldAlert,
@@ -336,117 +337,12 @@ export function ApprovalsFullPageView({
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {/* Scope toggles */}
-          <div className="flex items-center gap-1 border-r border-border/60 pr-2 mr-1">
-            <button
-              onClick={() => setFilterScope("ALL")}
-              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                filterScope === "ALL"
-                  ? "bg-secondary text-foreground shadow-xs"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              All Records
-            </button>
-            <button
-              onClick={() => setFilterScope("PENDING_ME")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                filterScope === "PENDING_ME"
-                  ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-              title="Approvals requiring sign-off by your logged-in role"
-            >
-              <UserCheck className="size-3" />
-              Awaiting My Sign-Off ({myActionCount})
-            </button>
-            <button
-              onClick={() => setFilterScope("MY_REQUESTS")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                filterScope === "MY_REQUESTS"
-                  ? "bg-primary/20 text-primary border border-primary/40"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-              title="Approvals requested by your department"
-            >
-              <Send className="size-3" />
-              My Dept Requests ({myDeptCount})
-            </button>
-          </div>
+      <ResponsiveFilterBar label="Approval filters" className="rounded-xl border border-border/60 bg-card p-2" activeCount={Number(deptFilter !== "ALL")} secondary={<CompactFilterSelect label="Department" shortLabel="Dept" icon={Building2} value={deptFilter} onChange={setDeptFilter} options={[{value:"ALL",label:"All authorized requests"}, ...Array.from(new Set(scopedApprovals.map(a => a.department).filter((value):value is string => Boolean(value)))).map(value => ({value,label:value}))]} />}>
+        <div className="filter-search"><Search /><input aria-label="Search approvals" placeholder="Search title, reference or requester…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
+        <CompactFilterSelect label="Approval scope" shortLabel="Scope" icon={UserCheck} value={filterScope} onChange={value => setFilterScope(value as typeof filterScope)} options={[{value:"ALL",label:"All authorized"},{value:"PENDING_ME",label:`Awaiting my sign-off (${myActionCount})`},{value:"MY_REQUESTS",label:`My department requests (${myDeptCount})`}]} />
+        <CompactFilterSelect label="Approval status" shortLabel="Status" icon={Filter} value={statusFilter} onChange={value => setStatusFilter(value as typeof statusFilter)} options={["ALL","Pending","Approved","Rejected","Returned"].map(value => ({value,label:value === "ALL" ? "All statuses" : value}))} />
+      </ResponsiveFilterBar>
 
-          <button
-            onClick={() => setStatusFilter("ALL")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-              statusFilter === "ALL"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            All Status
-          </button>
-          <button
-            onClick={() => setStatusFilter("Pending")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-              statusFilter === "Pending"
-                ? "bg-amber-500 text-white shadow-sm"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            Pending ({pendingCount})
-          </button>
-          <button
-            onClick={() => setStatusFilter("Approved")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-              statusFilter === "Approved"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            Approved ({approvedCount})
-          </button>
-          <button
-            onClick={() => setStatusFilter("Rejected")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-              statusFilter === "Rejected"
-                ? "bg-rose-600 text-white shadow-sm"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            Rejected ({rejectedCount})
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Department Filter */}
-          <div className="relative">
-            <select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground outline-none focus:ring-1 focus:ring-primary"
-            >
-              <option value="ALL">All authorized requests</option>
-              {Array.from(new Set(scopedApprovals.map(approval => approval.department).filter((value): value is string => Boolean(value)))).map(department => <option key={department} value={department}>{department}</option>)}
-            </select>
-          </div>
-
-          {/* Search box */}
-          <div className="relative min-w-56">
-            <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search approvals by title, ref, or lead..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-xs outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Approvals List */}
       <div className="space-y-4">
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-12 text-center">
