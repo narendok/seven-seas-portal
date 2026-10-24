@@ -352,51 +352,18 @@ export function resolveEmployeeProfile(
     return undefined; // Client fails closed
   }
 
-  // 1. Authenticated TEST Membership takes strict priority
   if (testMembership) {
-    if (testMembership.role === "admin") {
-      const adminBase = DEFAULT_EMPLOYEE_PROFILES["admin"];
-      if (adminBase) {
-        return {
-          ...adminBase,
-          id: testMembership.membershipId,
-          name: testMembership.displayName || adminBase.name,
-        };
-      }
-    }
-
-    if (testMembership.role === "department_lead") {
-      const deptCode = testMembership.departmentCode?.toLowerCase();
-      const leadBase = deptCode && DEFAULT_EMPLOYEE_PROFILES[deptCode]
-        ? DEFAULT_EMPLOYEE_PROFILES[deptCode]
-        : undefined;
-
-      if (leadBase) {
-        return {
-          ...leadBase,
-          id: testMembership.membershipId,
-          name: testMembership.displayName || leadBase.name,
-        };
-      }
-    }
-
-    // Authenticated regular member: NEVER return a lead profile!
-    const deptCode = (testMembership.departmentCode ?? "GEN").toUpperCase();
-    const deptName = testMembership.departmentName ?? "General";
+    if (!testMembership.membershipId || !testMembership.displayName || !["admin", "department_lead", "member"].includes(testMembership.role)) return undefined;
     return {
       id: testMembership.membershipId,
-      employeeCode: `HLPL-EMP-${testMembership.membershipId.slice(-4).toUpperCase()}`,
-      name: testMembership.displayName || `${deptCode} Employee`,
-      email: `${testMembership.membershipId}@test.hexenselabs.internal`,
-      phone: "+91 98000 00000",
-      departmentCode: deptCode,
-      departmentName: deptName,
-      roleTitle: `${deptName} Engineer`,
-      securityClearance: "Level 1 Operational Contributor",
-      facilityLocation: "Hexense Labs Headquarters, Noida",
-      emergencyContact: "HR Department (+91 98765 43212)",
-      joiningDate: "2024-01-15",
-      status: "Active",
+      employeeCode: "Not recorded",
+      name: testMembership.displayName,
+      email: "Not recorded", phone: "Not recorded",
+      departmentCode: testMembership.departmentCode ?? "Not recorded",
+      departmentName: testMembership.departmentName ?? "Not recorded",
+      roleTitle: testMembership.role === "admin" ? "Administrator" : testMembership.role === "department_lead" ? "Department lead" : "Employee",
+      securityClearance: "Not recorded", facilityLocation: "Not recorded",
+      emergencyContact: "Not recorded", joiningDate: "Not recorded", status: "Active",
     };
   }
 

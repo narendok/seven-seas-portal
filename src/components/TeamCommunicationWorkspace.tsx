@@ -187,32 +187,18 @@ export function TeamCommunicationWorkspace({
 
   return (
     <div className="space-y-4">
-      {/* Sandbox Demo Seed Notice */}
-      <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg border border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
-            DEMO / Sandbox Seed
-          </span>
-          <span>
-            Team communication channels, technical threads, and live polls loaded for active persona. Channel membership rules are enforced.
-          </span>
-        </div>
-        <div className="text-[11px] font-mono text-muted-foreground">
-          Scoped Persona: <strong>{persona.person}</strong> ({persona.label})
-        </div>
-      </div>
-
+      <span className="inline-flex rounded border border-amber-500/30 px-2 py-1 text-[10px] text-amber-600" title="Browser-local examples. Shared account communication is separate.">DEMO</span>
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-3 border-b border-border/40">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-              Synchronized Team Communication
+              Team Chat
             </span>
-            <span className="text-xs text-muted-foreground">Unified Web & App Contract</span>
+            <span className="text-xs text-muted-foreground"></span>
           </div>
           <h2 className="text-xl font-bold tracking-tight text-foreground mt-1">
-            Team Channels, Discussions & Technical Polls
+            Team Chat
           </h2>
           <p className="text-xs text-muted-foreground">
             Role-governed channels, multi-department thread replies, and structured links to tasks, documents and projects.
@@ -221,7 +207,7 @@ export function TeamCommunicationWorkspace({
 
         <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-200 flex items-center gap-2">
           <Shield className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>Notice: Chat agreement or poll results never substitute for formal IATF financial or stage-gate sign-off.</span>
+          <span>Notice: Chat agreement or poll results never substitute for formal financial or stage approval.</span>
         </div>
       </div>
 

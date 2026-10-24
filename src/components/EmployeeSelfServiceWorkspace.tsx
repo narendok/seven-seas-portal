@@ -120,13 +120,8 @@ export function EmployeeSelfServiceWorkspace({
 
   // Acknowledge Policy
   const handleAcknowledgePolicy = (policyId: string) => {
-    setPolicies((prev) =>
-      prev.map((p) =>
-        p.id === policyId
-          ? { ...p, status: "Acknowledged", acknowledgedAt: new Date().toISOString() }
-          : p
-      )
-    );
+    const next: AssignedPolicy[] = policies.map(p=>p.id===policyId?{...p,status:"Acknowledged",acknowledgedAt:new Date().toISOString()}:p);
+    onUpdatePolicies?.(next);setPolicies(next);
     setSelectedPolicy(null);
     setNoticeMessage(`Policy revision successfully acknowledged and bound to employee ${profile.employeeCode}.`);
   };
@@ -135,6 +130,7 @@ export function EmployeeSelfServiceWorkspace({
   const handleSubmitQuiz = (trainingId: string) => {
     const training = trainings.find((t) => t.id === trainingId);
     if (!training) return;
+    if (!training.quizQuestions.length || training.quizQuestions.some(q=>quizAnswers[q.id]===undefined)) {setNoticeMessage("Answer all published questions before submitting.");return;}
 
     let correctCount = 0;
     training.quizQuestions.forEach((q) => {
@@ -145,19 +141,8 @@ export function EmployeeSelfServiceWorkspace({
 
     const scorePct = Math.round((correctCount / training.quizQuestions.length) * 100);
 
-    setTrainings((prev) =>
-      prev.map((t) =>
-        t.id === trainingId
-          ? {
-              ...t,
-              status: scorePct >= 80 ? "Completed" : "In_Progress",
-              scorePct,
-              completedAt: new Date().toISOString(),
-              certificateRef: scorePct >= 80 ? `CERT-${profile.employeeCode}-${t.courseCode}-2026` : undefined,
-            }
-          : t
-      )
-    );
+    const next: AssignedTraining[] = trainings.map(t=>t.id===trainingId?{...t,status:scorePct>=80?"Completed":"In_Progress",scorePct,completedAt:scorePct>=80?new Date().toISOString():undefined}:t);
+    onUpdateTrainings?.(next);setTrainings(next);
     setQuizSubmitted(true);
     setNoticeMessage(`Assessment completed with score: ${scorePct}%. Training status updated for ${profile.name}.`);
   };
@@ -166,26 +151,17 @@ export function EmployeeSelfServiceWorkspace({
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedForm) return;
+    if (selectedForm.isAnonymous) { setNoticeMessage("Anonymous responses require the shared survey workflow; no response was saved."); return; }
 
     // Validate that required questions have answers
-    const missing = selectedForm.questions.filter((q) => q.required && !formAnswers[q.id]);
+    const missing = selectedForm.questions.filter((q) => q.required && (formAnswers[q.id] === undefined || formAnswers[q.id] === null || formAnswers[q.id] === ""));
     if (missing.length > 0) {
       setNoticeMessage(`Please answer all required questions: ${missing.map((m) => m.label).join(", ")}`);
       return;
     }
 
-    setForms((prev) =>
-      prev.map((f) =>
-        f.id === selectedForm.id
-          ? {
-              ...f,
-              status: "Submitted",
-              submittedAt: new Date().toISOString(),
-              answers: formAnswers,
-            }
-          : f
-      )
-    );
+    const next: AssignedFormSurvey[] = forms.map(f=>f.id===selectedForm.id?{...f,status:"Submitted",submittedAt:new Date().toISOString(),answers:formAnswers}:f);
+    onUpdateForms?.(next);setForms(next);
     setNoticeMessage(`Survey ${selectedForm.formCode} answers recorded and bound to ${profile.employeeCode}.`);
     setSelectedForm(null);
     setFormAnswers({});
@@ -198,7 +174,7 @@ export function EmployeeSelfServiceWorkspace({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              Employee Self-Service
+              My Profile
             </span>
             {testMembership ? (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
@@ -657,7 +633,7 @@ export function EmployeeSelfServiceWorkspace({
             <DialogHeader>
               <DialogTitle className="text-sm font-bold">{selectedTraining.title}</DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Passing criteria: 80% or higher for IATF certification.
+                Example assessment passing score: 80%. This does not issue a certificate.
               </DialogDescription>
             </DialogHeader>
 
@@ -751,7 +727,7 @@ export function EmployeeSelfServiceWorkspace({
             <DialogHeader>
               <DialogTitle className="text-sm font-bold">{selectedForm.title}</DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Code: {selectedForm.formCode} · {selectedForm.isAnonymous ? "100% Anonymous" : `Bound to ${profile.employeeCode}`}
+                Code: {selectedForm.formCode} · {selectedForm.isAnonymous ? "Shared anonymous workflow required" : `Bound to ${profile.employeeCode}`}
               </DialogDescription>
             </DialogHeader>
 

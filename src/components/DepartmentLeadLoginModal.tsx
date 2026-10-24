@@ -273,7 +273,7 @@ export function DepartmentLeadLoginModal({
                   {demoMode ? "Demo Department Preview" : "TEST Workspace Sign-in"}
                 </h3>
                 <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                  IATF 16949 / ISO 27001
+                  Controlled access / ISO 27001
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -325,7 +325,7 @@ export function DepartmentLeadLoginModal({
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-300 space-y-1">
                   <div className="flex items-center gap-1.5 font-bold">
                     <ShieldCheck className="size-4 shrink-0 text-amber-500" />
-                    <span>IATF 16949 / ISO 27001 Access Control Enforced</span>
+                    <span>Account permissions</span>
                   </div>
                   <p className="leading-relaxed">
                     You are authenticated as <strong>{activeCred.leadName}</strong> ({activeCred.departmentName}).

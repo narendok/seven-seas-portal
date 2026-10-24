@@ -1,6 +1,8 @@
+import { SharedBusinessWorkspace } from "@/components/SharedBusinessWorkspace";
+import { SharedProjectAnalysis } from "@/components/SharedProjectAnalysis";
 import { scopeRecordDefaults } from "@/lib/record-form-defaults";
 import { assertDecisionSubmission } from "@/lib/decision-log-policy";
-import { taskLane } from "@/lib/task-board";
+import { taskLane, sortTaskRecords, isTaskOverdue } from "@/lib/task-board";
 import { defaultDecisionLogs, type DecisionRecord } from "@/components/CompanyDirectoryAndLegalHub";
 import { ProjectAnalysisOverview } from "@/components/ProjectAnalysisOverview";
 import { useId } from "react";
@@ -11,6 +13,9 @@ import { suggestProjectCode } from "@/lib/project-code";
 import { DocumentUploadPilotDialog, type UploadDraft } from "@/components/DocumentUploadPilotDialog";
 import { assertUploadContextCurrent, sourceGerberPackages, type UploadScope, type UploadType, type SourcePackage } from "@/lib/document-upload-pilot";
 import { recordsForProject, documentsForProject } from "@/lib/project-workspace";
+import { SharedOperationalWorkspace } from "@/components/SharedOperationalWorkspace";
+import { SharedPortalSearch } from "@/components/SharedPortalSearch";
+import { useBusinessDate } from "@/hooks/use-business-date";
 import { SharedTestWorkspace } from "@/components/SharedTestWorkspace";
 import { evolveResponsibilityConfiguration, resolveProjectChronicles, type ResponsibilityVersion } from "@/lib/responsibility-version";
 import { DepartmentProjectWorkspace } from "@/components/DepartmentProjectWorkspace";
@@ -2222,8 +2227,9 @@ function Portal() {
   const getTestMembershipFn = useServerFn(getTestMembership);
   const [testMembership, setTestMembership] = useState<TestMembership | null>(null);
   const [testAuthReady, setTestAuthReady] = useState(false);
+  const [testAuthError,setTestAuthError]=useState<string|null>(null);
   const [showSharedTestWorkspace, setShowSharedTestWorkspace] = useState(false);
-  const [sharedTestInitialTab, setSharedTestInitialTab] = useState<"Tasks" | "Documents">("Tasks");
+  const [sharedTestInitialTab, setSharedTestInitialTab] = useState<"Projects" | "Records" | "Tasks" | "Approvals" | "Documents">("Tasks");
 
   const isInvalidUrlRole =
     typeof window !== "undefined" &&
@@ -2336,6 +2342,7 @@ function Portal() {
   const [persona, setPersona] = useState<Persona>(() => initialPersona);
   const [recordTypeFilter, setRecordTypeFilter] = useState<string|null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  useBusinessDate(); // Keep all task projections current across the business midnight.
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [rfqStep, setRfqStep] = useState(0);
   const [rfqOpen, setRfqOpen] = useState(false);
@@ -2477,21 +2484,22 @@ function Portal() {
     setSignedOut(true);
     setLoginModalOpen(false);
   };
-  const resolveTestMembership = async () => {
+  const resolveTestMembership = async (isCurrent:()=>boolean=()=>true) => {
     const membership = await getTestMembershipFn();
     const byDepartment = membership.departmentCode ? normalizePersonaId(membership.departmentCode) : "unrecognized";
     const personaId = membership.role === "admin" ? "admin" : membership.isClient ? "client" : byDepartment;
     const matched = personas.find((item) => item.id === personaId);
     if (!matched) throw new Error("This TEST account does not have a supported active department membership.");
-    setTestMembership(membership);
-    setShowSharedTestWorkspace(false);
-    setSignedOut(false);
-    switchPersona(membership.role === "member" ? {
-      ...matched,
-      kind: "member",
-      label: `${membership.departmentCode} Employee`,
-      person: membership.displayName,
-    } : { ...matched, person: membership.displayName });
+    if(!isCurrent())return;
+    const authenticatedPersona:Persona=membership.role==="member"?{...matched,kind:"member",label:`${membership.departmentCode} Employee`,person:membership.displayName}:{...matched,person:membership.displayName};
+    setTestMembership(membership);setTestAuthError(null);setShowSharedTestWorkspace(false);setSignedOut(false);
+    setPersona(authenticatedPersona);
+    setActiveArea((authenticatedPersona.kind==="lead"||authenticatedPersona.kind==="member")&&authenticatedPersona.departmentId?authenticatedPersona.departmentId:"home");
+    setDepartmentContext(null);setView("queue");setSelectedId(null);
+    const url=new URL(window.location.href);url.searchParams.delete("signedout");
+    if(authenticatedPersona.id==="admin")url.searchParams.delete("role");else url.searchParams.set("role",authenticatedPersona.id);
+    window.history.replaceState({},"",url.toString());
+
   };
   const handleTestLogin = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -2508,7 +2516,7 @@ function Portal() {
     const restore = async () => {
       const { data } = await supabase.auth.getSession();
       if (!data.session || !active) { if (active) setTestAuthReady(true); return; }
-      try { await resolveTestMembership(); } catch { await supabase.auth.signOut(); if (active) setTestMembership(null); }
+      try { await resolveTestMembership(()=>active); } catch (error) { if (active) {setTestMembership(null);setTestAuthError(error instanceof Error?error.message:"Session verification is unavailable. Retry without signing out.");} }
       if (active) setTestAuthReady(true);
     };
     void restore();
@@ -3129,6 +3137,7 @@ function Portal() {
     </div>
     <SharedTestWorkspace initialTab={sharedTestInitialTab} membership={testMembership} onLogout={handleLogout} darkMode={darkMode} />
   </div>;
+  if(testAuthError)return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><h1 className="text-lg font-semibold">Session verification unavailable</h1><p role="alert" className="my-3 text-sm">{testAuthError}</p><p className="text-xs text-muted-foreground">No local examples are used for this authenticated account.</p><button className="mt-4 rounded border border-border px-3 py-2 text-sm" onClick={()=>window.location.reload()}>Retry</button></section></main>;
   if (signedOut) return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><section className="max-w-lg rounded-xl border border-border bg-card p-6"><p className="text-[11px] font-bold uppercase text-primary">TEST ONLY</p><h1 className="mt-1 text-xl font-semibold">Signed out</h1><p className="mt-3 text-sm text-muted-foreground">Sign in with a provisioned TEST account. Browser-local demo records remain separate.</p><button type="button" disabled={!testAuthReady} onClick={() => setLoginModalOpen(true)} className="mt-5 rounded border border-border px-4 py-2 text-sm disabled:opacity-50">Sign in to TEST workspace</button></section><DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode currentPersonaId="" onClose={() => setLoginModalOpen(false)} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} /></main>;
   return (
     <main className={`${darkMode ? "dark" : ""} min-h-screen bg-background text-foreground transition-colors duration-200 motion-reduce:transition-none`}>
@@ -3313,7 +3322,9 @@ function Portal() {
         </header>
         <div className="mx-auto max-w-[1600px] space-y-6 px-6 py-6 pb-28 lg:pb-10">
           {persona.kind === "client" ? (
-            <ClientOEMPortal demoMode={portal.demoLoaded} focusDeliverables={clientDeliverablesFocus} />
+            <>{testMembership && <div className="flex gap-2"><button className="rounded-lg border border-border px-3 py-2 text-sm" onClick={()=>setView("queue")}>Deliverables</button><button className="rounded-lg border border-border px-3 py-2 text-sm" onClick={()=>setView("tickets")}>Tickets</button></div>}{testMembership && view==="tickets" ? <SharedBusinessWorkspace key={testMembership.membershipId} view="tickets" membership={testMembership}/> : <ClientOEMPortal demoMode={!testMembership && portal.demoLoaded} focusDeliverables={clientDeliverablesFocus}/>}</>
+          ) : testMembership && ["queue","project","summary","records","deliverables","assignee","approvals","vault","index"].includes(view) ? (
+ <SharedOperationalWorkspace key={`${testMembership.membershipId}:${view}`} membership={testMembership} view={view} darkMode={darkMode} onLogout={handleLogout}/>
           ) : (persona.kind === "lead" || persona.kind === "member") && view === "assignee" ? (
             <section className="space-y-4">
               <h1 className="text-xl font-semibold">{active.name} — My Tasks & Action Queue</h1>
@@ -3372,7 +3383,7 @@ function Portal() {
               onLog={log}
             />
           ) : view === "analysis" ? (
-            <ProjectAnalysisOverview key={persona.id} projects={(persona.kind === "lead" || persona.kind === "member") ? leadProjects : activeRecords.filter(r=>r.type === "Project")} records={(persona.kind === "lead" || persona.kind === "member") ? leadRecords : activeRecords} documents={scopedDocuments} onOpenProject={project => {setSelectedProjectId(project.reference); if(persona.kind === "admin") setSelectedId(project.id); else setProjectScopes(current=>({...current,[effectiveArea]:project.reference})); setView("project");}} />
+            testMembership ? <SharedProjectAnalysis membership={testMembership} /> : <ProjectAnalysisOverview key={persona.id} projects={(persona.kind === "lead" || persona.kind === "member") ? leadProjects : activeRecords.filter(r=>r.type === "Project")} records={(persona.kind === "lead" || persona.kind === "member") ? leadRecords : activeRecords} documents={scopedDocuments} onOpenProject={project => {setSelectedProjectId(project.reference); if(persona.kind === "admin") setSelectedId(project.id); else setProjectScopes(current=>({...current,[effectiveArea]:project.reference})); setView("project");}} />
           ) : view === "vault" ? (
             <><div className="flex items-center justify-between"><div><h1 className="text-lg font-semibold">Documents & Vault</h1><p className="text-xs text-muted-foreground">Original documents and project-linked files within your department access.</p></div><div className="flex gap-2">{testMembership && <Action label="Shared documents & uploads" primary onClick={() => {setSharedTestInitialTab("Documents"); setShowSharedTestWorkspace(true);}} />}<Action label="Back to workspace" onClick={() => navigate(effectiveArea)} /></div></div><HardwareDeliverablesDrive documents={scopedDocuments} departments={portal.departments} departmentContext={departmentContext} persona={persona} portal={portal} onSelectDocument={openDocument} onOpenCustomerRegister={() => setCustomerRegisterOpen(true)} uploadReadOnlyReason={testMembership ? "This view is browser-local. Shared TEST uploads remain in Shared TEST records until the shared document contract is verified." : undefined} onDocumentCreated={async document => update(state => { const ownWork = state.records.filter(r=>!r.archived && r.area === persona.departmentId); const keys = new Set([...ownWork.flatMap(projectReferences),...state.documents.filter(d=>canDepartmentAccessDocument(d,persona,departmentContext)).flatMap(d=>d.linkedRecordRefs ?? [])]); const projects = state.records.filter(r => r.type === "Project" && (persona.kind === "admin" || keys.has(r.id) || keys.has(r.reference))); const selected = projects.find(p => p.id === document.projectId); assertUploadContextCurrent(document, projects, state.departments, sourceGerberPackages(state.documents.filter(d => canDepartmentAccessDocument(d, persona, departmentContext)), selected)); return { ...state, documents:[document,...state.documents], audit:[{id:createId(),at:now(),action:"Draft document uploaded",detail:`${document.title} · Browser-local`},...state.audit].slice(0,100) }; })} /></>
           ) : view === "index" ? (
@@ -3501,6 +3512,8 @@ function Portal() {
               persona={persona}
               onRequestApproval={handleCreateApprovalRequest}
             />
+          ) : testMembership && ["budgets", "tickets", "profile", "hr_admin", "communication"].includes(view) ? (
+            <SharedBusinessWorkspace key={`${testMembership.membershipId}:${view}`} view={view} membership={testMembership} />
           ) : view === "budgets" ? (
             <DepartmentBudgetsWorkspace
               persona={persona}
@@ -3628,6 +3641,7 @@ function Portal() {
                 log("Administrator context returned", "Returned to global command center");
                 navigate("home");
               }}
+              onOpenAnalysis={()=>setView("analysis")}
               onRunRfq={() => {
                 setRfqStep(0);
                 setRfqOpen(true);
@@ -3982,7 +3996,7 @@ function Portal() {
           onResetDemo={resetDemo}
         />
       )}{" "}
-      {searchOpen && persona.kind !== "client" && <Dialog open onOpenChange={setSearchOpen}><DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Search</DialogTitle><DialogDescription>Search permitted documents, projects, tasks and process records. Your workspace stays open behind this popup.</DialogDescription></DialogHeader><SharedIndex compact queryValue={globalSearchQuery} onQueryChange={setGlobalSearchQuery} records={(persona.kind === "lead" || persona.kind === "member") ? [...leadRecords, ...leadProjects] : activeRecords} documents={scopedDocuments} allowedProjectIds={(persona.kind === "lead" || persona.kind === "member") ? leadProjects.map(project => project.id) : []} departments={portal.departments} departmentContext={departmentContext} onSelect={record => { setSearchOpen(false); if (record.type === "Project") { setSelectedProjectId(record.reference); if (persona.kind === "admin") setSelectedId(record.id); else setProjectScopes(current => ({ ...current, [effectiveArea]: record.reference })); setView("project"); } else openRecord(record); }} onSelectDocument={document => { setSearchOpen(false); openDocument(document); }} /></DialogContent></Dialog>}
+      {searchOpen && persona.kind !== "client" && <Dialog open onOpenChange={setSearchOpen}><DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Search</DialogTitle><DialogDescription>Search permitted documents, projects, tasks and process records. Your workspace stays open behind this popup.</DialogDescription></DialogHeader>{testMembership ? <SharedPortalSearch membership={testMembership} query={globalSearchQuery} onQueryChange={setGlobalSearchQuery} onOpen={destination=>{setSearchOpen(false);if(["Projects","Records","Tasks","Approvals","Documents"].includes(destination)){setSharedTestInitialTab(destination as "Projects"|"Records"|"Tasks"|"Approvals"|"Documents");setShowSharedTestWorkspace(true);}else setView(destination as "budgets"|"tickets"|"communication");}}/> : <SharedIndex compact queryValue={globalSearchQuery} onQueryChange={setGlobalSearchQuery} records={(persona.kind === "lead" || persona.kind === "member") ? [...leadRecords, ...leadProjects] : activeRecords} documents={scopedDocuments} allowedProjectIds={(persona.kind === "lead" || persona.kind === "member") ? leadProjects.map(project => project.id) : []} departments={portal.departments} departmentContext={departmentContext} onSelect={record => { setSearchOpen(false); if (record.type === "Project") { setSelectedProjectId(record.reference); if (persona.kind === "admin") setSelectedId(record.id); else setProjectScopes(current => ({ ...current, [effectiveArea]: record.reference })); setView("project"); } else openRecord(record); }} onSelectDocument={document => { setSearchOpen(false); openDocument(document); }} />}</DialogContent></Dialog>}
       <DepartmentLeadLoginModal isOpen={loginModalOpen} demoMode={false} testMode onClose={() => setLoginModalOpen(false)} currentPersonaId={testMembership?.role === "member" ? "" : persona.id} onLoginSuccess={handleDemoLogin} onTestLogin={handleTestLogin} onLogout={handleLogout} />
       {customerRegisterOpen && (
         <CustomerRegisterModal
@@ -4377,6 +4391,7 @@ function CommandCenter({
   onOpenAssignee,
   onReturnGlobal,
   onRunRfq,
+  onOpenAnalysis,
   onOpenSyncHub,
   onOpenDraftHub,
   onOpenAi4t,
@@ -4398,6 +4413,7 @@ function CommandCenter({
   onOpenAssignee: (assignee: string) => void;
   onReturnGlobal: () => void;
   onRunRfq: () => void;
+  onOpenAnalysis: () => void;
   onOpenSyncHub: () => void;
   onOpenDraftHub: () => void;
   onOpenAi4t: () => void;
@@ -4425,7 +4441,7 @@ function CommandCenter({
   return (
     <>
       {portal.demoLoaded && <DemoMarker />}
-      {portal.demoLoaded && <LifecycleProgress records={records} projectId="HLPL-SLCT-01" />}
+
       <PageHeader
         eyebrow={persona.kind === "admin" ? (departmentContext ? "Administrator context" : "Operational workspace") : `${persona.label} · active persona`}
         title="Command Center"
@@ -4437,12 +4453,10 @@ function CommandCenter({
         actions={
           <>
             {departmentContext && <Action onClick={onReturnGlobal} label="Return to global" />}
-            <Action onClick={() => onOpenProject("HLPL-AI4T-01")} label="Project Analysis (Page 1)" primary />
+            <Action onClick={onOpenAnalysis} label="Project Analysis" primary />
             <Action onClick={onOpenSyncHub} label="Cross-Department Sync & Order Hub" />
-            <Action onClick={onOpenAi4t} label="End-to-End Project Lifecycle Hub (HLPL-AI4T-01)" primary />
-            {onOpenFeasibilityGate && (
-              <Action onClick={() => onOpenFeasibilityGate("HLPL-AI4T-01")} label="Feasibility & Hardware Gate" />
-            )}
+            <Action onClick={onOpenAi4t} label="Knowledge Base" />
+
             {onOpenDecisionLog && (
               <Action onClick={onOpenDecisionLog} label="Official Decision Log" />
             )}
@@ -4452,12 +4466,8 @@ function CommandCenter({
             {onOpenDirectory && (
               <Action onClick={onOpenDirectory} label="Company Directory" />
             )}
-            {onOpenAssetCatalog && (
-              <Action onClick={onOpenAssetCatalog} label="Platform Asset Library" />
-            )}
-            {onOpenCloudSync && (
-              <Action onClick={onOpenCloudSync} label="Cloud & Supabase Sync" />
-            )}
+
+
             <Action onClick={onOpenDraftHub} label="Auto-Draft Templates" />
             <Action onClick={onRunRfq} label="Run RFQ Project Cycle Test" />
             <Action onClick={() => onCreate("Task")} label="Create Task" primary />
@@ -4481,7 +4491,7 @@ function CommandCenter({
           label="Today"
           value={String(
             taskRecords.filter(
-              (record) => record.fields["dueDate"] === today && record.status !== "Released",
+              (record) => taskLane(record,today)==="today",
             ).length,
           )}
           detail="Checklist tasks"
@@ -4501,7 +4511,7 @@ function CommandCenter({
           label="Tomorrow"
           value={String(
             taskRecords.filter(
-              (record) => record.fields["dueDate"] === tomorrow && record.status !== "Released",
+              (record) => taskLane(record,today)==="todo",
             ).length,
           )}
           detail="Pending list"
@@ -4611,7 +4621,7 @@ function RfqCycleTest({
       </p>
       <h3 className="mt-2 text-xl font-semibold">DEMO · Tata Ace EV 4G Telematics Gateway</h3>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Volume 50,000-units/year program. Commercial, engineering and manufacturing milestones governed under IATF 16949 / APQP Stage Gate baseline.
+        Volume 50,000-units/year program. Commercial, engineering and manufacturing milestones with stage reviews.
       </p>
       <ol className="mt-6 grid gap-2 sm:grid-cols-3">
         {rfqStages.map(([stage, stageTitle], index) => (
@@ -4860,7 +4870,7 @@ function Ai4tLifecycleHub({
       )}
       {tab === "binder" && <section className="ops-section mt-5 overflow-hidden">
 
-        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Unified role-filtered binder. IATF 16949 / ISO 9001 controlled document repository.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
+        <div className="ops-section-header flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold">Master dossier · {accessibleDossier.length} documents visible</p><p className="text-xs text-muted-foreground">Original controlled documents within your access.</p></div><BriefcaseBusiness className="size-4 text-steel" /></div>
         <div className="divide-y divide-border">{accessibleDossier.map((document) => <button key={document[1]} onClick={() => setDossier(document)} className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"><span className="min-w-0"><strong className="block text-sm">{document[0]}</strong><small className="font-mono text-[10px] text-muted-foreground">{document[1]} · {document[2]} · {document[3]}</small></span><ChevronRight className="size-4 self-center text-steel" /></button>)}</div>
       </section>}
       {dossier && <section className="mt-5 rounded-lg border border-steel/35 bg-panel p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] uppercase tracking-[.12em] text-steel">Controlled Document Preview</p><h4 className="mt-1 text-sm font-semibold">{dossier[0]}</h4></div><Status status="Draft" /></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><DocumentField label="Document ID" value={dossier[1]} /><DocumentField label="Project" value="HLPL-AI4T-01 · Operational Baseline" /><DocumentField label="Stage" value={dossier[3]} /><DocumentField label="Owner" value={`${dossier[2]} · department-owned`} /><DocumentField label="Revision" value="Rev 01 · Controlled Release" /><DocumentField label="Approval" value="Human approval required" /></div><div className="mt-4"><Action label="Open complete document" primary onClick={() => onOpenPrintable({ title: dossier[0].toUpperCase(), documentId: dossier[1], department: dossier[2], revision: "Rev 01", status: "Draft", project: "HLPL-AI4T-01", stage: dossier[3] })} /></div></section>}
@@ -5128,9 +5138,8 @@ function TodayChecklist({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [expandAll, setExpandAll] = useState(false);
   const [inspectionOpen, setInspectionOpen] = useState(false);
-  const todayTasks = tasks.filter(task => taskLane(task, today) === "today");
-  const pendingTasks = tasks.filter(task => taskLane(task, today) === "todo");
-  const reviewTasks = tasks.filter(task => taskLane(task, today) === "review");
+  const todayTasks = sortTaskRecords(tasks.filter(task => taskLane(task,today)==="today" || (taskLane(task,today)==="review" && (!task.fields["dueDate"] || task.fields["dueDate"]!<=today))),today);
+  const pendingTasks = sortTaskRecords(tasks.filter(task => taskLane(task,today)==="todo" || (taskLane(task,today)==="review" && task.fields["dueDate"]!>today)),today);
   const completedTasks = tasks.filter(task => taskLane(task, today) === "completed");
   const move = (task: RecordItem, dueDate: string, action: string) =>
     onUpdateTask(task.id, { fields: { ...task.fields, dueDate } }, action);
@@ -5140,7 +5149,7 @@ function TodayChecklist({
         <div><p className="text-sm font-semibold">Task checklist</p><p className="text-xs text-muted-foreground">Compact operational rows · up to 23 visible per lane</p></div>
         <div className="flex shrink-0 gap-2"><Action label={expandAll ? "Collapse all" : "Expand all"} onClick={() => setExpandAll((value) => !value)} /><Action label="Open expanded modal" onClick={() => setInspectionOpen(true)} /></div>
       </div>
-    <div className="grid gap-6 p-4 lg:grid-cols-3">
+    <div className="grid gap-6 p-4 lg:grid-cols-2">
       <ChecklistLane
         title="Today"
         description="Short department-wise checklist"
@@ -5175,7 +5184,7 @@ function TodayChecklist({
         onOpenAssignee={onOpenAssignee}
         expandAll={expandAll}
       />
-      <ChecklistLane title="Review / Approval" description="Awaiting the designated review; complete through Approvals" tasks={reviewTasks} departments={departments} onDrop={() => setDraggedId(null)} onDragStart={() => {}} onDone={() => {}} onMove={() => {}} onOpenProject={onOpenProject} onOpenAssignee={onOpenAssignee} expandAll={expandAll}/>
+
     </div>
     <details className="mx-4 mb-4 rounded-lg border border-border/70"><summary className="cursor-pointer px-3 py-2 text-xs font-semibold">Completed ({completedTasks.length})</summary><div>{completedTasks.map(task=><TaskCard key={task.id} task={task} department={departments.find(d=>d.id===task.departmentId)} onDragStart={()=>{}} onDone={()=>{}} onMove={()=>{}} onOpenProject={onOpenProject} onOpenAssignee={onOpenAssignee} expanded={false}/>)}</div></details>
     {inspectionOpen && <TaskInspectionModal tasks={[...todayTasks, ...pendingTasks]} departments={departments} onClose={() => setInspectionOpen(false)} onDone={(task) => onUpdateTask(task.id, { status: "Released" }, "Task marked done from inspection")} />}
@@ -5273,7 +5282,7 @@ function TaskCard({
       <div className="grid cursor-pointer grid-cols-[auto_auto_minmax(0,1fr)_auto_auto_auto] items-center gap-2 px-3 py-2.5 transition-colors hover:bg-secondary/70" onClick={() => setOpen((value) => !value)}>
         <span className="rounded border border-steel/35 bg-steel/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-steel">{department?.code.replace("DEMO-", "") ?? "—"}</span>
         <span className={`size-2 rounded-full ${task.priority === "Critical" ? "bg-danger" : task.priority === "High" ? "bg-warning" : "bg-steel"}`} />
-        <p className="truncate text-sm font-medium">{task.title}</p>
+        <p className="truncate text-sm font-medium">{task.title}{task.status==="In review"&&<span className="ml-2 text-[10px] text-warning">Awaiting approval</span>}{!["Released","Approved"].includes(task.status)&&isTaskOverdue(task)&&<span className="ml-2 text-[10px] text-danger">Overdue</span>}</p>
         <span className="grid size-6 place-items-center rounded-full border border-border bg-panel font-mono text-[9px] text-muted-foreground" title={assignee}>{assignee.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span>
         <span className="hidden font-mono text-[10px] text-muted-foreground sm:block">{task.fields["dueDate"] || "Unscheduled"}</span>
         <div className="flex items-center gap-1"><button disabled={task.status === "In review" || task.status === "Approved" || task.status === "Released"} title={task.status === "In review" ? "Complete through the designated approval" : "Mark done"} aria-label={`Mark ${task.title} done`} onClick={(event) => { event.stopPropagation(); onDone(task); }} className="grid size-7 place-items-center rounded border border-moss/35 text-moss hover:bg-accent"><Check className="size-3.5" /></button><ChevronRight className={`size-4 text-muted-foreground transition-transform motion-reduce:transition-none ${open ? "rotate-90" : ""}`} /></div>
@@ -5313,7 +5322,7 @@ function TaskCard({
 }
 
 function TaskInspectionModal({ tasks, departments, onClose, onDone }: { tasks: RecordItem[]; departments: Department[]; onClose: () => void; onDone: (task: RecordItem) => void }) {
-  return <Modal title="Expanded task inspection" onClose={onClose} wide><div className="space-y-3">{tasks.map((task) => <article key={task.id} className="border border-border bg-panel p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-mono text-[10px] text-steel">{departments.find((item) => item.id === task.departmentId)?.code ?? "—"} · {task.reference}</p><h3 className="mt-1 font-semibold">{task.title}</h3></div><Status status={task.status} /></div><p className="mt-2 text-sm text-muted-foreground">{task.notes || "No further description recorded."}</p><p className="mt-3 text-xs font-medium text-steel">Next action: Completion unblocks the next controlled lifecycle handoff.</p><div className="mt-4"><Action label="Mark done" onClick={() => onDone(task)} /></div></article>)}</div></Modal>;
+  return <Modal title="Expanded task inspection" onClose={onClose} wide><div className="space-y-3">{tasks.map((task) => <article key={task.id} className="border border-border bg-panel p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-mono text-[10px] text-steel">{departments.find((item) => item.id === task.departmentId)?.code ?? "—"} · {task.reference}</p><h3 className="mt-1 font-semibold">{task.title}</h3></div><Status status={task.status} /></div><p className="mt-2 text-sm text-muted-foreground">{task.notes || "No further description recorded."}</p><p className="mt-3 text-xs font-medium text-steel">Next action: Completion unblocks the next controlled lifecycle handoff.</p><div className="mt-4">{task.status!=="In review"&&<Action label="Mark done" onClick={() => onDone(task)} />}</div></article>)}</div></Modal>;
 }
 function fallbackProjectRecord(projectId: string, records: RecordItem[]): RecordItem {
   const found = records.find(
@@ -8983,7 +8992,7 @@ function CloudSyncPanel({
               <strong className="text-xs text-foreground">Track 2: Supabase Managed Postgres (Cloud Backbone)</strong>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Centralized enterprise database handling multi-tenant records (<code className="text-[10px] bg-muted px-1 py-0.5 rounded">operational_records</code>), private document binaries in Supabase Storage, and IATF-compliant tamper-proof audit events.
+              Centralized enterprise database handling multi-tenant records (<code className="text-[10px] bg-muted px-1 py-0.5 rounded">operational_records</code>), private document binaries in Supabase Storage, and recorded audit events.
             </p>
           </div>
         </div>
@@ -9597,16 +9606,7 @@ function IndexWorkspace({
   );
 }
 function DemoMarker() {
-  return (
-    <div className="mb-5 flex items-center justify-between border border-warning bg-panel px-4 py-3 text-sm">
-      <span>
-        <strong>OPERATIONAL ENTERPRISE BASELINE</strong>
-        <span className="ml-2 text-muted-foreground">
-          Browser-local examples; not verified production, certification or release evidence.
-        </span>
-      </span>
-    </div>
-  );
+ return <span className="inline-flex rounded border border-warning/40 bg-warning/10 px-2 py-1 text-[10px] font-semibold text-warning" title="Browser-local examples. No production approvals, certifications or shared saves are represented.">DEMO</span>;
 }
 function DemoDataPanel({
   loaded,

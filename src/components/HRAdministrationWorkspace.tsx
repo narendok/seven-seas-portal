@@ -188,10 +188,10 @@ export const HRAdministrationWorkspace: React.FC<HRAdministrationWorkspaceProps>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold tracking-tight text-foreground">
-                HR Administration Hub
+                HR
               </h1>
               <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-                Governed People Operations
+                People & activities
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -609,7 +609,7 @@ export const HRAdministrationWorkspace: React.FC<HRAdministrationWorkspaceProps>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={isAnonymous}
+                    checked={false} disabled title="Anonymous surveys are available in the authenticated shared HR workflow"
                     onChange={(e) => setIsAnonymous(e.target.checked)}
                     className="rounded border-border text-primary"
                   />
@@ -619,7 +619,7 @@ export const HRAdministrationWorkspace: React.FC<HRAdministrationWorkspaceProps>
                   </span>
                 </label>
                 <p className="text-[10px] text-muted-foreground pl-5">
-                  When enabled, respondent employee IDs will never be recorded in responses or linked in reports.
+                  Anonymous response separation is available only in the shared HR workflow. Local examples use identified submissions.
                 </p>
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-border/40">

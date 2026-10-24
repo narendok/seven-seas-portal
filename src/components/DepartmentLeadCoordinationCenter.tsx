@@ -1,5 +1,6 @@
 import { ResponsiveFilterBar, CompactFilterSelect } from "@/components/ResponsiveFilterBar";
 import { taskLane, sortTaskRecords, isTaskOverdue } from "@/lib/task-board";
+import { useBusinessDate } from "@/hooks/use-business-date";
 import { businessDate } from "@/lib/business-date";
 import React, { useState, useMemo } from "react";
 import {
@@ -165,7 +166,8 @@ export function DepartmentLeadCoordinationCenter({
   const [viewMode, setViewMode] = useState<"kanban" | "table" | "checklist">("checklist");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [assigneeFilter, setAssigneeFilter] = useState<string>(initialAssignee);
-  const [sortBy, setSortBy] = useState<"due" | "priority">("due");
+  const [sortBy, setSortBy] = useState<"due" | "priority">("priority");
+  const currentBusinessDay = useBusinessDate();
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Modals
@@ -234,9 +236,9 @@ export function DepartmentLeadCoordinationCenter({
       return true;
     }).sort((a, b) => {
       const priority = { Critical: 0, High: 1, Normal: 2, Low: 3 };
-      return sortBy === "priority" ? priority[a.priority] - priority[b.priority] || a.title.localeCompare(b.title) : (a.fields["dueDate"] || "9999-12-31").localeCompare(b.fields["dueDate"] || "9999-12-31") || priority[a.priority] - priority[b.priority];
+      return sortBy === "priority" ? (sortTaskRecords([a,b],currentBusinessDay)[0]?.id===a.id ? -1 : 1) : (a.fields["dueDate"] || "9999-12-31").localeCompare(b.fields["dueDate"] || "9999-12-31") || priority[a.priority] - priority[b.priority];
     });
-  }, [deptTasks, projectScope, statusFilter, assigneeFilter, searchQuery, departmentLead, sortBy, recordsAreScoped]);
+  }, [deptTasks, projectScope, statusFilter, assigneeFilter, searchQuery, departmentLead, sortBy, recordsAreScoped, currentBusinessDay]);
 
   // Compute workload per team member
   const memberWorkloads = useMemo(() => {
@@ -471,7 +473,7 @@ export function DepartmentLeadCoordinationCenter({
       {/* TAB 1: TEAMS TASKS */}
       {activeTab === "tasks" && (
         <div className="space-y-4">
-          <ResponsiveFilterBar label="Task filters" className="rounded-xl border border-border/70 bg-card p-2" activeCount={Number(assigneeFilter !== "ALL") + Number(sortBy !== "due")} secondary={<><CompactFilterSelect label="Assignee" shortLabel="Person" icon={Users} value={assigneeFilter} onChange={setAssigneeFilter} options={[{value:"ALL",label:"All team members"}, ...teamMembers.map(m => ({value:m.name,label:m.name}))]} /><CompactFilterSelect label="Sort tasks" shortLabel="Sort" icon={ArrowUpDown} value={sortBy} onChange={value => setSortBy(value as "due" | "priority")} options={[{value:"due",label:"Due date first"},{value:"priority",label:"Priority first"}]} /></>}>
+          <ResponsiveFilterBar label="Task filters" className="rounded-xl border border-border/70 bg-card p-2" activeCount={Number(assigneeFilter !== "ALL") + Number(sortBy !== "priority")} secondary={<><CompactFilterSelect label="Assignee" shortLabel="Person" icon={Users} value={assigneeFilter} onChange={setAssigneeFilter} options={[{value:"ALL",label:"All team members"}, ...teamMembers.map(m => ({value:m.name,label:m.name}))]} /><CompactFilterSelect label="Sort tasks" shortLabel="Sort" icon={ArrowUpDown} value={sortBy} onChange={value => setSortBy(value as "due" | "priority")} options={[{value:"due",label:"Due date first"},{value:"priority",label:"Priority first"}]} /></>}>
             <div className="filter-search"><Search /><input aria-label="Search department tasks" placeholder="Search tasks…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
             <CompactFilterSelect label="Task status" shortLabel="Status" icon={CheckSquare} value={statusFilter} onChange={value => setStatusFilter(value as typeof statusFilter)} options={[{value:"ALL",label:"All tasks"},{value:"OPEN",label:"Open / In Progress"},{value:"IN_REVIEW",label:"Under Review"},{value:"APPROVED",label:"Completed"}]} />
           </ResponsiveFilterBar>
@@ -499,8 +501,8 @@ export function DepartmentLeadCoordinationCenter({
                     const l = taskLane(task);
                     const due = task.fields["dueDate"] ?? "";
                     return column.lane === "today"
-                      ? (l === "today" || (l === "review" && (due <= businessDate() || !due)))
-                      : (l === "todo" || (l === "review" && due > businessDate()));
+                      ? (l === "today" || (l === "review" && (due <= currentBusinessDay || !due)))
+                      : (l === "todo" || (l === "review" && due > currentBusinessDay));
                   }));
                   return <KanbanColumn key={column.lane} title={column.title} tone={column.tone}
                     count={tasks.length} tasks={tasks} teamMembers={teamMembers}
@@ -1100,7 +1102,7 @@ function TaskChecklistView({
   readOnly?: boolean | undefined;
 }) {
   const [completedExpanded, setCompletedExpanded] = useState<boolean>(false);
-  const today = businessDate();
+  const today = useBusinessDate();
 
   const todayItems = sortTaskRecords(
     tasks.filter((t) => {
