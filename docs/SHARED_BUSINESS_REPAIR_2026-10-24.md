@@ -8,7 +8,7 @@ Baseline: web `b6de4c3`, Android `5d10316`. GitHub fetch on 24 October found bot
 
 The approved backend remains `rzskhndweihuczbdhoxk`. The Supabase connector lacked access to it; no substitute project was used. Migration `20261021134427_business_workspace_contract.sql` was tested in a rollback-only transaction through Lovable, then deployed through its SQL editor. Verification showed RLS enabled, anonymous RPC access false, direct authenticated table access false, 27 memberships preserved, and zero seeded business items immediately after deployment.
 
-Migration `20261024084915_business_workspace_validation_guards.sql` contains the final RPC corrections. **Deployment is awaiting fresh user confirmation at Lovable's Run anyway warning.** Automatic approval review rejected that action on 24 October; do not report this migration as deployed until its result is checked. Source tests include it.
+Migration `20261024084915_business_workspace_validation_guards.sql` contains the final RPC corrections. **Deployed on 24 October after explicit user approval.** The initial automatic-review rejection was resolved by that approval. Lovable returned `validation guards deployed`, with 27 memberships and the one synthetic claim preserved. Source tests include both migrations.
 
 ## Implemented in this repair
 
@@ -26,7 +26,7 @@ Migration `20261024084915_business_workspace_validation_guards.sql` contains the
 | Project Analysis | Real original records/project links, tasks and authorized document metadata. Explicit dependencies and enquiry associations; missing mappings remain unknown. Removed hardcoded AI4T/readiness fallback. |
 | Tasks/layout | Today and Tomorrow/Planned, priority ordering, collapsed Completed; no third admin review lane. Calendar refresh while open; overdue retains deadlines. Smaller DEMO badge and operational lifecycle walkthrough removed from the dashboard. |
 
-The final validation migration additionally fixes the existing record_fields SQL ambiguity, preserves task priority at creation, blocks direct completion of In review tasks, and rejects missing ticket states. These particular backend corrections remain gated by deployment approval.
+The final validation migration additionally fixes the existing record_fields SQL ambiguity, preserves task priority at creation, blocks direct completion of In review tasks, and rejects missing ticket states. These backend corrections were deployed in the approved follow-up migration.
 
 ## Evidence
 
@@ -34,12 +34,12 @@ The final validation migration additionally fixes the existing record_fields SQL
 - Android: 54 unit tests, zero failures/errors; testDebugUnitTest and assembleDebug succeeded. This is not a physical-device round trip.
 - Browser: authenticated EHW employee opened its actual shared project/task rather than lead examples. My Profile showed that employee and Not recorded for absent verified details, without lead letters.
 - A single clearly labelled synthetic TEST claim, INR 1.23, was created for the persistence scenario: visible reference `EXP-f6fbf5f9`, purpose `TEST verification only — persistence 24 Oct`. It is test evidence, not an approved payable, and no allocation/payment was created.
-- Browser reload after session correction retained the authenticated EHW identity. Reload preserved the same EXP-f6fbf5f9 claim; the second-account lead visibility check is recorded separately.
-- Earlier screenshots: `portal-popup-search-verified.png`, `shared-business-lovable-deployment.png`. Current deployment confirmation prompt: `final-migration-awaiting-approval.png` in the SSM-new working folder.
+- Browser reload after session correction retained the authenticated EHW identity. Reload preserved the same EXP-f6fbf5f9 claim; the EHW lead then saw the same reference, requester, INR 1.23 and Pending_Dept_Review state with review actions. The employee had no self-approval controls.
+- Earlier screenshots: `portal-popup-search-verified.png`, `shared-business-lovable-deployment.png`. Final deployment result: `final-migration-deployed-2026-10-24.png`; cross-account evidence: `shared-claim-lead-verified-2026-10-24.png` in the SSM-new working folder.
 
 ## Explicit limits / pending inputs
 
-- Final migration approval and subsequent Lovable Git import must be verified, not inferred from a local build.
+- Both migrations are deployed. Frontend Git/Lovable import is a separate delivery step; see the final delivery status rather than inferring it from a local build.
 - Device installation and web↔Android same-record verification have not been performed in this repair.
 - HR letter generation/issue requires the actual approved templates, verified employee fields and designated signer policy. No signatures or employment facts were invented.
 - The shared builder currently supports text, number, date, choice, rating and boolean. Attachments, conditional sections, advanced quiz scoring, configurable reminder delivery and attendance capture remain unverified/incomplete; basic training submission is not an issued certificate.
@@ -54,3 +54,5 @@ The final validation migration additionally fixes the existing record_fields SQL
 The migrations add guarded business storage and replace RPC bodies without deleting existing organizations, members, operational records, tasks, documents, inventory or assets. Do not run DROP/CASCADE as a rollback after real data exists. Revert the client integration to the previous Git commit if necessary; preserve new business records and restore previous RPC definitions from Git inside a reviewed migration. The browser-local DEMO store is never imported into authenticated tables.
 
 Stage only the source/tests/migrations for this repair. Never add the unrelated screenshots, launch scripts, sample files, supabase/.temp or local credentials. Use normal Git pushes without rewriting history.
+
+Source implementation commits: web `149ff0c`; Android `81bb41e`. This follow-up changes verification notes only.
